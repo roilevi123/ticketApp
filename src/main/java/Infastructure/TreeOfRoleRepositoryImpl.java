@@ -130,5 +130,9 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         }
         return false;
     }
+    @Override
+    public Set<Permission> getManagerPermissions(String manager, String company) {
+        return managers.get(manager+company).getPermissions();
+    }
 
 }
