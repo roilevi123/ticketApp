@@ -1,5 +1,6 @@
 package Appliction;
 
+import Domain.Company.Company;
 import Domain.Company.iCompanyRepository;
 import Domain.OwnerManagerTree.*;
 
@@ -77,6 +78,41 @@ class CompanyServiceTest {
 
         verify(companyRepository, never()).store(anyString(), anyString());
         verify(treeOfRoleRepository, never()).storeOwner(anyString(), anyString(), anyString());
+    }
+    @Test
+    void appointAManager_Success() {
+        String managerName = "new_manager";
+        Set<Permission> permissions = new HashSet<>();
+        permissions.add(Permission.MANAGE_INVENTORY);
+
+        Owner mockOwner = spy(new Owner(USERNAME, COMPANY,"Administrator"));
+        Manager expectedManager = new Manager(managerName, COMPANY, permissions,USERNAME);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+        when(userRepository.userExists(managerName)).thenReturn(true);
+        String result=companyService.AppointAManager(managerName, COMPANY, permissions, TOKEN);
+        assertEquals(result, "success");
+        verify(treeOfRoleRepository).storeManager(eq(managerName), eq(COMPANY), eq(permissions), eq(USERNAME));
+
+    }
+    @Test
+    void appointAManager_Failure_NotAuthorizedAsOwner() {
+        String managerName = "new_manager";
+        Company mockCompany = mock(Company.class);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
+
+//        doThrow(new RuntimeException("not authorized")).when(mockCompany).isAuthorizedAsOwner(USERNAME);
+
+        String result=companyService.AppointAManager(managerName, COMPANY, new HashSet<>(), TOKEN);
+        assertEquals(result,"failed");
+        verify(treeOfRoleRepository, never()).storeManager(anyString(), anyString(), anySet(),anyString());
+
     }
 
 

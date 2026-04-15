@@ -5,5 +5,9 @@ import java.util.Set;
 
 public interface iTreeOfRoleRepository {
     public void storeOwner(String owner,String company,String appointer);
+    public boolean exitsOwner(String owner,String company);
+    public void storeManager(String manager, String company, Set<Permission> permissions,String appointer);
+
+
 
 }
