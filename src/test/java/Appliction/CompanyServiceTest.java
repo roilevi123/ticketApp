@@ -483,6 +483,43 @@ class CompanyServiceTest {
         verifyNoInteractions(companyRepository);
 
     }
+    @Test
+    void getManagerPermissions_Success() {
+        String managerName = "some_manager";
+        Set<Permission> expectedPermissions = Set.of(Permission.MANAGE_INVENTORY, Permission.VIEW_PURCHASE_HISTORY);
+
+        Owner mockOwner = mock(Owner.class);
+        Manager mockManager = mock(Manager.class);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+        when(treeOfRoleRepository.getManagerPermissions(managerName, COMPANY)).thenReturn(expectedPermissions);
+//        when(mockManager.getPermissions()).thenReturn(expectedPermissions);
+
+        Set<Permission> result = companyService.GetManagerPermissions(TOKEN, COMPANY, managerName);
+
+        assertNotNull(result);
+        assertEquals(expectedPermissions, result);
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void getManagerPermissions_Failure_NotAnOwner() {
+        String managerName = "some_manager";
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
+
+        Set<Permission> result = companyService.GetManagerPermissions(TOKEN, COMPANY, managerName);
+
+        assertNull(result);
+        verify(treeOfRoleRepository, never()).getManager(anyString(), anyString());
+    }
+
 
 
 

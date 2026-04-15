@@ -17,4 +17,6 @@ public interface iTreeOfRoleRepository {
     public Owner getOwner( String owner ,String company);
     public boolean isAppointerManager(String manager,String company,String appointer);
     public boolean isAppointerOwner(String owner,String company,String appointer);
+    public Set<Permission> getManagerPermissions(String manager,String company);
+
 }

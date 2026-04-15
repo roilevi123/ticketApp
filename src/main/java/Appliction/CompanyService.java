@@ -279,6 +279,26 @@ public class CompanyService {
             return "failed";
         }
     }
+    public Set<Permission> GetManagerPermissions(String token, String company, String managerName) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
+            String requesterUsername = tokenService.extractUsername(token);
+            logger.info("User {} is trying to view permissions of manager {} in company {}", requesterUsername, managerName, company);
+            boolean owner = treeOfRoleRepository.exitsOwner(requesterUsername, company);
+            if (!owner) {
+                throw new RuntimeException("Access denied: Only an owner can view manager permissions");
+            }
+            Set<Permission> manager = treeOfRoleRepository.getManagerPermissions(managerName, company);
+            logger.info("Successfully retrieved permissions for manager {}", managerName);
+            return manager;
+
+        } catch (Exception e) {
+            logger.error("Error retrieving manager permissions: " + e.getMessage());
+            return null;
+        }
+    }
 
 
 
