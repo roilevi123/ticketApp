@@ -2,7 +2,7 @@ package AcceptanceTest.users;
 
 
 import AcceptanceTest.users.CompanyManagementTest.CompanyManagementTest;
-//import AcceptanceTest.users.visitorTests.UserActionInfo;
+import AcceptanceTest.users.visitorTests.UserActionInfo;
 import Appliction.CompanyService;
 import Appliction.IPasswordEncoder;
 import Appliction.UserService;
@@ -13,7 +13,7 @@ import Infastructure.*;
 
 
 public class AllTestRun {
-//    private UserActionInfo visitorActionTest;
+    private UserActionInfo visitorActionTest;
     private CompanyManagementTest companyManagementTest;
 
 
@@ -31,20 +31,20 @@ public class AllTestRun {
         CompanyService companyService=new CompanyService(iCompanyRepository,iUserRepository,iTreeOfRoleRepository,tokenService);
 
 
-//        visitorActionTest = new UserActionInfo(userService,initTheSystem);
+        visitorActionTest = new UserActionInfo(userService,initTheSystem);
         companyManagementTest=new CompanyManagementTest(companyService,userService,initTheSystem);
 
     }
     public void runAllTests() {
         System.out.println("Visitor action test ");
-//        String visitorActionTestResults=visitorActionTest.whichTestPass();
-//        String visitorActionTestResultsFailed=visitorActionTest.SeeFailTest();
+        String visitorActionTestResults=visitorActionTest.whichTestPass();
+        String visitorActionTestResultsFailed=visitorActionTest.SeeFailTest();
         String CompanyActionTestResults=companyManagementTest.whichTestPass();
         String CompanyActionTestResultsFailed=companyManagementTest.SeeFailTest();
 
 
-//        System.out.println(visitorActionTestResults);
-//        System.out.println(visitorActionTestResultsFailed);
+        System.out.println(visitorActionTestResults);
+        System.out.println(visitorActionTestResultsFailed);
         System.out.println(CompanyActionTestResults);
         System.out.println(CompanyActionTestResultsFailed);
 
