@@ -21,7 +21,10 @@ public class CompanyRepositoryImpl implements iCompanyRepository {
 
     }
 
-
+    @Override
+    public String getCompanyFounder(String company) {
+        return companies.get(company).getFounder();
+    }
 
 
 }

@@ -149,6 +149,30 @@ public class CompanyService {
             return "failed";
         }
     }
+    public String RejectAppointmentForOwner(String token, String company) {
+        try {
+            String username=tokenService.extractUsername(token);
+            logger.info("trying rejectAppointmentForowner " ,username,company);
+            if(!tokenService.validateToken(token)){
+                throw new RuntimeException("Invalid token");
+            }
+            boolean m=treeOfRoleRepository.isOwner(username,company);
+            if(!m) {
+                throw new RuntimeException("User not found2");
+            }
+            String c=companyRepository.getCompanyFounder(company);
+            if (username.equals(c)) {
+                throw new RuntimeException("founder can not give up the appointment");
+            }
+            treeOfRoleRepository.deleteOwner(username,company);
+            logger.info("successfully rejectAppointmentForowner " ,username,company);
+            return "success";
+        }
+        catch (Exception e) {
+            logger.error(e.getMessage());
+            return "failed";
+        }
+    }
 
 
 
