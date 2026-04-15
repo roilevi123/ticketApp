@@ -367,6 +367,41 @@ class CompanyServiceTest {
         assertEquals(res, "failed");
         verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
     }
+    @Test
+    void changeManagerPermissions_Success() {
+        String managerName = "sub_manager";
+        Set<Permission> newPermissions = Set.of(Permission.MANAGE_INVENTORY);
+        Manager mockManager = spy(new Manager(managerName, COMPANY, new HashSet<>(), USERNAME));
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.getManager(managerName, COMPANY)).thenReturn(mockManager);
+        when(treeOfRoleRepository.isAppointerManager(managerName, COMPANY,USERNAME)).thenReturn(true);
+
+        String res=companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerName, newPermissions);
+        assertEquals(res, "success");
+        verify(mockManager).setPermissions(newPermissions);
+        verify(treeOfRoleRepository).save(mockManager);
+        assertEquals(newPermissions, treeOfRoleRepository.getManager(managerName, COMPANY).getPermissions());
+    }
+
+    @Test
+    void changeManagerPermissions_Failure_NotTheAppointer() {
+        String managerName = "sub_manager";
+        String realAppointer = "someone_else";
+        Manager mockManager = new Manager(managerName, COMPANY, new HashSet<>(), realAppointer);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME); // "test_user"
+        when(treeOfRoleRepository.getManager(managerName, COMPANY)).thenReturn(mockManager);
+        when(treeOfRoleRepository.isAppointerManager(managerName, COMPANY,realAppointer)).thenReturn(false);
+
+        String res=companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerName, Set.of(Permission.MANAGE_INVENTORY));
+        assertEquals(res, "failed");
+        verify(treeOfRoleRepository, never()).save(any(Manager.class));
+        assertEquals(new HashSet<>(), treeOfRoleRepository.getManager(managerName, COMPANY).getPermissions());
+
+    }
 
 
 

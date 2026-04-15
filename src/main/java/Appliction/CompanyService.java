@@ -215,6 +215,35 @@ public class CompanyService {
             return "failed";
         }
     }
+    public String ChangeManagerPermissions(String token, String company, String managerName, Set<Permission> newPermissions) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
+            String username = tokenService.extractUsername(token);
+
+            logger.info("User {} is trying to change permissions for manager {} in company {}", username, managerName, company);
+
+            Manager manager = treeOfRoleRepository.getManager(managerName, company);
+            if (manager == null) {
+                throw new RuntimeException("Manager not found");
+            }
+            boolean m=treeOfRoleRepository.isAppointerManager(managerName, company, username);
+            if (!m) {
+                throw new RuntimeException("You are not authorized to change permissions for this manager (you did not appoint them)");
+            }
+
+            manager.setPermissions(newPermissions);
+
+            treeOfRoleRepository.save(manager);
+
+            logger.info("Successfully changed permissions for manager {} by {}", managerName, username);
+            return "success";
+        } catch (Exception e) {
+            logger.error("Failed to change permissions: " + e.getMessage());
+            return "failed";
+        }
+    }
 
 
 
