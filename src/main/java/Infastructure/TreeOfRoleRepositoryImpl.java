@@ -22,6 +22,19 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         owners.put(owner+company,o);
     }
 
+    @Override
+    public boolean exitsOwner(String owner, String company) {
+        if(owners.containsKey(owner+company)){
+            return owners.get(owner+company).isAccepted();
+        }
+        return false;
+    }
+    @Override
+    public void storeManager(String manager, String company, Set<Permission> permissions,String appointer) {
+        Manager m=new Manager(manager,company,permissions,appointer);
+        managers.put(manager+company,m);
+
+    }
 
 
 }
