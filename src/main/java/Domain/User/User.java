@@ -1,4 +1,4 @@
-package Domain.User.;
+package Domain.User;
 
 public class User {
     private String name;
