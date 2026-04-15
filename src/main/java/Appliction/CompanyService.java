@@ -70,6 +70,24 @@ public class CompanyService {
             return "failed";
         }
     }
+    public String ApproveAppointmentForManager(String token, String company) {
+        try {
+            String username=tokenService.extractUsername(token);
+            logger.info("trying approveAppointmentForManager " ,username,company);
+            if(!tokenService.validateToken(token)){
+                throw new RuntimeException("Invalid token");
+            }
+            Manager m=treeOfRoleRepository.getManager(username,company);
+            m.acceptAppointment();
+            treeOfRoleRepository.save(m);
+            logger.info("successfully approveAppointmentForManager " ,username,company);
+            return "success";
+        }
+        catch (Exception e) {
+            logger.error(e.getMessage());
+            return "failed";
+        }
+    }
 
 
 
