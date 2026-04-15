@@ -7,9 +7,10 @@ import Domain.Company.iCompanyRepository;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CompanyRepositoryImpl implements iCompanyRepository {
-    private Map<String, Company> companies = new HashMap<>();
+    private Map<String, Company> companies = new ConcurrentHashMap<String, Company>();
     public CompanyRepositoryImpl() {
 
     }
