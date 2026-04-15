@@ -113,6 +113,22 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
     public Owner getOwner(String owner,String company) {
         return owners.get(owner+company);
     }
+    @Override
+    public boolean isAppointerManager(String manager, String company, String appointer) {
+        if(managers.containsKey(manager+company)) {
+            Manager m=managers.get(manager+company);
+            return m.isAccepted()&& appointer.equals(m.getAppointer());
+        }
+        return false;
+    }
 
+    @Override
+    public boolean isAppointerOwner(String owner, String company, String appointer) {
+        if (owners.containsKey(owner+company)) {
+            Owner o=owners.get(owner+company);
+            return o.isAccepted()&& appointer.equals(o.getAppointer());
+        }
+        return false;
+    }
 
 }
