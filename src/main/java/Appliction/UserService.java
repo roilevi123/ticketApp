@@ -41,8 +41,27 @@ public class UserService implements IAuth {
 
     @Override
     public String login(String username, String password) {
-        return "";
+        try {
+            logger.info("User {} is trying to login", username);
+            boolean user = userRepository.userExists(username);
+            String passwordHash = userRepository.getUserPassword(username);
+            if (!user ) {
+                return "User not found";
+            }
+            if (!passwordEncoder.matches(password, passwordHash)) {
+                logger.error("Invalid password for user {}", username);
+                throw new RuntimeException("Invalid password");
+            }
+            String token = tokenService.generateToken(username);
+            logger.info("User {} logged in successfully", username);
+            return token;
+
+        } catch (Exception e) {
+            logger.error("Login failed for user {}", username, e);
+            return null;
+        }
     }
+
 
 
 }
