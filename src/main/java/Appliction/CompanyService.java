@@ -262,6 +262,23 @@ public class CompanyService {
             return "failed";
         }
     }
+    public String unfreezeCompany(String company, String token) {
+        try {
+            if(!tokenService.validateToken(token)){
+                throw new RuntimeException("Invalid token");
+            }
+            String username=tokenService.extractUsername(token);
+            logger.info("trying unfreeze company " ,username,company );
+            Company companyObj = companyRepository.getCompany(company);
+            companyObj.unfreezeCompany(username);
+            companyRepository.save(companyObj);
+            logger.info("successfully unfreeze company " ,username,company );
+            return "success";
+        }catch (Exception e) {
+            logger.error(e.getMessage());
+            return "failed";
+        }
+    }
 
 
 

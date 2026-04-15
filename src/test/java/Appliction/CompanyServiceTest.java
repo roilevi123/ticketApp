@@ -441,6 +441,48 @@ class CompanyServiceTest {
         verify(companyRepository, never()).save(any(Company.class));
 
     }
+    @Test
+    void unfreezeCompany_Success() {
+        Company mockCompany = spy(new Company(COMPANY, USERNAME));
+        mockCompany.setActive(false);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(companyRepository.getCompany(COMPANY)).thenReturn(mockCompany);
+
+        String res=companyService.unfreezeCompany(COMPANY, TOKEN);
+        assertEquals(res, "success");
+        verify(mockCompany).unfreezeCompany(USERNAME);
+        verify(companyRepository).save(mockCompany);
+        assertEquals( true,mockCompany.getActive());
+
+
+    }
+    @Test
+    void UnfreezeCompany_Failure_NotFounder() {
+        String otherUser = "other_user";
+        Company mockCompany = new Company(COMPANY, USERNAME);
+        mockCompany.setActive(false);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(otherUser);
+        when(companyRepository.getCompany(COMPANY)).thenReturn(mockCompany);
+
+        String res=companyService.unfreezeCompany(COMPANY, TOKEN);
+        assertEquals(res, "failed");
+        verify(companyRepository, never()).save(any(Company.class));
+        assertEquals( false,mockCompany.getActive());
+    }
+
+    @Test
+    void unfreezeCompany_Failure_InvalidToken() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(false);
+
+        String res=companyService.unfreezeCompany(COMPANY, TOKEN);
+        assertEquals(res, "failed");
+        verifyNoInteractions(companyRepository);
+
+    }
 
 
 
