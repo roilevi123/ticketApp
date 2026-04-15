@@ -402,6 +402,45 @@ class CompanyServiceTest {
         assertEquals(new HashSet<>(), treeOfRoleRepository.getManager(managerName, COMPANY).getPermissions());
 
     }
+    @Test
+    void freezeCompany_Success() {
+        Company mockCompany = spy(new Company(COMPANY, USERNAME));
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(companyRepository.getCompany(COMPANY)).thenReturn(mockCompany);
+
+        String res=companyService.freezeCompany(COMPANY, TOKEN);
+
+        assertEquals(res, "success");
+        verify(mockCompany).freezeCompany(USERNAME);
+        verify(companyRepository).save(mockCompany);
+        assertEquals( false,mockCompany.getActive());
+    }
+
+    @Test
+    void freezeCompany_Failure_NotFounder() {
+        String otherUser = "other_user";
+        Company mockCompany = new Company(COMPANY, USERNAME);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(otherUser);
+        when(companyRepository.getCompany(COMPANY)).thenReturn(mockCompany);
+
+        String res=companyService.freezeCompany(COMPANY, TOKEN);
+        assertEquals(res, "failed");
+        verify(companyRepository, never()).save(any(Company.class));
+        assertEquals( true,mockCompany.getActive());
+    }
+    @Test
+    void freezeCompany_CompanyNotFound() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(companyRepository.getCompany(COMPANY)).thenReturn(null);
+
+        String res=companyService.freezeCompany(COMPANY, TOKEN);
+        assertEquals(res, "failed");
+        verify(companyRepository, never()).save(any(Company.class));
+
+    }
 
 
 
