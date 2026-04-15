@@ -193,6 +193,34 @@ class CompanyServiceTest {
         assertEquals("failed",result);
 
     }
+    @Test
+    void appointOwner_Success() {
+        String newOwnerName = "new_owner";
+        Owner mockOwner = mock(Owner.class);
+        Owner expectedNewOwner = new Owner(newOwnerName, COMPANY, USERNAME);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+        when(userRepository.userExists(newOwnerName)).thenReturn(true);
+        String result1=companyService.AppointOwner(newOwnerName, COMPANY, TOKEN);
+        assertEquals(result1, "success");
+        verify(treeOfRoleRepository).storeOwner(newOwnerName, COMPANY, USERNAME);
+
+
+    }
+    @Test
+    void appointOwner_Failure_OwnerNotFoundInTree() {
+        String newOwnerName = "new_owner";
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
+
+        String result=companyService.AppointOwner(newOwnerName, COMPANY, TOKEN);
+        assertEquals(result, "failed");
+        verify(treeOfRoleRepository, never()).storeOwner(anyString(), anyString(), anyString());
+    }
 
 
 
