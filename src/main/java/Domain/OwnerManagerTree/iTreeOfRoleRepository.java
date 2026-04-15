@@ -14,5 +14,6 @@ public interface iTreeOfRoleRepository {
     public void deleteOwner(String owner,String company);
     public boolean isManager(String manager,String company);
     public boolean isOwner(String owner,String company);
+    public Owner getOwner( String owner ,String company);
 
 }

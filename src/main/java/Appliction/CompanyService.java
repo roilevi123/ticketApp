@@ -131,6 +131,24 @@ public class CompanyService {
             return "failed";
         }
     }
+    public String  ApproveAppointmentForOwner(String token, String company) {
+        try {
+            String username=tokenService.extractUsername(token);
+            logger.info("trying approveAppointmentForManager " ,username,company);
+            if(!tokenService.validateToken(token)){
+                throw new RuntimeException("Invalid token");
+            }
+            Owner m=treeOfRoleRepository.getOwner(username,company);
+            m.acceptAppointment();
+            treeOfRoleRepository.save(m);
+            logger.info("successfully approveAppointmentForManager " ,username,company);
+            return "success";
+        }
+        catch (Exception e) {
+            logger.error(e.getMessage());
+            return "failed";
+        }
+    }
 
 
 

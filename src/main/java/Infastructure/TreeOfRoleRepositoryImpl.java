@@ -109,5 +109,10 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         return false;
     }
 
+    @Override
+    public Owner getOwner(String owner,String company) {
+        return owners.get(owner+company);
+    }
+
 
 }

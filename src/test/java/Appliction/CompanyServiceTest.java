@@ -221,6 +221,50 @@ class CompanyServiceTest {
         assertEquals(result, "failed");
         verify(treeOfRoleRepository, never()).storeOwner(anyString(), anyString(), anyString());
     }
+    @Test
+    void approveAppointmentForOwner_Success() {
+        Owner mockOwner = spy(new Owner(USERNAME, COMPANY, "appointer_user"));
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.getOwner(USERNAME, COMPANY)).thenReturn(mockOwner);
+
+        String result=companyService.ApproveAppointmentForOwner(TOKEN, COMPANY);
+        assertEquals(result, "success");
+        verify(mockOwner).acceptAppointment();
+        verify(treeOfRoleRepository).save(mockOwner);
+        assertTrue(mockOwner.isAccepted());
+        assertTrue(treeOfRoleRepository.getOwner(USERNAME, COMPANY).isAccepted());
+
+    }
+
+    @Test
+    void approveAppointmentForOwner_Failure_OwnerNotFound() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.getOwner(USERNAME, COMPANY)).thenReturn(null);
+
+        String result =companyService.ApproveAppointmentForOwner(TOKEN, COMPANY);
+        assertEquals(result, "failed");
+        verify(treeOfRoleRepository, never()).save(any(Owner.class));
+    }
+
+    @Test
+    void approveAppointmentForOwner_Failure_AlreadyAccepted() {
+        Owner mockOwner = spy(new Owner(USERNAME, COMPANY, "appointer_user"));
+        mockOwner.acceptAppointment();
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.getOwner(USERNAME, COMPANY)).thenReturn(mockOwner);
+
+        String result =companyService.ApproveAppointmentForOwner(TOKEN, COMPANY);
+
+        assertEquals(result, "failed");
+        verify(treeOfRoleRepository, never()).save(any(Owner.class));
+        assertTrue(mockOwner.isAccepted());
+        assertTrue(treeOfRoleRepository.getOwner(USERNAME, COMPANY).isAccepted());
+    }
 
 
 
