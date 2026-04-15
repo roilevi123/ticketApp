@@ -173,6 +173,28 @@ public class CompanyService {
             return "failed";
         }
     }
+    public String FireOwner(String token, String company,String owner) {
+        try {
+            String username=tokenService.extractUsername(token);
+            logger.info("trying fire owner " ,owner,company);
+            if(!tokenService.validateToken(token)){
+                throw new RuntimeException("Invalid token");
+            }
+            boolean m=treeOfRoleRepository.isAppointerOwner(owner,company,username);
+
+            if(!m) {
+                throw new RuntimeException("you are not allowed to fire owner ");
+            }
+
+            treeOfRoleRepository.deleteOwner(owner,company);
+            logger.info("successfully fire owner " ,owner,company);
+            return "success";
+        }
+        catch (Exception e) {
+            logger.error(e.getMessage());
+            return "failed";
+        }
+    }
 
 
 
