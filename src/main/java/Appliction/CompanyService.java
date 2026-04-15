@@ -1,5 +1,6 @@
 package Appliction;
 
+import Domain.Company.Company;
 import Domain.Company.iCompanyRepository;
 import Domain.OwnerManagerTree.*;
 
@@ -241,6 +242,23 @@ public class CompanyService {
             return "success";
         } catch (Exception e) {
             logger.error("Failed to change permissions: " + e.getMessage());
+            return "failed";
+        }
+    }
+    public String freezeCompany(String company, String token) {
+        try {
+            if(!tokenService.validateToken(token)){
+                throw new RuntimeException("Invalid token");
+            }
+            String username=tokenService.extractUsername(token);
+            logger.info("trying freeze company " ,username,company );
+            Company companyObj = companyRepository.getCompany(company);
+            companyObj.freezeCompany(username);
+            companyRepository.save(companyObj);
+            logger.info("successfully freeze company " ,username,company );
+            return "success";
+        }catch (Exception e) {
+            logger.error(e.getMessage());
             return "failed";
         }
     }
