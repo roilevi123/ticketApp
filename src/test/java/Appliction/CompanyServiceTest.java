@@ -265,6 +265,47 @@ class CompanyServiceTest {
         assertTrue(mockOwner.isAccepted());
         assertTrue(treeOfRoleRepository.getOwner(USERNAME, COMPANY).isAccepted());
     }
+    @Test
+    void rejectAppointmentForOwner_Success() {
+        Owner mockOwner = mock(Owner.class);
+        Company mockCompany = mock(Company.class);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.isOwner(USERNAME, COMPANY)).thenReturn(true);
+        when(mockCompany.getFounder()).thenReturn("different_user");
+
+        String result=companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
+        assertEquals(result, "success");
+        verify(treeOfRoleRepository).deleteOwner(USERNAME, COMPANY);
+
+        assertNull(treeOfRoleRepository.getOwner(USERNAME, COMPANY));
+    }
+
+    @Test
+    void rejectAppointmentForOwner_Failure_IsFounder() {
+        Owner mockOwner = mock(Owner.class);
+        Company mockCompany = mock(Company.class);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+        when(companyRepository.getCompanyFounder(COMPANY)).thenReturn(USERNAME);
+        when(mockCompany.getFounder()).thenReturn(USERNAME);
+
+        String result=companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
+        assertEquals(result, "failed");
+        verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
+    }
+
+    @Test
+    void rejectAppointmentForOwner_Failure_InvalidToken() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(false);
+
+        String result=companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
+        assertEquals(result, "failed");
+        verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
+    }
 
 
 
