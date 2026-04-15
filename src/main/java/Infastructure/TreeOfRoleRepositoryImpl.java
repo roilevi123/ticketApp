@@ -134,5 +134,18 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
     public Set<Permission> getManagerPermissions(String manager, String company) {
         return managers.get(manager+company).getPermissions();
     }
+    @Override
+    public List<Owner> getAllOwnersByCompany(String company) {
+        return owners.values().stream()
+                .filter(o -> o.getCompanyName().equals(company))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Manager> getAllManagersByCompany(String company) {
+        return managers.values().stream()
+                .filter(m -> m.getCompanyName().equals(company))
+                .collect(Collectors.toList());
+    }
 
 }

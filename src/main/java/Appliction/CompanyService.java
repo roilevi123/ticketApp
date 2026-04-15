@@ -299,6 +299,47 @@ public class CompanyService {
             return null;
         }
     }
+    public String GetRoleTreeString(String token, String companyName) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String requester = tokenService.extractUsername(token);
+
+            if (treeOfRoleRepository.getOwner(requester, companyName) == null) {
+                throw new RuntimeException("Only owners can view the role tree");
+            }
+
+            List<Owner> allOwners = treeOfRoleRepository.getAllOwnersByCompany(companyName);
+            List<Manager> allManagers = treeOfRoleRepository.getAllManagersByCompany(companyName);
+            Company company = companyRepository.getCompany(companyName);
+
+            StringBuilder treeString = new StringBuilder();
+            buildTreeString(company.getFounder(), allOwners, allManagers, treeString, 0);
+
+            return treeString.toString();
+        }catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
+
+    }
+
+    private void buildTreeString(String currentUsername, List<Owner> allOwners, List<Manager> allManagers, StringBuilder sb, int depth) {
+        String indent = "  ".repeat(depth);
+        String role = allOwners.stream().anyMatch(o -> o.getUserName().equals(currentUsername)) ? "Owner" : "Manager";
+
+        sb.append(indent).append("|-- ").append(currentUsername).append(" (").append(role).append(")\n");
+
+        allOwners.stream()
+                .filter(o -> currentUsername.equals(o.getAppointer()))
+                .forEach(o -> buildTreeString(o.getUserName(), allOwners, allManagers, sb, depth + 1));
+
+        allManagers.stream()
+                .filter(m -> currentUsername.equals(m.getAppointer()))
+                .forEach(m -> {
+                    String mIndent = "  ".repeat(depth + 1);
+                    sb.append(mIndent).append("|-- ").append(m.getUserName()).append(" (Manager)\n");
+                });
+    }
 
 
 
