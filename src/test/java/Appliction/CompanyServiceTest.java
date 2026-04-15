@@ -159,6 +159,40 @@ class CompanyServiceTest {
         assertTrue(treeOfRoleRepository.getManager(USERNAME, COMPANY).isAccepted());
 
     }
+    @Test
+    void rejectAppointmentForManager_Success() {
+        Manager mockManager = mock(Manager.class);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.isManager(USERNAME, COMPANY)).thenReturn(true);
+
+        String result=companyService.RejectAppointmentForManager(TOKEN, COMPANY);
+        assertEquals("success",result);
+        verify(treeOfRoleRepository).deleteManager(USERNAME, COMPANY);
+
+
+    }
+
+    @Test
+    void rejectAppointmentForManager_Failure_UserNotFound() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+
+        String result=companyService.RejectAppointmentForManager(TOKEN, COMPANY);
+        assertEquals("failed",result);
+        verify(treeOfRoleRepository, never()).deleteManager(anyString(), anyString());
+    }
+    @Test
+    void rejectAppointmentForManager_Failure_ManagerNotFound() {
+        Manager mockManager = mock(Manager.class);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.isManager(USERNAME, COMPANY)).thenReturn(false);
+
+        String result=companyService.RejectAppointmentForManager(TOKEN, COMPANY);
+        assertEquals("failed",result);
+
+    }
 
 
 

@@ -10,6 +10,9 @@ public interface iTreeOfRoleRepository {
     public Manager getManager(String manager,String company);
     public void save(Owner owner);
     public void save(Manager manager);
-
+    public void deleteManager(String manager,String company);
+    public void deleteOwner(String owner,String company);
+    public boolean isManager(String manager,String company);
+    public boolean isOwner(String owner,String company);
 
 }

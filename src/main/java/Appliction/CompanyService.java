@@ -88,6 +88,26 @@ public class CompanyService {
             return "failed";
         }
     }
+    public String RejectAppointmentForManager(String token, String company) {
+        try {
+            String username=tokenService.extractUsername(token);
+            logger.info("trying rejectAppointmentForManager " ,username,company);
+            if(!tokenService.validateToken(token)){
+                throw new RuntimeException("Invalid token");
+            }
+            boolean m=treeOfRoleRepository.isManager(username,company);
+            if(!m) {
+                throw new RuntimeException("User not found2");
+            }
+            treeOfRoleRepository.deleteManager(username,company);
+            logger.info("successfully rejectAppointmentForManager " ,username,company);
+            return "success";
+        }
+        catch (Exception e) {
+            logger.error(e.getMessage());
+            return "failed";
+        }
+    }
 
 
 
