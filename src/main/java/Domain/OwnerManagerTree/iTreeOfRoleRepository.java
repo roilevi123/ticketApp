@@ -7,7 +7,9 @@ public interface iTreeOfRoleRepository {
     public void storeOwner(String owner,String company,String appointer);
     public boolean exitsOwner(String owner,String company);
     public void storeManager(String manager, String company, Set<Permission> permissions,String appointer);
-
+    public Manager getManager(String manager,String company);
+    public void save(Owner owner);
+    public void save(Manager manager);
 
 
 }

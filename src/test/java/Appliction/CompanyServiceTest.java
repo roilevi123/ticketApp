@@ -114,6 +114,51 @@ class CompanyServiceTest {
         verify(treeOfRoleRepository, never()).storeManager(anyString(), anyString(), anySet(),anyString());
 
     }
+    @Test
+    void approveAppointmentForManager_Success() {
+        Set<Permission> permissions = new HashSet<>();
+        permissions.add(Permission.MANAGE_INVENTORY);
+        Manager mockManager = spy(new Manager(USERNAME, COMPANY, permissions,"Administrator"));
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.getManager(USERNAME, COMPANY)).thenReturn(mockManager);
+
+        String result=companyService.ApproveAppointmentForManager(TOKEN, COMPANY);
+        assertEquals(result, "success");
+        verify(mockManager).acceptAppointment();
+        verify(treeOfRoleRepository).save(mockManager);
+        assertEquals(true, mockManager.isAccepted());
+        assertTrue(treeOfRoleRepository.getManager(USERNAME, COMPANY).isAccepted());
+
+    }
+    @Test
+    void approveAppointmentForManager_Failure_ManagerNotFound() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.getManager(USERNAME, COMPANY)).thenReturn(null);
+
+        String result=companyService.ApproveAppointmentForManager(TOKEN, COMPANY);
+        assertEquals(result, "failed");
+        verify(treeOfRoleRepository, never()).save(any(Manager.class));
+    }
+    @Test
+    void approveAppointmentForManager_Failure_AlreadyAccepted() {
+        Set<Permission> permissions = new HashSet<>();
+        Manager mockManager = spy(new Manager(USERNAME, COMPANY, permissions,"Administrator"));
+        mockManager.acceptAppointment();
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.getManager(USERNAME, COMPANY)).thenReturn(mockManager);
+
+        String result=companyService.ApproveAppointmentForManager(TOKEN, COMPANY);
+        assertEquals(result, "failed");
+        verify(treeOfRoleRepository, never()).save(any(Manager.class));
+        assertEquals(true, mockManager.isAccepted());
+        assertTrue(treeOfRoleRepository.getManager(USERNAME, COMPANY).isAccepted());
+
+    }
 
 
 

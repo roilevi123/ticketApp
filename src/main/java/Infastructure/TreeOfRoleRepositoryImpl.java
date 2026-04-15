@@ -36,5 +36,51 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
 
     }
 
+    @Override
+    public Manager getManager(String manager,String company) {
+        return managers.get(manager+company);
+    }
+
+    @Override
+    public void save(Owner ownerToUpdate) {
+        String key = ownerToUpdate.getUserName() + ownerToUpdate.getCompanyName();
+
+        Owner currentInDb = owners.get(key);
+
+        if (currentInDb == null) {
+            throw new RuntimeException("Owner not found for update: " + key);
+        }
+
+        Owner updatedOwner = new Owner(ownerToUpdate);
+        updatedOwner.setVersion(ownerToUpdate.getVersion() + 1);
+
+        boolean success = owners.replace(key, currentInDb, updatedOwner);
+
+        if (!success) {
+            throw new RuntimeException("Optimistic Lock Failure: Owner '" + key +
+                    "' was updated by another thread.");
+        }
+    }
+
+    @Override
+    public void save(Manager managerToUpdate) {
+        String key = managerToUpdate.getUserName() + managerToUpdate.getCompanyName();
+        Manager currentInDb = managers.get(key);
+
+        if (currentInDb == null) {
+            throw new RuntimeException("Manager not found for update: " + key);
+        }
+
+        Manager updatedManager = new Manager(managerToUpdate);
+        updatedManager.setVersion(managerToUpdate.getVersion() + 1);
+
+        boolean success = managers.replace(key, currentInDb, updatedManager);
+
+        if (!success) {
+            throw new RuntimeException("Optimistic Lock Failure: Manager '" + key +
+                    "' was updated by another thread.");
+        }
+    }
+
 
 }
