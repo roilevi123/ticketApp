@@ -44,6 +44,12 @@ public class CompanyRepositoryImpl implements iCompanyRepository {
                     "' was updated by another thread/user.");
         }
     }
+
+    @Override
+    public void deleteAllCompany() {
+        companies.clear();
+    }
+
     @Override
     public Company getCompany(String company) {
         return companies.get(company);

@@ -28,5 +28,10 @@ public class UserRepositoryImpl implements IUserRepository {
         return users.containsKey(username);
     }
 
+    @Override
+    public void deleteAll() {
+        users.clear();
+    }
+
 
 }

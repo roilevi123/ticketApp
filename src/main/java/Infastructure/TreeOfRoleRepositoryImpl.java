@@ -148,4 +148,10 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public void deleteAllRoles() {
+        managers.clear();
+        owners.clear();
+    }
+
 }

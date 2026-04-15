@@ -5,4 +5,6 @@ public interface iCompanyRepository {
     public String getCompanyFounder(String company);
     public Company getCompany(String company);
     public void save(Company companyToUpdate);
+    public void deleteAllCompany();
+
 }
