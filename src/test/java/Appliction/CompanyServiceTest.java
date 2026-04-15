@@ -337,6 +337,36 @@ class CompanyServiceTest {
         assertEquals(res, "failed");
         verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
     }
+    @Test
+    void fireManager_Success() {
+        String managerToFire = "manager_to_fire";
+        Manager mockManager = mock(Manager.class);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.isAppointerManager(managerToFire, COMPANY,USERNAME)).thenReturn(true);
+
+        String res=companyService.FireManager(TOKEN, COMPANY, managerToFire);
+        assertEquals(res, "success");
+        verify(treeOfRoleRepository).deleteManager(managerToFire, COMPANY);
+
+    }
+
+    @Test
+    void fireManager_Failure_NotTheAppointer() {
+        String managerToFire = "manager_to_fire";
+        String differentAppointer = "other_user";
+        Manager mockManager = mock(Manager.class);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.isAppointerManager(managerToFire, COMPANY,differentAppointer)).thenReturn(true);
+//        when(mockManager.getAppointer()).thenReturn(differentAppointer);
+
+        String res=companyService.FireManager(TOKEN, COMPANY, managerToFire);
+        assertEquals(res, "failed");
+        verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
+    }
 
 
 

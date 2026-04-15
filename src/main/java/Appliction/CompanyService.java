@@ -195,6 +195,26 @@ public class CompanyService {
             return "failed";
         }
     }
+    public String FireManager(String token, String company,String manager) {
+        try {
+            String username=tokenService.extractUsername(token);
+            logger.info("trying fire owner " ,manager,company);
+            if(!tokenService.validateToken(token)){
+                throw new RuntimeException("Invalid token");
+            }
+            boolean m=treeOfRoleRepository.isAppointerManager(manager,company,username);
+            if(!m) {
+                throw new RuntimeException("you are not allowed to fire owner ");
+            }
+            treeOfRoleRepository.deleteManager(manager,company);
+            logger.info("successfully fire owner " ,manager,company);
+            return "success";
+        }
+        catch (Exception e) {
+            logger.error(e.getMessage());
+            return "failed";
+        }
+    }
 
 
 
