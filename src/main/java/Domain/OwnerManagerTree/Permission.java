@@ -1,0 +1,10 @@
+package Domain.OwnerManagerTree;
+
+public enum Permission {
+    MANAGE_INVENTORY,
+    CONFIGURE_LAYOUT,
+    CHANGE_POLICIES,
+    RESPOND_TO_INQUIRIES,
+    VIEW_PURCHASE_HISTORY,
+    GENERATE_SALES_REPORTS
+}
