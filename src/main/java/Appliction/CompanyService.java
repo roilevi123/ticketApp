@@ -108,6 +108,29 @@ public class CompanyService {
             return "failed";
         }
     }
+    public String AppointOwner(String owner, String company,String token) {
+        try {
+            logger.info("trying appointAManager " ,owner,company);
+            if(!tokenService.validateToken(token)){
+                throw new RuntimeException("Invalid token");
+            }
+            String username=tokenService.extractUsername(token);
+            boolean o=treeOfRoleRepository.exitsOwner(username,company);
+            if(!o) {
+                throw new RuntimeException("User not found1");
+            }
+            boolean UserExists = userRepository.userExists(owner);
+            if(!UserExists) {
+                throw new RuntimeException("User not found3");
+            }
+            treeOfRoleRepository.storeOwner(owner,company,username);
+            logger.info("successfully appointAManager " ,owner,company);
+            return "success";
+        }catch (Exception e) {
+            logger.error(e.getMessage());
+            return "failed";
+        }
+    }
 
 
 
