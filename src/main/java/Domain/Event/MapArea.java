@@ -1,4 +1,9 @@
 package Domain.Event;
 
-public class MapArea {
+
+public enum MapArea {
+    SEAT,
+    STAND,
+    STAGE,
+    ENTRANCE
 }
