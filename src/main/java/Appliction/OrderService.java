@@ -2,25 +2,14 @@ package Appliction;
 
 public class OrderService {
 
-    public String reserveTickets(String eventId, int amount, String userToken) {
-        if (userToken == null || userToken.isEmpty() || userToken.equals("invalid-token")) {
-            return "failed_not_logged_in";
-        }
-        if (eventId.equals("fake-id-999") || eventId.equals("deleted-id-123")) {
-            return "failed_event_not_found";
-        }
-        if (eventId.equals("sold-out-id")) {
-            return "failed_sold_out";
-        }
-        if (amount <= 0) {
-            return "failed_invalid_amount";
-        }
-        if (amount > 100) {
-            return "failed_not_enough_tickets";
-        }
-        if (amount > 10) {
-            return "failed_exceed_user_limit";
-        }
-        return "reserve_success_id_555";
+    public Response<String> reserveTickets(String eventId, int amount, String userToken) {
+        if (userToken == null || userToken.isEmpty() || userToken.equals("invalid-token")) return new Response<>(false, "Not logged in", null);
+        if (eventId.equals("fake-id-999") || eventId.equals("deleted-id-123")) return new Response<>(false, "Event not found", null);
+        if (eventId.equals("sold-out-id")) return new Response<>(false, "Sold out", null);
+        if (amount <= 0) return new Response<>(false, "Invalid amount", null);
+        if (amount > 100) return new Response<>(false, "Not enough tickets", null);
+        if (amount > 10) return new Response<>(false, "Exceeded user limit", null);
+        
+        return new Response<>(true, "Reservation successful", "reserve_id_555");
     }
 }

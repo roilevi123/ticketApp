@@ -3,6 +3,7 @@ import AcceptanceTest.users.initTheSystem;
 import Appliction.EventService;
 import Appliction.OrderService;
 import Appliction.UserService;
+import Appliction.Response;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -49,18 +50,11 @@ public class ReserveOrderTest {
         testMap.forEach((id, testLogic) -> {
             initTheSystem.init();
             boolean result;
-            try {
-                result = testLogic.get();
-            } catch (Exception e) {
-                result = false;
-            }
-
+            try { result = testLogic.get(); } 
+            catch (Exception e) { result = false; }
             stringBuilder.append("the result of test ").append(id).append(": ").append(result).append("\n");
-
-            if (result) passTests.add(id);
-            else failTests.add(id);
+            if (result) passTests.add(id); else failTests.add(id);
         });
-
         return stringBuilder.toString();
     }
 
@@ -70,18 +64,17 @@ public class ReserveOrderTest {
         
         userService.register("admin", "adminPass");
         String adminToken = userService.login("admin", "adminPass");
-        String eventId = eventService.createEvent("Rock Concert", "2026-10-10", "TLV", adminToken);
+        String eventId = eventService.createEvent("Rock Concert", "2026-10-10", "TLV", adminToken).getData();
 
-        String result = orderService.reserveTickets(eventId, 2, token);
-        return result.startsWith("reserve_success");
+        Response<String> result = orderService.reserveTickets(eventId, 2, token);
+        return result.isSuccess();
     }
 
     public boolean reserveOrderFailedEventNotFound() {
         userService.register("user1", "pass1");
         String token = userService.login("user1", "pass1");
-
-        String result = orderService.reserveTickets("fake-id-999", 2, token);
-        return result.equals("failed_event_not_found");
+        Response<String> result = orderService.reserveTickets("fake-id-999", 2, token);
+        return !result.isSuccess();
     }
 
     public boolean reserveOrderFailedNotEnoughTickets() {
@@ -90,19 +83,19 @@ public class ReserveOrderTest {
         
         userService.register("admin", "adminPass");
         String adminToken = userService.login("admin", "adminPass");
-        String eventId = eventService.createEvent("Small Show", "2026-11-11", "Barby", adminToken);
+        String eventId = eventService.createEvent("Small Show", "2026-11-11", "Barby", adminToken).getData();
 
-        String result = orderService.reserveTickets(eventId, 150, token);
-        return result.equals("failed_not_enough_tickets");
+        Response<String> result = orderService.reserveTickets(eventId, 150, token);
+        return !result.isSuccess();
     }
 
     public boolean reserveOrderFailedNotLoggedIn() {
         userService.register("admin", "adminPass");
         String adminToken = userService.login("admin", "adminPass");
-        String eventId = eventService.createEvent("Open Air", "2026-12-12", "Park", adminToken);
+        String eventId = eventService.createEvent("Open Air", "2026-12-12", "Park", adminToken).getData();
 
-        String result = orderService.reserveTickets(eventId, 2, "invalid-token");
-        return result.equals("failed_not_logged_in");
+        Response<String> result = orderService.reserveTickets(eventId, 2, "invalid-token");
+        return !result.isSuccess();
     }
 
     public boolean reserveOrderFailedNegativeAmount() {
@@ -111,10 +104,10 @@ public class ReserveOrderTest {
         
         userService.register("admin", "adminPass");
         String adminToken = userService.login("admin", "adminPass");
-        String eventId = eventService.createEvent("Jazz Night", "2026-08-08", "Jerusalem", adminToken);
+        String eventId = eventService.createEvent("Jazz Night", "2026-08-08", "Jerusalem", adminToken).getData();
 
-        String result = orderService.reserveTickets(eventId, -5, token);
-        return result.equals("failed_invalid_amount");
+        Response<String> result = orderService.reserveTickets(eventId, -5, token);
+        return !result.isSuccess();
     }
 
     public boolean reserveOrderFailedZeroAmount() {
@@ -123,10 +116,10 @@ public class ReserveOrderTest {
         
         userService.register("admin", "adminPass");
         String adminToken = userService.login("admin", "adminPass");
-        String eventId = eventService.createEvent("Pop Show", "2026-09-09", "Haifa", adminToken);
+        String eventId = eventService.createEvent("Pop Show", "2026-09-09", "Haifa", adminToken).getData();
 
-        String result = orderService.reserveTickets(eventId, 0, token);
-        return result.equals("failed_invalid_amount");
+        Response<String> result = orderService.reserveTickets(eventId, 0, token);
+        return !result.isSuccess();
     }
 
     public boolean reserveOrderFailedExceedUserLimit() {
@@ -135,26 +128,24 @@ public class ReserveOrderTest {
         
         userService.register("admin", "adminPass");
         String adminToken = userService.login("admin", "adminPass");
-        String eventId = eventService.createEvent("Big Festival", "2026-07-07", "Eilat", adminToken);
+        String eventId = eventService.createEvent("Big Festival", "2026-07-07", "Eilat", adminToken).getData();
 
-        String result = orderService.reserveTickets(eventId, 15, token);
-        return result.equals("failed_exceed_user_limit");
+        Response<String> result = orderService.reserveTickets(eventId, 15, token);
+        return !result.isSuccess();
     }
 
     public boolean reserveOrderFailedSoldOut() {
         userService.register("user1", "pass1");
         String token = userService.login("user1", "pass1");
-
-        String result = orderService.reserveTickets("sold-out-id", 2, token);
-        return result.equals("failed_sold_out");
+        Response<String> result = orderService.reserveTickets("sold-out-id", 2, token);
+        return !result.isSuccess();
     }
 
     public boolean reserveOrderFailedEventDeleted() {
         userService.register("user1", "pass1");
         String token = userService.login("user1", "pass1");
-
-        String result = orderService.reserveTickets("deleted-id-123", 1, token);
-        return result.equals("failed_event_not_found");
+        Response<String> result = orderService.reserveTickets("deleted-id-123", 1, token);
+        return !result.isSuccess();
     }
 
     public boolean reserveMultipleOrdersSuccess() {
@@ -163,11 +154,11 @@ public class ReserveOrderTest {
         
         userService.register("admin", "adminPass");
         String adminToken = userService.login("admin", "adminPass");
-        String eventId = eventService.createEvent("Classic Concert", "2026-05-05", "Tzfat", adminToken);
+        String eventId = eventService.createEvent("Classic Concert", "2026-05-05", "Tzfat", adminToken).getData();
 
-        String result1 = orderService.reserveTickets(eventId, 2, token);
-        String result2 = orderService.reserveTickets(eventId, 3, token);
+        Response<String> result1 = orderService.reserveTickets(eventId, 2, token);
+        Response<String> result2 = orderService.reserveTickets(eventId, 3, token);
         
-        return result1.startsWith("reserve_success") && result2.startsWith("reserve_success");
+        return result1.isSuccess() && result2.isSuccess();
     }
 }
