@@ -187,7 +187,7 @@ public class TicketRepositoryImpl implements iTicketRepository {
                 if (area == MapArea.SEAT) {
                     storeTicket(i, j, event, company, price);
                 } else if (area == MapArea.STAND) {
-                    for (int k = 0; k < 3; k++) {
+                    for (int k = 0; k < 1; k++) {
                         storeTicket(i, j, event, company, price);
                     }
                 }
