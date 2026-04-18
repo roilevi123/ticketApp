@@ -3,6 +3,7 @@ package AcceptanceTest.users;
 
 import AcceptanceTest.users.CompanyManagementTest.CompanyManagementTest;
 import AcceptanceTest.users.EventManagementTest.EventManagementTest;
+import AcceptanceTest.users.EventManagementTest.ViewEventInfoTest;
 import AcceptanceTest.users.visitorTests.UserActionInfo;
 import Appliction.CompanyService;
 import Appliction.EventService;
@@ -18,6 +19,7 @@ public class AllTestRun {
     private UserActionInfo visitorActionTest;
     private CompanyManagementTest companyManagementTest;
     private EventManagementTest eventManagementTest;
+    private ViewEventInfoTest viewEventInfoTest;
 
 //    private AdminTests adminTests;
     public AllTestRun() {
@@ -36,7 +38,7 @@ public class AllTestRun {
         visitorActionTest = new UserActionInfo(userService,initTheSystem);
         companyManagementTest=new CompanyManagementTest(companyService,userService,initTheSystem);
         eventManagementTest = new EventManagementTest(userService, eventService, initTheSystem);
-        
+        viewEventInfoTest = new ViewEventInfoTest(userService, eventService, initTheSystem);
     }
     public void runAllTests() {
         System.out.println("Visitor action test ");
@@ -45,6 +47,7 @@ public class AllTestRun {
         String CompanyActionTestResults=companyManagementTest.whichTestPass();
         String CompanyActionTestResultsFailed=companyManagementTest.SeeFailTest();
         String eventTestResults = eventManagementTest.runAllTests();
+        String viewEventTestResults = viewEventInfoTest.runAllTests();
 
         System.out.println(visitorActionTestResults);
         System.out.println(visitorActionTestResultsFailed);
@@ -53,6 +56,8 @@ public class AllTestRun {
         System.out.println(CompanyActionTestResultsFailed);
         System.out.println("-------------------------------------------------");
         System.out.println(eventTestResults);
+        System.out.println("-------------------------------------------------");
+        System.out.println(viewEventTestResults);
         
 
     }
