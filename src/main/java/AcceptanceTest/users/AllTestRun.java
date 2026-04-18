@@ -4,10 +4,12 @@ package AcceptanceTest.users;
 import AcceptanceTest.users.CompanyManagementTest.CompanyManagementTest;
 import AcceptanceTest.users.EventManagementTest.EventManagementTest;
 import AcceptanceTest.users.EventManagementTest.ViewEventInfoTest;
+import AcceptanceTest.users.OrderManagementTest.ReserveOrderTest;
 import AcceptanceTest.users.visitorTests.UserActionInfo;
 import Appliction.CompanyService;
 import Appliction.EventService;
 import Appliction.IPasswordEncoder;
+import Appliction.OrderService;
 import Appliction.UserService;
 import Domain.Company.iCompanyRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
@@ -20,6 +22,7 @@ public class AllTestRun {
     private CompanyManagementTest companyManagementTest;
     private EventManagementTest eventManagementTest;
     private ViewEventInfoTest viewEventInfoTest;
+    private ReserveOrderTest reserveOrderTest;
 
 //    private AdminTests adminTests;
     public AllTestRun() {
@@ -34,11 +37,13 @@ public class AllTestRun {
         UserService userService=new UserService(iPasswordEncoder,iUserRepository,tokenService);
         CompanyService companyService=new CompanyService(iCompanyRepository,iUserRepository,iTreeOfRoleRepository,tokenService);
         EventService eventService = new EventService();
+        OrderService orderService = new OrderService();
 
         visitorActionTest = new UserActionInfo(userService,initTheSystem);
         companyManagementTest=new CompanyManagementTest(companyService,userService,initTheSystem);
         eventManagementTest = new EventManagementTest(userService, eventService, initTheSystem);
         viewEventInfoTest = new ViewEventInfoTest(userService, eventService, initTheSystem);
+        reserveOrderTest = new ReserveOrderTest(userService, eventService, orderService, initTheSystem);
     }
     public void runAllTests() {
         System.out.println("Visitor action test ");
@@ -48,6 +53,7 @@ public class AllTestRun {
         String CompanyActionTestResultsFailed=companyManagementTest.SeeFailTest();
         String eventTestResults = eventManagementTest.runAllTests();
         String viewEventTestResults = viewEventInfoTest.runAllTests();
+        String reserveOrderTestResults = reserveOrderTest.runAllTests();
 
         System.out.println(visitorActionTestResults);
         System.out.println(visitorActionTestResultsFailed);
@@ -58,6 +64,8 @@ public class AllTestRun {
         System.out.println(eventTestResults);
         System.out.println("-------------------------------------------------");
         System.out.println(viewEventTestResults);
+        System.out.println("-------------------------------------------------");
+        System.out.println(reserveOrderTestResults);
         
 
     }

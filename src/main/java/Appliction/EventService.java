@@ -1,5 +1,6 @@
 package Appliction;
 
+//TEST ONLY - NOT FOR PRODUCTION USE
 public class EventService {
 
     private String lastCreatorToken = "";
