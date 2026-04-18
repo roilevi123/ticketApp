@@ -2,8 +2,10 @@ package AcceptanceTest.users;
 
 
 import AcceptanceTest.users.CompanyManagementTest.CompanyManagementTest;
+import AcceptanceTest.users.EventManagementTest.EventManagementTest;
 import AcceptanceTest.users.visitorTests.UserActionInfo;
 import Appliction.CompanyService;
+import Appliction.EventService;
 import Appliction.IPasswordEncoder;
 import Appliction.UserService;
 import Domain.Company.iCompanyRepository;
@@ -15,7 +17,7 @@ import Infastructure.*;
 public class AllTestRun {
     private UserActionInfo visitorActionTest;
     private CompanyManagementTest companyManagementTest;
-
+    private EventManagementTest eventManagementTest;
 
 //    private AdminTests adminTests;
     public AllTestRun() {
@@ -29,11 +31,12 @@ public class AllTestRun {
 
         UserService userService=new UserService(iPasswordEncoder,iUserRepository,tokenService);
         CompanyService companyService=new CompanyService(iCompanyRepository,iUserRepository,iTreeOfRoleRepository,tokenService);
-
+        EventService eventService = new EventService();
 
         visitorActionTest = new UserActionInfo(userService,initTheSystem);
         companyManagementTest=new CompanyManagementTest(companyService,userService,initTheSystem);
-
+        eventManagementTest = new EventManagementTest(userService, eventService, initTheSystem);
+        
     }
     public void runAllTests() {
         System.out.println("Visitor action test ");
@@ -41,13 +44,16 @@ public class AllTestRun {
         String visitorActionTestResultsFailed=visitorActionTest.SeeFailTest();
         String CompanyActionTestResults=companyManagementTest.whichTestPass();
         String CompanyActionTestResultsFailed=companyManagementTest.SeeFailTest();
-
+        String eventTestResults = eventManagementTest.runAllTests();
 
         System.out.println(visitorActionTestResults);
         System.out.println(visitorActionTestResultsFailed);
+        System.out.println("-------------------------------------------------");
         System.out.println(CompanyActionTestResults);
         System.out.println(CompanyActionTestResultsFailed);
-
+        System.out.println("-------------------------------------------------");
+        System.out.println(eventTestResults);
+        
 
     }
 }
