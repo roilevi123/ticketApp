@@ -20,6 +20,7 @@ public interface iTreeOfRoleRepository {
     public Set<Permission> getManagerPermissions(String manager,String company);
     List<Owner> getAllOwnersByCompany(String company);
     List<Manager> getAllManagersByCompany(String company);
+    public boolean ManagerPermitedToCreateUpdateDelete(String manager,String company);
     public void deleteAllRoles();
     public boolean ManagerPermitToSeeTransactions(String manager, String company);
     public void deleteCompanyMangersAndOwners(String company);
