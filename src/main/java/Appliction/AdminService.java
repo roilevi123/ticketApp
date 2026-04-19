@@ -83,6 +83,7 @@ public class AdminService {
                 String tickets=ticketRepository.getTicketsDescription(ticketsId);
                 orders.append(tickets+"\n");
             }
+
             return orders.toString();
         }catch (Exception e) {
             logger.error(e.getMessage());
