@@ -11,7 +11,7 @@ import Domain.Ticket.*;
 
 public class TicketRepositoryImpl implements iTicketRepository {
     
-    private Map<String, List<Ticket>> tickets = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, List<Ticket>> tickets = new ConcurrentHashMap<>();
     private AtomicLong idCounter = new AtomicLong(1);
     
     @Override

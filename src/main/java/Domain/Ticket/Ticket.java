@@ -107,10 +107,10 @@ public class Ticket {
     @Override
     public String toString() {
         return "Ticket {" +
-                ", Event='" + event + '\'' +
-                ", Company='" + company + '\'' +
-                ", Row=" + row +
-                ", Col=" + col +
+                ", event='" + event + '\'' +
+                ", company='" + company + '\'' +
+                ", verticalSpote=" + row +
+                ", horizontalSpote=" + col +
                 ", Price=" + price +
                 ", Date=" + (date != null ? date : "N/A") +
                 '}';

@@ -45,10 +45,10 @@ public class EventService {
         return m || (o);
     }
 
-    public Response<String> createEvent(String token, String companyName, String eventName, EventType eventType, String location, String artistName, Date date, double price, int totalTickets, MapArea[][] map) {
+    public Response<String> createEvent(String token,String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] map) {
         String username = tokenService.extractUsername(token);
-        if (!isAuthorized(companyName,username)) {
-            logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, companyName);
+        if (!isAuthorized(company,username)) {
+            logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, company);
             return new Response<>(false, "Unauthorized", null);
         }
         if(!tokenService.validateToken(token)) {
@@ -56,13 +56,13 @@ public class EventService {
         }
 
         try {
-            Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, companyName, totalTickets,map);
+            Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, company,map);
             ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, event.getDate(), event.getPrice());
-            iQueueRepository.initQueue(eventName+companyName);
-            logger.info("Event '{}' created successfully for company '{}'", eventName, companyName);
+            iQueueRepository.initQueue(eventName+company);
+            logger.info("Event '{}' created successfully for company '{}'", eventName, company);
             return new Response<>(true, "Event created successfully", event.getId());
         } catch (Exception e) {
-            logger.error("Failed to create event '{}' for company '{}': {}", eventName, companyName, e.getMessage());
+            logger.error("Failed to create event '{}' for company '{}': {}", eventName, company, e.getMessage());
             return new Response<>(false, "Failed to create event: " + e.getMessage(), null);
         }
     }
@@ -91,7 +91,7 @@ public class EventService {
         }
     }
 
-    public String UpdateEvent(String token,String eventId, String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] map, double rating) {
+    public String UpdateEvent(String token, String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] map, double rating) {
         try {
             logger.info("trying update  event: " + eventName);
             String username = tokenService.extractUsername(token);
@@ -101,7 +101,7 @@ public class EventService {
             if (!isAuthorized(company, username)) {
                 throw new RuntimeException("Unauthorized: User is not an owner or authorized manager");
             }
-            Event event = eventRepository.getEventById(eventId, company);
+            Event event = eventRepository.getEvent(eventName, company);
             if (event == null) {
                 throw new RuntimeException("Event not found: " + eventName);
             }

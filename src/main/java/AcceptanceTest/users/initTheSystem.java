@@ -3,7 +3,10 @@ package AcceptanceTest.users;
 
 import Domain.Company.iCompanyRepository;
 import Domain.Event.iEventRepository;
+import Domain.Order.IActiveOrderRepository;
+import Domain.Order.IPurchasedOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import Domain.QueueAggregates.iQueueRepository;
 import Domain.Ticket.iTicketRepository;
 import Domain.User.IUserRepository;
@@ -22,7 +25,8 @@ public class initTheSystem {
     private iTicketRepository iTicketRepository;
     private iEventRepository iEventRepository;
     private iQueueRepository iQueueRepository;
-
+    private IActiveOrderRepository iActiveOrderRepository;
+    private iPurchasedOrderRepository iPurchasedOrderRepository;
     public initTheSystem(
 
             iTreeOfRoleRepository iTreeOfRoleRepository,
@@ -32,7 +36,9 @@ public class initTheSystem {
             TokenService tokenService,
             iTicketRepository ticketRepository,
             iEventRepository eventRepository,
-            iQueueRepository iQueueRepository
+            iQueueRepository iQueueRepository,
+            IActiveOrderRepository activeOrderRepository,
+            iPurchasedOrderRepository purchasedOrderRepository
     ) {
 
         this.iTreeOfRoleRepository = iTreeOfRoleRepository;
@@ -44,17 +50,22 @@ public class initTheSystem {
         this.iTicketRepository = ticketRepository;
         this.iEventRepository = eventRepository;
         this.iQueueRepository = iQueueRepository;
+        this.iActiveOrderRepository = activeOrderRepository;
+        this.iPurchasedOrderRepository = purchasedOrderRepository;
     }
     public void init() {
+        iActiveOrderRepository.deleteAllActiveOrders();
+        iEventRepository.deleteAllEvents();
         iTreeOfRoleRepository.deleteAllRoles();
         iCompanyRepository.deleteAllCompany();
+        iPurchasedOrderRepository.deleteAll();
+        iQueueRepository.deleteAll();
+        iTicketRepository.deleteAllTickets();
         iUserRepository.deleteAll();
         iPasswordEncoder=new PasswordEncoderImpl();
         tokenService.clearAllData();
 
-        iTicketRepository.deleteAllTickets();
-        iEventRepository.deleteAllEvents();
-        iQueueRepository.deleteAll();
+
 
     }
 }

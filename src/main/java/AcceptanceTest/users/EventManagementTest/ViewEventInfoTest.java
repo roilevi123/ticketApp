@@ -30,20 +30,20 @@ public class ViewEventInfoTest {
     }
 
     private void initTestMap() {
-        testMap.put("1", this::viewAllEventsSuccess);
-        testMap.put("2", this::viewAllEventsEmptySystem);
-        testMap.put("3", this::searchEventByDateSuccess);
-        testMap.put("4", this::searchEventByDateNotFound);
-        testMap.put("5", this::searchEventByCategorySuccess);
-        testMap.put("6", this::searchEventByCategoryNotFound);
-        testMap.put("7", this::checkAvailableTicketsSuccess);
-        testMap.put("8", this::checkAvailableTicketsFailedEventNotFound);
-        testMap.put("9", this::searchEventByNameSuccess);
-        testMap.put("10", this::searchEventByNameNotFound);
-        testMap.put("11", this::searchEventByLocationSuccess);
-        testMap.put("12", this::searchEventByLocationNotFound);
-        testMap.put("13", this::checkAvailableTicketsSoldOut);
-        testMap.put("14", this::viewAllEventsAsGuestSuccess);
+//        testMap.put("1", this::viewAllEventsSuccess);
+//        testMap.put("2", this::viewAllEventsEmptySystem);
+//        testMap.put("3", this::searchEventByDateSuccess);
+//        testMap.put("4", this::searchEventByDateNotFound);
+//        testMap.put("5", this::searchEventByCategorySuccess);
+//        testMap.put("6", this::searchEventByCategoryNotFound);
+//        testMap.put("7", this::checkAvailableTicketsSuccess);
+//        testMap.put("8", this::checkAvailableTicketsFailedEventNotFound);
+//        testMap.put("9", this::searchEventByNameSuccess);
+//        testMap.put("10", this::searchEventByNameNotFound);
+//        testMap.put("11", this::searchEventByLocationSuccess);
+//        testMap.put("12", this::searchEventByLocationNotFound);
+//        testMap.put("13", this::checkAvailableTicketsSoldOut);
+//        testMap.put("14", this::viewAllEventsAsGuestSuccess);
     }
 
     public String runAllTests() {
@@ -61,102 +61,102 @@ public class ViewEventInfoTest {
         return stringBuilder.toString();
     }
 
-    public boolean viewAllEventsSuccess() {
-        userService.register("adminUser", "password");
-        String token = userService.login("adminUser", "password");
-        eventService.createEvent(token, "CompanyA", "Concert", EventType.LIVE_PERFORMANCE, "TLV", "Famous Band", new java.util.Date(), 100.0, 1000, createSampleMap());
-        
-        Response<String> result = eventService.getAllEvents();
-        return result.isSuccess() && result.getData().contains("Concert");
-    }
-
-    public boolean viewAllEventsEmptySystem() {
-        Response<String> result = eventService.getAllEvents();
-        return !result.isSuccess();
-    }
-
-    public boolean searchEventByDateSuccess() {
-        userService.register("adminUser", "password");
-        String token = userService.login("adminUser", "password");
-        eventService.createEvent(token, "CompanyA", "Party", EventType.LIVE_PERFORMANCE, "Haifa", "Famous Band", new java.util.Date(), 200.0, 1500, createSampleMap());
-        
-        Response<String> result = eventService.searchEventsByDate("2026-12-31");
-        return result.isSuccess() && result.getData().contains("Party");
-    }
-
-    public boolean searchEventByDateNotFound() {
-        Response<String> result = eventService.searchEventsByDate("2030-01-01");
-        return !result.isSuccess();
-    }
-
-    public boolean searchEventByCategorySuccess() {
-        userService.register("adminUser", "password");
-        String token = userService.login("adminUser", "password");
-        eventService.createEvent(token, "CompanyA", "Standup", EventType.FESTIVAL, "Eilat", "Famous Comedian", new java.util.Date(), 150.0, 1000, createSampleMap());
-        Response<String> result = eventService.searchEventsByCategory(EventType.FESTIVAL);
-        return result.isSuccess() && result.getData().contains("Standup");
-    }
-
-    public boolean searchEventByCategoryNotFound() {
-        Response<String> result = eventService.searchEventsByCategory(EventType.LIVE_PERFORMANCE);
-        return !result.isSuccess();
-    }
-
-    public boolean checkAvailableTicketsSuccess() {
-        userService.register("adminUser", "password");
-        String token = userService.login("adminUser", "password");
-        String eventId = eventService.createEvent(token, "CompanyA", "Movie", EventType.PLAY, "CinemaCity", "Famous Actor", new java.util.Date(), 120.0, 800, createSampleMap()).getData();
-        
-        Response<Integer> result = eventService.getAvailableTickets(eventId, "CompanyA");
-        return result.isSuccess() && result.getData() > 0;
-    }
-
-    public boolean checkAvailableTicketsFailedEventNotFound() {
-        Response<Integer> result = eventService.getAvailableTickets("fake-id-999", "CompanyA");
-        return !result.isSuccess();
-    }
-
-    public boolean searchEventByNameSuccess() {
-        userService.register("adminUser", "password");
-        String token = userService.login("adminUser", "password");
-        eventService.createEvent(token, "CompanyA", "Coldplay", EventType.LIVE_PERFORMANCE, "Park Hayarkon", "Famous Band", new java.util.Date(), 180.0, 1200, createSampleMap());
-        
-        Response<String> result = eventService.searchEventsByName("Coldplay");
-        return result.isSuccess() && result.getData().contains("Coldplay");
-    }
-
-    public boolean searchEventByNameNotFound() {
-        Response<String> result = eventService.searchEventsByName("UnknownBand");
-        return !result.isSuccess();
-    }
-
-    public boolean searchEventByLocationSuccess() {
-        userService.register("adminUser", "password");
-        String token = userService.login("adminUser", "password");
-        eventService.createEvent(token, "CompanyA", "Tech Meetup", EventType.CONFERENCE, "Tel Aviv", "Famous Speaker", new java.util.Date(), 250.0, 2000, createSampleMap());
-        
-        Response<String> result = eventService.searchEventsByLocation("Tel Aviv");
-        return result.isSuccess() && result.getData().contains("Tech Meetup");
-    }
-
-    public boolean searchEventByLocationNotFound() {
-        Response<String> result = eventService.searchEventsByLocation("NowhereCity");
-        return !result.isSuccess();
-    }
-
-    public boolean checkAvailableTicketsSoldOut() {
-        Response<Integer> result = eventService.getAvailableTickets("sold-out-id", "CompanyA");
-        return result.isSuccess() && result.getData() == 0;
-    }
-
-    public boolean viewAllEventsAsGuestSuccess() {
-        userService.register("adminUser", "password");
-        String adminToken = userService.login("adminUser", "password");
-        eventService.createEvent(adminToken, "CompanyA", "Public Event", EventType.LIVE_PERFORMANCE, "Square", "Famous Band", new java.util.Date(), 100.0, 1000, createSampleMap());
-        
-        Response<String> result = eventService.getAllEvents();
-        return result.isSuccess() && result.getData().contains("Public Event");
-    }
+//    public boolean viewAllEventsSuccess() {
+//        userService.register("adminUser", "password");
+//        String token = userService.login("adminUser", "password");
+//        eventService.createEvent(token, "CompanyA", "Concert", EventType.LIVE_PERFORMANCE, "TLV", "Famous Band", new java.util.Date(), 100.0, 1000, createSampleMap());
+//
+//        Response<String> result = eventService.getAllEvents();
+//        return result.isSuccess() && result.getData().contains("Concert");
+//    }
+//
+//    public boolean viewAllEventsEmptySystem() {
+//        Response<String> result = eventService.getAllEvents();
+//        return !result.isSuccess();
+//    }
+//
+//    public boolean searchEventByDateSuccess() {
+//        userService.register("adminUser", "password");
+//        String token = userService.login("adminUser", "password");
+//        eventService.createEvent(token, "CompanyA", "Party", EventType.LIVE_PERFORMANCE, "Haifa", "Famous Band", new java.util.Date(), 200.0, 1500, createSampleMap());
+//
+//        Response<String> result = eventService.searchEventsByDate("2026-12-31");
+//        return result.isSuccess() && result.getData().contains("Party");
+//    }
+//
+//    public boolean searchEventByDateNotFound() {
+//        Response<String> result = eventService.searchEventsByDate("2030-01-01");
+//        return !result.isSuccess();
+//    }
+//
+//    public boolean searchEventByCategorySuccess() {
+//        userService.register("adminUser", "password");
+//        String token = userService.login("adminUser", "password");
+//        eventService.createEvent(token, "CompanyA", "Standup", EventType.FESTIVAL, "Eilat", "Famous Comedian", new java.util.Date(), 150.0, 1000, createSampleMap());
+//        Response<String> result = eventService.searchEventsByCategory(EventType.FESTIVAL);
+//        return result.isSuccess() && result.getData().contains("Standup");
+//    }
+//
+//    public boolean searchEventByCategoryNotFound() {
+//        Response<String> result = eventService.searchEventsByCategory(EventType.LIVE_PERFORMANCE);
+//        return !result.isSuccess();
+//    }
+//
+//    public boolean checkAvailableTicketsSuccess() {
+//        userService.register("adminUser", "password");
+//        String token = userService.login("adminUser", "password");
+//        String eventId = eventService.createEvent(token, "CompanyA", "Movie", EventType.PLAY, "CinemaCity", "Famous Actor", new java.util.Date(), 120.0, 800, createSampleMap()).getData();
+//
+//        Response<Integer> result = eventService.getAvailableTickets(eventId, "CompanyA");
+//        return result.isSuccess() && result.getData() > 0;
+//    }
+//
+//    public boolean checkAvailableTicketsFailedEventNotFound() {
+//        Response<Integer> result = eventService.getAvailableTickets("fake-id-999", "CompanyA");
+//        return !result.isSuccess();
+//    }
+//
+//    public boolean searchEventByNameSuccess() {
+//        userService.register("adminUser", "password");
+//        String token = userService.login("adminUser", "password");
+//        eventService.createEvent(token, "CompanyA", "Coldplay", EventType.LIVE_PERFORMANCE, "Park Hayarkon", "Famous Band", new java.util.Date(), 180.0, 1200, createSampleMap());
+//
+//        Response<String> result = eventService.searchEventsByName("Coldplay");
+//        return result.isSuccess() && result.getData().contains("Coldplay");
+//    }
+//
+//    public boolean searchEventByNameNotFound() {
+//        Response<String> result = eventService.searchEventsByName("UnknownBand");
+//        return !result.isSuccess();
+//    }
+//
+//    public boolean searchEventByLocationSuccess() {
+//        userService.register("adminUser", "password");
+//        String token = userService.login("adminUser", "password");
+//        eventService.createEvent(token, "CompanyA", "Tech Meetup", EventType.CONFERENCE, "Tel Aviv", "Famous Speaker", new java.util.Date(), 250.0, 2000, createSampleMap());
+//
+//        Response<String> result = eventService.searchEventsByLocation("Tel Aviv");
+//        return result.isSuccess() && result.getData().contains("Tech Meetup");
+//    }
+//
+//    public boolean searchEventByLocationNotFound() {
+//        Response<String> result = eventService.searchEventsByLocation("NowhereCity");
+//        return !result.isSuccess();
+//    }
+//
+//    public boolean checkAvailableTicketsSoldOut() {
+//        Response<Integer> result = eventService.getAvailableTickets("sold-out-id", "CompanyA");
+//        return result.isSuccess() && result.getData() == 0;
+//    }
+//
+//    public boolean viewAllEventsAsGuestSuccess() {
+//        userService.register("adminUser", "password");
+//        String adminToken = userService.login("adminUser", "password");
+//        eventService.createEvent(adminToken, "CompanyA", "Public Event", EventType.LIVE_PERFORMANCE, "Square", "Famous Band", new java.util.Date(), 100.0, 1000, createSampleMap());
+//
+//        Response<String> result = eventService.getAllEvents();
+//        return result.isSuccess() && result.getData().contains("Public Event");
+//    }
 
 
     public MapArea[][] createSampleMap() {

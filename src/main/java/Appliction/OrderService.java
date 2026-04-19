@@ -45,44 +45,44 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
 
             long expirationTime = System.currentTimeMillis() + (10 * 10 * 100);
             Date expiryDate = new Date(expirationTime);
+            List<Ticket> availableAtSpot1 = ticketRepository.getAvailableTicketsByEventAndCompany(company, event);
 
             for (int[] request : requests) {
                 int v = request[0];
                 int h = request[1];
-
-                int ticketsSecuredForSpot = 0;
-                int maxRetries = 5;
-
-
-                List<Ticket> availableAtSpot = ticketRepository.getAvailableTicketsByEventAndCompany(company, event).stream()
+                List<Ticket> availableAtSpot = availableAtSpot1.stream()
                         .filter(t -> t.getCol() == v &&
                                 t.getRow() == h &&
                                 (t.getDate() == null || t.getDate().before(new Date())) &&
                                 !t.isPurchased() &&
                                 !reservedTicketIds.contains(t.getId()))
                         .toList();
+                int numRequested = (request.length > 2) ? request[2] : 1;
+                int securedForThisSpot = 0;
 
-                if (availableAtSpot.isEmpty()) {
-                    throw new RuntimeException("Not enough tickets available at spot: " + v + "," + h);
-                }
+
 
                 for (Ticket ticketInDb : availableAtSpot) {
+                    if (securedForThisSpot >= numRequested) {
+                        break;
+                    }
 
                     try {
                         Ticket updatedTicket = new Ticket(ticketInDb);
                         updatedTicket.setDate(expiryDate);
-
                         ticketRepository.save(updatedTicket);
-
                         reservedTicketIds.add(updatedTicket.getId());
-                        ticketsSecuredForSpot++;
-
+                        securedForThisSpot++;
                     } catch (RuntimeException e) {
-
-                        break;
+                        logger.warn("Concurrency conflict for ticket: " + ticketInDb.getId());
                     }
                 }
+
+                if (securedForThisSpot < numRequested) {
+                    throw new RuntimeException("Not enough tickets available at spot: " + v + "," + h);
+                }
             }
+
 
 
             String id = activeOrderRepository.store(company, event, reservedTicketIds, username, expiryDate);
