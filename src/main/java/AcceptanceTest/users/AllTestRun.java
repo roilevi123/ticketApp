@@ -12,7 +12,9 @@ import Appliction.IPasswordEncoder;
 import Appliction.OrderService;
 import Appliction.UserService;
 import Domain.Company.iCompanyRepository;
+import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import Domain.Ticket.iTicketRepository;
 import Domain.User.IUserRepository;
 import Infastructure.*;
 
@@ -31,13 +33,15 @@ public class AllTestRun {
         IUserRepository iUserRepository =new UserRepositoryImpl();
         IPasswordEncoder iPasswordEncoder =new PasswordEncoderImpl();
         TokenService tokenService = new TokenService();
+        IActiveOrderRepository activeOrderRepository= new OrderRepositoryImpl();
+        iTicketRepository iTicketRepository =new TicketRepositoryImpl();
         initTheSystem initTheSystem=new initTheSystem(iTreeOfRoleRepository,iCompanyRepository,iUserRepository,iPasswordEncoder,tokenService);
 
 
         UserService userService=new UserService(iPasswordEncoder,iUserRepository,tokenService);
         CompanyService companyService=new CompanyService(iCompanyRepository,iUserRepository,iTreeOfRoleRepository,tokenService);
         EventService eventService = new EventService();
-        OrderService orderService = new OrderService();
+        OrderService orderService = new OrderService(activeOrderRepository,tokenService,iTicketRepository);
 
         visitorActionTest = new UserActionInfo(userService,initTheSystem);
         companyManagementTest=new CompanyManagementTest(companyService,userService,initTheSystem);

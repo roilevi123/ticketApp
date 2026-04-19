@@ -36,6 +36,28 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         managers.put(manager+company,m);
 
     }
+    @Override
+    public void deleteCompanyMangersAndOwners(String company) {
+        List<String> names=new ArrayList<>();
+        for(Manager m:managers.values()) {
+            if(m.getCompanyName().equals(company)) {
+                names.add(m.getUserName());
+            }
+        }
+        for(Owner o:owners.values()) {
+            if(o.getCompanyName().equals(company)) {
+                names.add(o.getUserName());
+            }
+        }
+        for(String n:names) {
+            if(managers.containsKey(n+company)) {
+                managers.remove(n+company);
+            }
+            if(owners.containsKey(n+company)) {
+                owners.remove(n+company);
+            }
+        }
+    }
 
     @Override
     public Manager getManager(String manager,String company) {
