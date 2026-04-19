@@ -48,6 +48,10 @@ public class EventService {
             logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, companyName);
             return new Response<>(false, "Unauthorized", null);
         }
+        if(!tokenService.validateToken(token)) {
+            throw new RuntimeException("Invalid token");
+        }
+
         try {
             Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, companyName, totalTickets);
             ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, event.getDate(), event.getPrice());
@@ -60,6 +64,29 @@ public class EventService {
         }
     }
 
+    public Response<Void> deleteEvent(String eventId, String companyName, String token) {
+        String username = tokenService.extractUsername(token);
+        if (!isAuthorized(companyName,username)) {
+            logger.info("Unauthorized attempt to delete event '{}' for company '{}'", eventId, companyName);
+            return new Response<>(false, "Unauthorized", null);
+        }
+        if(!tokenService.validateToken(token)) {
+            throw new RuntimeException("Invalid token");
+        }
+        try {
+            Event event = eventRepository.getEventById(eventId, companyName);
+            if (event == null) {
+                logger.info("Attempt to delete non-existent event '{}' for company '{}'", eventId, companyName);
+                return new Response<>(false, "Event not found", null);
+            }
+            eventRepository.deleteEvent(eventId, companyName);
+            logger.info("Event '{}' deleted successfully for company '{}'", eventId, companyName);
+            return new Response<>(true, "Event deleted successfully", null);
+        } catch (Exception e) {
+            logger.error("Failed to delete event '{}' for company '{}': {}", eventId, companyName, e.getMessage());
+            return new Response<>(false, "Failed to delete event: " + e.getMessage(), null);
+        }
+    }
 
     public Response<Void> updateEventDate(String eventId, String newDate, String token) {
         if (eventId.equals("fake-id-999") || this.isDeleted) return new Response<>(false, "Event not found", null);
@@ -79,14 +106,6 @@ public class EventService {
         return new Response<>(true, "Location updated", null);
     }
 
-    public Response<Void> deleteEvent(String eventId, String token) {
-        if (eventId.equals("fake-id-999")) return new Response<>(false, "Event not found", null);
-        if (!token.equals(this.lastCreatorToken)) return new Response<>(false, "No permission", null);
-        if (this.isDeleted) return new Response<>(false, "Already deleted", null);
-        this.isDeleted = true;
-        this.hasEvents = false;
-        return new Response<>(true, "Event deleted", null);
-    }
 
     public Response<String> getEventInfo(String eventId) {
         if (eventId.equals("fake-id-999") || this.isDeleted) return new Response<>(false, "Event not found", null);

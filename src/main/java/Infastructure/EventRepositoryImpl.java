@@ -45,6 +45,16 @@ public class EventRepositoryImpl implements iEventRepository {
     }
 
     @Override
+    public Event getEventById(String eventId, String company) {
+        for (Event event : events.values()) {
+            if (event.getId().equals(eventId) && event.getCompany().equals(company)) {
+                return event;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public List<Event> getAllEvents() {
         return new ArrayList<>(events.values());
     }
@@ -113,6 +123,21 @@ public class EventRepositoryImpl implements iEventRepository {
             }
         }
         return priceRangeEvents;
+    }
+
+    @Override
+    public void deleteEvent(String eventId, String company) {
+        Event eventToDelete = null;
+        for (Event event : events.values()) {
+            if (event.getId().equals(eventId) && event.getCompany().equals(company)) {
+                eventToDelete = event;
+                break;
+            }
+        }
+        if (eventToDelete == null) {
+            throw new RuntimeException("Event not found for deletion: " + eventId + " for company: " + company);
+        }
+        events.remove(eventToDelete.getName() + company);
     }
 
     @Override

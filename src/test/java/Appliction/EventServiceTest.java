@@ -135,6 +135,7 @@ public class EventServiceTest {
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
         assertNull(savedEvent, "Event should not be created with an invalid token");
     }
+
     @Test
     void createEvent_Failure_NoPermissions() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
@@ -148,6 +149,7 @@ public class EventServiceTest {
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
         assertNull(savedEvent, "Event should not be created if the user has no permissions");
     }
+
     @Test
     void createEvent_Failure_ManagerWithoutRequiredPermission() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
@@ -162,6 +164,56 @@ public class EventServiceTest {
         assertEquals(res.isSuccess(), false);
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
         assertNull(savedEvent, "Event should not be created if the manager lacks MANAGE_INVENTORY permission");
+    }
+
+//----------------------------------DELETE EVENT TESTS----------------------------------
+
+    @Test
+    void deleteEvent_Success_AsOwner() {
+        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 200);
+        assertNotNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+
+        Response<Void> res = eventService.deleteEvent(event.getId(), COMPANY, TOKEN);
+        assertEquals(res.isSuccess(), true);
+        assertNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
+    }
+    @Test
+    void deleteEvent_Success_AsManagerWithPermissions() {
+        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 1500);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+
+        Manager mockManager = mock(Manager.class);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
+        when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(true);
+        when(mockManager.getPermissions()).thenReturn(Set.of(Permission.MANAGE_INVENTORY));
+
+        Response<Void> res = eventService.deleteEvent(event.getId(), COMPANY, TOKEN);
+        assertEquals(res.isSuccess(), true);
+        assertNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
+        List<Ticket> remainingTickets = ((TicketRepositoryImpl) ticketRepository).getTicketsForEvent(COMPANY, EVENT_NAME);
+        assertTrue(remainingTickets.isEmpty());
+    }
+    @Test
+    void deleteEvent_Failure_Unauthorized() {
+        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 1000);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
+        when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(false);
+
+        Response<Void> res = eventService.deleteEvent(event.getId(), COMPANY, TOKEN);
+        assertEquals(res.isSuccess(), false);
+        assertNotNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
+        List<Ticket> remainingTickets = ((TicketRepositoryImpl) ticketRepository).getTicketsForEvent(COMPANY, EVENT_NAME);
+        assertTrue(remainingTickets.isEmpty());
     }
     
 }
