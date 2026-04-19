@@ -3,6 +3,7 @@ package Appliction;
 import Domain.Company.iCompanyRepository;
 import Domain.Event.*;
 import Domain.OwnerManagerTree.*;
+import Domain.Ticket.iTicketRepository;
 import Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,14 +21,16 @@ public class EventService {
     private iEventRepository eventRepository;
     private TokenService tokenService;
     private iTreeOfRoleRepository treeOfRoleRepository;
+    private iTicketRepository ticketRepository;
     private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
 
 
-    public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository, TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository) {
+    public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository, TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository, iTicketRepository ticketRepository) {
         this.companyRepository = companyRepository;
         this.eventRepository = eventRepository;
         this.tokenService = tokenService;
         this.treeOfRoleRepository = treeOfRoleRepository;
+        this.ticketRepository = ticketRepository;
     }
 
     public boolean isAuthorized(String company,String username) {
@@ -44,6 +47,7 @@ public class EventService {
         }
         try {
             Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, companyName, totalTickets);
+            ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), event.getMap(), event.getDate(), event.getPrice());
             logger.info("Event '{}' created successfully for company '{}'", eventName, companyName);
             return new Response<>(true, "Event created successfully", event.getId());
         } catch (Exception e) {

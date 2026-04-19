@@ -42,8 +42,7 @@ public class AllTestRun {
 
         UserService userService=new UserService(iPasswordEncoder,iUserRepository,tokenService);
         CompanyService companyService=new CompanyService(iCompanyRepository,iUserRepository,iTreeOfRoleRepository,tokenService);
-        EventService eventService = new EventService(iCompanyRepository, iEventRepository, tokenService, iTreeOfRoleRepository);
-        EventService eventService = new EventService();
+        EventService eventService = new EventService(iCompanyRepository, iEventRepository, tokenService, iTreeOfRoleRepository, iTicketRepository);
         OrderService orderService = new OrderService(activeOrderRepository,tokenService,iTicketRepository);
 
 

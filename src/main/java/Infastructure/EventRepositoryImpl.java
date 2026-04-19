@@ -16,7 +16,7 @@ public class EventRepositoryImpl implements iEventRepository {
         if (events.containsKey(key)) {
             throw new RuntimeException("Event already exists: " + eventName + " for company: " + company);
         }
-        Event newEvent = new Event(String.valueOf(idCounter.getAndIncrement()), company, null, eventName, location, artistName, date, price, totalTickets);
+        Event newEvent = new Event(String.valueOf(idCounter.getAndIncrement()), company, null, eventName, location, artistName, date, price, totalTickets, eventType);
         events.put(key, newEvent);
         return newEvent;
     }
