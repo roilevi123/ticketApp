@@ -110,6 +110,16 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         return false;
     }
 
+
+    public boolean ManagerPermitedToCreateUpdateDelete(String manager,String company){
+        if (managers.containsKey(manager+company)) {
+            Manager m=managers.get(manager+company);
+            return m.getPermissions().contains(Permission.MANAGE_INVENTORY) && managers.get(manager+company).isAccepted();
+        }
+        return false;
+    }
+
+
     @Override
     public Owner getOwner(String owner,String company) {
         return owners.get(owner+company);

@@ -3,7 +3,6 @@ package AcceptanceTest.users.visitorTests;
 import AcceptanceTest.users.initTheSystem;
 import Appliction.UserService;
 
-
 import java.util.*;
 import java.util.function.Supplier;
 

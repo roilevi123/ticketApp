@@ -6,12 +6,14 @@ import AcceptanceTest.users.EventManagementTest.EventManagementTest;
 import AcceptanceTest.users.EventManagementTest.ViewEventInfoTest;
 import AcceptanceTest.users.OrderManagementTest.ReserveOrderTest;
 import AcceptanceTest.users.visitorTests.UserActionInfo;
+//<<<<<<< Updated upstream
 import Appliction.CompanyService;
 import Appliction.EventService;
 import Appliction.IPasswordEncoder;
 import Appliction.OrderService;
 import Appliction.UserService;
 import Domain.Company.iCompanyRepository;
+import Domain.Event.iEventRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import Domain.User.IUserRepository;
 import Infastructure.*;
@@ -32,11 +34,11 @@ public class AllTestRun {
         IPasswordEncoder iPasswordEncoder =new PasswordEncoderImpl();
         TokenService tokenService = new TokenService();
         initTheSystem initTheSystem=new initTheSystem(iTreeOfRoleRepository,iCompanyRepository,iUserRepository,iPasswordEncoder,tokenService);
-
+        iEventRepository iEventRepository =new EventRepositoryImpl();
 
         UserService userService=new UserService(iPasswordEncoder,iUserRepository,tokenService);
         CompanyService companyService=new CompanyService(iCompanyRepository,iUserRepository,iTreeOfRoleRepository,tokenService);
-        EventService eventService = new EventService();
+        EventService eventService = new EventService(iCompanyRepository, iEventRepository, tokenService, iTreeOfRoleRepository);
         OrderService orderService = new OrderService();
 
         visitorActionTest = new UserActionInfo(userService,initTheSystem);

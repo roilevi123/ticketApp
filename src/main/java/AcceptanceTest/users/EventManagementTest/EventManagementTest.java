@@ -4,7 +4,7 @@ import AcceptanceTest.users.initTheSystem;
 import Appliction.UserService;
 import Appliction.EventService;
 import Appliction.Response;
-
+import Domain.Event.EventType;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,7 +67,7 @@ public class EventManagementTest {
         userService.register("adminUser", "password123");
         String token = userService.login("adminUser", "password123");
 
-        Response<String> createRes = eventService.createEvent("Shlomo Artzi Concert", "2026-08-15", "Caesarea", token);
+        Response<String> createRes = eventService.createEvent(token, "CompanyA", "Shlomo Artzi Concert", EventType.LIVE_PERFORMANCE, "Caesarea", "Famous Band", new java.util.Date(), 200.0, 1500);
         if (!createRes.isSuccess() || createRes.getData() == null) return false;
 
         String eventId = createRes.getData();
@@ -82,21 +82,21 @@ public class EventManagementTest {
     }
 
     public boolean createEventFailedNoToken() {
-        Response<String> result = eventService.createEvent("Coldplay Live", "2026-09-01", "Park Hayarkon", "");
+        Response<String> result = eventService.createEvent("", "CompanyA", "Event Without Token", EventType.LIVE_PERFORMANCE, "Location", "Artist", new java.util.Date(), 100.0, 100);
         return !result.isSuccess();
     }
 
     public boolean createEventFailedMissingFields() {
         userService.register("adminUser", "password123");
         String token = userService.login("adminUser", "password123");
-        Response<String> result = eventService.createEvent("", "", "Tel Aviv", token);
+        Response<String> result = eventService.createEvent(token, "CompanyA", "", EventType.LIVE_PERFORMANCE, "Tel Aviv", "Famous Band", new java.util.Date(), 0.0, 0);
         return !result.isSuccess();
     }
 
     public boolean updateEventSuccess() {
         userService.register("adminUser", "password123");
         String token = userService.login("adminUser", "password123");
-        String eventId = eventService.createEvent("Jazz Festival", "2026-05-05", "Jerusalem", token).getData();
+        String eventId = eventService.createEvent(token, "CompanyA", "Jazz Festival", EventType.LIVE_PERFORMANCE, "Jerusalem", "Famous Band", new java.util.Date(), 150.0, 1000).getData();
         
         Response<Void> result = eventService.updateEventDate(eventId, "2026-05-06", token);
         return result.isSuccess();
@@ -112,7 +112,7 @@ public class EventManagementTest {
     public boolean updateEventFailedNoPermission() {
         userService.register("admin", "adminPass");
         String adminToken = userService.login("admin", "adminPass");
-        String eventId = eventService.createEvent("Private Party", "2026-01-01", "Tel Aviv", adminToken).getData();
+        String eventId = eventService.createEvent(adminToken, "CompanyA", "Private Party", EventType.LIVE_PERFORMANCE, "Tel Aviv", "Famous Band", new java.util.Date(), 100.0, 1000).getData();
 
         userService.register("hacker", "hackerPass");
         String hackerToken = userService.login("hacker", "hackerPass");
@@ -124,7 +124,7 @@ public class EventManagementTest {
     public boolean deleteEventSuccess() {
         userService.register("adminUser", "password123");
         String token = userService.login("adminUser", "password123");
-        String eventId = eventService.createEvent("Tech Conference", "2026-11-11", "Expo TLV", token).getData();
+        String eventId = eventService.createEvent(token, "CompanyA", "Tech Conference", EventType.CONFERENCE, "Expo TLV", "Famous Speaker", new java.util.Date(), 250.0, 2000).getData();
         
         Response<Void> result = eventService.deleteEvent(eventId, token);
         return result.isSuccess();
@@ -133,7 +133,7 @@ public class EventManagementTest {
     public boolean deleteEventWithoutPermissionsTest() {
         userService.register("admin", "adminPass");
         String adminToken = userService.login("admin", "adminPass");
-        String eventId = eventService.createEvent("Private Party", "2026-01-01", "Tel Aviv", adminToken).getData();
+        String eventId = eventService.createEvent(adminToken, "CompanyA", "Private Party", EventType.LIVE_PERFORMANCE, "Tel Aviv", "Famous Band", new java.util.Date(), 100.0, 1000).getData();
 
         userService.register("hacker", "hackerPass");
         String hackerToken = userService.login("hacker", "hackerPass");
@@ -152,21 +152,21 @@ public class EventManagementTest {
     public boolean createEventFailedPastDate() {
         userService.register("adminUser", "password123");
         String token = userService.login("adminUser", "password123");
-        Response<String> result = eventService.createEvent("Old Event", "2020-01-01", "Haifa", token);
+        Response<String> result = eventService.createEvent(token, "CompanyA", "Old Event", EventType.LIVE_PERFORMANCE, "Haifa", "Famous Band", new java.util.Date(), 100.0, 1000);
         return !result.isSuccess();
     }
 
     public boolean createEventFailedInvalidDateFormat() {
         userService.register("adminUser", "password123");
         String token = userService.login("adminUser", "password123");
-        Response<String> result = eventService.createEvent("Bad Date Event", "invalid-date", "Eilat", token);
+        Response<String> result = eventService.createEvent(token, "CompanyA", "Bad Date Event", EventType.LIVE_PERFORMANCE, "Eilat", "Famous Band", new java.util.Date(), 100.0, 1000);
         return !result.isSuccess();
     }
 
     public boolean updateEventNameSuccess() {
         userService.register("adminUser", "password123");
         String token = userService.login("adminUser", "password123");
-        String eventId = eventService.createEvent("Initial Name", "2026-08-15", "Caesarea", token).getData();
+        String eventId = eventService.createEvent(token, "CompanyA", "Initial Name", EventType.LIVE_PERFORMANCE, "Caesarea", "Famous Band", new java.util.Date(), 100.0, 1000).getData();
         Response<Void> result = eventService.updateEventName(eventId, "Updated Name", token);
         return result.isSuccess();
     }
@@ -174,7 +174,7 @@ public class EventManagementTest {
     public boolean updateEventNameFailedNoPermission() {
         userService.register("admin", "adminPass");
         String adminToken = userService.login("admin", "adminPass");
-        String eventId = eventService.createEvent("My Event", "2026-01-01", "Tel Aviv", adminToken).getData();
+        String eventId = eventService.createEvent(adminToken, "CompanyA", "My Event", EventType.LIVE_PERFORMANCE, "Tel Aviv", "Famous Band", new java.util.Date(), 100.0, 1000).getData();
 
         userService.register("user2", "pass2");
         String userToken = userService.login("user2", "pass2");
@@ -185,7 +185,7 @@ public class EventManagementTest {
     public boolean updateEventLocationSuccess() {
         userService.register("adminUser", "password123");
         String token = userService.login("adminUser", "password123");
-        String eventId = eventService.createEvent("Moving Event", "2026-08-15", "Haifa", token).getData();
+        String eventId = eventService.createEvent(token, "CompanyA", "Moving Event", EventType.LIVE_PERFORMANCE, "Haifa", "Famous Band", new java.util.Date(), 100.0, 1000).getData();
         Response<Void> result = eventService.updateEventLocation(eventId, "Tel Aviv", token);
         return result.isSuccess();
     }
@@ -193,7 +193,7 @@ public class EventManagementTest {
     public boolean deleteEventTwiceFailed() {
         userService.register("adminUser", "password123");
         String token = userService.login("adminUser", "password123");
-        String eventId = eventService.createEvent("Double Delete", "2026-11-11", "Expo TLV", token).getData();
+        String eventId = eventService.createEvent(token, "CompanyA", "Double Delete", EventType.LIVE_PERFORMANCE, "Expo TLV", "Famous Band", new java.util.Date(), 100.0, 1000).getData();
         eventService.deleteEvent(eventId, token);
         Response<Void> result = eventService.deleteEvent(eventId, token);
         return !result.isSuccess();
@@ -202,7 +202,7 @@ public class EventManagementTest {
     public boolean getEventInfoSuccess() {
         userService.register("adminUser", "password123");
         String token = userService.login("adminUser", "password123");
-        String eventId = eventService.createEvent("Info Event", "2026-12-12", "Eilat", token).getData();
+        String eventId = eventService.createEvent(token, "CompanyA", "Info Event", EventType.LIVE_PERFORMANCE, "Eilat", "Famous Band", new java.util.Date(), 100.0, 1000).getData();
         Response<String> result = eventService.getEventInfo(eventId);
         return result.isSuccess() && result.getData() != null;
     }
