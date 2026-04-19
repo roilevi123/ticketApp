@@ -108,59 +108,21 @@ class ReserveTicketServiceTest {
         assertEquals(1, orderRepository.getTicketsId(USERNAME).size());
     }
 
-//    @Test
-//    void getActiveOrderTickets_Success() {
-//        when(tokenService.validateToken(TOKEN)).thenReturn(true);
-//        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-//
-//        ticketRepository.storeTicket(COMPANY, EVENT, new Date(), 0, 0,100);
-//        ticket t = ticketRepository.getTicketsForEvent(COMPANY, EVENT).get(0);
-//        Date expiration = new Date(System.currentTimeMillis() + 600000);
-//
-//        orderRepository.store(COMPANY, EVENT, List.of(t.getId()), USERNAME, expiration);
-//
-//        String description = reserveTicketService.getActiveOrderTickets(TOKEN);
-//
-//        assertNotNull(description);
-//        assertTrue(description.contains(COMPANY));
-//    }
-//
-//    @Test
-//    void editOrder_RemoveAndAdd_Success() {
-//        MapArea[][] map = new MapArea[2][2];
-//        map[0][0] = MapArea.SEAT;
-//        map[0][1] = MapArea.SEAT;
-//        ticketRepository.makeMapToTicket(COMPANY, EVENT, map, new Date(),100);
-//
-//        when(tokenService.validateToken(TOKEN)).thenReturn(true);
-//        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-//
-//        reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, List.of(new int[]{0, 0, 1}));
-//        order activeOrder = orderRepository.getOrder(USERNAME);
-//        String oldTicketId = activeOrder.getTicketsId().get(0);
-//
-//        List<int[]> additional = List.of(new int[]{0, 1, 1});
-//        reserveTicketService.editOrder(TOKEN, List.of(oldTicketId), additional);
-//
-//        order updatedOrder = orderRepository.getOrder(USERNAME);
-//        assertEquals(1, updatedOrder.getTicketsId().size());
-//        assertFalse(updatedOrder.getTicketsId().contains(oldTicketId));
-//
-//        ticket released = ticketRepository.getTicketsForEvent(COMPANY, EVENT).stream()
-//                .filter(t -> t.getId().equals(oldTicketId)).findFirst().get();
-//        assertNull(released.getExpired());
-//    }
-//
-//    @Test
-//    void editOrder_Failure_Expired() {
-//        when(tokenService.validateToken(TOKEN)).thenReturn(true);
-//        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-//
-//        Date pastDate = new Date(System.currentTimeMillis() - 10000);
-//        orderRepository.store(COMPANY, EVENT, List.of("T1"), USERNAME, pastDate);
-//
-//        assertThrows(RuntimeException.class, () -> {
-//            reserveTicketService.editOrder(TOKEN, null, List.of(new int[]{0, 0, 1}));
-//        });
-//    }
+    @Test
+    void getActiveOrderTickets_Success() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+
+        ticketRepository.storeTicket(0, 0, EVENT,COMPANY,100);
+        Ticket t = ticketRepository.getTicketsForEvent(COMPANY, EVENT).get(0);
+        Date expiration = new Date(System.currentTimeMillis() + 600000);
+
+        orderRepository.store(COMPANY, EVENT, List.of(t.getId()), USERNAME, expiration);
+
+        String description = reserveTicketService.getActiveOrderTickets(TOKEN);
+
+        assertNotNull(description);
+        assertTrue(description.contains(COMPANY));
+    }
+
 }
