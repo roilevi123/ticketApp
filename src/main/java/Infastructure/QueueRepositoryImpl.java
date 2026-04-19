@@ -27,6 +27,9 @@ public class QueueRepositoryImpl implements iQueueRepository {
 
     @Override
     public List<QueueEntry> getQueue(String eventId) {
+        if (!eventQueues.containsKey(eventId)) {
+            throw new RuntimeException("Event '"+eventId+"' not found");
+        }
         return eventQueues.computeIfAbsent(eventId, k -> new LinkedList<>());
     }
     @Override
