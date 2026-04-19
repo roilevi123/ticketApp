@@ -107,6 +107,23 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
             return null;
         }
     }
+    public String getActiveOrderTickets(String token) {
+        try {
+            logger.info("get information about active order ticket reservation for token: " + token);
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token3");
+            }
+            String username=tokenService.extractUsername(token);
+            List<String> ticketsId = activeOrderRepository.getTicketsId(username);
+            String tickets=ticketRepository.getTicketsDescription(ticketsId);
+
+            logger.info("get active order tickets: " + tickets);
+            return tickets;
+        } catch (Exception e) {
+            logger.error("Error retrieving active order: {}", e.getMessage());
+            throw new RuntimeException("Could not fetch active order");
+        }
+    }
 
 
 }
