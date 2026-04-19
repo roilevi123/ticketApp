@@ -1,5 +1,14 @@
 package Appliction;
 
+import Domain.Company.iCompanyRepository;
+import Domain.Event.*;
+import Domain.OwnerManagerTree.*;
+import Infastructure.TokenService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.Date;
+
+
 public class EventService {
 
     private String lastCreatorToken = "";
@@ -7,19 +16,42 @@ public class EventService {
     private boolean hasEvents = false;
     private String lastEventName = "";
 
-    public Response<String> createEvent(String name, String date, String location, String token) {
-        if (token == null || token.isEmpty() || name == null || name.isEmpty() || date == null || date.isEmpty() || location == null || location.isEmpty()) {
-            return new Response<>(false, "Missing fields or token", null);
-        }
-        if (date.equals("2020-01-01") || date.equals("invalid-date")) {
-            return new Response<>(false, "Invalid date", null);
-        }
-        this.lastCreatorToken = token;
-        this.isDeleted = false;
-        this.hasEvents = true;
-        this.lastEventName = name;
-        return new Response<>(true, "Event created", "event-12345");
+    private iCompanyRepository companyRepository;
+    private iEventRepository eventRepository;
+    private TokenService tokenService;
+    private iTreeOfRoleRepository treeOfRoleRepository;
+    private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
+
+
+    public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository, TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository) {
+        this.companyRepository = companyRepository;
+        this.eventRepository = eventRepository;
+        this.tokenService = tokenService;
+        this.treeOfRoleRepository = treeOfRoleRepository;
     }
+
+    public boolean isAuthorized(String company,String username) {
+        boolean o=treeOfRoleRepository.exitsOwner(username,company);
+        boolean m=treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(username,company);
+        return m || (o);
+    }
+
+    public Response<String> createEvent(String token, String companyName, String eventName, EventType eventType, String location, String artistName, Date date, double price, int totalTickets) {
+        String username = tokenService.extractUsername(token);
+        if (!isAuthorized(companyName,username)) {
+            logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, companyName);
+            return new Response<>(false, "Unauthorized", null);
+        }
+        try {
+            Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, companyName, totalTickets);
+            logger.info("Event '{}' created successfully for company '{}'", eventName, companyName);
+            return new Response<>(true, "Event created successfully", event.getId());
+        } catch (Exception e) {
+            logger.error("Failed to create event '{}' for company '{}': {}", eventName, companyName, e.getMessage());
+            return new Response<>(false, "Failed to create event: " + e.getMessage(), null);
+        }
+    }
+
 
     public Response<Void> updateEventDate(String eventId, String newDate, String token) {
         if (eventId.equals("fake-id-999") || this.isDeleted) return new Response<>(false, "Event not found", null);

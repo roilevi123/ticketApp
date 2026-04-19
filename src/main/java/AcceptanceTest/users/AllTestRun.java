@@ -6,12 +6,14 @@ import AcceptanceTest.users.EventManagementTest.EventManagementTest;
 import AcceptanceTest.users.EventManagementTest.ViewEventInfoTest;
 import AcceptanceTest.users.OrderManagementTest.ReserveOrderTest;
 import AcceptanceTest.users.visitorTests.UserActionInfo;
+//<<<<<<< Updated upstream
 import Appliction.CompanyService;
 import Appliction.EventService;
 import Appliction.IPasswordEncoder;
 import Appliction.OrderService;
 import Appliction.UserService;
 import Domain.Company.iCompanyRepository;
+import Domain.Event.iEventRepository;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import Domain.Ticket.iTicketRepository;
@@ -36,12 +38,14 @@ public class AllTestRun {
         IActiveOrderRepository activeOrderRepository= new OrderRepositoryImpl();
         iTicketRepository iTicketRepository =new TicketRepositoryImpl();
         initTheSystem initTheSystem=new initTheSystem(iTreeOfRoleRepository,iCompanyRepository,iUserRepository,iPasswordEncoder,tokenService);
-
+        iEventRepository iEventRepository =new EventRepositoryImpl();
 
         UserService userService=new UserService(iPasswordEncoder,iUserRepository,tokenService);
         CompanyService companyService=new CompanyService(iCompanyRepository,iUserRepository,iTreeOfRoleRepository,tokenService);
+        EventService eventService = new EventService(iCompanyRepository, iEventRepository, tokenService, iTreeOfRoleRepository);
         EventService eventService = new EventService();
         OrderService orderService = new OrderService(activeOrderRepository,tokenService,iTicketRepository);
+
 
         visitorActionTest = new UserActionInfo(userService,initTheSystem);
         companyManagementTest=new CompanyManagementTest(companyService,userService,initTheSystem);

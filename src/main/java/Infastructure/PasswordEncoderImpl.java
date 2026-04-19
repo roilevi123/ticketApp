@@ -1,6 +1,7 @@
 package Infastructure;
-import Appliction.IPasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import Appliction.IPasswordEncoder;
 
 public class PasswordEncoderImpl implements IPasswordEncoder {
 
