@@ -52,6 +52,11 @@ public class CompanyRepositoryImpl implements iCompanyRepository {
     }
 
     @Override
+    public void deleteCompany(String company) {
+        companies.remove(company);
+    }
+
+    @Override
     public Company getCompany(String company) {
         return companies.get(company);
     }

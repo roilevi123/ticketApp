@@ -6,5 +6,6 @@ public interface iCompanyRepository {
     public Company getCompany(String company);
     public void save(Company companyToUpdate);
     public void deleteAllCompany();
+    public void deleteCompany(String company);
 
 }

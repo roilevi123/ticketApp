@@ -36,6 +36,28 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         managers.put(manager+company,m);
 
     }
+    @Override
+    public void deleteCompanyMangersAndOwners(String company) {
+        List<String> names=new ArrayList<>();
+        for(Manager m:managers.values()) {
+            if(m.getCompanyName().equals(company)) {
+                names.add(m.getUserName());
+            }
+        }
+        for(Owner o:owners.values()) {
+            if(o.getCompanyName().equals(company)) {
+                names.add(o.getUserName());
+            }
+        }
+        for(String n:names) {
+            if(managers.containsKey(n+company)) {
+                managers.remove(n+company);
+            }
+            if(owners.containsKey(n+company)) {
+                owners.remove(n+company);
+            }
+        }
+    }
 
     @Override
     public Manager getManager(String manager,String company) {
@@ -163,6 +185,36 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
     public void deleteAllRoles() {
         managers.clear();
         owners.clear();
+    }
+    @Override
+    public boolean ManagerPermitToSeeTransactions(String manager, String company) {
+        if (managers.containsKey(manager+company)) {
+            Manager m=managers.get(manager+company);
+            return m.getPermissions().contains(Permission.GENERATE_SALES_REPORTS);
+        }
+        return false;
+    }
+    @Override
+    public void deleteUserRoles(String username) {
+        List<String> names=new ArrayList<>();
+        for(Manager m:managers.values()) {
+            if(m.getUserName().equals(username)) {
+                names.add(m.getCompanyName());
+            }
+        }
+        for(Owner o:owners.values()) {
+            if(o.getUserName().equals(username)) {
+                names.add(o.getCompanyName());
+            }
+        }
+        for(String n:names) {
+            if(managers.containsKey(n+username)) {
+                managers.remove(username+n);
+            }
+            if(owners.containsKey(n+username)) {
+                owners.remove(username+n);
+            }
+        }
     }
 
 }
