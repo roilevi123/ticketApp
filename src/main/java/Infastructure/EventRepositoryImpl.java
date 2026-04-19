@@ -11,12 +11,12 @@ public class EventRepositoryImpl implements iEventRepository {
     private AtomicInteger idCounter = new AtomicInteger(1);
     
     @Override
-    public Event store(String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, int totalTickets,MapArea[][] mapArea) {
+    public Event store(String eventName, String artistName, EventType eventType, double price, Date date, String location, String company,MapArea[][] mapArea) {
         String key = eventName + company;
         if (events.containsKey(key)) {
             throw new RuntimeException("Event already exists: " + eventName + " for company: " + company);
         }
-        Event newEvent = new Event(String.valueOf(idCounter.getAndIncrement()), company, null, eventName, location, artistName, date, price, totalTickets, eventType, mapArea);
+        Event newEvent = new Event(String.valueOf(idCounter.getAndIncrement()), company, null, eventName, location, artistName, date, price, 100, eventType, mapArea);
         events.put(key, newEvent);
         return newEvent;
     }

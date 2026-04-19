@@ -48,14 +48,15 @@ class OrderServiceTest {
 
     @Test
     void reserveTickets_Success_UpdatesRepositories() {
-        // יצירת טיקטים אמיתיים שיחזרו מה-Mock
         Ticket t1 = new Ticket(0, 0, EVENT, COMPANY, "id1", 100);
         Ticket t2 = new Ticket(1, 1, EVENT, COMPANY, "id2", 100);
 
 
+        ticketRepository.storeTicket(0, 0, EVENT,COMPANY,100);
+        ticketRepository.storeTicket(1, 1, EVENT,COMPANY,100);
 
-        when(ticketRepository.getAvailableTicketsByEventAndCompany(COMPANY, EVENT))
-                .thenReturn(List.of(t1, t2));
+//        when(ticketRepository.getAvailableTicketsByEventAndCompany(COMPANY, EVENT))
+//                .thenReturn(List.of(t1, t2));
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
@@ -92,8 +93,11 @@ class OrderServiceTest {
 
     @Test
     void reserveTickets_ReplaceExpiredOrder_Success() {
+
         Ticket t1 = new Ticket(0, 0, EVENT, COMPANY, "T_NEW", 100.0);
-        when(ticketRepository.getAvailableTicketsByEventAndCompany(COMPANY, EVENT)).thenReturn(List.of(t1));
+        ticketRepository.storeTicket(0, 0, EVENT,COMPANY,100);
+        ticketRepository.storeTicket(1, 1, EVENT,COMPANY,100);
+//        when(ticketRepository.getAvailableTicketsByEventAndCompany(COMPANY, EVENT)).thenReturn(List.of(t1));
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);

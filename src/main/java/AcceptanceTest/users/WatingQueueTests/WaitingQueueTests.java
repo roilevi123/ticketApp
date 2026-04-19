@@ -42,7 +42,7 @@ public class WaitingQueueTests {
 
     public String whichTestPass() {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Event management test:\n");
+        stringBuilder.append("Waiting Queue management test:\n");
 
         testMap.forEach((id, testLogic) -> {
             initTheSystem.init();
@@ -88,7 +88,7 @@ public class WaitingQueueTests {
         userService.register("creator","creator");
         String token1 = userService.login("creator","creator");
         companyService.CreateCompany("creator",token1);
-        eventService.createEvent(token1, "creator", "Rock Festival",  EventType.CONFERENCE,"Tel Aviv", "g",  new Date(),100.0, 200,  getMapArea());
+        eventService.createEvent(token1, "Rock Festival", "Arctic Monkeys", EventType.CONFERENCE, 100.0, new Date(), "Tel Aviv", "creator", getMapArea());
 
     }
     public boolean TestSequentialQueueEntry1() {
@@ -118,7 +118,7 @@ public class WaitingQueueTests {
         userService.register("creator3", "creator");
         String token = userService.login("creator3", "creator");
         companyService.CreateCompany("creator3", token);
-        eventService.createEvent(token, "creator3","Concurrent Fest",  EventType.CONFERENCE,"Haifa","Artist",  new Date(),100.0,  100, getMapArea());
+        eventService.createEvent(token, "Concurrent Fest", "Artist", EventType.CONFERENCE, 100.0, new Date(), "Haifa", "creator3", getMapArea());
 
         String eventId = "Concurrent Festcreator3";
         int threadCount = 50;
@@ -160,9 +160,9 @@ public class WaitingQueueTests {
         userService.register("creator4", "creator");
         String token = userService.login("creator4", "creator");
         companyService.CreateCompany("creator4", token);
-        eventService.createEvent(token, "creator4","Concurrent Fest",  EventType.CONFERENCE,"Haifa","Artist",  new Date(),100.0,  100, getMapArea());
+        eventService.createEvent(token, "Overfill Fest", "Artist", EventType.CONFERENCE, 100.0, new Date(), "Eilat", "creator4", getMapArea());
 
-        String eventId = "Concurrent Festcreator4";
+        String eventId = "Overfill Festcreator4";
         int threadCount = 150;
 
         java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
@@ -202,9 +202,9 @@ public class WaitingQueueTests {
         userService.register("creator5", "creator");
         String token = userService.login("creator5", "creator");
         companyService.CreateCompany("creator5", token);
-        eventService.createEvent(token, "creator5","Concurrent Fest",  EventType.CONFERENCE,"Haifa","Artist",  new Date(),100.0,  100, getMapArea());
+        eventService.createEvent(token, "Refresh Fest", "Artist", EventType.CONFERENCE, 100.0, new Date(), "Jerusalem", "creator5", getMapArea());
 
-        String eventId = "Concurrent Festcreator5";
+        String eventId = "Refresh Festcreator5";
 
         for (int i = 1; i <= 100; i++) {
             queueService.checkStatus(eventId, "dummyUser" + i);

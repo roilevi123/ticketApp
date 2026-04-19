@@ -4,10 +4,11 @@ import Domain.Order.ActiveOrder;
 import Domain.Order.IActiveOrderRepository;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class OrderRepositoryImpl  implements IActiveOrderRepository {
-    Map<String, ActiveOrder> orders = new HashMap<>();
+    ConcurrentHashMap<String, ActiveOrder> orders = new ConcurrentHashMap<>();
     private  AtomicLong idCounter = new AtomicLong(1);
 
     @Override
@@ -63,7 +64,7 @@ public class OrderRepositoryImpl  implements IActiveOrderRepository {
 
     @Override
     public void deleteAllActiveOrders() {
-
+        orders.clear();
     }
     @Override
     public List<String> getTicketsId(String userId) {

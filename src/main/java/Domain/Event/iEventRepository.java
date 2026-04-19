@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface iEventRepository {
-    public Event store(String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, int totalTickets, MapArea[][] mapArea   );
+    public Event store(String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] mapArea   );
 
     public Event getEvent(String eventName, String company);
     public Event getEventById(String eventId, String company);
