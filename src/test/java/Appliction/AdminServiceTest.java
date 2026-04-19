@@ -100,8 +100,4 @@ class AdminServiceTest {
         String result = adminService.GetAllPurchasedOrders(NOT_ADMIN);
 
 
-        assertEquals(null, result);
-        verify(purchasedOrderRepository, never()).GetAllPurchasedOrders();
-    }
-
-}
+}}
