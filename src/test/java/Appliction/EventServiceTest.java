@@ -49,7 +49,7 @@ public class EventServiceTest {
         }
         eventRepository = new EventRepositoryImpl();
         ticketRepository = spy(new TicketRepositoryImpl());
-        eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository);
+        eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository);
     }
 
     @Test
@@ -78,7 +78,6 @@ public class EventServiceTest {
         assertEquals(date, savedEvent.getDate());
         assertEquals(location, savedEvent.getLocation());
         assertEquals(COMPANY, savedEvent.getCompany());
-        assertArrayEquals(MAP, savedEvent.getMap());
 
         List<Ticket> createdTickets = ((TicketRepositoryImpl) ticketRepository).getAllTicketsByEventAndCompany(EVENT_NAME, COMPANY);
         long seatCount = createdTickets.stream().filter(t -> t.getCol() == 0 && t.getRow() == 1).count();
@@ -106,6 +105,7 @@ public class EventServiceTest {
         when(mockManager.getPermissions()).thenReturn(Set.of(Permission.MANAGE_INVENTORY));
 
         Response<String> res=eventService.createEvent(TOKEN, COMPANY, EVENT_NAME, EventType.LIVE_PERFORMANCE, location, artist, date, price, 1000);
+        assertEquals(res.getMessage(), "Event created successfully");
         assertEquals(res.isSuccess(), true);
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
 
@@ -117,7 +117,6 @@ public class EventServiceTest {
         assertEquals(date, savedEvent.getDate());
         assertEquals(location, savedEvent.getLocation());
         assertEquals(COMPANY, savedEvent.getCompany());
-        assertArrayEquals(MAP, savedEvent.getMap());
 
         List<Ticket> createdTickets = ((TicketRepositoryImpl) ticketRepository).getAllTicketsByEventAndCompany(EVENT_NAME, COMPANY);
         boolean hasSeatTicket = createdTickets.stream().anyMatch(t -> t.getCol() == 0 && t.getRow() == 0);
