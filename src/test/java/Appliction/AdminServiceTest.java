@@ -79,5 +79,28 @@ class AdminServiceTest {
         verify(userRepository, never()).deleteUser(anyString());
         verify(treeOfRoleRepository, never()).deleteUserRoles(anyString());
     }
+    @Test
+    void GetAllPurchasedOrders_Success() {
+        List<String> tickets = List.of("T1");
+        PurchaseOrder po = new PurchaseOrder("Comp", "Ev", tickets, "Buyer", "O1");
+
+        when(purchasedOrderRepository.GetAllPurchasedOrders()).thenReturn(List.of(po));
+        when(ticketRepository.getTicketsDescription(tickets)).thenReturn("Desc1");
+
+        String result = adminService.GetAllPurchasedOrders(ADMIN_NAME);
+
+        assertTrue(result.contains("Comp"));
+        assertTrue(result.contains("Ev"));
+        assertTrue(result.contains("Buyer"));
+        assertTrue(result.contains("Desc1"));
+    }
+
+    @Test
+    void GetAllPurchasedOrders_Fail_NotAdmin() {
+        String result = adminService.GetAllPurchasedOrders(NOT_ADMIN);
+
+        assertEquals(null, result);
+        verify(purchasedOrderRepository, never()).GetAllPurchasedOrders();
+    }
 
 }

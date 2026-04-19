@@ -69,6 +69,27 @@ public class AdminService {
             return "error";
         }
     }
+    public String GetAllPurchasedOrders(String adminName) {
+        try {
+            logger.info("Getting all purchased orders");
+            if(!adminRepository.isAdmin(adminName)) {
+                throw new Exception("Admin does not exist");
+            }
+            List<PurchaseOrder> purchasedOrders = purchasedOrderRepository.GetAllPurchasedOrders();
+            StringBuilder orders = new StringBuilder();
+            for(PurchaseOrder purchasedOrder : purchasedOrders) {
+                orders.append(purchasedOrder.toString()+"\n");
+                List<String> ticketsId = purchasedOrder.getTicketsId();
+                String tickets=ticketRepository.getTicketsDescription(ticketsId);
+                orders.append(tickets+"\n");
+            }
+            return orders.toString();
+        }catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
+
+    }
 
 
 
