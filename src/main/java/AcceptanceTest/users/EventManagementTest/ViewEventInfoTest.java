@@ -93,13 +93,12 @@ public class ViewEventInfoTest {
         userService.register("adminUser", "password");
         String token = userService.login("adminUser", "password");
         eventService.createEvent(token, "CompanyA", "Standup", EventType.FESTIVAL, "Eilat", "Famous Comedian", new java.util.Date(), 150.0, 1000, createSampleMap());
-        
-        Response<String> result = eventService.searchEventsByCategory("Comedy");
+        Response<String> result = eventService.searchEventsByCategory(EventType.FESTIVAL);
         return result.isSuccess() && result.getData().contains("Standup");
     }
 
     public boolean searchEventByCategoryNotFound() {
-        Response<String> result = eventService.searchEventsByCategory("Sports");
+        Response<String> result = eventService.searchEventsByCategory(EventType.LIVE_PERFORMANCE);
         return !result.isSuccess();
     }
 
@@ -108,12 +107,12 @@ public class ViewEventInfoTest {
         String token = userService.login("adminUser", "password");
         String eventId = eventService.createEvent(token, "CompanyA", "Movie", EventType.PLAY, "CinemaCity", "Famous Actor", new java.util.Date(), 120.0, 800, createSampleMap()).getData();
         
-        Response<Integer> result = eventService.getAvailableTickets(eventId);
+        Response<Integer> result = eventService.getAvailableTickets(eventId, "CompanyA");
         return result.isSuccess() && result.getData() > 0;
     }
 
     public boolean checkAvailableTicketsFailedEventNotFound() {
-        Response<Integer> result = eventService.getAvailableTickets("fake-id-999");
+        Response<Integer> result = eventService.getAvailableTickets("fake-id-999", "CompanyA");
         return !result.isSuccess();
     }
 
@@ -146,7 +145,7 @@ public class ViewEventInfoTest {
     }
 
     public boolean checkAvailableTicketsSoldOut() {
-        Response<Integer> result = eventService.getAvailableTickets("sold-out-id");
+        Response<Integer> result = eventService.getAvailableTickets("sold-out-id", "CompanyA");
         return result.isSuccess() && result.getData() == 0;
     }
 
