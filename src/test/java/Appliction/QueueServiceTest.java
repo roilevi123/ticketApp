@@ -3,12 +3,14 @@ package Appliction;
 import Domain.QueueAggregates.QueueEntry;
 import Domain.QueueAggregates.iQueueRepository;
 import Infastructure.QueueRepositoryImpl;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 class QueueServiceTest {
 
@@ -19,8 +21,10 @@ class QueueServiceTest {
     @BeforeEach
     void setUp() {
         queueRepository = new QueueRepositoryImpl();
+        queueRepository.initQueue(EVENT_ID);
         queueService = new QueueService(queueRepository);
     }
+
 
     @Test
     void checkStatus_NewUser_Authorized() {

@@ -49,7 +49,7 @@ public class EventServiceTest {
         }
         eventRepository = new EventRepositoryImpl();
         ticketRepository = spy(new TicketRepositoryImpl());
-        eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository);
+        eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository,queueRepository);
     }
 
     @Test
