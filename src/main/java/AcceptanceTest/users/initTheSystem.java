@@ -1,13 +1,14 @@
 package AcceptanceTest.users;
 
 
-import Appliction.IPasswordEncoder;
 import Domain.Company.iCompanyRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import Domain.User.IUserRepository;
 import Infastructure.PasswordEncoderImpl;
 import Infastructure.TokenService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import Appliction.IPasswordEncoder;
 
 public class initTheSystem {
     private iTreeOfRoleRepository iTreeOfRoleRepository;

@@ -1,7 +1,8 @@
 package Infastructure;
 
-import Appliction.IBarcodeGenerator;
 import java.util.UUID;
+
+import Appliction.IBarcodeGenerator;
 
 public class BarcodeGeneratorMock implements IBarcodeGenerator {
 
