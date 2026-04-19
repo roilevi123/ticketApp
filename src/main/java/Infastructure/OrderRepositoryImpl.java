@@ -48,7 +48,7 @@ public class OrderRepositoryImpl  implements IActiveOrderRepository {
 
     @Override
     public ActiveOrder findById(String orderId) {
-        return null;
+        return orders.get(orderId);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class OrderRepositoryImpl  implements IActiveOrderRepository {
 
     @Override
     public void delete(String orderId) {
-
+        orders.remove(orderId);
     }
 
     @Override
@@ -73,6 +73,15 @@ public class OrderRepositoryImpl  implements IActiveOrderRepository {
             }
         }
         return new ArrayList<>();
+    }
+    @Override
+    public ActiveOrder getOrder(String username) {
+        for(ActiveOrder order : orders.values()) {
+            if (order.getUserId() != null && order.getUserId().equals(username)) {
+                return order;
+            }
+        }
+        return null;
     }
 
 }
