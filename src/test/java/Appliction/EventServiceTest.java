@@ -66,7 +66,7 @@ public class EventServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
 
-        Response<String> res =eventService.createEvent(TOKEN, COMPANY, EVENT_NAME, EventType.LIVE_PERFORMANCE, location, artist, date, price, 1000);
+        Response<String> res =eventService.createEvent(TOKEN, COMPANY, EVENT_NAME, EventType.LIVE_PERFORMANCE, location, artist, date, price, 1000, MAP);
         assertEquals(res.isSuccess(), true);
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
 
@@ -84,7 +84,7 @@ public class EventServiceTest {
         long standCount = createdTickets.stream().filter(t -> t.getCol() == 0 && t.getRow() == 2).count();
 
         assertEquals(1, seatCount);
-        assertEquals(3, standCount);
+        assertEquals(1, standCount);
         assertTrue(createdTickets.stream().allMatch(t -> t.getCompany().equals(COMPANY) && t.getEvent().equals(EVENT_NAME)));
     }
 
@@ -104,7 +104,7 @@ public class EventServiceTest {
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(true);
         when(mockManager.getPermissions()).thenReturn(Set.of(Permission.MANAGE_INVENTORY));
 
-        Response<String> res=eventService.createEvent(TOKEN, COMPANY, EVENT_NAME, EventType.LIVE_PERFORMANCE, location, artist, date, price, 1000);
+        Response<String> res=eventService.createEvent(TOKEN, COMPANY, EVENT_NAME, EventType.LIVE_PERFORMANCE, location, artist, date, price, 1000, MAP);
         assertEquals(res.getMessage(), "Event created successfully");
         assertEquals(res.isSuccess(), true);
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
@@ -130,7 +130,7 @@ public class EventServiceTest {
     void createEvent_Failure_InvalidToken() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
 
-        Response<String> res=eventService.createEvent(TOKEN, COMPANY, EVENT_NAME, EventType.LIVE_PERFORMANCE, "Tel Aviv", "Artist", new Date(), 100.0, 1000);
+        Response<String> res=eventService.createEvent(TOKEN, COMPANY, EVENT_NAME, EventType.LIVE_PERFORMANCE, "Tel Aviv", "Artist", new Date(), 100.0, 1000, MAP);
         assertEquals(res.isSuccess(), false);
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
         assertNull(savedEvent, "Event should not be created with an invalid token");
@@ -143,7 +143,7 @@ public class EventServiceTest {
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(false);
 
-        Response<String> res=eventService.createEvent(TOKEN, COMPANY, EVENT_NAME, EventType.LIVE_PERFORMANCE, "Tel Aviv", "Artist", new Date(), 100.0, 1000);
+        Response<String> res=eventService.createEvent(TOKEN, COMPANY, EVENT_NAME, EventType.LIVE_PERFORMANCE, "Tel Aviv", "Artist", new Date(), 100.0, 1000, MAP);
         assertEquals(res.isSuccess(), false);
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
         assertNull(savedEvent, "Event should not be created if the user has no permissions");
@@ -158,7 +158,7 @@ public class EventServiceTest {
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(false);
         when(mockManager.getPermissions()).thenReturn(Set.of(Permission.RESPOND_TO_INQUIRIES));
 
-        Response<String> res=eventService.createEvent(TOKEN, COMPANY, EVENT_NAME, EventType.LIVE_PERFORMANCE, "Tel Aviv", "Artist", new Date(), 100.0, 1000);
+        Response<String> res=eventService.createEvent(TOKEN, COMPANY, EVENT_NAME, EventType.LIVE_PERFORMANCE, "Tel Aviv", "Artist", new Date(), 100.0, 1000, MAP);
         assertEquals(res.isSuccess(), false);
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
         assertNull(savedEvent, "Event should not be created if the manager lacks MANAGE_INVENTORY permission");
