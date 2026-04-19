@@ -54,6 +54,21 @@ public class AdminService {
         }
 
     }
+    public String removeUser(String username,String adminName) {
+        try {
+            logger.info("Deleting user " + username);
+            if(!adminRepository.isAdmin(adminName)) {
+                throw new Exception("Admin does not exist");
+            }
+            userRepository.deleteUser(username);
+            treeOfRoleRepository.deleteUserRoles(username);
+            logger.info("Deleted user " + username);
+            return "success";
+        }catch (Exception e) {
+            logger.error(e.getMessage());
+            return "error";
+        }
+    }
 
 
 

@@ -60,5 +60,24 @@ class AdminServiceTest {
         verify(companyRepository, never()).deleteCompany(anyString());
     }
 
+    @Test
+    void removeUser_Success() {
+        String user = "user1";
+
+        adminService.removeUser(user, ADMIN_NAME);
+
+        verify(userRepository).deleteUser(user);
+        verify(treeOfRoleRepository).deleteUserRoles(user);
+    }
+
+    @Test
+    void removeUser_Fail_NotAdmin() {
+        String user = "user1";
+
+        adminService.removeUser(user, NOT_ADMIN);
+
+        verify(userRepository, never()).deleteUser(anyString());
+        verify(treeOfRoleRepository, never()).deleteUserRoles(anyString());
+    }
 
 }
