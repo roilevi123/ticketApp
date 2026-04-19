@@ -3,6 +3,7 @@ package Appliction;
 import Domain.Company.iCompanyRepository;
 import Domain.Event.*;
 import Domain.OwnerManagerTree.*;
+import Domain.QueueAggregates.iQueueRepository;
 import Domain.Ticket.iTicketRepository;
 import Infastructure.TokenService;
 import org.slf4j.Logger;
@@ -22,15 +23,17 @@ public class EventService {
     private TokenService tokenService;
     private iTreeOfRoleRepository treeOfRoleRepository;
     private iTicketRepository ticketRepository;
-    private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
+    private iQueueRepository iQueueRepository;
+    private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
 
-    public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository, TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository, iTicketRepository ticketRepository) {
+    public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository, TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository, iTicketRepository ticketRepository, iQueueRepository iQueueRepository) {
         this.companyRepository = companyRepository;
         this.eventRepository = eventRepository;
         this.tokenService = tokenService;
         this.treeOfRoleRepository = treeOfRoleRepository;
         this.ticketRepository = ticketRepository;
+        this.iQueueRepository = iQueueRepository;
     }
 
     public boolean isAuthorized(String company,String username) {
@@ -48,6 +51,7 @@ public class EventService {
         try {
             Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, companyName, totalTickets);
             ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, event.getDate(), event.getPrice());
+            iQueueRepository.initQueue(eventName+companyName);
             logger.info("Event '{}' created successfully for company '{}'", eventName, companyName);
             return new Response<>(true, "Event created successfully", event.getId());
         } catch (Exception e) {
