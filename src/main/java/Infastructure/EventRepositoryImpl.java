@@ -24,17 +24,17 @@ public class EventRepositoryImpl implements iEventRepository {
     @Override
     public Event save(Event eventToUpdate) {
         String key = eventToUpdate.getName() + eventToUpdate.getCompany();
-            Event currentInDb = events.get(key);
-            if (currentInDb == null) {
-                throw new RuntimeException("Event not found for update: " + eventToUpdate.getName());
-            }
-            Event updatedEvent = new Event(eventToUpdate);
-            updatedEvent.setVersion(eventToUpdate.getVersion() + 1);
-            boolean success = events.replace(key, currentInDb, updatedEvent);
-            if (!success) {
-                throw new RuntimeException("Optimistic Lock Failure: Event '" + eventToUpdate.getName() +
-                        "' was updated by another thread/user.");
-            }
+        Event currentInDb = events.get(key);
+        if (currentInDb == null) {
+            throw new RuntimeException("Event not found for update: " + eventToUpdate.getName());
+        }
+        Event updatedEvent = new Event(eventToUpdate);
+        updatedEvent.setVersion(eventToUpdate.getVersion() + 1);
+        boolean success = events.replace(key, currentInDb, updatedEvent);
+        if (!success) {
+            throw new RuntimeException("Optimistic Lock Failure: Event '" + eventToUpdate.getName() +
+                    "' was updated by another thread/user.");
+        }
         return updatedEvent;
 
     }
@@ -71,10 +71,10 @@ public class EventRepositoryImpl implements iEventRepository {
     }
 
     @Override
-    public List<Event> getEventsByDateRange(Date from, Date to, String company) {
+    public List<Event> getEventsByDateRange(Date from, Date to) {
         List<Event> dateRangeEvents = new ArrayList<>();
         for (Event event : events.values()) {
-            if (event.getCompany().equals(company) && !event.getDate().before(from) && !event.getDate().after(to)) {
+            if (!event.getDate().before(from) && !event.getDate().after(to)) {
                 dateRangeEvents.add(event);
             }
         }
@@ -82,21 +82,32 @@ public class EventRepositoryImpl implements iEventRepository {
     }
     
     @Override
-    public List<Event> getEventsByType(EventType eventType, String company) {
+    public List<Event> getEventsByType(EventType eventType) {
         List<Event> typeEvents = new ArrayList<>();
         for (Event event : events.values()) {
-            if (event.getCompany().equals(company) && event.getType() == eventType) {
+            if (event.getType() == eventType) {
                 typeEvents.add(event);
             }
         }
         return typeEvents;
     }
+
+    @Override
+    public List<Event> getEventsByName(String name) {
+        List<Event> nameEvents = new ArrayList<>();
+        for (Event event : events.values()) {
+            if (event.getName().equals(name)) {
+                nameEvents.add(event);
+            }
+        }
+        return nameEvents;
+    }
     
     @Override
-    public List<Event> getEventsByLocation(String location, String company) {
+    public List<Event> getEventsByLocation(String location) {
         List<Event> locationEvents = new ArrayList<>();
         for (Event event : events.values()) {
-            if (event.getCompany().equals(company) && event.getLocation().equals(location)) {
+            if (event.getLocation().equals(location)) {
                 locationEvents.add(event);
             }
         }
@@ -104,10 +115,10 @@ public class EventRepositoryImpl implements iEventRepository {
     }
     
     @Override
-    public List<Event> getEventsByArtist(String artistName, String company) {
+    public List<Event> getEventsByArtist(String artistName) {
         List<Event> artistEvents = new ArrayList<>();
         for (Event event : events.values()) {
-            if (event.getCompany().equals(company) && event.getArtistName().equals(artistName)) {
+            if (event.getArtistName().equals(artistName)) {
                 artistEvents.add(event);
             }
         }
@@ -115,10 +126,10 @@ public class EventRepositoryImpl implements iEventRepository {
     }
     
     @Override
-    public List<Event> getEventsByPriceRange(double minPrice, double maxPrice, String company) {
+    public List<Event> getEventsByPriceRange(double minPrice, double maxPrice) {
         List<Event> priceRangeEvents = new ArrayList<>();
         for (Event event : events.values()) {
-            if (event.getCompany().equals(company) && event.getPrice() >= minPrice && event.getPrice() <= maxPrice) {
+            if (event.getPrice() >= minPrice && event.getPrice() <= maxPrice) {
                 priceRangeEvents.add(event);
             }
         }

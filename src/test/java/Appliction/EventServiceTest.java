@@ -216,4 +216,64 @@ public class EventServiceTest {
         assertTrue(remainingTickets.isEmpty());
     }
     
+
+//----------------------------------UPDATE EVENT TESTS----------------------------------
+
+    @Test
+    void updateEvent_Success_AsOwner() {
+        Event event = eventRepository.store(EVENT_NAME, "Old Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Old Loc", COMPANY, 1000);
+
+        String newArtist = "New Artist";
+        double newPrice = 200.0;
+        double newRating = 4.5;
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+
+        String res=eventService.UpdateEvent(TOKEN, event.getId(), EVENT_NAME, newArtist, EventType.PLAY, newPrice, new Date(), "New Loc", COMPANY, MAP, newRating);
+        assertEquals(res, "success");
+        Event updated = eventRepository.getEvent(EVENT_NAME, COMPANY);
+        assertNotNull(updated);
+        assertEquals(newArtist, updated.getArtistName());
+        assertEquals(newPrice, updated.getPrice());
+        assertEquals(newRating, updated.getRating());
+        assertEquals(EventType.PLAY, updated.getType());
+    }
+
+    @Test
+    void updateEvent_Success_AsManagerWithPermissions() {
+        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Loc", COMPANY, 1000);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+
+        Manager mockManager = mock(Manager.class);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
+        when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(true);
+        when(mockManager.getPermissions()).thenReturn(Set.of(Permission.MANAGE_INVENTORY));
+
+        String res=eventService.UpdateEvent(TOKEN, event.getId(), EVENT_NAME, "Manager Artist", EventType.FESTIVAL, 300.0, new Date(), "Loc", COMPANY, MAP, 5.0);
+        assertEquals(res, "success");
+        Event updated = eventRepository.getEvent(EVENT_NAME, COMPANY);
+        assertEquals("Manager Artist", updated.getArtistName());
+        assertEquals(5.0, updated.getRating());
+    }
+
+    @Test
+    void updateEvent_Failure_Unauthorized() {
+        String oldArtist = "Old Artist";
+        Event event = eventRepository.store(EVENT_NAME, oldArtist, EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Old Loc", COMPANY, 2000);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
+        when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(false);
+
+        String res=eventService.UpdateEvent(TOKEN, event.getId(), EVENT_NAME, "New Artist", EventType.PLAY, 500.0, new Date(), "New Loc", COMPANY, MAP, 1.0);
+        assertEquals(res, "failed");
+        Event notUpdated = eventRepository.getEvent(EVENT_NAME, COMPANY);
+        assertEquals(oldArtist, notUpdated.getArtistName());
+        assertNotEquals(500.0, notUpdated.getPrice());
+    }
 }

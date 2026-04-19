@@ -13,10 +13,11 @@ public interface iEventRepository {
     public void deleteEvent(String eventId, String company);
     public void deleteAllEvents();
     public List<Event> getEventsByCompany(String company);
-    public List<Event> getEventsByDateRange(Date from, Date to, String company);
-    public List<Event> getEventsByType(EventType eventType, String company);
-    public List<Event> getEventsByLocation(String location, String company);
-    public List<Event> getEventsByArtist(String artistName, String company);
-    public List<Event> getEventsByPriceRange(double minPrice, double maxPrice, String company);
+    public List<Event> getEventsByDateRange(Date from, Date to);
+    public List<Event> getEventsByType(EventType eventType);
+    public List<Event> getEventsByLocation(String location);
+    public List<Event> getEventsByArtist(String artistName);
+    public List<Event> getEventsByPriceRange(double minPrice, double maxPrice);
+    public List<Event> getEventsByName(String name);
 
 }

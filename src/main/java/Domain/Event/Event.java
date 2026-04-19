@@ -1,10 +1,11 @@
 package Domain.Event;
 
+import java.util.Arrays;
 import java.util.Date;
 
 public class Event {
     private String eventId;
-    private String companyId; 
+    private String companyName; 
     private String queueId; 
     private String name;
     private String description;
@@ -19,9 +20,9 @@ public class Event {
     private int version; 
     private MapArea[][] map;
 
-    public Event(String eventId, String companyId, String queueId, String name, String location, String artistName, Date date, double price, int totalTickets, EventType type) {
+    public Event(String eventId, String companyName, String queueId, String name, String location, String artistName, Date date, double price, int totalTickets, EventType type) {
         this.eventId = eventId;
-        this.companyId = companyId;
+        this.companyName = companyName;
         this.queueId = queueId;
         this.name = name;
         this.location = location;
@@ -36,7 +37,7 @@ public class Event {
 
     public Event(Event event) {
         this.eventId = event.getId();
-        this.companyId = event.getCompany();
+        this.companyName = event.getCompany();
         this.queueId = event.getQueueId();
         this.name = event.getName();
         this.date = event.getDate();
@@ -55,7 +56,7 @@ public class Event {
 
     // getters
     public String getId() { return eventId; }
-    public String getCompany() { return companyId; }
+    public String getCompany() { return companyName; }
     public String getQueueId() { return queueId; }
     public String getName() { return name; }
     public Date getDate() { return date; }
@@ -71,6 +72,7 @@ public class Event {
     public double getRating() { return rating; }
 
     // setters
+    public void setName(String name) { this.name = name; }
     public void setDescription(String description) { this.description = description; }
     public void setType(EventType type) { this.type = type; }
     public void setLocation(String location) { this.location = location; }
@@ -81,5 +83,23 @@ public class Event {
     public void setAvailableTickets(int availableTickets) { this.availableTickets = availableTickets; }
     public void setVersion(int version) { this.version = version; }
     public void setRating(double rating) { this.rating = rating; }
+    public void setCompany(String companyName) { this.companyName = companyName; }
     
+
+    @Override
+    public String toString() {
+        return "Event{" +
+                "eventName='" + name + '\'' +
+                ", artistName='" + artistName + '\'' +
+                ", eventType=" + type +
+                ", price=" + price +
+                ", date=" + date +
+                ", location='" + location + '\'' +
+                ", rating=" + rating +
+                ", company='" + companyName + '\'' +
+                ", version=" + version +
+                ", map=" + Arrays.deepToString(map) +
+                '}';
+    }
 }
+
