@@ -56,7 +56,7 @@ public class EventService {
         }
 
         try {
-            Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, companyName, totalTickets);
+            Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, companyName, totalTickets,map);
             ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, event.getDate(), event.getPrice());
             iQueueRepository.initQueue(eventName+companyName);
             logger.info("Event '{}' created successfully for company '{}'", eventName, companyName);
@@ -288,5 +288,71 @@ public class EventService {
         List<Ticket> tickets = ticketRepository.getAllTicketsByEventAndCompany(event.getCompany(), event.getName());
         int availableTickets = tickets.size(); 
         return new Response<>(true, "Success", availableTickets);
+    }
+
+    public String getCompanyInfo(String company) {
+        try {
+            logger.info("trying Getting company info: " + company);
+            boolean c=companyRepository.isCompanyActive(company);
+            if(!c){
+                throw new RuntimeException("the company is not active");
+            }
+            logger.info("Successfully Getting company info: " + company);
+            return companyRepository.getCompanyDescription(company);
+        }catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
+    }
+    public List<String> getCompanyEvents(String company) {
+        try {
+            logger.info("trying Getting company events: " + company);
+            boolean c=companyRepository.isCompanyActive(company);
+            if(!c){
+                throw new RuntimeException("the company is not active");
+            }
+            List<Event> events = eventRepository.getEventsByCompany(company);
+            List<String> eventsString = new ArrayList<>();
+            for (Event event : events) {
+                eventsString.add(event.toString());
+
+            }
+            logger.info("Successfully Getting company events: " + company);
+            return eventsString;
+        }
+        catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
+    }
+    public MapArea[][] getMapArea(String company,String eventName) {
+        try {
+            logger.info("trying Getting map area: " + eventName);
+            MapArea[][] map=eventRepository.getMapArea(company,eventName);
+            logger.info("Successfully Getting map area: " + eventName);
+            return map;
+        }catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
+    }
+    public List<String> searchEvents(String query, String company, EventType type,
+                                     Double minPrice, Double maxPrice,
+                                     Date startDate, Date endDate,
+                                     String location, Double minRating) {
+        try {
+            logger.info("Initiating search with parameters - Query: {}, Company: {}", query, company);
+
+            List<String> results = eventRepository.searchEvents(
+                    query, company, type, minPrice, maxPrice, startDate, endDate, location, minRating
+            );
+
+            logger.info("Search completed successfully. Found {} events", results.size());
+            return results;
+
+        } catch (Exception e) {
+            logger.error("Error occurred during event search: {}", e.getMessage());
+            return null;
+        }
     }
 }

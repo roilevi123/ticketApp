@@ -20,7 +20,7 @@ public class Event {
     private int version; 
     private MapArea[][] map;
 
-    public Event(String eventId, String companyName, String queueId, String name, String location, String artistName, Date date, double price, int totalTickets, EventType type) {
+    public Event(String eventId, String companyName, String queueId, String name, String location, String artistName, Date date, double price, int totalTickets, EventType type, MapArea[][] mapArea) {
         this.eventId = eventId;
         this.companyName = companyName;
         this.queueId = queueId;
@@ -33,6 +33,7 @@ public class Event {
         this.availableTickets = totalTickets;
         this.version = 0;
         this.type = type;
+        this.map = mapArea;
     }
 
     public Event(Event event) {

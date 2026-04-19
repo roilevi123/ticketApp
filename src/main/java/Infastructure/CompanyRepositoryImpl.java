@@ -14,7 +14,10 @@ public class CompanyRepositoryImpl implements iCompanyRepository {
     public CompanyRepositoryImpl() {
 
     }
-
+    @Override
+    public String getCompanyDescription(String company) {
+        return companies.get(company).toString();
+    }
 
     @Override
     public void store(String company, String founder) {
@@ -61,5 +64,8 @@ public class CompanyRepositoryImpl implements iCompanyRepository {
         return companies.get(company);
     }
 
-
+    @Override
+    public boolean isCompanyActive(String company) {
+        return companies.get(company).getActive();
+    }
 }
