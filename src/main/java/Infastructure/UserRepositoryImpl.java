@@ -33,5 +33,10 @@ public class UserRepositoryImpl implements IUserRepository {
         users.clear();
     }
 
+    @Override
+    public void deleteUser(String username) {
+        users.remove(username);
+    }
+
 
 }
