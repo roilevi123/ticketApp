@@ -52,6 +52,8 @@ class OrderServiceTest {
         Ticket t1 = new Ticket(0, 0, EVENT, COMPANY, "id1", 100);
         Ticket t2 = new Ticket(1, 1, EVENT, COMPANY, "id2", 100);
 
+
+
         when(ticketRepository.getAvailableTicketsByEventAndCompany(COMPANY, EVENT))
                 .thenReturn(List.of(t1, t2));
 
