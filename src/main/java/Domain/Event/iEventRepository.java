@@ -1,10 +1,13 @@
 package Domain.Event;
 
+import java.awt.geom.Area;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public interface iEventRepository {
-    public Event store(String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, int totalTickets);
+    public Event store(String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, int totalTickets, MapArea[][] mapArea   );
+
     public Event getEvent(String eventName, String company);
     public Event getEventById(String eventId, String company);
     public List<Event> getAllEvents();
@@ -19,5 +22,5 @@ public interface iEventRepository {
     public List<Event> getEventsByArtist(String artistName);
     public List<Event> getEventsByPriceRange(double minPrice, double maxPrice);
     public List<Event> getEventsByName(String name);
-
+    public MapArea[][] getMapArea(String company, String eventName);
 }

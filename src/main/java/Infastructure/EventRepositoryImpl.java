@@ -11,12 +11,12 @@ public class EventRepositoryImpl implements iEventRepository {
     private AtomicInteger idCounter = new AtomicInteger(1);
     
     @Override
-    public Event store(String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, int totalTickets) {
+    public Event store(String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, int totalTickets,MapArea[][] mapArea) {
         String key = eventName + company;
         if (events.containsKey(key)) {
             throw new RuntimeException("Event already exists: " + eventName + " for company: " + company);
         }
-        Event newEvent = new Event(String.valueOf(idCounter.getAndIncrement()), company, null, eventName, location, artistName, date, price, totalTickets, eventType);
+        Event newEvent = new Event(String.valueOf(idCounter.getAndIncrement()), company, null, eventName, location, artistName, date, price, totalTickets, eventType, mapArea);
         events.put(key, newEvent);
         return newEvent;
     }
@@ -102,7 +102,15 @@ public class EventRepositoryImpl implements iEventRepository {
         }
         return nameEvents;
     }
-    
+
+    @Override
+    public MapArea[][] getMapArea(String company, String eventName) {
+        if (!events.containsKey(eventName + company)) {
+            throw new RuntimeException("Event not found for update: " + eventName + " for company: " + company);
+        }
+        return events.get(eventName+company).getMap();
+    }
+
     @Override
     public List<Event> getEventsByLocation(String location) {
         List<Event> locationEvents = new ArrayList<>();

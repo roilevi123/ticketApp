@@ -16,9 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -170,7 +168,7 @@ public class EventServiceTest {
 
     @Test
     void deleteEvent_Success_AsOwner() {
-        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 200);
+        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 200, MAP);
         assertNotNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
@@ -183,7 +181,7 @@ public class EventServiceTest {
     }
     @Test
     void deleteEvent_Success_AsManagerWithPermissions() {
-        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 1500);
+        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 1500, MAP);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
@@ -201,7 +199,7 @@ public class EventServiceTest {
     }
     @Test
     void deleteEvent_Failure_Unauthorized() {
-        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 1000);
+        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 1000, MAP);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
@@ -221,7 +219,7 @@ public class EventServiceTest {
 
     @Test
     void updateEvent_Success_AsOwner() {
-        Event event = eventRepository.store(EVENT_NAME, "Old Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Old Loc", COMPANY, 1000);
+        Event event = eventRepository.store(EVENT_NAME, "Old Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Old Loc", COMPANY, 1000, MAP);
 
         String newArtist = "New Artist";
         double newPrice = 200.0;
@@ -243,7 +241,7 @@ public class EventServiceTest {
 
     @Test
     void updateEvent_Success_AsManagerWithPermissions() {
-        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Loc", COMPANY, 1000);
+        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Loc", COMPANY, 1000, MAP);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
@@ -263,7 +261,7 @@ public class EventServiceTest {
     @Test
     void updateEvent_Failure_Unauthorized() {
         String oldArtist = "Old Artist";
-        Event event = eventRepository.store(EVENT_NAME, oldArtist, EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Old Loc", COMPANY, 2000);
+        Event event = eventRepository.store(EVENT_NAME, oldArtist, EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Old Loc", COMPANY, 2000, MAP);
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
 
@@ -276,4 +274,138 @@ public class EventServiceTest {
         assertEquals(oldArtist, notUpdated.getArtistName());
         assertNotEquals(500.0, notUpdated.getPrice());
     }
+    @Test
+    void getCompanyInfo_Success() {
+        String companyName = "LiveNation";
+        Company realCompany = new Company(companyName, "admin");
+
+        realCompany.setActive(true);
+        String expectedInfo = realCompany.toString();
+
+        when(companyRepository.isCompanyActive(companyName)).thenReturn(true);
+        when(companyRepository.getCompanyDescription(companyName)).thenReturn(expectedInfo);
+
+
+        String result = eventService.getCompanyInfo(companyName);
+
+        assertEquals(expectedInfo, result);
+    }
+
+    @Test
+    void getCompanyInfo_Failure_NotActive() {
+        String companyName = "InactiveCorp";
+        Company realCompany = new Company(companyName, "admin");
+
+        realCompany.setActive(false);
+
+        when(companyRepository.isCompanyActive(companyName)).thenReturn(false);
+
+        String result = eventService.getCompanyInfo(companyName);
+//        System.out.println(result);
+        assertEquals(null, result);
+    }
+    @Test
+    void getMapArea_Success() {
+        MapArea[][] customMap = new MapArea[2][2];
+        customMap[0][0] = MapArea.STAGE;
+        customMap[0][1] = MapArea.ENTRANCE;
+        customMap[1][0] = MapArea.SEAT;
+        customMap[1][1] = MapArea.STAND;
+
+        eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 100,customMap);
+
+        MapArea[][] result = eventService.getMapArea(COMPANY, EVENT_NAME);
+
+        assertNotNull(result);
+        assertArrayEquals(customMap, result);
+        assertEquals(MapArea.STAGE, result[0][0]);
+        assertEquals(MapArea.ENTRANCE, result[0][1]);
+    }
+
+    @Test
+    void getMapArea_Failure_EventNotFound() {
+        MapArea[][] result = eventService.getMapArea(COMPANY, "NonExistentEvent");
+
+        assertNull(result);
+    }
+    @Test
+    void searchEvents_FilterByCompany() {
+        eventRepository.store("Rock", "Artist A", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", "CompanyA",100, MAP);
+        eventRepository.store("Jazz", "Artist B", EventType.LIVE_PERFORMANCE, 150.0, new Date(), "Haifa", "CompanyB", 100,MAP);
+
+        List<String> result = eventService.searchEvents(null, "CompanyA", null, null, null, null, null, null, null);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).contains("Rock"));
+    }
+
+    @Test
+    void searchEvents_FilterByQuery() {
+        eventRepository.store("Special Show", "Artist A", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 100,MAP);
+        eventRepository.store("Regular Event", "Artist B", EventType.LIVE_PERFORMANCE, 150.0, new Date(), "Haifa", COMPANY,100, MAP);
+
+        List<String> result = eventService.searchEvents("Special", null, null, null, null, null, null, null, null);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).contains("Special Show"));
+    }
+
+    @Test
+    void searchEvents_FilterByPriceRange() {
+        eventRepository.store("Cheap", "A", EventType.LIVE_PERFORMANCE, 50.0, new Date(), "L", COMPANY, 100,MAP);
+        eventRepository.store("Mid", "B", EventType.LIVE_PERFORMANCE, 150.0, new Date(), "L", COMPANY,100, MAP);
+        eventRepository.store("Expensive", "C", EventType.LIVE_PERFORMANCE, 300.0, new Date(), "L", COMPANY, 100,MAP);
+
+        List<String> result = eventService.searchEvents(null, null, null, 100.0, 200.0, null, null, null, null);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).contains("Mid"));
+    }
+
+    @Test
+    void searchEvents_FilterByType() {
+        eventRepository.store("Concert", "A", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "L", COMPANY, 100,MAP);
+        eventRepository.store("Theater", "B", EventType.PLAY, 100.0, new Date(), "L", COMPANY,100, MAP);
+
+        List<String> result = eventService.searchEvents(null, null, EventType.PLAY, null, null, null, null, null, null);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).contains("PLAY"));
+    }
+
+    @Test
+    void searchEvents_CombinedFilters() {
+        eventRepository.store("Target-Perfect", "Artist", EventType.LIVE_PERFORMANCE, 150.0, new Date(), "Tel Aviv", COMPANY,100, MAP);
+        eventRepository.store("Wrong-Name", "Artist", EventType.LIVE_PERFORMANCE, 150.0, new Date(), "Tel Aviv", COMPANY, 100,MAP);
+        eventRepository.store("Target-Wrong-Type", "Artist", EventType.PLAY, 150.0, new Date(), "Tel Aviv", COMPANY, 100,MAP);
+
+        List<String> result = eventService.searchEvents(
+                "Target",
+                COMPANY,
+                EventType.LIVE_PERFORMANCE,
+                100.0,
+                200.0,
+                null,
+                null,
+                "Tel Aviv",
+                null
+        );
+
+        // רק Target-Perfect אמור לעבור את כל הפילטרים
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).contains("Target-Perfect"));
+        assertTrue(result.get(0).contains("LIVE_PERFORMANCE"));
+    }
+
+    @Test
+    void searchEvents_NoResults() {
+        eventRepository.store("Event", "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, 100,MAP);
+
+        List<String> result = eventService.searchEvents("NonExistent", null, null, null, null, null, null, null, null);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+
 }
