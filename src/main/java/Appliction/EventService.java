@@ -39,7 +39,7 @@ public class EventService {
         return m || (o);
     }
 
-    public Response<String> createEvent(String token, String companyName, String eventName, EventType eventType, String location, String artistName, Date date, double price, int totalTickets) {
+    public Response<String> createEvent(String token, String companyName, String eventName, EventType eventType, String location, String artistName, Date date, double price, int totalTickets, MapArea[][] map) {
         String username = tokenService.extractUsername(token);
         if (!isAuthorized(companyName,username)) {
             logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, companyName);
@@ -47,7 +47,7 @@ public class EventService {
         }
         try {
             Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, companyName, totalTickets);
-            ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), event.getMap(), event.getDate(), event.getPrice());
+            ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, event.getDate(), event.getPrice());
             logger.info("Event '{}' created successfully for company '{}'", eventName, companyName);
             return new Response<>(true, "Event created successfully", event.getId());
         } catch (Exception e) {
