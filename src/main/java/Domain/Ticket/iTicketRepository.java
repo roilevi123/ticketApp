@@ -20,4 +20,7 @@ public interface iTicketRepository {
     public List<Ticket> getTicketsByPriceRange(String event, String company, double minPrice, double maxPrice);
     public void makeMapToTicket(String company, String event, MapArea[][] mapAreas,Date date, double price);
     public void deleteAllTickets();
+    public String getTicketsDescription(List<String> ticketIds);
+    public List<Ticket> getTicketsForEvent(String company, String event);
+
 }

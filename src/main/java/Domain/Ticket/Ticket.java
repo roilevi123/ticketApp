@@ -100,7 +100,19 @@ public class Ticket {
         return price;
     }
 
+
     public void setPrice(double price) {
         this.price = price;
+    }
+    @Override
+    public String toString() {
+        return "Ticket {" +
+                ", Event='" + event + '\'' +
+                ", Company='" + company + '\'' +
+                ", Row=" + row +
+                ", Col=" + col +
+                ", Price=" + price +
+                ", Date=" + (date != null ? date : "N/A") +
+                '}';
     }
 }
