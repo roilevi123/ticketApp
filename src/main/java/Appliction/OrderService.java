@@ -22,23 +22,15 @@ public class OrderService {
     private IActiveOrderRepository activeOrderRepository;
     private iTicketRepository ticketRepository;
     private TokenService tokenService;
-    private IPaymentService paymentService;
-    private IBarcodeGenerator barcodeGenerator;
-    private ISupplyService supplyService;
-    private IPurchasedOrderRepository purchasedOrderRepository;
+
 
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
-public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService, iTicketRepository ticketRepository, 
-                        IPaymentService paymentService, IBarcodeGenerator barcodeGenerator, 
-                        ISupplyService supplyService, IPurchasedOrderRepository purchasedOrderRepository) {
+public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService, iTicketRepository ticketRepository) {
         this.activeOrderRepository = activeOrderRepository;
         this.tokenService = tokenService;
         this.ticketRepository = ticketRepository;
-        this.paymentService = paymentService;
-        this.barcodeGenerator = barcodeGenerator;
-        this.supplyService = supplyService;
-        this.purchasedOrderRepository = purchasedOrderRepository;
+
     }
 
     public String reserveTickets(String token, String company, String event, List<int[]> requests) {
@@ -115,66 +107,23 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
             return null;
         }
     }
-    public String purchaseTickets(String token, String orderId, String creditCard, String email) {
+    public String getActiveOrderTickets(String token) {
         try {
-            logger.info("Starting purchase process for order: " + orderId);
+            logger.info("get information about active order ticket reservation for token: " + token);
             if (!tokenService.validateToken(token)) {
-                throw new RuntimeException("Invalid token");
+                throw new RuntimeException("Invalid token3");
             }
-            String username = tokenService.extractUsername(token);
+            String username=tokenService.extractUsername(token);
+            List<String> ticketsId = activeOrderRepository.getTicketsId(username);
+            String tickets=ticketRepository.getTicketsDescription(ticketsId);
 
-            // fetch the active order
-            ActiveOrder activeOrder = activeOrderRepository.findById(orderId);
-            if (activeOrder == null) {
-                throw new RuntimeException("Order not found or expired");
-            }
-
-            // calculate total price
-            double totalPrice = 0.0;
-            for (String ticketId : activeOrder.getTicketIds()) {
-                Ticket t = ticketRepository.getTicketById(ticketId);
-                if (t != null) totalPrice += t.getPrice();
-            }
-            
-
-            boolean paymentSuccess = paymentService.processPayment(creditCard, totalPrice);
-            if (!paymentSuccess) {
-                throw new RuntimeException("Payment failed");
-            }
-
-            // update tickets as purchased and generate barcodes
-            java.util.Map<String, String> barcodes = new java.util.HashMap<>();
-            for (String ticketId : activeOrder.getTicketIds()) {
-                Ticket t = ticketRepository.getTicketById(ticketId);
-                if (t != null) {
-                    Ticket updated = new Ticket(t);
-                    updated.purchase(); 
-                    updated.setDate(null); 
-                    ticketRepository.save(updated);
-
-                    String barcode = barcodeGenerator.generateBarcode(activeOrder.getEventId(), ticketId);
-                    barcodes.put(ticketId, barcode);
-                }
-            }
-
-            // save purchased order record
-            PurchasedOrder purchasedOrder = new PurchasedOrder(
-                    activeOrder.getOrderId(), username, activeOrder.getEventId(),
-                    activeOrder.getCompanyId(), barcodes, totalPrice
-            );
-            purchasedOrderRepository.save(purchasedOrder);
-
-            supplyService.supplyToEmail(email, "Your barcodes: " + barcodes.values().toString());
-
-            activeOrderRepository.delete(orderId);
-
-            logger.info("Purchase successful for order: " + orderId);
-            return "success";
-
+            logger.info("get active order tickets: " + tickets);
+            return tickets;
         } catch (Exception e) {
-            logger.error("Purchase failed: " + e.getMessage());
-            return "failed: " + e.getMessage();
+            logger.error("Error retrieving active order: {}", e.getMessage());
+            throw new RuntimeException("Could not fetch active order");
         }
     }
+
 
 }
