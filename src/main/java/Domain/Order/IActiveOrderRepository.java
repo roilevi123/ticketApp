@@ -11,5 +11,5 @@ public interface IActiveOrderRepository {
     void delete(String orderId);
     void deleteAllActiveOrders();
     public List<String> getTicketsId(String userId);
-
+    public ActiveOrder getOrder(String username);
 }

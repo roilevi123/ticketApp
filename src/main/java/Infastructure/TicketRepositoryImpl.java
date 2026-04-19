@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import Domain.Event.MapArea;
 import Domain.Ticket.*;
@@ -29,6 +30,17 @@ public class TicketRepositoryImpl implements iTicketRepository {
             }
         }
         return null;
+    }
+    @Override
+    public String getTicketsDescription(List<String> ticketIds) {
+        StringBuilder sb = new StringBuilder();
+        Set<String> idSet = new HashSet<>(ticketIds);
+        tickets.values().stream()
+                .flatMap(List::stream)
+                .filter(t -> idSet.contains(t.getId()))
+                .forEach(t -> sb.append(t.toString()).append("\n"));
+
+        return sb.toString().trim();
     }
 
     @Override
@@ -81,7 +93,7 @@ public class TicketRepositoryImpl implements iTicketRepository {
     }
 
     @Override
-    public List<Ticket> getAvailableTicketsByEventAndCompany(String event, String company) {
+    public List<Ticket> getAvailableTicketsByEventAndCompany(String company, String event) {
         List<Ticket> allTickets = tickets.get(event + company);
         if (allTickets == null) {
             return null;
@@ -193,6 +205,14 @@ public class TicketRepositoryImpl implements iTicketRepository {
                 }
             }
         }
+    }
+    @Override
+    public List<Ticket> getTicketsForEvent(String company, String event) {
+        List<Ticket> eventTickets = tickets.get(event + company);
+        if (eventTickets == null) {
+            return new ArrayList<>();
+        }
+        return eventTickets.stream().map(Ticket::new).collect(Collectors.toList());
     }
 
     @Override

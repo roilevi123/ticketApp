@@ -154,5 +154,13 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         managers.clear();
         owners.clear();
     }
+    @Override
+    public boolean ManagerPermitToSeeTransactions(String manager, String company) {
+        if (managers.containsKey(manager+company)) {
+            Manager m=managers.get(manager+company);
+            return m.getPermissions().contains(Permission.GENERATE_SALES_REPORTS);
+        }
+        return false;
+    }
 
 }
