@@ -113,7 +113,8 @@ class ReserveTicketServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
 
-        ticketRepository.storeTicket(0, 0, EVENT,COMPANY,100);
+        ticketRepository
+                .storeTicket(0, 0, EVENT,COMPANY,100);
         Ticket t = ticketRepository.getTicketsForEvent(COMPANY, EVENT).get(0);
         Date expiration = new Date(System.currentTimeMillis() + 600000);
 
