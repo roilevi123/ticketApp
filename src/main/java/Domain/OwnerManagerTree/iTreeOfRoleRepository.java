@@ -22,4 +22,5 @@ public interface iTreeOfRoleRepository {
     List<Manager> getAllManagersByCompany(String company);
     public void deleteAllRoles();
     public boolean ManagerPermitToSeeTransactions(String manager, String company);
+    public void deleteCompanyMangersAndOwners(String company);
 }
