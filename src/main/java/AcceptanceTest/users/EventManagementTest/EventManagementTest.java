@@ -78,7 +78,7 @@ public class EventManagementTest {
         Response<Void> updateRes = eventService.updateEventDate(eventId, "2026-08-16", token);
         if (!updateRes.isSuccess()) return false;
 
-        Response<Void> deleteRes = eventService.deleteEvent(eventId, token);
+        Response<Void> deleteRes = eventService.deleteEvent(eventId, "CompanyA", token);
         if (!deleteRes.isSuccess()) return false;
 
         Response<String> getRes = eventService.getEventInfo(eventId);
@@ -130,7 +130,7 @@ public class EventManagementTest {
         String token = userService.login("adminUser", "password123");
         String eventId = eventService.createEvent(token, "CompanyA", "Tech Conference", EventType.CONFERENCE, "Expo TLV", "Famous Speaker", new java.util.Date(), 250.0, 2000, createSampleMap()).getData();
         
-        Response<Void> result = eventService.deleteEvent(eventId, token);
+        Response<Void> result = eventService.deleteEvent(eventId, "CompanyA", token);
         return result.isSuccess();
     }
 
@@ -142,14 +142,14 @@ public class EventManagementTest {
         userService.register("hacker", "hackerPass");
         String hackerToken = userService.login("hacker", "hackerPass");
         
-        Response<Void> result = eventService.deleteEvent(eventId, hackerToken);
+        Response<Void> result = eventService.deleteEvent(eventId, "CompanyA", hackerToken);
         return !result.isSuccess();
     }
 
     public boolean deleteNonExistentEventTest() {
         userService.register("user1", "pass");
         String token = userService.login("user1", "pass");
-        Response<Void> result = eventService.deleteEvent("fake-id-999", token);
+        Response<Void> result = eventService.deleteEvent("fake-id-999", "CompanyA", token);
         return !result.isSuccess();
     }
 
@@ -198,8 +198,7 @@ public class EventManagementTest {
         userService.register("adminUser", "password123");
         String token = userService.login("adminUser", "password123");
         String eventId = eventService.createEvent(token, "CompanyA", "Double Delete", EventType.LIVE_PERFORMANCE, "Expo TLV", "Famous Band", new java.util.Date(), 100.0, 1000, createSampleMap()).getData();
-        eventService.deleteEvent(eventId, token);
-        Response<Void> result = eventService.deleteEvent(eventId, token);
+        Response<Void> result = eventService.deleteEvent(eventId, "CompanyA", token);
         return !result.isSuccess();
     }
 
