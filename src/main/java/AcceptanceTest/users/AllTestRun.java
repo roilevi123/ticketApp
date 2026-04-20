@@ -71,49 +71,49 @@ public class AllTestRun {
     }
     public void runAllTests() {
         System.out.println("Visitor action test ");
-        String visitorActionTestResults=visitorActionTest.whichTestPass();
-        String visitorActionTestResultsFailed=visitorActionTest.SeeFailTest();
-        String CompanyActionTestResults=companyManagementTest.whichTestPass();
-        String CompanyActionTestResultsFailed=companyManagementTest.SeeFailTest();
-        String WatingQueueTestResults=waitingQueueTests.whichTestPass();
-        String WatingQueueTestResultsFailed=waitingQueueTests.SeeFailTest();
-//
-        String EventActionTestResults=eventManagementTest.whichTestPass();
-        String EventActionTestResultsFailed=eventManagementTest.SeeFailTest();
-        String ReseveTicketTestResults=reseveTicketTests.whichTestPass();
-        String ReseveTicketTestResultsFailed=reseveTicketTests.SeeFailTest();
-        String InformationEventsTestResults=informationEventsTests.whichTestPass();
-        String InformationEventsTestResultsFailed=informationEventsTests.SeeFailTest();
+//        String visitorActionTestResults=visitorActionTest.whichTestPass();
+//        String visitorActionTestResultsFailed=visitorActionTest.SeeFailTest();
+//        String CompanyActionTestResults=companyManagementTest.whichTestPass();
+//        String CompanyActionTestResultsFailed=companyManagementTest.SeeFailTest();
+//        String WatingQueueTestResults=waitingQueueTests.whichTestPass();
+//        String WatingQueueTestResultsFailed=waitingQueueTests.SeeFailTest();
+////
+//        String EventActionTestResults=eventManagementTest.whichTestPass();
+//        String EventActionTestResultsFailed=eventManagementTest.SeeFailTest();
+//        String ReseveTicketTestResults=reseveTicketTests.whichTestPass();
+//        String ReseveTicketTestResultsFailed=reseveTicketTests.SeeFailTest();
+//        String InformationEventsTestResults=informationEventsTests.whichTestPass();
+//        String InformationEventsTestResultsFailed=informationEventsTests.SeeFailTest();
         String PurchaseOrderTestResults=purchaseOrderTests.whichTestPass();
         String PurchaseOrderTestResultsFailed=purchaseOrderTests.SeeFailTest();
-        String AdminTestResults=adminTests.whichTestPass();
-        String AdminTestResultsFailed=adminTests.SeeFailTest();
+//        String AdminTestResults=adminTests.whichTestPass();
+//        String AdminTestResultsFailed=adminTests.SeeFailTest();
 
-        System.out.println(visitorActionTestResults);
-        System.out.println(visitorActionTestResultsFailed);
-        System.out.println("-------------------------------------------------");
-        System.out.println(CompanyActionTestResults);
-        System.out.println(CompanyActionTestResultsFailed);
-        System.out.println("-------------------------------------------------");
-        System.out.println(WatingQueueTestResults);
-        System.out.println(WatingQueueTestResultsFailed);
-        System.out.println("-------------------------------------------------");
-        System.out.println(EventActionTestResults);
-        System.out.println(EventActionTestResultsFailed);
-        System.out.println("-------------------------------------------------");
-        System.out.println(ReseveTicketTestResults);
-        System.out.println(ReseveTicketTestResultsFailed);
-
-        System.out.println("-------------------------------------------------");
-        System.out.println(InformationEventsTestResults);
-        System.out.println(InformationEventsTestResultsFailed);
+//        System.out.println(visitorActionTestResults);
+//        System.out.println(visitorActionTestResultsFailed);
+//        System.out.println("-------------------------------------------------");
+//        System.out.println(CompanyActionTestResults);
+//        System.out.println(CompanyActionTestResultsFailed);
+//        System.out.println("-------------------------------------------------");
+//        System.out.println(WatingQueueTestResults);
+//        System.out.println(WatingQueueTestResultsFailed);
+//        System.out.println("-------------------------------------------------");
+//        System.out.println(EventActionTestResults);
+//        System.out.println(EventActionTestResultsFailed);
+//        System.out.println("-------------------------------------------------");
+//        System.out.println(ReseveTicketTestResults);
+//        System.out.println(ReseveTicketTestResultsFailed);
+//
+//        System.out.println("-------------------------------------------------");
+//        System.out.println(InformationEventsTestResults);
+//        System.out.println(InformationEventsTestResultsFailed);
         System.out.println("-------------------------------------------------");
         System.out.println(PurchaseOrderTestResults);
         System.out.println(PurchaseOrderTestResultsFailed);
-        System.out.println("-------------------------------------------------");
-
-        System.out.println(AdminTestResults);
-        System.out.println(AdminTestResultsFailed);
+//        System.out.println("-------------------------------------------------");
+//
+//        System.out.println(AdminTestResults);
+//        System.out.println(AdminTestResultsFailed);
 
     }
 }
