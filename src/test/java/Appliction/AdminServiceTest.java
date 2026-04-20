@@ -27,7 +27,7 @@ class AdminServiceTest {
     @Mock private IUserRepository userRepository;
     @Mock private iPurchasedOrderRepository purchasedOrderRepository;
     @Mock private iTicketRepository ticketRepository;
-
+    @Mock private Domain.Event.iEventRepository eventRepository;
     @InjectMocks
     private AdminService adminService;
 

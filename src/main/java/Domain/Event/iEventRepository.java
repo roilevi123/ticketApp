@@ -15,6 +15,7 @@ public interface iEventRepository {
     public List<String> searchEvents(String query, String company, EventType type, Double minPrice, Double maxPrice, Date startDate, Date endDate, String location, Double minRating);
     public void deleteEvent(String eventId, String company);
     public void deleteAllEvents();
+    public void deleteCompanyEvent(String company);
     public List<Event> getEventsByCompany(String company);
     public List<Event> getEventsByDateRange(Date from, Date to);
     public List<Event> getEventsByType(EventType eventType);

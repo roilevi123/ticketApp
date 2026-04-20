@@ -2,6 +2,7 @@ package Appliction;
 
 import Domain.AdminAggregate.iAdminRepository;
 import Domain.Company.iCompanyRepository;
+import Domain.Event.iEventRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 
 import Domain.PurchasedOrderAggregate.PurchaseOrder;
@@ -21,6 +22,7 @@ public class AdminService {
     private IUserRepository userRepository;
     private iPurchasedOrderRepository purchasedOrderRepository;
     private iTicketRepository ticketRepository;
+    private iEventRepository eventRepository;
     private static final Logger logger = LoggerFactory.getLogger(AdminService.class);
     public AdminService(
              iTreeOfRoleRepository treeOfRoleRepository
@@ -28,7 +30,8 @@ public class AdminService {
             , iAdminRepository adminRepository
             , IUserRepository userRepository
             , iPurchasedOrderRepository purchasedOrderRepository
-            , iTicketRepository ticketRepository
+            , iTicketRepository ticketRepository,
+             iEventRepository eventRepository
     ) {
         this.treeOfRoleRepository = treeOfRoleRepository;
         this.companyRepository = companyRepository;
@@ -36,6 +39,7 @@ public class AdminService {
         this.userRepository = userRepository;
         this.purchasedOrderRepository = purchasedOrderRepository;
         this.ticketRepository = ticketRepository;
+        this.eventRepository = eventRepository;
     }
     public String CloseCompany(String companyName,String adminName) {
         try {
@@ -44,7 +48,7 @@ public class AdminService {
                 throw new Exception("Admin does not exist");
             }
             companyRepository.deleteCompany(companyName);
-//            eventRepository.deleteCompanyEvents(companyName);
+            eventRepository.deleteCompanyEvent(companyName);
             treeOfRoleRepository.deleteCompanyMangersAndOwners(companyName);
             logger.info("Deleted company " + companyName);
             return "success";

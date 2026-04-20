@@ -1,15 +1,19 @@
 package AcceptanceTest.users;
 
 
+import AcceptanceTest.users.AdminTests.AdminTests;
 import AcceptanceTest.users.CompanyManagementTest.CompanyManagementTest;
+import AcceptanceTest.users.EventInfo.informationEventsTests;
 import AcceptanceTest.users.EventManagementTest.EventManagementTest;
 import AcceptanceTest.users.EventManagementTest.ViewEventInfoTest;
 import AcceptanceTest.users.Order.ReseveTicketTests;
 import AcceptanceTest.users.OrderManagementTest.ReserveOrderTest;
+import AcceptanceTest.users.PurchasedOrder.PurchaseOrderTests;
 import AcceptanceTest.users.WatingQueueTests.WaitingQueueTests;
 import AcceptanceTest.users.visitorTests.UserActionInfo;
 //<<<<<<< Updated upstream
 import Appliction.*;
+import Domain.AdminAggregate.iAdminRepository;
 import Domain.Company.iCompanyRepository;
 import Domain.Event.iEventRepository;
 import Domain.Order.IActiveOrderRepository;
@@ -28,8 +32,14 @@ public class AllTestRun {
 
     private WaitingQueueTests waitingQueueTests;
     private ReseveTicketTests reseveTicketTests;
+    private informationEventsTests informationEventsTests;
+    private PurchaseOrderTests purchaseOrderTests;
+    private AdminTests adminTests;
 //    private AdminTests adminTests;
     public AllTestRun() {
+        ISupplyService supplyService=new SupplyServiceMock();
+        IPaymentService paymentService=new PaymentServiceMock();
+        IBarcodeGenerator barcodeGenerator=new BarcodeGeneratorMock();
         iTreeOfRoleRepository iTreeOfRoleRepository =new TreeOfRoleRepositoryImpl();
         iCompanyRepository iCompanyRepository =new CompanyRepositoryImpl();
         IUserRepository iUserRepository =new UserRepositoryImpl();
@@ -40,6 +50,7 @@ public class AllTestRun {
         iEventRepository iEventRepository =new EventRepositoryImpl();
         iQueueRepository iQueueRepository =new QueueRepositoryImpl();
         iPurchasedOrderRepository iPurchasedOrderRepository =new PurchasedOrderRepositoryImpl();
+        iAdminRepository iAdminRepository =new AdminRepositoryImpl();
         initTheSystem initTheSystem=new initTheSystem(iTreeOfRoleRepository,iCompanyRepository,iUserRepository,iPasswordEncoder,tokenService,iTicketRepository,iEventRepository,iQueueRepository,activeOrderRepository,iPurchasedOrderRepository);
 
         UserService userService=new UserService(iPasswordEncoder,iUserRepository,tokenService);
@@ -47,13 +58,17 @@ public class AllTestRun {
         EventService eventService = new EventService(iCompanyRepository, iEventRepository, tokenService, iTreeOfRoleRepository, iTicketRepository,iQueueRepository);
         OrderService orderService = new OrderService(activeOrderRepository,tokenService,iTicketRepository);
         QueueService queueService = new QueueService(iQueueRepository);
-
+        PurchasedService purchasedService=new PurchasedService(activeOrderRepository,iTicketRepository,iPurchasedOrderRepository,supplyService,paymentService,barcodeGenerator,tokenService,iTreeOfRoleRepository);
+        AdminService adminService=new AdminService(iTreeOfRoleRepository,iCompanyRepository,iAdminRepository,iUserRepository,iPurchasedOrderRepository,iTicketRepository,iEventRepository);
         visitorActionTest = new UserActionInfo(userService,initTheSystem);
         companyManagementTest=new CompanyManagementTest(companyService,userService,initTheSystem);
         eventManagementTest = new EventManagementTest(userService, eventService, initTheSystem,companyService);
 
         reseveTicketTests= new ReseveTicketTests(userService, companyService,eventService, orderService, initTheSystem);
         waitingQueueTests=new WaitingQueueTests(userService,companyService,eventService,queueService,initTheSystem);
+        informationEventsTests=new informationEventsTests(userService,companyService,eventService,initTheSystem);
+        purchaseOrderTests=new PurchaseOrderTests(userService,companyService,eventService,orderService,purchasedService,initTheSystem);
+        adminTests=new AdminTests(userService,companyService,eventService,orderService,purchasedService,adminService,initTheSystem);
 
     }
     public void runAllTests() {
@@ -69,6 +84,12 @@ public class AllTestRun {
         String EventActionTestResultsFailed=eventManagementTest.SeeFailTest();
         String ReseveTicketTestResults=reseveTicketTests.whichTestPass();
         String ReseveTicketTestResultsFailed=reseveTicketTests.SeeFailTest();
+        String InformationEventsTestResults=informationEventsTests.whichTestPass();
+        String InformationEventsTestResultsFailed=informationEventsTests.SeeFailTest();
+        String PurchaseOrderTestResults=purchaseOrderTests.whichTestPass();
+        String PurchaseOrderTestResultsFailed=purchaseOrderTests.SeeFailTest();
+        String AdminTestResults=adminTests.whichTestPass();
+        String AdminTestResultsFailed=adminTests.SeeFailTest();
 
         System.out.println(visitorActionTestResults);
         System.out.println(visitorActionTestResultsFailed);
@@ -84,9 +105,17 @@ public class AllTestRun {
         System.out.println("-------------------------------------------------");
         System.out.println(ReseveTicketTestResults);
         System.out.println(ReseveTicketTestResultsFailed);
-//        System.out.println("-------------------------------------------------");
-//        System.out.println(reserveOrderTestResults);
-        
+
+        System.out.println("-------------------------------------------------");
+        System.out.println(InformationEventsTestResults);
+        System.out.println(InformationEventsTestResultsFailed);
+        System.out.println("-------------------------------------------------");
+        System.out.println(PurchaseOrderTestResults);
+        System.out.println(PurchaseOrderTestResultsFailed);
+        System.out.println("-------------------------------------------------");
+
+        System.out.println(AdminTestResults);
+        System.out.println(AdminTestResultsFailed);
 
     }
 }
