@@ -186,4 +186,15 @@ public class EventRepositoryImpl implements iEventRepository {
         idCounter.set(1);
     }
 
+
+    @Override
+    public void deleteCompanyEvent(String company) {
+        List<Event> eventList=getEventsByCompany(company);
+        for (Event eventName : eventList) {
+            events.remove(eventName.getName()+company);
+        }
+
+    }
+
+
 }

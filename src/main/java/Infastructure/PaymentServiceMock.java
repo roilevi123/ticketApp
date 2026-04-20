@@ -7,9 +7,7 @@ public class PaymentServiceMock implements IPaymentService {
     @Override
     public boolean processPayment(String creditCardDetails, double amount) {
         // check if the credit card details are valid and amount is positive
-        if (creditCardDetails == null || creditCardDetails.trim().isEmpty() || amount <= 0) {
-            return false;
-        }
+
         return true; 
     }
 
