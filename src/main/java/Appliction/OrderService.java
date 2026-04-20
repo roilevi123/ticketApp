@@ -11,6 +11,7 @@ import Domain.Ticket.iTicketRepository;
 import Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -107,14 +108,20 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
             return null;
         }
     }
-    public String getActiveOrderTickets(String token) {
+    public String getActiveOrderTickets(String token,String orderId) {
         try {
             logger.info("get information about active order ticket reservation for token: " + token);
-            if (!tokenService.validateToken(token)) {
+            ActiveOrder activeOrder=activeOrderRepository.findById(orderId);
+            if (!tokenService.validateToken(token) && activeOrder == null) {
                 throw new RuntimeException("Invalid token3");
             }
+            List<String> ticketsId;
+            if(activeOrder!=null){
+                ticketsId=activeOrder.getTicketIds();
+            }
+
             String username=tokenService.extractUsername(token);
-            List<String> ticketsId = activeOrderRepository.getTicketsId(username);
+             ticketsId = activeOrderRepository.getTicketsId(username);
             String tickets=ticketRepository.getTicketsDescription(ticketsId);
 
             logger.info("get active order tickets: " + tickets);

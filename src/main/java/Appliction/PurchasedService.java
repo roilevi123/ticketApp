@@ -53,11 +53,18 @@ public class PurchasedService {
         return m || (o );
     }
 
-    public String  PurchaseTicket(String email, String orderId) {
+    public String  PurchaseTicket(String email, String orderId,String username) {
         try {
             ActiveOrder order = repository.findById(orderId);
+            ActiveOrder activeOrder = repository.getOrder(username);
             if (order == null || order.getExpirationTime().before(new Date())) {
-                throw new Exception("Order expired or not found");
+                if(activeOrder != null && activeOrder.getExpirationTime().after(new Date()) ) {
+                    order = activeOrder;
+                }
+                else {
+                    throw new Exception("Order expired or not found");
+
+                }
             }
 
             List<Ticket> purchasedTickets = order.getTicketIds().stream()
@@ -91,7 +98,7 @@ public class PurchasedService {
                 purchasedOrderRepository.StorePurchasedOrder(order.getCompanyId(), order.getEventId(), order.getTicketIds(), order.getUserId(), order.getOrderId());
 //                purchasedTickets.forEach(ticket -> {ticketRepository.save(ticket);});
 
-                repository.delete(orderId);
+                repository.delete(activeOrder.getOrderId());
 
             } catch (Exception e) {
                 paymentService.refund(email, totalPrice);

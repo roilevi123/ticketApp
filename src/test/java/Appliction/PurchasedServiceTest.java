@@ -85,7 +85,7 @@ class PurchasedServiceTest {
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
         when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenReturn("new byte[]{1, 2, 3}");
 
-        purchasedService.PurchaseTicket(EMAIL, orderId);
+        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
 
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
 
@@ -129,7 +129,7 @@ class PurchasedServiceTest {
 
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(false);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId);
+        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
 
         verify(paymentService).processPayment(EMAIL, 100.0);
         verify(supplyService, never()).supplyToEmail(anyString(), anyString());
@@ -161,7 +161,7 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId);
+        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
 
         verify(paymentService, never()).processPayment(anyString(), anyDouble());
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
@@ -188,7 +188,7 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, "orderId");
+        purchasedService.PurchaseTicket(EMAIL, "orderId",USERNAME);
 
         verify(paymentService, never()).processPayment(anyString(), anyDouble());
         assertNotNull(orderRepoSpy.findById(orderId));
@@ -219,12 +219,63 @@ class PurchasedServiceTest {
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
         when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenThrow(new RuntimeException("Generator Error"));
 
-        purchasedService.PurchaseTicket(EMAIL, orderId);
+        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
 
         verify(paymentService).refund(EMAIL, 100.0);
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
         verify(orderRepoSpy, never()).delete(USERNAME);
     }
+    @Test
+    void purchaseTicket_Success_WithSpyAndStateCheckAsLogoutUser() throws Exception {
+        iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
+        IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
+
+        purchasedService = new PurchasedService(
+                orderRepoSpy,
+                ticketRepoSpy,
+                purchasedOrderRepository,
+                supplyService,
+                paymentService,
+                barcodeGenerator,
+                tokenService,
+                treeOfRoleRepository
+        );
+
+        Date futureDate = new Date(System.currentTimeMillis() + 1000000);
+
+        ticketRepoSpy.storeTicket(0, 0, EVENT,COMPANY,100);
+        Ticket originalTicket = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0);
+        String ticketId = originalTicket.getId();
+
+        String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
+//        String generatedOrderId = orderRepoSpy.getOrder(USERNAME).getOrderId();
+
+//        when(eventRepository.getEventPrice(EVENT, COMPANY)).thenReturn(100.0);
+        when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
+        when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenReturn("new byte[]{1, 2, 3}");
+
+        purchasedService.PurchaseTicket(EMAIL, "",USERNAME);
+
+        Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
+
+        assertNotNull(ticketAfterPurchase);
+        assertTrue(ticketAfterPurchase.isPurchased());
+        assertEquals(2, ticketAfterPurchase.getVersion());
+
+        ActiveOrder activeOrderAfter = orderRepoSpy.getOrder(USERNAME);
+        assertNull(activeOrderAfter);
+
+        verify(purchasedOrderRepository).StorePurchasedOrder(
+                eq(COMPANY),
+                eq(EVENT),
+                anyList(),
+                eq(USERNAME),
+                eq(orderId)
+        );
+
+        verify(orderRepoSpy).delete(orderId);
+    }
+
     @Test
     void isAuthorized_Owner_ReturnsTrue() {
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);

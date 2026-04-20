@@ -45,6 +45,7 @@ public class ReseveTicketTests {
         testMap.put("11", this::GetActiveOrderTicketsSequential11);
         testMap.put("12", this::GetActiveOrderTicketsConcurrent12);
         testMap.put("13", this::GetActiveOrderTicketsExpired13);
+        testMap.put("14", this::GetActiveOrderTicketsAsGuest14);
 
 
     }
@@ -330,7 +331,7 @@ public class ReseveTicketTests {
         requests.add(new int[]{0, 0, 1});
 
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        String tickets = reserveTicketService.getActiveOrderTickets(token1);
+        String tickets = reserveTicketService.getActiveOrderTickets(token1,orderId);
 
         return orderId != null && tickets != null &&
                 tickets.contains("company='1'") &&
@@ -349,14 +350,14 @@ public class ReseveTicketTests {
         List<int[]> requests1 = new ArrayList<>();
         requests1.add(new int[]{1, 1, 1});
         String orderId1 = reserveTicketService.reserveTickets(token1, "1", "1", requests1);
-        String tickets1 = reserveTicketService.getActiveOrderTickets(token1);
+        String tickets1 = reserveTicketService.getActiveOrderTickets(token1,orderId1);
 
         userService.register("user2", "pass2");
         String token2 = userService.login("user2", "pass2");
         List<int[]> requests2 = new ArrayList<>();
         requests2.add(new int[]{0, 0, 1});
         String orderId2 = reserveTicketService.reserveTickets(token2, "1", "1", requests2);
-        String tickets2 = reserveTicketService.getActiveOrderTickets(token2);
+        String tickets2 = reserveTicketService.getActiveOrderTickets(token2,orderId2);
 
         return orderId1 != null && orderId2 != null &&
                 tickets1 != null &&
@@ -419,7 +420,7 @@ public class ReseveTicketTests {
         int activeTicketsCount = 0;
         boolean contentValid = false;
         for (String t : tokens) {
-            String tickets = reserveTicketService.getActiveOrderTickets(t);
+            String tickets = reserveTicketService.getActiveOrderTickets(t,"orderId");
             if (tickets != null && !tickets.trim().isEmpty()) {
                 activeTicketsCount++;
                 if (tickets.contains("company='1'") &&
@@ -458,7 +459,7 @@ public class ReseveTicketTests {
         String token2 = userService.login("user2", "pass2");
         String orderId2 = reserveTicketService.reserveTickets(token2, "1", "1", requests);
 
-        String tickets2 = reserveTicketService.getActiveOrderTickets(token2);
+        String tickets2 = reserveTicketService.getActiveOrderTickets(token2,orderId2);
 
         return orderId1 != null && orderId2 != null &&
                 tickets2 != null &&
@@ -466,5 +467,24 @@ public class ReseveTicketTests {
                 tickets2.contains("event='1'") &&
                 tickets2.contains("verticalSpote=0") &&
                 tickets2.contains("horizontalSpote=0");
+    }
+    public boolean GetActiveOrderTicketsAsGuest14() {
+        userService.register("1", "1");
+        String token = userService.login("1", "1");
+        companyService.CreateCompany("1", token);
+        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+
+
+        List<int[]> requests = new ArrayList<>();
+        requests.add(new int[]{0, 0, 1});
+
+        String orderId = reserveTicketService.reserveTickets("token1", "1", "1", requests);
+        String tickets = reserveTicketService.getActiveOrderTickets("token1",orderId);
+
+        return orderId != null && tickets != null &&
+                tickets.contains("company='1'") &&
+                tickets.contains("event='1'") &&
+                tickets.contains("verticalSpote=0") &&
+                tickets.contains("horizontalSpote=0");
     }
 }

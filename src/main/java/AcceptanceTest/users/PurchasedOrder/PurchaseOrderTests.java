@@ -47,6 +47,8 @@ public class PurchaseOrderTests {
         testMap.put("10", this::GetUserTransactionSuccess10);
         testMap.put("11", this::GetUserTransactionMultipleCompanies11);
         testMap.put("12", this::GetUserTransactionSecurity12);
+        testMap.put("13", this::PurchaseOrderAsGuest13);
+        testMap.put("14", this::PurchasedTicketSuccessAndGETOutTheApp14);
 
 
     }
@@ -114,7 +116,7 @@ public class PurchaseOrderTests {
         List<int[]> requests = new ArrayList<>();
         requests.add(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        String result=purchasedService.PurchaseTicket("ro@gmail.com",orderId);
+        String result=purchasedService.PurchaseTicket("ro@gmail.com",orderId,"2");
         return result.equals("success");
     }
     public boolean PurchasedTicketFailedOrderExpired2() {
@@ -132,7 +134,7 @@ public class PurchaseOrderTests {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        String result=purchasedService.PurchaseTicket("ro@gmail.com",orderId);
+        String result=purchasedService.PurchaseTicket("ro@gmail.com",orderId,"2");
         return result.equals("error");
 
     }
@@ -147,7 +149,7 @@ public class PurchaseOrderTests {
         requests.add(new int[]{0, 0, 1});
         requests.add(new int[]{1,1, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        String result=purchasedService.PurchaseTicket("ro@gmail.com",orderId);
+        String result=purchasedService.PurchaseTicket("ro@gmail.com",orderId,"2");
         return result.equals("success");
     }
     public boolean GetCompanyTransactionSuccess4() {
@@ -160,7 +162,7 @@ public class PurchaseOrderTests {
         List<int[]> requests = new ArrayList<>();
         requests.add(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        purchasedService.PurchaseTicket("ro@gmail.com",orderId);
+        purchasedService.PurchaseTicket("ro@gmail.com",orderId,"2");
         String result=purchasedService.getCompanyTransaction("1",token);
         String expected="PurchaseOrder{company='1', event='1', buyer='2'}\n" +
                 "Ticket{company='1', event='1', date=Tue Apr 14 19:11:43 IDT 2026, verticalSpote=0, horizontalSpote=0}";
@@ -182,7 +184,7 @@ public class PurchaseOrderTests {
         requests.add(new int[]{0, 0, 1});
         requests.add(new int[]{1, 1, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        purchasedService.PurchaseTicket("ro@gmail.com", orderId);
+        purchasedService.PurchaseTicket("ro@gmail.com", orderId,"2");
         String result = purchasedService.getCompanyTransaction("1", token);
 
         boolean basicInfo = result != null &&
@@ -217,7 +219,7 @@ public class PurchaseOrderTests {
         requests.add(new int[]{0, 0, 1});
         requests.add(new int[]{1, 1, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        purchasedService.PurchaseTicket("ro@gmail.com", orderId);
+        purchasedService.PurchaseTicket("ro@gmail.com", orderId,"2");
         String result = purchasedService.getCompanyTransaction("1", token2);
 
         boolean basicInfo = result != null &&
@@ -253,8 +255,8 @@ public class PurchaseOrderTests {
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
         String orderId1 = reserveTicketService.reserveTickets(token2, "1", "2", requests);
 
-        purchasedService.PurchaseTicket("ro@gmail.com", orderId);
-        purchasedService.PurchaseTicket("ro@gmail.com", orderId1);
+        purchasedService.PurchaseTicket("ro@gmail.com", orderId,"2");
+        purchasedService.PurchaseTicket("ro@gmail.com", orderId1,"3");
 
         String result = purchasedService.getCompanyTransaction("1", token);
         System.out.println(result);
@@ -282,7 +284,7 @@ public class PurchaseOrderTests {
         List<int[]> requests = new ArrayList<>();
         requests.add(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(tokenBuyer, "Company2", "Event2", requests);
-        purchasedService.PurchaseTicket("buyer@gmail.com", orderId);
+        purchasedService.PurchaseTicket("buyer@gmail.com", orderId,"buyer");
 
         String result = purchasedService.getCompanyTransaction("Company2", tokenOwner1);
 
@@ -303,12 +305,12 @@ public class PurchaseOrderTests {
         List<int[]> reqA = new ArrayList<>();
         reqA.add(new int[]{0, 0, 1});
         String orderA = reserveTicketService.reserveTickets(tokenBuyer, "1", "EventA", reqA);
-        purchasedService.PurchaseTicket("b@gmail.com", orderA);
+        purchasedService.PurchaseTicket("b@gmail.com", orderA,"buyer");
 
         List<int[]> reqB = new ArrayList<>();
         reqB.add(new int[]{0, 0, 1});
         String orderB = reserveTicketService.reserveTickets(tokenBuyer, "1", "EventB", reqB);
-        purchasedService.PurchaseTicket("b@gmail.com", orderB);
+        purchasedService.PurchaseTicket("b@gmail.com", orderB,"buyer");
 
         String result = purchasedService.getCompanyTransaction("1", token);
 
@@ -329,7 +331,7 @@ public class PurchaseOrderTests {
         req.add(new int[]{0, 0, 1});
 
         String orderId = reserveTicketService.reserveTickets(tB, "C10", "E10", req);
-        purchasedService.PurchaseTicket("b@gmail.com", orderId);
+        purchasedService.PurchaseTicket("b@gmail.com", orderId,"20");
 
         String result = purchasedService.getUserTransaction(tB);
 
@@ -353,10 +355,10 @@ public class PurchaseOrderTests {
         req.add(new int[]{0, 0, 1});
 
         String orderA = reserveTicketService.reserveTickets(tB, "CA", "EA", req);
-        purchasedService.PurchaseTicket("b@gmail.com", orderA);
+        purchasedService.PurchaseTicket("b@gmail.com", orderA,"300");
 
         String orderB = reserveTicketService.reserveTickets(tB, "CB", "EB", req);
-        purchasedService.PurchaseTicket("b@gmail.com", orderB);
+        purchasedService.PurchaseTicket("b@gmail.com", orderB,"300");
 
         String result = purchasedService.getUserTransaction(tB);
 
@@ -374,7 +376,7 @@ public class PurchaseOrderTests {
         List<int[]> req = new ArrayList<>();
         req.add(new int[]{0, 0, 1});
         String order1 = reserveTicketService.reserveTickets(t1, "SecC", "SecE", req);
-        purchasedService.PurchaseTicket("u1@gmail.com", order1);
+        purchasedService.PurchaseTicket("u1@gmail.com", order1,"user1");
 
         userService.register("user2", "p");
         String t2 = userService.login("user2", "p");
@@ -382,4 +384,30 @@ public class PurchaseOrderTests {
 
         return result != null && !result.contains("buyer='user1'");
     }
+    public boolean PurchaseOrderAsGuest13(){
+        userService.register("own", "p");
+        String tO = userService.login("own", "p");
+        companyService.CreateCompany("SecC", tO);
+        eventService.createEvent(tO, "SecE", "SecC", EventType.PLAY, 100, new Date(), "L", "SecC", getMapArea());
+        List<int[]> req = new ArrayList<>();
+        req.add(new int[]{0, 0, 1});
+        String order1 = reserveTicketService.reserveTickets("nonExist", "SecC", "SecE", req);
+        String result= purchasedService.PurchaseTicket("u1@gmail.com", order1,"user1");
+        return result.equals("success");
+    }
+    public boolean PurchasedTicketSuccessAndGETOutTheApp14() {
+        userService.register("1","1");
+        String token=userService.login("1","1");
+        companyService.CreateCompany("1",token);
+        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        userService.register("2","2");
+        String token1=userService.login("2","2");
+        List<int[]> requests = new ArrayList<>();
+        requests.add(new int[]{0, 0, 1});
+        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
+        String result=purchasedService.PurchaseTicket("ro@gmail.com","orderId","2");
+        return result.equals("success");
+    }
+
+
 }

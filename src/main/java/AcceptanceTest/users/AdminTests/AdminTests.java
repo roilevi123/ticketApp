@@ -142,7 +142,7 @@ public class AdminTests {
         List<int[]> req = new ArrayList<>();
         req.add(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", req);
-        purchasedService.PurchaseTicket("b@gmail.com", orderId);
+        purchasedService.PurchaseTicket("b@gmail.com", orderId,"buyer");
 
         String result = adminService.GetAllPurchasedOrders("admin");
 
@@ -167,11 +167,11 @@ public class AdminTests {
         List<int[]> req1 = new ArrayList<>();
         req.add(new int[]{1, 1, 1});
         String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", req);
-        purchasedService.PurchaseTicket("b1@gmail.com", o1);
+        purchasedService.PurchaseTicket("b1@gmail.com", o1,"b1");
 
 
         String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", req1);
-        purchasedService.PurchaseTicket("b2@gmail.com", o2);
+        purchasedService.PurchaseTicket("b2@gmail.com", o2,"b2");
 
         String result = adminService.GetAllPurchasedOrders("admin");
 
@@ -203,10 +203,10 @@ public class AdminTests {
         req.add(new int[]{0, 0, 1});
 
         String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", req);
-        purchasedService.PurchaseTicket("b@gmail.com", orderA);
+        purchasedService.PurchaseTicket("b@gmail.com", orderA,"buyer8");
 
         String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", req);
-        purchasedService.PurchaseTicket("b@gmail.com", orderB);
+        purchasedService.PurchaseTicket("b@gmail.com", orderB,"buyer8");
 
         String result = adminService.GetAllPurchasedOrders("admin");
 
