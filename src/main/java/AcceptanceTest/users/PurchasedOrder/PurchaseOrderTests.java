@@ -404,8 +404,9 @@ public class PurchaseOrderTests {
         String token1=userService.login("2","2");
         List<int[]> requests = new ArrayList<>();
         requests.add(new int[]{0, 0, 1});
+
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        String result=purchasedService.PurchaseTicket("ro@gmail.com","orderId","2");
+        String result=purchasedService.PurchaseTicket("ro@gmail.com","orderId",token1);
         return result.equals("success");
     }
 

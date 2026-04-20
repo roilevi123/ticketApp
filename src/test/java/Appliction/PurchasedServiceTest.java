@@ -253,7 +253,8 @@ class PurchasedServiceTest {
 //        when(eventRepository.getEventPrice(EVENT, COMPANY)).thenReturn(100.0);
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
         when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenReturn("new byte[]{1, 2, 3}");
-
+        when(tokenService.validateToken(anyString())).thenReturn(true);
+        when(tokenService.extractUsername(anyString())).thenReturn(USERNAME);
         purchasedService.PurchaseTicket(EMAIL, "",USERNAME);
 
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
