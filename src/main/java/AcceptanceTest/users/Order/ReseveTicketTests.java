@@ -50,7 +50,7 @@ public class ReseveTicketTests {
     }
     public String whichTestPass() {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Event management test:\n");
+        stringBuilder.append("Reserve Ticket test:\n");
 
         testMap.forEach((id, testLogic) -> {
             initTheSystem.init();
@@ -75,7 +75,7 @@ public class ReseveTicketTests {
     }
     public String SeeFailTest() {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("event management test that fail:\n");
+        stringBuilder.append("Reserve Ticket test that fail:\n");
         if (failTests.isEmpty()) {
             stringBuilder.append("None!");
         } else {

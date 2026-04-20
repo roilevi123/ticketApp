@@ -77,7 +77,7 @@ public class PurchaseOrderTests {
     }
     public String SeeFailTest() {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("event management test that fail:\n");
+        stringBuilder.append("Purchased order test that fail:\n");
         if (failTests.isEmpty()) {
             stringBuilder.append("None!");
         } else {
