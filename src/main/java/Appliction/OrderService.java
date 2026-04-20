@@ -115,13 +115,17 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
             if (!tokenService.validateToken(token) && activeOrder == null) {
                 throw new RuntimeException("Invalid token3");
             }
-            List<String> ticketsId;
+            List<String> ticketsId=new ArrayList<>();
             if(activeOrder!=null){
                 ticketsId=activeOrder.getTicketIds();
             }
 
-            String username=tokenService.extractUsername(token);
-             ticketsId = activeOrderRepository.getTicketsId(username);
+            String username="";
+            if(tokenService.validateToken(token)){
+                username=tokenService.extractUsername(token);
+                ticketsId = activeOrderRepository.getTicketsId(username);
+
+            }
             String tickets=ticketRepository.getTicketsDescription(ticketsId);
 
             logger.info("get active order tickets: " + tickets);
