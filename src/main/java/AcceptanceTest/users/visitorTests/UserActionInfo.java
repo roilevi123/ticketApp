@@ -31,6 +31,9 @@ public class UserActionInfo {
         testMap.put("5", this::LoginFailWrongPassword5);
         testMap.put("6", this::LoginFailInValidPassword6);
         testMap.put("7", this::LoginFailUserNotFound7);
+        testMap.put("8", this::LogoutSuccess8);
+        testMap.put("9", this::LogoutFailed9);
+        testMap.put("10", this::LoginAfterLogoutSuccess10);
 
 
 
@@ -112,6 +115,26 @@ public class UserActionInfo {
         String result = userService.login("roi", "roilevi");
         return result == null;
     }
+    public boolean LogoutSuccess8() {
+        userService.register("roi", "roilevi");
+         String token=userService.login("roi", "roilevi");
+        String result = userService.logout(token);
+        return result.equals("success");
+    }
+    public boolean LogoutFailed9() {
+        userService.register("roi", "roilevi");
+        String result=userService.logout("token");
+        return result.equals("failed");
+    }
+    public boolean LoginAfterLogoutSuccess10() {
+        userService.register("roi", "roilevi");
+        String token=userService.login("roi", "roilevi");
+        userService.logout(token);
+        String result=userService.login("roi", "roilevi");
+        return result!=null;
+    }
+
+
 
 
 }

@@ -78,7 +78,7 @@ class UserServiceTest {
 
         String result = userService.login("unknown_user", RAW_PASSWORD);
 
-        assertNotNull(result);
+        assertNull(result);
         verify(tokenService, never()).generateToken(anyString());
     }
 
