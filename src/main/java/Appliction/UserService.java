@@ -62,6 +62,20 @@ public class UserService implements IAuth {
         }
     }
 
-
-
+    @Override
+    public String logout(String token) {
+        try {
+            logger.info("Logout requested");
+            if (tokenService.validateToken(token)){
+                tokenService.addBlacklistToken(tokenService.extractUsername(token));
+            logger.info("Logout completed successfully");
+            return "success";
+            }
+        logger.error("Logout failed for token {}", token);
+        throw new RuntimeException("Invalid token");
+        } catch (Exception e) {
+            logger.error("Logout failed", e);
+            return "failed";
+        }
+    }
 }
