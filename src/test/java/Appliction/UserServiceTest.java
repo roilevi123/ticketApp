@@ -98,4 +98,35 @@ class UserServiceTest {
         assertEquals("failed", result);
         verify(tokenService, never()).addBlacklistToken(anyString());
     }
+
+    @Test
+    void getUserInfo_ShouldReturnUserInfoString() {
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.getUser(USERNAME)).thenReturn(mockUser);
+
+        String result = userService.getUserInfo(TOKEN);
+
+        assertEquals("name=" + USERNAME, result);
+    }
+
+    @Test
+    void getUserInfo_InvalidToken_ShouldReturnErrorMessage() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(false);
+        String result = userService.getUserInfo(TOKEN);
+
+        assertEquals(null, result);
+    }
+
+    @Test
+    void getUserInfo_UserNotFound_ShouldReturnErrorMessage() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.getUser(USERNAME)).thenReturn(null);
+
+        String result = userService.getUserInfo(TOKEN);
+
+        assertEquals(null, result);
+    }
 }

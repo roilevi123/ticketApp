@@ -23,6 +23,16 @@ public class UserRepositoryImpl implements IUserRepository {
     public String getUserPassword(String username) {
         return users.get(username).getPassword();
     }
+
+    @Override
+    public User getUser(String username) {
+        User user = users.get(username);
+        if (user == null) {
+            return null;
+        }
+        return new User(user);
+    }
+
     @Override
     public boolean userExists(String username) {
         return users.containsKey(username);
