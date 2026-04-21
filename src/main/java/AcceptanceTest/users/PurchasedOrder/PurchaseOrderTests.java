@@ -49,6 +49,7 @@ public class PurchaseOrderTests {
         testMap.put("12", this::GetUserTransactionSecurity12);
         testMap.put("13", this::PurchaseOrderAsGuest13);
         testMap.put("14", this::PurchasedTicketSuccessAndGETOutTheApp14);
+        testMap.put("15", this::PurchaseOrderAsGuestFaildBecauseHegetOut15);
 
 
     }
@@ -395,6 +396,7 @@ public class PurchaseOrderTests {
         String result= purchasedService.PurchaseTicket("u1@gmail.com", order1,"user1");
         return result.equals("success");
     }
+
     public boolean PurchasedTicketSuccessAndGETOutTheApp14() {
         userService.register("1","1");
         String token=userService.login("1","1");
@@ -408,6 +410,17 @@ public class PurchaseOrderTests {
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
         String result=purchasedService.PurchaseTicket("ro@gmail.com","orderId",token1);
         return result.equals("success");
+    }
+    public boolean PurchaseOrderAsGuestFaildBecauseHegetOut15(){
+        userService.register("own", "p");
+        String tO = userService.login("own", "p");
+        companyService.CreateCompany("SecC", tO);
+        eventService.createEvent(tO, "SecE", "SecC", EventType.PLAY, 100, new Date(), "L", "SecC", getMapArea());
+        List<int[]> req = new ArrayList<>();
+        req.add(new int[]{0, 0, 1});
+        String order1 = reserveTicketService.reserveTickets("nonExist", "SecC", "SecE", req);
+        String result= purchasedService.PurchaseTicket("u1@gmail.com", "order1","user1");
+        return result.equals("error");
     }
 
 

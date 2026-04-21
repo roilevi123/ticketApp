@@ -46,6 +46,10 @@ public class ReseveTicketTests {
         testMap.put("12", this::GetActiveOrderTicketsConcurrent12);
         testMap.put("13", this::GetActiveOrderTicketsExpired13);
         testMap.put("14", this::GetActiveOrderTicketsAsGuest14);
+        testMap.put("15", this::GetActiveOrderTicketsAAfterLogOut15);
+        testMap.put("16", this::GetActiveOrderTicketsAsGuestThatGetOUt16);
+
+
 
 
     }
@@ -486,5 +490,43 @@ public class ReseveTicketTests {
                 tickets.contains("event='1'") &&
                 tickets.contains("verticalSpote=0") &&
                 tickets.contains("horizontalSpote=0");
+    }
+
+    public boolean GetActiveOrderTicketsAAfterLogOut15() {
+        userService.register("1", "1");
+        String token = userService.login("1", "1");
+        companyService.CreateCompany("1", token);
+        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+
+        userService.register("user1", "pass1");
+        String token1 = userService.login("user1", "pass1");
+        List<int[]> requests = new ArrayList<>();
+        requests.add(new int[]{0, 0, 1});
+
+        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
+        userService.logout(token1);
+        String token2 =userService.login("user1", "pass1");
+        String tickets = reserveTicketService.getActiveOrderTickets(token2,null);
+
+        return orderId != null && tickets != null &&
+                tickets.contains("company='1'") &&
+                tickets.contains("event='1'") &&
+                tickets.contains("verticalSpote=0") &&
+                tickets.contains("horizontalSpote=0");
+    }
+    public boolean GetActiveOrderTicketsAsGuestThatGetOUt16() {
+        userService.register("1", "1");
+        String token = userService.login("1", "1");
+        companyService.CreateCompany("1", token);
+        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+
+
+        List<int[]> requests = new ArrayList<>();
+        requests.add(new int[]{0, 0, 1});
+
+        String orderId = reserveTicketService.reserveTickets("token1", "1", "1", requests);
+        String tickets = reserveTicketService.getActiveOrderTickets("token1","orderId");
+
+        return tickets==null;
     }
 }

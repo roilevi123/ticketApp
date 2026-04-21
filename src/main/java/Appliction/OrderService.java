@@ -132,7 +132,7 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
             return tickets;
         } catch (Exception e) {
             logger.error("Error retrieving active order: {}", e.getMessage());
-            throw new RuntimeException("Could not fetch active order");
+            return null;
         }
     }
 
