@@ -34,8 +34,8 @@ public class UserActionInfo {
         testMap.put("8", this::LogoutSuccess8);
         testMap.put("9", this::LogoutFailed9);
         testMap.put("10", this::LoginAfterLogoutSuccess10);
-
-
+        testMap.put("11", this::getUserInfoSuccess11);
+        testMap.put("12", this::getUserInfoNotExist12);
 
     }
 
@@ -132,6 +132,16 @@ public class UserActionInfo {
         userService.logout(token);
         String result=userService.login("roi", "roilevi");
         return result!=null;
+    }
+    public boolean getUserInfoSuccess11() {
+        userService.register("roi", "roilevi");
+        String token=userService.login("roi", "roilevi");
+        String result=userService.getUserInfo(token);
+        return result.equals("name=roi");
+    }
+    public boolean getUserInfoNotExist12() {
+        String result=userService.getUserInfo("Non Exist User");
+        return result==null;
     }
 
 
