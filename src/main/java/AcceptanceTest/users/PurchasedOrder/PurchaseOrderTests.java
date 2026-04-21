@@ -50,6 +50,7 @@ public class PurchaseOrderTests {
         testMap.put("13", this::PurchaseOrderAsGuest13);
         testMap.put("14", this::PurchasedTicketSuccessAndGETOutTheApp14);
         testMap.put("15", this::PurchaseOrderAsGuestFaildBecauseHegetOut15);
+        testMap.put("16", this::PurchasedTicketSuccessAndGETOutTheAppAndTheOrderExpired16);
 
 
     }
@@ -408,7 +409,9 @@ public class PurchaseOrderTests {
         requests.add(new int[]{0, 0, 1});
 
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        String result=purchasedService.PurchaseTicket("ro@gmail.com","orderId",token1);
+        userService.logout(token1);
+        String t1 = userService.login("2","2");
+        String result=purchasedService.PurchaseTicket("ro@gmail.com","orderId",t1);
         return result.equals("success");
     }
     public boolean PurchaseOrderAsGuestFaildBecauseHegetOut15(){
@@ -420,6 +423,27 @@ public class PurchaseOrderTests {
         req.add(new int[]{0, 0, 1});
         String order1 = reserveTicketService.reserveTickets("nonExist", "SecC", "SecE", req);
         String result= purchasedService.PurchaseTicket("u1@gmail.com", "order1","user1");
+        return result.equals("error");
+    }
+    public boolean PurchasedTicketSuccessAndGETOutTheAppAndTheOrderExpired16() {
+        userService.register("1","1");
+        String token=userService.login("1","1");
+        companyService.CreateCompany("1",token);
+        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        userService.register("2","2");
+        String token1=userService.login("2","2");
+        List<int[]> requests = new ArrayList<>();
+        requests.add(new int[]{0, 0, 1});
+
+        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
+        userService.logout(token1);
+        String t1 = userService.login("2","2");
+        try {
+            Thread.sleep(11000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        String result=purchasedService.PurchaseTicket("ro@gmail.com","orderId",t1);
         return result.equals("error");
     }
 
