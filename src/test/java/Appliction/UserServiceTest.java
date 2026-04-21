@@ -1,5 +1,6 @@
 package Appliction;
 
+import Domain.Order.IActiveOrderRepository;
 import Domain.User.IUserRepository;
 import Domain.User.User;
 import Infastructure.TokenService;
@@ -24,12 +25,16 @@ class UserServiceTest {
     @Mock
     private TokenService tokenService;
 
+    @Mock
+    private IActiveOrderRepository activeOrderRepository;
+
     @InjectMocks
     private UserService userService;
 
     private final String USERNAME = "roy_user";
     private final String RAW_PASSWORD = "password123";
     private final String ENCODED_PASSWORD = "encoded_password123";
+    private final String TOKEN = "mock-jwt-token";
 
 
     @Test
@@ -77,9 +82,20 @@ class UserServiceTest {
         verify(tokenService, never()).generateToken(anyString());
     }
 
+    @Test
+    void logout_ValidToken_shouldPutUserInBlacklist() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        String result = userService.logout(TOKEN);
+        assertEquals("success", result);
+        verify(tokenService, times(1)).addBlacklistToken(USERNAME);
+    }
 
-
-
-
-
+    @Test
+    void logout_InvalidToken_shouldReturnErrorMessage() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(false);
+        String result = userService.logout(TOKEN);
+        assertEquals("failed", result);
+        verify(tokenService, never()).addBlacklistToken(anyString());
+    }
 }
