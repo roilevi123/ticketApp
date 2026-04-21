@@ -7,4 +7,6 @@ public interface IAuth {
     String login(String username, String password);
 
     String logout(String token);
+
+    String getUserInfo(String token);
 }

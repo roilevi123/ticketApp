@@ -34,7 +34,7 @@ public class User {
     }
 
     public String getUserInfo() {
-        return "name=" + name ;
+        return "name=" + name + ", version=" + version;
     }
 }
 
