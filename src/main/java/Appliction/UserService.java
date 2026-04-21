@@ -78,4 +78,25 @@ public class UserService implements IAuth {
             return "failed";
         }
     }
+
+    public String getUserInfo(String token) {
+        try {
+            logger.info("Getting user info");
+            if (tokenService.validateToken(token)){
+                String username = tokenService.extractUsername(token);
+                User user = userRepository.getUser(username);
+                if (user == null) {
+                    logger.error("User {} not found while getting user info", username);
+                    throw new RuntimeException("User not found");
+                }
+                logger.info("User info retrieved successfully for user {}", username);
+                return user.getUserInfo();
+            }
+            logger.error("Invalid token provided for getting user info");
+            throw new RuntimeException("Invalid token");
+        } catch (Exception e) {
+            logger.error("Failed to get user info", e);
+            return null;
+        }
+    }
 }
