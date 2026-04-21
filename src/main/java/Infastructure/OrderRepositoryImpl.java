@@ -49,6 +49,9 @@ public class OrderRepositoryImpl  implements IActiveOrderRepository {
 
     @Override
     public ActiveOrder findById(String orderId) {
+        if(orderId == null) {
+            return null;
+        }
         return orders.get(orderId);
     }
 
