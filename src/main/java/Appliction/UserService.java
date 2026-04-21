@@ -46,7 +46,7 @@ public class UserService implements IAuth {
             boolean user = userRepository.userExists(username);
             String passwordHash = userRepository.getUserPassword(username);
             if (!user ) {
-                return "User not found";
+                throw new RuntimeException( "User not found");
             }
             if (!passwordEncoder.matches(password, passwordHash)) {
                 logger.error("Invalid password for user {}", username);
