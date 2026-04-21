@@ -99,4 +99,28 @@ public class UserService implements IAuth {
             return null;
         }
     }
+
+    public String updateUserPassword(String token, String newPassword) {
+        try {
+            logger.info("Updating user password");
+            if (!tokenService.validateToken(token)) {
+                logger.error("Invalid token provided for updating password");
+                throw new RuntimeException("Invalid token");
+            }
+            String username = tokenService.extractUsername(token);
+            User user = userRepository.getUser(username);
+            if (user == null) {
+                logger.error("User {} not found while updating password", username);
+                throw new RuntimeException("User not found");
+            }
+            String encodedPassword = passwordEncoder.encode(newPassword);
+            user.setPassword(encodedPassword);
+            userRepository.save(user);
+            logger.info("Password updated successfully for user {}", username);
+            return "success";
+        } catch (Exception e) {
+            logger.error("Failed to update password", e);
+            return "failed";
+        }
+    }
 }

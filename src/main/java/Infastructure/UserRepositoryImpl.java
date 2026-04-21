@@ -39,6 +39,22 @@ public class UserRepositoryImpl implements IUserRepository {
     }
 
     @Override
+    public void save(User userToUpdate) {
+        String username = userToUpdate.getName();
+        User currentInDb = users.get(username);
+        if (currentInDb == null) {
+            throw new RuntimeException("User not found for update: " + username);
+        }
+        User updatedUser = new User(userToUpdate);
+        updatedUser.setVersion(userToUpdate.getVersion() + 1);
+        boolean success = users.replace(username, currentInDb, updatedUser);
+        if (!success) {
+            throw new RuntimeException("Optimistic Lock Failure: User '" + username +
+                    "' was updated by another thread/user.");
+        }
+    }
+
+    @Override
     public void deleteAll() {
         users.clear();
     }

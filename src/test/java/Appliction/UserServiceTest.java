@@ -129,4 +129,60 @@ class UserServiceTest {
 
         assertEquals(null, result);
     }
+
+
+    @Test
+    void updateUserPassword_Success_ShouldUpdatePassword() {
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD);
+        mockUser.setVersion(0);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.getUser(USERNAME)).thenReturn(mockUser);
+        when(passwordEncoder.encode("new_password")).thenReturn("encoded_new_password");
+
+        String result = userService.updateUserPassword(TOKEN, "new_password");
+
+        assertEquals("success", result);
+        verify(userRepository, times(1)).save(any(User.class));
+    }
+
+    @Test
+    void updateUserPassword_InvalidToken_ShouldReturnErrorMessage() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(false);
+
+        String result = userService.updateUserPassword(TOKEN, "new_password");
+
+        assertEquals("failed", result);
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void updateUserPassword_UserNotFound_ShouldReturnErrorMessage() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.getUser(USERNAME)).thenReturn(null);
+
+        String result = userService.updateUserPassword(TOKEN, "new_password");
+
+        assertEquals("failed", result);
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void updateUserPassword_OptimisticLockFailure_ShouldReturnErrorMessage() {
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD);
+        mockUser.setVersion(0);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.getUser(USERNAME)).thenReturn(mockUser);
+        when(passwordEncoder.encode("new_password")).thenReturn("encoded_new_password");
+        doThrow(new RuntimeException("Optimistic Lock Failure")).when(userRepository).save(any(User.class));
+
+        String result = userService.updateUserPassword(TOKEN, "new_password");
+
+        assertEquals("failed", result);
+        verify(userRepository, times(1)).save(any(User.class));
+    }
 }
