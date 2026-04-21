@@ -36,7 +36,9 @@ public class UserActionInfo {
         testMap.put("10", this::LoginAfterLogoutSuccess10);
         testMap.put("11", this::getUserInfoSuccess11);
         testMap.put("12", this::getUserInfoNotExist12);
-
+        testMap.put("13", this::UpdateUserInfoSuccess13);
+        testMap.put("14", this::UpdateUserInfoNotExist14);
+        testMap.put("15", this::UpdateUserInfoAndThenLoginSuccess15);
     }
 
     public String whichTestPass() {
@@ -143,6 +145,25 @@ public class UserActionInfo {
         String result=userService.getUserInfo("Non Exist User");
         return result==null;
     }
+    public boolean UpdateUserInfoSuccess13() {
+        userService.register("roi", "roilevi");
+        String token=userService.login("roi", "roilevi");
+        String result=userService.updateUserPassword(token, "new");
+        return result.equals("success");
+    }
+    public boolean UpdateUserInfoNotExist14() {
+        String result=userService.updateUserPassword("token", "wrong");
+        return result.equals("failed");
+    }
+    public boolean UpdateUserInfoAndThenLoginSuccess15() {
+        userService.register("roi", "roilevi");
+        String token=userService.login("roi", "roilevi");
+        userService.updateUserPassword(token, "new");
+        userService.logout(token);
+        String result=userService.login("roi", "new");
+        return result!=null;
+    }
+
 
 
 
