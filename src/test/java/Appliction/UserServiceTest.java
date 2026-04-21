@@ -107,8 +107,8 @@ class UserServiceTest {
         when(userRepository.getUser(USERNAME)).thenReturn(mockUser);
 
         String result = userService.getUserInfo(TOKEN);
+        assertEquals("name=" + USERNAME + ", version=0", result);
 
-        assertEquals("name=" + USERNAME, result);
     }
 
     @Test
