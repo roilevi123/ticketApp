@@ -13,6 +13,7 @@ import AcceptanceTest.users.visitorTests.UserActionInfo;
 import Appliction.*;
 import Domain.AdminAggregate.iAdminRepository;
 import Domain.Company.iCompanyRepository;
+import Domain.Domains.*;
 import Domain.Event.iEventRepository;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
@@ -51,22 +52,33 @@ public class AllTestRun {
         iAdminRepository iAdminRepository =new AdminRepositoryImpl();
         initTheSystem initTheSystem=new initTheSystem(iTreeOfRoleRepository,iCompanyRepository,iUserRepository,iPasswordEncoder,tokenService,iTicketRepository,iEventRepository,iQueueRepository,activeOrderRepository,iPurchasedOrderRepository);
 
-        UserService userService=new UserService(iPasswordEncoder,iUserRepository,tokenService);
-        CompanyService companyService=new CompanyService(iCompanyRepository,iUserRepository,iTreeOfRoleRepository,tokenService);
-        EventService eventService = new EventService(iCompanyRepository, iEventRepository, tokenService, iTreeOfRoleRepository, iTicketRepository,iQueueRepository);
-        OrderService orderService = new OrderService(activeOrderRepository,tokenService,iTicketRepository);
-        QueueService queueService = new QueueService(iQueueRepository);
-        PurchasedService purchasedService=new PurchasedService(activeOrderRepository,iTicketRepository,iPurchasedOrderRepository,supplyService,paymentService,barcodeGenerator,tokenService,iTreeOfRoleRepository);
-        AdminService adminService=new AdminService(iTreeOfRoleRepository,iCompanyRepository,iAdminRepository,iUserRepository,iPurchasedOrderRepository,iTicketRepository,iEventRepository);
-        visitorActionTest = new UserActionInfo(userService,initTheSystem);
-        companyManagementTest=new CompanyManagementTest(companyService,userService,initTheSystem);
-        eventManagementTest = new EventManagementTest(userService, eventService, initTheSystem,companyService);
+        UserDomain userService=new UserDomain(iPasswordEncoder,iUserRepository,tokenService);
+        CompanyDomain companyDomain =new CompanyDomain(iCompanyRepository,iUserRepository,iTreeOfRoleRepository,tokenService);
+        EventDomain eventDomain = new EventDomain(iCompanyRepository, iEventRepository, tokenService, iTreeOfRoleRepository, iTicketRepository,iQueueRepository);
+        OrderDomain orderDomain = new OrderDomain(activeOrderRepository,tokenService,iTicketRepository);
+        QueueDomain queueDomain = new QueueDomain(iQueueRepository);
+        PurchasedDomain purchasedDomain =new PurchasedDomain(activeOrderRepository,iTicketRepository,iPurchasedOrderRepository,supplyService,paymentService,barcodeGenerator,tokenService,iTreeOfRoleRepository);
+        AdminDomain adminDomain =new AdminDomain(iTreeOfRoleRepository,iCompanyRepository,iAdminRepository,iUserRepository,iPurchasedOrderRepository,iTicketRepository,iEventRepository);
 
-        reseveTicketTests= new ReseveTicketTests(userService, companyService,eventService, orderService, initTheSystem);
-        waitingQueueTests=new WaitingQueueTests(userService,companyService,eventService,queueService,initTheSystem);
-        informationEventsTests=new informationEventsTests(userService,companyService,eventService,initTheSystem);
-        purchaseOrderTests=new PurchaseOrderTests(userService,companyService,eventService,orderService,purchasedService,initTheSystem);
-        adminTests=new AdminTests(userService,companyService,eventService,orderService,purchasedService,adminService,initTheSystem);
+        UserService userService1=new UserService(userService);
+        CompanyService companyService=new CompanyService(companyDomain);
+        EventService eventService=new EventService(eventDomain);
+        OrderService orderService=new OrderService(orderDomain);
+        QueueService queueService=new QueueService(queueDomain);
+        PurchasedSevice purchasedSevice=new PurchasedSevice(purchasedDomain);
+        AdminService adminService=new AdminService(adminDomain);
+
+        visitorActionTest = new UserActionInfo(userService1,initTheSystem);
+        companyManagementTest=new CompanyManagementTest(companyService,userService1,initTheSystem);
+        eventManagementTest = new EventManagementTest(userService1, eventService, initTheSystem, companyService);
+        reseveTicketTests= new ReseveTicketTests(userService1, companyService, eventService, orderService, initTheSystem);
+        waitingQueueTests=new WaitingQueueTests(userService1, companyService, eventService, queueService,initTheSystem);
+
+        informationEventsTests=new informationEventsTests(userService1, companyService, eventService,initTheSystem);
+        purchaseOrderTests=new PurchaseOrderTests(userService1, companyService, eventService, orderService, purchasedSevice,initTheSystem);
+        adminTests=new AdminTests(userService1, companyService, eventService, orderService, purchasedSevice, adminService,initTheSystem);
+
+
 
     }
     public void runAllTests() {

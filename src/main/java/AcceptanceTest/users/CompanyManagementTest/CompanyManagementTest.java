@@ -3,6 +3,8 @@ package AcceptanceTest.users.CompanyManagementTest;
 import AcceptanceTest.users.initTheSystem;
 import Appliction.CompanyService;
 import Appliction.UserService;
+import Domain.Domains.CompanyDomain;
+import Domain.Domains.UserDomain;
 import Domain.OwnerManagerTree.Permission;
 
 
@@ -10,20 +12,17 @@ import java.util.*;
 import java.util.function.Supplier;
 
 public class CompanyManagementTest {
-    private CompanyService companyService;
+    private CompanyService companyDomain;
     private UserService userService;
     private final List<String> failTests = new ArrayList<>();
     private final List<String> passTests = new ArrayList<>();
     private final Map<String, Supplier<Boolean>> testMap = new LinkedHashMap<>();
     private initTheSystem initTheSystem;
-    public CompanyManagementTest(CompanyService companyService, UserService userService,initTheSystem initTheSystem) {
-        this.companyService = companyService;
+    public CompanyManagementTest(CompanyService companyDomain, UserService userService, initTheSystem initTheSystem) {
+        this.companyDomain = companyDomain;
         this.userService = userService;
         this.initTheSystem = initTheSystem;
         initTestMap();
-    }
-    public void setUserService(UserService userService) {
-        this.userService = userService;
     }
     private void initTestMap() {
         testMap.put("1", this::CreateCompanySuccess1);
@@ -106,13 +105,13 @@ public class CompanyManagementTest {
     public boolean CreateCompanySuccess1() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        String result =companyService.CreateCompany("1",token);
+        String result = companyDomain.CreateCompany("1",token);
         return result.equals("success");
     }
     public boolean CreateCompanyFailedUserNotFound2() {
 //        userService.register("1","1");
 //        String token=userService.login("1","1");
-        String result =companyService.CreateCompany("1","token");
+        String result = companyDomain.CreateCompany("1","token");
         return result.equals("failed");
     }
     public boolean AppointManagerSuccess3() {
@@ -120,19 +119,19 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        String result =companyService.AppointAManager("2","1",permissions,token);
+        String result = companyDomain.AppointAManager("2","1",permissions,token);
         return result.equals("success");
     }
     public boolean AppointManagerFailedUserNotFound4() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        String result =companyService.AppointAManager("2","1",permissions,token);
+        String result = companyDomain.AppointAManager("2","1",permissions,token);
         return result.equals("failed");
     }
     public boolean AppointManagerFailedNotOwner5() {
@@ -142,10 +141,10 @@ public class CompanyManagementTest {
         String token2=userService.login("2","2");
         userService.register("3","3");
         String token3=userService.login("3","3");
-        companyService.CreateCompany("1",token1);
+        companyDomain.CreateCompany("1",token1);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        String result =companyService.AppointAManager("2","1",permissions,token3);
+        String result = companyDomain.AppointAManager("2","1",permissions,token3);
         return result.equals("failed");
     }
     public boolean ApproveManagerRequestSuccess6() {
@@ -153,11 +152,11 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        String result=companyService.ApproveAppointmentForManager(token2,"1");
+        companyDomain.AppointAManager("2","1",permissions,token);
+        String result= companyDomain.ApproveAppointmentForManager(token2,"1");
         return result.equals("success");
     }
     public boolean ApproveManagerRequestFaildCompanyNotExitst7() {
@@ -165,11 +164,11 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        String result=companyService.ApproveAppointmentForManager(token2,"2");
+        companyDomain.AppointAManager("2","1",permissions,token);
+        String result= companyDomain.ApproveAppointmentForManager(token2,"2");
         return result.equals("failed");
     }
     public boolean RejectManagerRequestSuccess8() {
@@ -177,11 +176,11 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        String result=companyService.RejectAppointmentForManager(token2,"1");
+        companyDomain.AppointAManager("2","1",permissions,token);
+        String result= companyDomain.RejectAppointmentForManager(token2,"1");
         return result.equals("success");
     }
     public boolean RejectManagerRequestFailedNoOfferExist9() {
@@ -189,11 +188,11 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
 //        companyService.AppointAManager("2","1",permissions,token);
-        String result=companyService.RejectAppointmentForManager(token2,"1");
+        String result= companyDomain.RejectAppointmentForManager(token2,"1");
         return result.equals("failed");
     }
 
@@ -203,16 +202,16 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        String result =companyService.AppointOwner("2","1",token);
+        companyDomain.CreateCompany("1",token);
+        String result = companyDomain.AppointOwner("2","1",token);
         return result.equals("success");
     }
 
     public boolean AppointOwnerFailedUserNotFound11() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        String result =companyService.AppointOwner("2","1",token);
+        companyDomain.CreateCompany("1",token);
+        String result = companyDomain.AppointOwner("2","1",token);
         return result.equals("failed");
     }
     public boolean AppointOwnerFailedNotOwner12() {
@@ -222,8 +221,8 @@ public class CompanyManagementTest {
         String token2=userService.login("2","2");
         userService.register("3","3");
         String token3=userService.login("3","3");
-        companyService.CreateCompany("1",token);
-        String result =companyService.AppointOwner("2","1",token3);
+        companyDomain.CreateCompany("1",token);
+        String result = companyDomain.AppointOwner("2","1",token3);
         return result.equals("failed");
     }
     public boolean ApproveOwnerRequestSuccess13() {
@@ -231,9 +230,9 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        String result=companyService.ApproveAppointmentForOwner(token2,"1");
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
+        String result= companyDomain.ApproveAppointmentForOwner(token2,"1");
         return result.equals("success");
     }
     public boolean ApproveOwnerRequestFaildCompanyNotExitst14() {
@@ -241,10 +240,10 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
 
-        companyService.AppointOwner("2","1",token);
-        String result=companyService.ApproveAppointmentForOwner(token2,"2");
+        companyDomain.AppointOwner("2","1",token);
+        String result= companyDomain.ApproveAppointmentForOwner(token2,"2");
         return result.equals("failed");
     }
     public boolean RejectOwnerRequestSuccess15() {
@@ -252,10 +251,10 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
 
-        companyService.AppointOwner("2","1",token);
-        String result=companyService.RejectAppointmentForOwner(token2,"1");
+        companyDomain.AppointOwner("2","1",token);
+        String result= companyDomain.RejectAppointmentForOwner(token2,"1");
         return result.equals("success");
     }
     public boolean RejectOwnerRequestFailedNoOfferExist16() {
@@ -263,8 +262,8 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        String result=companyService.RejectAppointmentForOwner(token2,"1");
+        companyDomain.CreateCompany("1",token);
+        String result= companyDomain.RejectAppointmentForOwner(token2,"1");
         return result.equals("failed");
     }
     public boolean FireOwnerRequestSuccess17() {
@@ -272,10 +271,10 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        companyService.ApproveAppointmentForOwner(token2,"1");
-        String result=companyService.FireOwner(token,"1","2");
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
+        String result= companyDomain.FireOwner(token,"1","2");
         return result.equals("success");
     }
     public boolean FireOwnerFailedNotTheAppointer18() {
@@ -285,12 +284,12 @@ public class CompanyManagementTest {
         String token2=userService.login("2","2");
         userService.register("3","3");
         String token3=userService.login("3","3");
-        companyService.CreateCompany("1",token1);
-        companyService.AppointOwner("2","1",token1);
-        companyService.ApproveAppointmentForOwner(token2,"1");
-        companyService.AppointOwner("3","1",token1);
-        companyService.ApproveAppointmentForOwner(token3,"1");
-        String result=companyService.FireOwner(token2,"1","3");
+        companyDomain.CreateCompany("1",token1);
+        companyDomain.AppointOwner("2","1",token1);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
+        companyDomain.AppointOwner("3","1",token1);
+        companyDomain.ApproveAppointmentForOwner(token3,"1");
+        String result= companyDomain.FireOwner(token2,"1","3");
         return result.equals("failed");
     }
     public boolean FireOwnerFailedCanNotFireTheFounder19() {
@@ -298,10 +297,10 @@ public class CompanyManagementTest {
         String token1=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token1);
-        companyService.AppointOwner("2","1",token1);
-        companyService.ApproveAppointmentForOwner(token2,"1");
-        String result=companyService.FireOwner(token2,"1","1");
+        companyDomain.CreateCompany("1",token1);
+        companyDomain.AppointOwner("2","1",token1);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
+        String result= companyDomain.FireOwner(token2,"1","1");
         return result.equals("failed");
     }
     public boolean FireOwnerFailedCanNotOwner20() {
@@ -309,10 +308,10 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
 //        companyService.ApproveAppointmentForOwner(token2,"1");
-        String result=companyService.FireOwner(token,"1","2");
+        String result= companyDomain.FireOwner(token,"1","2");
         return result.equals("failed");
     }
 
@@ -321,12 +320,12 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions=new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        String result=companyService.FireManager(token,"1","2");
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
+        String result= companyDomain.FireManager(token,"1","2");
         return result.equals("success");
     }
     public boolean FireManagerFailedNotTheAppointer22() {
@@ -336,15 +335,15 @@ public class CompanyManagementTest {
         String token2=userService.login("2","2");
         userService.register("3","3");
         String token3=userService.login("3","3");
-        companyService.CreateCompany("1",token1);
-        companyService.AppointOwner("2","1",token1);
-        companyService.ApproveAppointmentForOwner(token2,"1");
+        companyDomain.CreateCompany("1",token1);
+        companyDomain.AppointOwner("2","1",token1);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
         Set<Permission> permissions=new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("3","1",permissions,token1);
-        companyService.ApproveAppointmentForManager(token3,"1");
+        companyDomain.AppointAManager("3","1",permissions,token1);
+        companyDomain.ApproveAppointmentForManager(token3,"1");
 
-        String result=companyService.FireManager(token2,"1","3");
+        String result= companyDomain.FireManager(token2,"1","3");
         return result.equals("failed");
     }
     public boolean FireManagerFailedCanNotManager23() {
@@ -352,12 +351,12 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions=new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
+        companyDomain.AppointAManager("2","1",permissions,token);
 //        companyService.ApproveAppointmentForManager(token2,"1");
-        String result=companyService.FireManager(token,"1","2");
+        String result= companyDomain.FireManager(token,"1","2");
         return result.equals("failed");
     }
     public boolean ChangeManagerPermissionsSuccess24() {
@@ -365,14 +364,14 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions=new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
         Set<Permission> permissions1=new HashSet<>();
         permissions.add(Permission.CHANGE_POLICIES);
-        String result=companyService.ChangeManagerPermissions(token,"1","2",permissions1);
+        String result= companyDomain.ChangeManagerPermissions(token,"1","2",permissions1);
         return result.equals("success");
     }
     public boolean ChangeManagerPermissionsNotAppointer25() {
@@ -382,16 +381,16 @@ public class CompanyManagementTest {
         String token2=userService.login("2","2");
         userService.register("3","3");
         String token3=userService.login("3","3");
-        companyService.CreateCompany("1",token1);
-        companyService.AppointOwner("2","1",token1);
-        companyService.ApproveAppointmentForOwner(token2,"1");
+        companyDomain.CreateCompany("1",token1);
+        companyDomain.AppointOwner("2","1",token1);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
         Set<Permission> permissions=new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("3","1",permissions,token1);
-        companyService.ApproveAppointmentForManager(token3,"1");
+        companyDomain.AppointAManager("3","1",permissions,token1);
+        companyDomain.ApproveAppointmentForManager(token3,"1");
         Set<Permission> permissions1=new HashSet<>();
         permissions.add(Permission.CHANGE_POLICIES);
-        String result=companyService.ChangeManagerPermissions(token2,"1","3",permissions1);
+        String result= companyDomain.ChangeManagerPermissions(token2,"1","3",permissions1);
         return result.equals("failed");
     }
     public boolean ChangeManagerPermissionsNotManager26() {
@@ -399,21 +398,21 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions=new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
+        companyDomain.AppointAManager("2","1",permissions,token);
 //        companyService.ApproveAppointmentForManager(token2,"1");
         Set<Permission> permissions1=new HashSet<>();
         permissions.add(Permission.CHANGE_POLICIES);
-        String result=companyService.ChangeManagerPermissions(token,"1","2",permissions1);
+        String result= companyDomain.ChangeManagerPermissions(token,"1","2",permissions1);
         return result.equals("failed");
     }
     public boolean FreezeCompanySuccess27() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        String res=companyService.freezeCompany("1",token);
+        companyDomain.CreateCompany("1",token);
+        String res= companyDomain.freezeCompany("1",token);
         return res.equals("success");
     }
     public boolean FreezeCompanyNotFounder28() {
@@ -421,26 +420,26 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        companyService.ApproveAppointmentForOwner(token2,"1");
-        String res=companyService.freezeCompany("1",token2);
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
+        String res= companyDomain.freezeCompany("1",token2);
         return res.equals("failed");
     }
     public boolean FreezeCompanyFailedAlreadyFreeze29() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        companyService.freezeCompany("1",token);
-        String res=companyService.freezeCompany("1",token);
+        companyDomain.CreateCompany("1",token);
+        companyDomain.freezeCompany("1",token);
+        String res= companyDomain.freezeCompany("1",token);
         return res.equals("failed");
     }
     public boolean UnFreezeCompanySuccess30() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        companyService.freezeCompany("1",token);
-        String res=companyService.unfreezeCompany("1",token);
+        companyDomain.CreateCompany("1",token);
+        companyDomain.freezeCompany("1",token);
+        String res= companyDomain.unfreezeCompany("1",token);
         return res.equals("success");
     }
     public boolean UnFreezeCompanyNotFounder31() {
@@ -448,18 +447,18 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        companyService.ApproveAppointmentForOwner(token2,"1");
-        companyService.freezeCompany("1",token);
-        String res=companyService.unfreezeCompany("1",token2);
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
+        companyDomain.freezeCompany("1",token);
+        String res= companyDomain.unfreezeCompany("1",token2);
         return res.equals("failed");
     }
     public boolean UnFreezeCompanyFailedAlreadyUnFreeze32() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        String res=companyService.unfreezeCompany("1",token);
+        companyDomain.CreateCompany("1",token);
+        String res= companyDomain.unfreezeCompany("1",token);
         return res.equals("failed");
     }
     public boolean GetMangerPermissions33() {
@@ -467,11 +466,11 @@ public class CompanyManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        Set<Permission> list=companyService.GetManagerPermissions(token,"1","2");
+        companyDomain.AppointAManager("2","1",permissions,token);
+        Set<Permission> list= companyDomain.GetManagerPermissions(token,"1","2");
         return list.contains(Permission.MANAGE_INVENTORY)&&list.size()==1;
     }
     public boolean GetMangerPermissionsNotOwner34() {
@@ -481,12 +480,12 @@ public class CompanyManagementTest {
         String token2=userService.login("2","2");
         userService.register("3","3");
         String token3=userService.login("3","3");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        Set<Permission> list=companyService.GetManagerPermissions(token3,"1","2");
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
+        Set<Permission> list= companyDomain.GetManagerPermissions(token3,"1","2");
         return list==null;
     }
     public boolean GetTreeOfRolesSuccess35() {
@@ -496,14 +495,14 @@ public class CompanyManagementTest {
         String token2=userService.login("2","2");
         userService.register("3","3");
         String token3=userService.login("3","3");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        companyService.AppointOwner("3","1",token);
-        companyService.ApproveAppointmentForOwner(token3,"1");
-        String treeOfRoles=companyService.GetRoleTreeString(token,"1");
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
+        companyDomain.AppointOwner("3","1",token);
+        companyDomain.ApproveAppointmentForOwner(token3,"1");
+        String treeOfRoles= companyDomain.GetRoleTreeString(token,"1");
         String expectedTree =
                 "|-- 1 (Owner)\n" +
                         "  |-- 3 (Owner)\n" +
@@ -521,20 +520,20 @@ public class CompanyManagementTest {
         String token4=userService.login("4","4");
         userService.register("5","5");
         String token5=userService.login("5","5");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        companyService.AppointOwner("3","1",token);
-        companyService.ApproveAppointmentForOwner(token3,"1");
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
+        companyDomain.AppointOwner("3","1",token);
+        companyDomain.ApproveAppointmentForOwner(token3,"1");
 
-        companyService.AppointAManager("4","1",permissions,token3);
-        companyService.ApproveAppointmentForManager(token4,"1");
-        companyService.AppointOwner("5","1",token3);
-        companyService.ApproveAppointmentForOwner(token5,"1");
+        companyDomain.AppointAManager("4","1",permissions,token3);
+        companyDomain.ApproveAppointmentForManager(token4,"1");
+        companyDomain.AppointOwner("5","1",token3);
+        companyDomain.ApproveAppointmentForOwner(token5,"1");
 
-        String treeOfRoles=companyService.GetRoleTreeString(token,"1");
+        String treeOfRoles= companyDomain.GetRoleTreeString(token,"1");
         String expectedTree =
                 "|-- 1 (Owner)\n" +
                         "  |-- 3 (Owner)\n" +
@@ -554,22 +553,22 @@ public class CompanyManagementTest {
         String token4=userService.login("4","4");
         userService.register("5","5");
         String token5=userService.login("5","5");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        companyService.AppointOwner("3","1",token);
-        companyService.ApproveAppointmentForOwner(token3,"1");
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
+        companyDomain.AppointOwner("3","1",token);
+        companyDomain.ApproveAppointmentForOwner(token3,"1");
 
-        companyService.AppointAManager("4","1",permissions,token3);
-        companyService.ApproveAppointmentForManager(token4,"1");
-        companyService.AppointOwner("5","1",token3);
-        companyService.ApproveAppointmentForOwner(token5,"1");
+        companyDomain.AppointAManager("4","1",permissions,token3);
+        companyDomain.ApproveAppointmentForManager(token4,"1");
+        companyDomain.AppointOwner("5","1",token3);
+        companyDomain.ApproveAppointmentForOwner(token5,"1");
 
-        String res =companyService.FireManager(token3,"1","4");
+        String res = companyDomain.FireManager(token3,"1","4");
         System.out.println(res);
-        String treeOfRoles=companyService.GetRoleTreeString(token,"1");
+        String treeOfRoles= companyDomain.GetRoleTreeString(token,"1");
         System.out.println(treeOfRoles);
         String expectedTree =
                 "|-- 1 (Owner)\n" +

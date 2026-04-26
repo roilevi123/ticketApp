@@ -1,6 +1,6 @@
 package Appliction;
 
-import Domain.Event.MapArea;
+import Domain.Domains.OrderDomain;
 import Domain.Ticket.Ticket;
 import Domain.User.IUserRepository;
 import Infastructure.OrderRepositoryImpl;
@@ -22,9 +22,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
-class OrderServiceTest {
+class OrderDomainTest {
 
-    private OrderService reserveTicketService;
+    private OrderDomain reserveTicketService;
     private TicketRepositoryImpl ticketRepository;
     private OrderRepositoryImpl orderRepository;
 
@@ -43,7 +43,7 @@ class OrderServiceTest {
         MockitoAnnotations.openMocks(this);
         ticketRepository = spy(new TicketRepositoryImpl());
         orderRepository = spy(new OrderRepositoryImpl());
-        reserveTicketService = new OrderService(orderRepository, tokenService, ticketRepository);
+        reserveTicketService = new OrderDomain(orderRepository, tokenService, ticketRepository);
     }
 
     @Test

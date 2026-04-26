@@ -1,6 +1,9 @@
-package Appliction;
+package Domain.Domains;
 
 
+import Appliction.IBarcodeGenerator;
+import Appliction.IPaymentService;
+import Appliction.ISupplyService;
 import Domain.Order.ActiveOrder;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
@@ -16,7 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Date;
 import java.util.List;
 
-public class PurchasedService {
+public class PurchasedDomain {
     private IActiveOrderRepository repository;
     private ISupplyService supplyService;
     private IPaymentService paymentService;
@@ -24,10 +27,10 @@ public class PurchasedService {
     private iTicketRepository ticketRepository;
     private iPurchasedOrderRepository purchasedOrderRepository;
     private iTreeOfRoleRepository treeOfRoleRepository;
-    private static final Logger logger = LoggerFactory.getLogger(PurchasedService.class);
+    private static final Logger logger = LoggerFactory.getLogger(PurchasedDomain.class);
     private TokenService tokenService;
 
-    public PurchasedService(
+    public PurchasedDomain(
             IActiveOrderRepository repository,
             iTicketRepository ticketRepository,
             iPurchasedOrderRepository purchasedOrderRepository,

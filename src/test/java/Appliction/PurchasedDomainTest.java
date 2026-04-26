@@ -1,5 +1,6 @@
 package Appliction;
 
+import Domain.Domains.PurchasedDomain;
 import Domain.Order.ActiveOrder;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
@@ -24,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-class PurchasedServiceTest {
+class PurchasedDomainTest {
 
     @Mock
     private IActiveOrderRepository orderRepository;
@@ -43,7 +44,7 @@ class PurchasedServiceTest {
     @Mock
     private iTreeOfRoleRepository treeOfRoleRepository;
     @InjectMocks
-    private PurchasedService purchasedService;
+    private PurchasedDomain purchasedDomain;
 
     private final String EMAIL = "test@example.com";
     private final String ORDER_ID = "ord123";
@@ -61,7 +62,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
 
-        purchasedService = new PurchasedService(
+        purchasedDomain = new PurchasedDomain(
                 orderRepoSpy,
                 ticketRepoSpy,
                 purchasedOrderRepository,
@@ -85,7 +86,7 @@ class PurchasedServiceTest {
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
         when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenReturn("new byte[]{1, 2, 3}");
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
+        purchasedDomain.PurchaseTicket(EMAIL, orderId,USERNAME);
 
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
 
@@ -111,7 +112,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
 
-        purchasedService = new PurchasedService(
+        purchasedDomain = new PurchasedDomain(
                 orderRepoSpy,
                 ticketRepoSpy,
                 purchasedOrderRepository,
@@ -129,7 +130,7 @@ class PurchasedServiceTest {
 
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(false);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
+        purchasedDomain.PurchaseTicket(EMAIL, orderId,USERNAME);
 
         verify(paymentService).processPayment(EMAIL, 100.0);
         verify(supplyService, never()).supplyToEmail(anyString(), anyString());
@@ -145,7 +146,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
 
-        purchasedService = new PurchasedService(
+        purchasedDomain = new PurchasedDomain(
                 orderRepoSpy,
                 ticketRepoSpy,
                 purchasedOrderRepository,
@@ -161,7 +162,7 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
+        purchasedDomain.PurchaseTicket(EMAIL, orderId,USERNAME);
 
         verify(paymentService, never()).processPayment(anyString(), anyDouble());
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
@@ -172,7 +173,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
 
-        purchasedService = new PurchasedService(
+        purchasedDomain = new PurchasedDomain(
                 orderRepoSpy,
                 ticketRepoSpy,
                 purchasedOrderRepository,
@@ -188,7 +189,7 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, "orderId",USERNAME);
+        purchasedDomain.PurchaseTicket(EMAIL, "orderId",USERNAME);
 
         verify(paymentService, never()).processPayment(anyString(), anyDouble());
         assertNotNull(orderRepoSpy.findById(orderId));
@@ -200,7 +201,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
 
-        purchasedService = new PurchasedService(
+        purchasedDomain = new PurchasedDomain(
                 orderRepoSpy,
                 ticketRepoSpy,
                 purchasedOrderRepository,
@@ -219,7 +220,7 @@ class PurchasedServiceTest {
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
         when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenThrow(new RuntimeException("Generator Error"));
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
+        purchasedDomain.PurchaseTicket(EMAIL, orderId,USERNAME);
 
         verify(paymentService).refund(EMAIL, 100.0);
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
@@ -230,7 +231,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
 
-        purchasedService = new PurchasedService(
+        purchasedDomain = new PurchasedDomain(
                 orderRepoSpy,
                 ticketRepoSpy,
                 purchasedOrderRepository,
@@ -255,7 +256,7 @@ class PurchasedServiceTest {
         when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenReturn("new byte[]{1, 2, 3}");
         when(tokenService.validateToken(anyString())).thenReturn(true);
         when(tokenService.extractUsername(anyString())).thenReturn(USERNAME);
-        purchasedService.PurchaseTicket(EMAIL, "",USERNAME);
+        purchasedDomain.PurchaseTicket(EMAIL, "",USERNAME);
 
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
 
@@ -281,7 +282,7 @@ class PurchasedServiceTest {
     void isAuthorized_Owner_ReturnsTrue() {
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
 
-        assertTrue(purchasedService.isAuthorized(COMPANY, USERNAME));
+        assertTrue(purchasedDomain.isAuthorized(COMPANY, USERNAME));
     }
 
     @Test
@@ -289,7 +290,7 @@ class PurchasedServiceTest {
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitToSeeTransactions(USERNAME, COMPANY)).thenReturn(true);
 
-        assertTrue(purchasedService.isAuthorized(COMPANY, USERNAME));
+        assertTrue(purchasedDomain.isAuthorized(COMPANY, USERNAME));
     }
 
     @Test
@@ -304,7 +305,7 @@ class PurchasedServiceTest {
         when(purchasedOrderRepository.getPurchasedOrdersForCompany(COMPANY)).thenReturn(List.of(po));
         when(ticketRepository.getTicketsDescription(anyList())).thenReturn("Ticket Info");
 
-        String result = purchasedService.getCompanyTransaction(COMPANY, token);
+        String result = purchasedDomain.getCompanyTransaction(COMPANY, token);
 
         assertTrue(result.contains(COMPANY));
         assertTrue(result.contains("Ticket Info"));
@@ -320,7 +321,7 @@ class PurchasedServiceTest {
         when(treeOfRoleRepository.exitsOwner(user, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitToSeeTransactions(user, COMPANY)).thenReturn(false);
 
-        String result = purchasedService.getCompanyTransaction(COMPANY, token);
+        String result = purchasedDomain.getCompanyTransaction(COMPANY, token);
 
         assertEquals("User not authorized", result);
         verify(purchasedOrderRepository, never()).getPurchasedOrdersForCompany(anyString());
@@ -337,7 +338,7 @@ class PurchasedServiceTest {
         when(purchasedOrderRepository.getPurchasedOrdersForUser(buyer)).thenReturn(List.of(po));
         when(ticketRepository.getTicketsDescription(anyList())).thenReturn("Seat 10");
 
-        String result = purchasedService.getUserTransaction(token);
+        String result = purchasedDomain.getUserTransaction(token);
 
         assertTrue(result.contains(buyer));
         assertTrue(result.contains("Seat 10"));
@@ -348,7 +349,7 @@ class PurchasedServiceTest {
         String token = "invalid_token";
         when(tokenService.validateToken(token)).thenReturn(false);
 
-        String result = purchasedService.getUserTransaction(token);
+        String result = purchasedDomain.getUserTransaction(token);
 
         assertEquals("Invalid token", result);
         verify(purchasedOrderRepository, never()).getPurchasedOrdersForUser(anyString());

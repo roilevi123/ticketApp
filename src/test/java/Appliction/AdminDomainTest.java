@@ -2,6 +2,7 @@ package Appliction;
 
 import Domain.AdminAggregate.iAdminRepository;
 import Domain.Company.iCompanyRepository;
+import Domain.Domains.AdminDomain;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import Domain.PurchasedOrderAggregate.PurchaseOrder;
 import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
@@ -19,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
-class AdminServiceTest {
+class AdminDomainTest {
 
     @Mock private iCompanyRepository companyRepository;
     @Mock private iTreeOfRoleRepository treeOfRoleRepository;
@@ -29,7 +30,7 @@ class AdminServiceTest {
     @Mock private iTicketRepository ticketRepository;
     @Mock private Domain.Event.iEventRepository eventRepository;
     @InjectMocks
-    private AdminService adminService;
+    private AdminDomain adminDomain;
 
     private final String ADMIN_NAME = "admin";
     private final String NOT_ADMIN = "notAdmin";
@@ -45,7 +46,7 @@ class AdminServiceTest {
     void CloseCompany_Success() {
         String company = "Company1";
 
-        adminService.CloseCompany(company, ADMIN_NAME);
+        adminDomain.CloseCompany(company, ADMIN_NAME);
 
         verify(companyRepository).deleteCompany(company);
         verify(treeOfRoleRepository).deleteCompanyMangersAndOwners(company);
@@ -55,7 +56,7 @@ class AdminServiceTest {
     void CloseCompany_Fail_NotAdmin() {
         String company = "Company1";
 
-        adminService.CloseCompany(company, NOT_ADMIN);
+        adminDomain.CloseCompany(company, NOT_ADMIN);
 
         verify(companyRepository, never()).deleteCompany(anyString());
     }
@@ -64,7 +65,7 @@ class AdminServiceTest {
     void removeUser_Success() {
         String user = "user1";
 
-        adminService.removeUser(user, ADMIN_NAME);
+        adminDomain.removeUser(user, ADMIN_NAME);
 
         verify(userRepository).deleteUser(user);
         verify(treeOfRoleRepository).deleteUserRoles(user);
@@ -74,7 +75,7 @@ class AdminServiceTest {
     void removeUser_Fail_NotAdmin() {
         String user = "user1";
 
-        adminService.removeUser(user, NOT_ADMIN);
+        adminDomain.removeUser(user, NOT_ADMIN);
 
         verify(userRepository, never()).deleteUser(anyString());
         verify(treeOfRoleRepository, never()).deleteUserRoles(anyString());
@@ -87,7 +88,7 @@ class AdminServiceTest {
         when(purchasedOrderRepository.GetAllPurchasedOrders()).thenReturn(List.of(po));
         when(ticketRepository.getTicketsDescription(tickets)).thenReturn("Desc1");
 
-        String result = adminService.GetAllPurchasedOrders(ADMIN_NAME);
+        String result = adminDomain.GetAllPurchasedOrders(ADMIN_NAME);
 
         assertTrue(result.contains("Comp"));
         assertTrue(result.contains("Ev"));
@@ -97,7 +98,7 @@ class AdminServiceTest {
 
     @Test
     void GetAllPurchasedOrders_Fail_NotAdmin() {
-        String result = adminService.GetAllPurchasedOrders(NOT_ADMIN);
+        String result = adminDomain.GetAllPurchasedOrders(NOT_ADMIN);
 
 
 }}

@@ -5,6 +5,10 @@ import Appliction.CompanyService;
 import Appliction.EventService;
 import Appliction.OrderService;
 import Appliction.UserService;
+import Domain.Domains.CompanyDomain;
+import Domain.Domains.EventDomain;
+import Domain.Domains.OrderDomain;
+import Domain.Domains.UserDomain;
 import Domain.Event.EventType;
 import Domain.Event.MapArea;
 
@@ -15,17 +19,17 @@ import java.util.function.Supplier;
 
 public class ReseveTicketTests {
     UserService userService;
-    CompanyService companyService;
-    EventService eventService;
+    CompanyService companyDomain;
+    EventService eventDomain;
     OrderService reserveTicketService;
     private final List<String> failTests = new ArrayList<>();
     private final List<String> passTests = new ArrayList<>();
     private final Map<String, Supplier<Boolean>> testMap = new LinkedHashMap<>();
     private initTheSystem initTheSystem;
-    public ReseveTicketTests(UserService userService, CompanyService companyService, EventService eventService, OrderService reserveTicketService, initTheSystem initTheSystem) {
+    public ReseveTicketTests(UserService userService, CompanyService companyDomain, EventService eventDomain, OrderService reserveTicketService, initTheSystem initTheSystem) {
         this.userService = userService;
-        this.companyService = companyService;
-        this.eventService = eventService;
+        this.companyDomain = companyDomain;
+        this.eventDomain = eventDomain;
         this.reserveTicketService = reserveTicketService;
         this.initTheSystem = initTheSystem;
         initTestMap();
@@ -110,8 +114,8 @@ public class ReseveTicketTests {
     public boolean ReseveTicketTestPass1() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        companyDomain.CreateCompany("1",token);
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
         userService.register("2","2");
         String token1=userService.login("2","2");
         List<int[]> requests = new ArrayList<>();
@@ -124,8 +128,8 @@ public class ReseveTicketTests {
         String token = userService.login("1", "1");
         userService.register("2", "2");
         String token1 = userService.login("2", "2");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         List<int[]> requests = new ArrayList<>();
         requests.add(new int[]{0, 0});
@@ -139,8 +143,8 @@ public class ReseveTicketTests {
     public boolean ReseveTicketOutOfBounds3() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         List<int[]> requests = new ArrayList<>();
         requests.add(new int[]{5, 5});
@@ -153,8 +157,8 @@ public class ReseveTicketTests {
     public boolean ReseveTicketMultipleSpots4() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         List<int[]> requests = new ArrayList<>();
         requests.add(new int[]{0, 0});
@@ -168,8 +172,8 @@ public class ReseveTicketTests {
     public boolean ReseveTicketAlreadyReserved5() {
         userService.register("1", "1");
         String token1 = userService.login("1", "1");
-        companyService.CreateCompany("1", token1);
-        eventService.createEvent(token1, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token1);
+        eventDomain.createEvent(token1, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         userService.register("2", "2");
         String token2 = userService.login("2", "2");
@@ -186,8 +190,8 @@ public class ReseveTicketTests {
     public boolean ReseveTicketConcurrentTwoThreads6() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         int threadCount = 2;
         CountDownLatch latch = new CountDownLatch(1);
@@ -232,8 +236,8 @@ public class ReseveTicketTests {
     public boolean ReseveTicketStandSequential7() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea1());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea1());
 
         userService.register("user1", "pass1");
         String token1 = userService.login("user1", "pass1");
@@ -252,8 +256,8 @@ public class ReseveTicketTests {
     public boolean ReseveTicketConcurrentStand8() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea1());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea1());
 
         int threadCount = 2;
         CountDownLatch latch = new CountDownLatch(1);
@@ -298,8 +302,8 @@ public class ReseveTicketTests {
     public boolean ReseveTicketExpiredTicketAvailableAgain9() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         userService.register("user1", "pass1");
         String token1 = userService.login("user1", "pass1");
@@ -326,8 +330,8 @@ public class ReseveTicketTests {
     public boolean GetActiveOrderTicketsSingle10() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         userService.register("user1", "pass1");
         String token1 = userService.login("user1", "pass1");
@@ -346,8 +350,8 @@ public class ReseveTicketTests {
     public boolean GetActiveOrderTicketsSequential11() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea1());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea1());
 
         userService.register("user1", "pass1");
         String token1 = userService.login("user1", "pass1");
@@ -378,8 +382,8 @@ public class ReseveTicketTests {
     public boolean GetActiveOrderTicketsConcurrent12() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         int threadCount = 2;
         CountDownLatch latch = new CountDownLatch(1);
@@ -442,8 +446,8 @@ public class ReseveTicketTests {
     public boolean GetActiveOrderTicketsExpired13() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         userService.register("user1", "pass1");
         String token1 = userService.login("user1", "pass1");
@@ -475,8 +479,8 @@ public class ReseveTicketTests {
     public boolean GetActiveOrderTicketsAsGuest14() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
 
         List<int[]> requests = new ArrayList<>();
@@ -495,8 +499,8 @@ public class ReseveTicketTests {
     public boolean GetActiveOrderTicketsAAfterLogOut15() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         userService.register("user1", "pass1");
         String token1 = userService.login("user1", "pass1");
@@ -517,8 +521,8 @@ public class ReseveTicketTests {
     public boolean GetActiveOrderTicketsAsGuestThatGetOUt16() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        companyDomain.CreateCompany("1", token);
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
 
         List<int[]> requests = new ArrayList<>();

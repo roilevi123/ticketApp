@@ -4,6 +4,9 @@ import AcceptanceTest.users.initTheSystem;
 import Appliction.CompanyService;
 import Appliction.EventService;
 import Appliction.UserService;
+import Domain.Domains.CompanyDomain;
+import Domain.Domains.EventDomain;
+import Domain.Domains.UserDomain;
 import Domain.Event.EventType;
 import Domain.Event.MapArea;
 
@@ -13,19 +16,19 @@ import java.util.function.Supplier;
 
 public class informationEventsTests {
     UserService userService;
-    CompanyService companyService;
-    EventService eventService;
+    CompanyService companyDomain;
+    EventService eventDomain;
     private final List<String> failTests = new ArrayList<>();
     private final List<String> passTests = new ArrayList<>();
     private final Map<String, Supplier<Boolean>> testMap = new LinkedHashMap<>();
     private initTheSystem initTheSystem;
     public informationEventsTests(UserService userService,
-                                  CompanyService companyService,
-                                  EventService eventService,
+                                  CompanyService companyDomain,
+                                  EventService eventDomain,
                                   initTheSystem initTheSystem) {
         this.userService = userService;
-        this.companyService = companyService;
-        this.eventService = eventService;
+        this.companyDomain = companyDomain;
+        this.eventDomain = eventDomain;
         this.initTheSystem = initTheSystem;
         initTestMap();
     }
@@ -95,8 +98,8 @@ public class informationEventsTests {
     public boolean GetCompanyInfoSuccess1() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        String companyInfo = eventService.getCompanyInfo("1");
+        companyDomain.CreateCompany("1",token);
+        String companyInfo = eventDomain.getCompanyInfo("1");
         String expectedInfo = "Company Summary:" +
                 "\nName: 1" +
                 "\nFounder/Owner: 1" +
@@ -108,18 +111,18 @@ public class informationEventsTests {
         userService.register("1","1");
         String token=userService.login("1","1");
 //        companyService.CreateCompany("1",token);
-        String companyInfo = eventService.getCompanyInfo("1");
+        String companyInfo = eventDomain.getCompanyInfo("1");
         return companyInfo==null;
     }
     public boolean GetCompanyEventsSuccess3() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
+        companyDomain.CreateCompany("1", token);
         Date eventDate = new Date();
         MapArea[][] map = getMapArea();
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, eventDate, "1", "1", map);
-        eventService.createEvent(token, "2", "2", EventType.CONFERENCE, 200, eventDate, "2", "1", map);
-        List<String> list = eventService.getCompanyEvents("1");
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, eventDate, "1", "1", map);
+        eventDomain.createEvent(token, "2", "2", EventType.CONFERENCE, 200, eventDate, "2", "1", map);
+        List<String> list = eventDomain.getCompanyEvents("1");
         String expectedEvent1 = "Event{eventName='1', artistName='1', eventType=PLAY, price=100.0, date=" + eventDate + ", location='1', rating=0.0, company='1', version=0, map=[[SEAT, SEAT], [SEAT, SEAT]]}";
         String expectedEvent2 = "Event{eventName='2', artistName='2', eventType=CONFERENCE, price=200.0, date=" + eventDate + ", location='2', rating=0.0, company='1', version=0, map=[[SEAT, SEAT], [SEAT, SEAT]]}";
         List<String> expectedList = List.of(expectedEvent1, expectedEvent2);
@@ -131,8 +134,8 @@ public class informationEventsTests {
     public boolean GetCompanyEventsSuccessButNoEventsExist4() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        List<String> list = eventService.getCompanyEvents("1");
+        companyDomain.CreateCompany("1", token);
+        List<String> list = eventDomain.getCompanyEvents("1");
 
         return list.isEmpty();
     }
@@ -140,26 +143,26 @@ public class informationEventsTests {
         userService.register("1", "1");
         String token = userService.login("1", "1");
 //        companyService.CreateCompany("1", token);
-        List<String> list = eventService.getCompanyEvents("1");
+        List<String> list = eventDomain.getCompanyEvents("1");
         return list==null;
     }
 
     public boolean GetEventMapSuccess6() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
+        companyDomain.CreateCompany("1", token);
         Date eventDate = new Date();
         MapArea[][] map = getMapArea();
-        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, eventDate, "1", "1", map);
-        MapArea[][] list = eventService.getMapArea("1","1");
+        eventDomain.createEvent(token, "1", "1", EventType.PLAY, 100, eventDate, "1", "1", map);
+        MapArea[][] list = eventDomain.getMapArea("1","1");
 
         return Arrays.deepEquals(map, list);
     }
     public boolean GetEventMapFailedNoEventsExist7() {
         userService.register("1", "1");
         String token = userService.login("1", "1");
-        companyService.CreateCompany("1", token);
-        MapArea[][] list = eventService.getMapArea("1","1");
+        companyDomain.CreateCompany("1", token);
+        MapArea[][] list = eventDomain.getMapArea("1","1");
 
         return list==null;
     }
@@ -167,42 +170,42 @@ public class informationEventsTests {
         userService.register("1", "1");
         String token = userService.login("1", "1");
 //        companyService.CreateCompany("1", token);
-        MapArea[][] list = eventService.getMapArea("1","1");
+        MapArea[][] list = eventDomain.getMapArea("1","1");
         return list==null;
     }
     private void setupEnvironment() {
         userService.register("user1", "pass1");
         String token1 = userService.login("user1", "pass1");
-        companyService.CreateCompany("CompanyA", token1);
+        companyDomain.CreateCompany("CompanyA", token1);
 
         userService.register("user2", "pass2");
         String token2 = userService.login("user2", "pass2");
-        companyService.CreateCompany("CompanyB", token2);
+        companyDomain.CreateCompany("CompanyB", token2);
 
         long day = 24 * 60 * 60 * 1000L;
         Date today = new Date();
         Date nextWeek = new Date(today.getTime() + 7 * day);
 
-        eventService.createEvent(token1, "Rock Festival", "Arctic Monkeys", EventType.CONFERENCE, 100.0, today, "Tel Aviv", "CompanyA", getMapArea());
-        eventService.createEvent(token1, "Jazz Night", "Norah Jones", EventType.CONFERENCE, 200.0, nextWeek, "Haifa", "CompanyA", getMapArea());
+        eventDomain.createEvent(token1, "Rock Festival", "Arctic Monkeys", EventType.CONFERENCE, 100.0, today, "Tel Aviv", "CompanyA", getMapArea());
+        eventDomain.createEvent(token1, "Jazz Night", "Norah Jones", EventType.CONFERENCE, 200.0, nextWeek, "Haifa", "CompanyA", getMapArea());
 
-        eventService.createEvent(token2, "Tech Talk", "Elon Mask", EventType.CONFERENCE, 0.0, today, "Tel Aviv", "CompanyB", getMapArea());
-        eventService.createEvent(token2, "Opera Show", "Pavaraotti", EventType.PLAY, 500.0, nextWeek, "Jerusalem", "CompanyB", getMapArea());
+        eventDomain.createEvent(token2, "Tech Talk", "Elon Mask", EventType.CONFERENCE, 0.0, today, "Tel Aviv", "CompanyB", getMapArea());
+        eventDomain.createEvent(token2, "Opera Show", "Pavaraotti", EventType.PLAY, 500.0, nextWeek, "Jerusalem", "CompanyB", getMapArea());
 
     }
     public boolean SearchEventsByEventNameQuery9() {
         setupEnvironment();
-        List<String> results = eventService.searchEvents("Rock", null, null, null, null, null, null, null, null);
+        List<String> results = eventDomain.searchEvents("Rock", null, null, null, null, null, null, null, null);
         return results != null && results.size() == 1 && results.get(0).contains("Rock Festival");
     }
     public boolean SearchEventsByArtistNameQuery10() {
         setupEnvironment();
-        List<String> results = eventService.searchEvents("Monkeys", null, null, null, null, null, null, null, null);
+        List<String> results = eventDomain.searchEvents("Monkeys", null, null, null, null, null, null, null, null);
         return results != null && results.size() == 1 && results.get(0).contains("Arctic Monkeys");
     }
     public boolean SearchEventsByPriceRangeMultipleCompanies11() {
         setupEnvironment();
-        List<String> results = eventService.searchEvents(null, null, null, 0.0, 150.0, null, null, null, null);
+        List<String> results = eventDomain.searchEvents(null, null, null, 0.0, 150.0, null, null, null, null);
         return results != null && results.size() == 2;
     }
     public boolean SearchEventsByDateRange12() {
@@ -213,7 +216,7 @@ public class informationEventsTests {
 
         Date tomorrow = new Date(System.currentTimeMillis() + (24 * 60 * 60 * 1000L));
 
-        List<String> results = eventService.searchEvents(null, null, null, null, null, startDate, tomorrow, null, null);
+        List<String> results = eventDomain.searchEvents(null, null, null, null, null, startDate, tomorrow, null, null);
 
         if (results == null || results.size() != 2) {
             System.out.println("Test 12 failed. Found size: " + (results != null ? results.size() : "null"));
@@ -223,12 +226,12 @@ public class informationEventsTests {
     }
     public boolean SearchEventsByLocation13() {
         setupEnvironment();
-        List<String> results = eventService.searchEvents(null, null, null, null, null, null, null, "Tel Aviv", null);
+        List<String> results = eventDomain.searchEvents(null, null, null, null, null, null, null, "Tel Aviv", null);
         return results != null && results.size() == 2;
     }
     public boolean SearchEventsByMinRating14() {
         setupEnvironment();
-        List<String> results = eventService.searchEvents(null, null, null, null, null, null, null, null, 1.0);
+        List<String> results = eventDomain.searchEvents(null, null, null, null, null, null, null, null, 1.0);
         return results != null && results.isEmpty();
     }
 

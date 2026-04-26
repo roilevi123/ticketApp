@@ -1,5 +1,6 @@
 package Appliction;
 
+import Domain.Domains.UserDomain;
 import Domain.Order.IActiveOrderRepository;
 import Domain.User.IUserRepository;
 import Domain.User.User;
@@ -29,7 +30,7 @@ class UserServiceTest {
     private IActiveOrderRepository activeOrderRepository;
 
     @InjectMocks
-    private UserService userService;
+    private UserDomain userService;
 
     private final String USERNAME = "roy_user";
     private final String RAW_PASSWORD = "password123";

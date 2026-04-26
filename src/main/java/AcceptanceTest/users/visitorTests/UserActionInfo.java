@@ -2,6 +2,7 @@ package AcceptanceTest.users.visitorTests;
 
 import AcceptanceTest.users.initTheSystem;
 import Appliction.UserService;
+import Domain.Domains.UserDomain;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -13,15 +14,13 @@ public class UserActionInfo {
     private initTheSystem initTheSystem;
     private final Map<String, Supplier<Boolean>> testMap = new LinkedHashMap<>();
 
-    public UserActionInfo(UserService userService,initTheSystem initTheSystem) {
+    public UserActionInfo(UserService userService, initTheSystem initTheSystem) {
         this.userService = userService;
         this.initTheSystem = initTheSystem;
         initTestMap();
     }
 
-    public UserService getUserService() {
-        return userService;
-    }
+
 
     private void initTestMap() {
         testMap.put("1", this::RegisterSuccess1);

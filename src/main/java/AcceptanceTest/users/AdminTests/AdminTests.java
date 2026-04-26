@@ -2,6 +2,7 @@ package AcceptanceTest.users.AdminTests;
 
 import AcceptanceTest.users.initTheSystem;
 import Appliction.*;
+import Domain.Domains.*;
 import Domain.Event.EventType;
 import Domain.Event.MapArea;
 
@@ -11,30 +12,30 @@ import java.util.function.Supplier;
 
 public class AdminTests {
     UserService userService;
-    CompanyService companyService;
-    EventService eventService;
+    CompanyService companyDomain;
+    EventService eventDomain;
     OrderService reserveTicketService;
-    PurchasedService purchasedService;
-    AdminService adminService;
+    PurchasedSevice purchasedDomain;
+    AdminService adminDomain;
 
     private final List<String> failTests = new ArrayList<>();
     private final List<String> passTests = new ArrayList<>();
     private final Map<String, Supplier<Boolean>> testMap = new LinkedHashMap<>();
     private initTheSystem initTheSystem;
     public AdminTests(UserService userService,
-                      CompanyService companyService,
-                      EventService eventService,
+                      CompanyService companyDomain,
+                      EventService eventDomain,
                       OrderService reserveTicketService,
-                      PurchasedService purchasedService,
-                      AdminService adminService,
+                      PurchasedSevice purchasedDomain,
+                      AdminService adminDomain,
                       initTheSystem initTheSystem
                      ) {
         this.userService = userService;
-        this.companyService = companyService;
-        this.eventService = eventService;
+        this.companyDomain = companyDomain;
+        this.eventDomain = eventDomain;
         this.reserveTicketService = reserveTicketService;
-        this.purchasedService = purchasedService;
-        this.adminService = adminService;
+        this.purchasedDomain = purchasedDomain;
+        this.adminDomain = adminDomain;
         this.initTheSystem = initTheSystem;
         initTestMap();
     }
@@ -98,12 +99,12 @@ public class AdminTests {
     public boolean CloseCompanySuccess1(){
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        String result=adminService.CloseCompany("1","admin");
-        String company=eventService.getCompanyInfo("1");
-        List<String> events=eventService.getCompanyEvents("1");
-        String treeOfRole=companyService.GetRoleTreeString(token,"1");
+        companyDomain.CreateCompany("1",token);
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        String result= adminDomain.CloseCompany("1","admin");
+        String company= eventDomain.getCompanyInfo("1");
+        List<String> events= eventDomain.getCompanyEvents("1");
+        String treeOfRole= companyDomain.GetRoleTreeString(token,"1");
         System.out.println(result);
         System.out.println(company==null);
         System.out.println(treeOfRole==null);
@@ -113,38 +114,38 @@ public class AdminTests {
     public boolean CloseCompanyFailedNotAdmin2(){
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        String result=adminService.CloseCompany("1","admin1");
+        companyDomain.CreateCompany("1",token);
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        String result= adminDomain.CloseCompany("1","admin1");
         return result.equals("error");
     }
     public boolean RemoveUserSuccess3(){
         userService.register("1","1");
         String token=userService.login("1","1");
-        String result=adminService.removeUser("1","admin");
+        String result= adminDomain.removeUser("1","admin");
         String isExist=userService.login("1","1");
         return result.equals("success")&& isExist==null;
     }
     public boolean RemoveUserFailedNotAdmin4(){
         userService.register("1","1");
         String token=userService.login("1","1");
-        String result=adminService.removeUser("1","admin1");
+        String result= adminDomain.removeUser("1","admin1");
         return result.equals("error");
     }
     public boolean GetAllPurchasedOrdersSuccess5() {
         userService.register("owner", "p");
         String tO = userService.login("owner", "p");
-        companyService.CreateCompany("C1", tO);
-        eventService.createEvent(tO, "E1", "C1", EventType.PLAY, 100, new Date(), "L", "C1", getMapArea());
+        companyDomain.CreateCompany("C1", tO);
+        eventDomain.createEvent(tO, "E1", "C1", EventType.PLAY, 100, new Date(), "L", "C1", getMapArea());
 
         userService.register("buyer", "p");
         String tB = userService.login("buyer", "p");
         List<int[]> req = new ArrayList<>();
         req.add(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", req);
-        purchasedService.PurchaseTicket("b@gmail.com", orderId,"buyer");
+        purchasedDomain.PurchaseTicket("b@gmail.com", orderId,"buyer");
 
-        String result = adminService.GetAllPurchasedOrders("admin");
+        String result = adminDomain.GetAllPurchasedOrders("admin");
 
         return result != null &&
                 result.contains("company='C1'") &&
@@ -154,8 +155,8 @@ public class AdminTests {
     public boolean GetAllPurchasedOrdersMultipleSuccess6() {
         userService.register("o1", "p");
         String tO = userService.login("o1", "p");
-        companyService.CreateCompany("C1", tO);
-        eventService.createEvent(tO, "E1", "C1", EventType.PLAY, 100, new Date(), "L", "C1", getMapArea());
+        companyDomain.CreateCompany("C1", tO);
+        eventDomain.createEvent(tO, "E1", "C1", EventType.PLAY, 100, new Date(), "L", "C1", getMapArea());
 
         userService.register("b1", "p");
         String tB1 = userService.login("b1", "p");
@@ -167,13 +168,13 @@ public class AdminTests {
         List<int[]> req1 = new ArrayList<>();
         req.add(new int[]{1, 1, 1});
         String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", req);
-        purchasedService.PurchaseTicket("b1@gmail.com", o1,"b1");
+        purchasedDomain.PurchaseTicket("b1@gmail.com", o1,"b1");
 
 
         String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", req1);
-        purchasedService.PurchaseTicket("b2@gmail.com", o2,"b2");
+        purchasedDomain.PurchaseTicket("b2@gmail.com", o2,"b2");
 
-        String result = adminService.GetAllPurchasedOrders("admin");
+        String result = adminDomain.GetAllPurchasedOrders("admin");
 
         return result != null &&
                 result.contains("buyer='b1'") &&
@@ -181,7 +182,7 @@ public class AdminTests {
     }
 
     public boolean GetAllPurchasedOrdersFailedNotAdmin7() {
-        String result = adminService.GetAllPurchasedOrders("notAdminUser");
+        String result = adminDomain.GetAllPurchasedOrders("notAdminUser");
 
         return result == null;
     }
@@ -189,13 +190,13 @@ public class AdminTests {
         // הגדרת חברה א' ואירוע
         userService.register("ownerA", "p");
         String tOA = userService.login("ownerA", "p");
-        companyService.CreateCompany("CompA", tOA);
-        eventService.createEvent(tOA, "EventA", "CompA", EventType.PLAY, 100, new Date(), "LocA", "CompA", getMapArea());
+        companyDomain.CreateCompany("CompA", tOA);
+        eventDomain.createEvent(tOA, "EventA", "CompA", EventType.PLAY, 100, new Date(), "LocA", "CompA", getMapArea());
 
         userService.register("ownerB", "p");
         String tOB = userService.login("ownerB", "p");
-        companyService.CreateCompany("CompB", tOB);
-        eventService.createEvent(tOB, "EventB", "CompB", EventType.PLAY, 100, new Date(), "LocB", "CompB", getMapArea());
+        companyDomain.CreateCompany("CompB", tOB);
+        eventDomain.createEvent(tOB, "EventB", "CompB", EventType.PLAY, 100, new Date(), "LocB", "CompB", getMapArea());
 
         userService.register("buyer8", "p");
         String tB = userService.login("buyer8", "p");
@@ -203,12 +204,12 @@ public class AdminTests {
         req.add(new int[]{0, 0, 1});
 
         String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", req);
-        purchasedService.PurchaseTicket("b@gmail.com", orderA,"buyer8");
+        purchasedDomain.PurchaseTicket("b@gmail.com", orderA,"buyer8");
 
         String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", req);
-        purchasedService.PurchaseTicket("b@gmail.com", orderB,"buyer8");
+        purchasedDomain.PurchaseTicket("b@gmail.com", orderB,"buyer8");
 
-        String result = adminService.GetAllPurchasedOrders("admin");
+        String result = adminDomain.GetAllPurchasedOrders("admin");
 
         return result != null &&
                 result.contains("company='CompA'") &&

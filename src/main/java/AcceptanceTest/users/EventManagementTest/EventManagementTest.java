@@ -2,8 +2,11 @@ package AcceptanceTest.users.EventManagementTest;
 
 import AcceptanceTest.users.initTheSystem;
 import Appliction.CompanyService;
-import Appliction.UserService;
 import Appliction.EventService;
+import Appliction.UserService;
+import Domain.Domains.CompanyDomain;
+import Domain.Domains.UserDomain;
+import Domain.Domains.EventDomain;
 import Appliction.Response;
 import Domain.Event.EventType;
 
@@ -14,19 +17,19 @@ import Domain.OwnerManagerTree.Permission;
 
 public class EventManagementTest {
 
-    private EventService eventService;
-    private CompanyService companyService;
+    private EventService eventDomain;
+    private CompanyService companyDomain;
     private UserService userService;
     private final List<String> failTests = new ArrayList<>();
     private final List<String> passTests = new ArrayList<>();
     private final Map<String, Supplier<Boolean>> testMap = new LinkedHashMap<>();
     private initTheSystem initTheSystem;
 
-    public EventManagementTest(UserService userService, EventService eventService, initTheSystem initTheSystem, CompanyService companyService) {
+    public EventManagementTest(UserService userService, EventService eventDomain, initTheSystem initTheSystem, CompanyService companyDomain) {
         this.userService = userService;
-        this.eventService = eventService;
+        this.eventDomain = eventDomain;
         this.initTheSystem = initTheSystem;
-        this.companyService = companyService;
+        this.companyDomain = companyDomain;
         initTestMap();
     }
 
@@ -102,8 +105,8 @@ public class EventManagementTest {
     public boolean CreateEventAsFounderSuccess1() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        Response<String> result=eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        companyDomain.CreateCompany("1",token);
+        Response<String> result= eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
         return result.isSuccess();
     }
     public boolean CreateEventAsManagerSuccess2() {
@@ -111,12 +114,12 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
+        Response<String> result= eventDomain.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
         return result.isSuccess();
     }
     public boolean CreateEventAsOwnerSuccess3() {
@@ -124,10 +127,10 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        companyService.ApproveAppointmentForOwner(token2,"1");
-        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
+        Response<String> result= eventDomain.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
         return result.isSuccess();
     }
     public boolean CreateEventFailedNotAuthorizedNotPartOfTheCompany4() {
@@ -135,10 +138,10 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
 //        companyService.AppointOwner("2","1",token);
 //        companyService.ApproveAppointmentForOwner(token2,"1");
-        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        Response<String> result= eventDomain.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
         return !result.isSuccess();
     }
     public boolean CreateEventFailedNotAuthorizedNotAprroveTheOwnerShip5() {
@@ -146,10 +149,10 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
 //        companyService.ApproveAppointmentForOwner(token2,"1");
-        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        Response<String> result= eventDomain.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
         return !result.isSuccess();
     }
     public boolean CreateEventFailedNotAuthorizedNotHaveTheRightPermission6() {
@@ -157,20 +160,20 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.CHANGE_POLICIES);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
+        Response<String> result= eventDomain.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
         return !result.isSuccess();
     }
     public boolean DeleteEventAsFounderSuccess7() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token);
+        companyDomain.CreateCompany("1",token);
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        Response<Void> result= eventDomain.deleteEvent("1","1",token);
         return result.isSuccess();
     }
     public boolean DeleteEventAsManagerSuccess8() {
@@ -178,13 +181,13 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        Response<Void> result= eventDomain.deleteEvent("1","1",token2);
 
         return result.isSuccess();
     }
@@ -193,11 +196,11 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        companyService.ApproveAppointmentForOwner(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        Response<Void> result= eventDomain.deleteEvent("1","1",token2);
         return result.isSuccess();
 
     }
@@ -206,11 +209,11 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        companyService.ApproveAppointmentForOwner(token2,"1");
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
 //        eventService.CreateEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
+        Response<Void> result= eventDomain.deleteEvent("1","1",token2);
         return !result.isSuccess();
     }
 
@@ -220,11 +223,11 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
 //        companyService.AppointOwner("2","1",token);
 //        companyService.ApproveAppointmentForOwner(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        Response<Void> result= eventDomain.deleteEvent("1","1",token2);
 
         return !result.isSuccess();
     }
@@ -233,11 +236,11 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
 //        companyService.ApproveAppointmentForOwner(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        Response<Void> result= eventDomain.deleteEvent("1","1",token2);
 
         return !result.isSuccess();
     }
@@ -246,13 +249,13 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.CHANGE_POLICIES);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        Response<Void> result= eventDomain.deleteEvent("1","1",token2);
 
         return !result.isSuccess();
     }
@@ -260,9 +263,9 @@ public class EventManagementTest {
     public boolean UpdateEventAsFounderSuccess14() {
         userService.register("1","1");
         String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        String result=eventService.UpdateEvent(token,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
+        companyDomain.CreateCompany("1",token);
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        String result= eventDomain.UpdateEvent(token,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
         return result.equals("success");
     }
     public boolean UpdateEventAsManagerSuccess15() {
@@ -270,13 +273,13 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        String result=eventService.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        String result= eventDomain.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
 
         return result.equals("success");
     }
@@ -285,11 +288,11 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        companyService.ApproveAppointmentForOwner(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        String result=eventService.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        String result= eventDomain.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
         return result.equals("success");
 
     }
@@ -298,11 +301,11 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        companyService.ApproveAppointmentForOwner(token2,"1");
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
+        companyDomain.ApproveAppointmentForOwner(token2,"1");
 //        eventService.CreateEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        String result=eventService.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
+        String result= eventDomain.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
         return result.equals("failed");
     }
 
@@ -312,11 +315,11 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
 //        companyService.AppointOwner("2","1",token);
 //        companyService.ApproveAppointmentForOwner(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        String result=eventService.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        String result= eventDomain.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
 
         return result.equals("failed");
     }
@@ -325,11 +328,11 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
+        companyDomain.CreateCompany("1",token);
+        companyDomain.AppointOwner("2","1",token);
 //        companyService.ApproveAppointmentForOwner(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        String result=eventService.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        String result= eventDomain.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
 
         return result.equals("failed");
     }
@@ -338,13 +341,13 @@ public class EventManagementTest {
         String token=userService.login("1","1");
         userService.register("2","2");
         String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+        companyDomain.CreateCompany("1",token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.CHANGE_POLICIES);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        String result=eventService.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
+        companyDomain.AppointAManager("2","1",permissions,token);
+        companyDomain.ApproveAppointmentForManager(token2,"1");
+        eventDomain.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+        String result= eventDomain.UpdateEvent(token2,"1","2", EventType.PLAY,100,new Date(),"1","1",getMapArea(),0);
 
         return result.equals("failed");
     }
