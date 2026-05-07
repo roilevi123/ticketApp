@@ -1,25 +1,17 @@
 package Appliction;
 
+import Domain.Domains.QueueDomain;
 import Domain.QueueAggregates.QueueEntry;
-import Domain.QueueAggregates.iQueueRepository;
+
 import java.util.List;
 import java.util.Optional;
 
 public class QueueService {
-    private iQueueRepository queueRepository;
-    private final int MAX_ACTIVE_USERS = 100;
-    private final long ACCESS_DURATION = 10 * 60 * 1000;
-
-    public QueueService(iQueueRepository queueRepository) {
-        this.queueRepository = queueRepository;
+    private QueueDomain domain;
+    public QueueService(QueueDomain domain) {
+        this.domain = domain;
     }
-
     public String checkStatus(String eventId, String username) {
-        return queueRepository.checkStatusAtomic(
-                eventId,
-                username,
-                MAX_ACTIVE_USERS,
-                ACCESS_DURATION
-        );
+        return domain.checkStatus(eventId, username);
     }
 }
