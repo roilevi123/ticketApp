@@ -13,11 +13,11 @@ public class ActiveOrder {
     private List<String> ticketIds;
     private Date expirationTime;
     private int version;
-    public ActiveOrder(String company, String event, List<String> ticketsId, String buyer, String orderId, Date expiryDate) {
+    public ActiveOrder(String company, String event, List<String> ticketsId, String buyerID, String orderId, Date expiryDate) {
         this.companyId = company;
         this.eventId = event;
         this.ticketIds = ticketsId;
-        this.userId = buyer;
+        this.userId = buyerID;
         this.version = 1;
         this.orderId = orderId;
         this.expirationTime = expiryDate;

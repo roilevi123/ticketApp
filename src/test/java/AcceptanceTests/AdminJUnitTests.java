@@ -13,7 +13,7 @@ import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import Domain.QueueAggregates.iQueueRepository;
 import Domain.Ticket.TicketDTO;
 import Domain.Ticket.iTicketRepository;
-import Domain.User.IUserRepository;
+import Domain.User.*;
 import Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +34,7 @@ public class AdminJUnitTests {
     private OrderService reserveTicketService;
     private PurchasedService purchasedService;
     private AdminService adminService;
+    private IUserRepository userRepository;
 
     @BeforeEach
     void setUp() {
@@ -48,8 +49,12 @@ public class AdminJUnitTests {
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
 
         // הוספת ה-AdminRepository הנדרש על פי ה-Service החדש
-        iAdminRepository adminRepository = new AdminRepositoryImpl();
-
+        iAdminRepository adminRepository = new AdminRepositoryImpl(){
+            @Override
+            public boolean isAdmin(String userID) {
+                return userID.equals("admin");
+            }
+        };
         TokenService tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
@@ -72,16 +77,16 @@ public class AdminJUnitTests {
                 paymentService, barcodeGenerator,
                 tokenService, treeOfRoleRepository);
 
-        // עדכון אתחול AdminService לפי הקונסטרקטור שסיפקת (7 פרמטרים)
         this.adminService = new AdminService(
-                treeOfRoleRepository,   // 1
-                companyRepository,      // 2
-                adminRepository,        // 3
-                userRepository,         // 4
-                purchasedOrderRepository, // 5
-                ticketRepository,       // 6
-                eventRepository         // 7
+                treeOfRoleRepository,   
+                companyRepository,      
+                adminRepository,        
+                userRepository,         
+                purchasedOrderRepository,
+                ticketRepository,       
+                eventRepository         
         );
+        this.userRepository = userRepository;
 
         // --- Data Cleanup ---
         userRepository.deleteAll();
@@ -93,7 +98,7 @@ public class AdminJUnitTests {
         ticketRepository.deleteAllTickets();
         queueRepository.deleteAll();
         tokenService.clearAllData();
-        // הערה: יש לוודא שיש מתודת cleanup גם ל-AdminRepository אם הוא שומר נתונים
+        adminRepository.deleteAll();
     }
 
     private MapArea[][] getMapArea() {
@@ -130,7 +135,7 @@ public class AdminJUnitTests {
         String token = userService.login("owner1", "password");
         companyService.CreateCompany("C1", token);
 
-        String result = adminService.CloseCompany("C1", "wrong_admin_token");
+        String result = adminService.CloseCompany("C1", "not_admin");
         assertNotEquals("success", result);
     }
 
@@ -138,8 +143,8 @@ public class AdminJUnitTests {
     @DisplayName("3. Remove User Success")
     void removeUserSuccess3() {
         userService.register("userToRemove", "123");
-
-        String result = adminService.removeUser("userToRemove", "admin");
+        String userID = (userRepository.getUserByUsername("userToRemove")).getID();
+        String result = adminService.removeUser(userID, "admin");
         assertEquals("success", result);
 
         // וודוא שהמשתמש נמחק ולא יכול להתחבר

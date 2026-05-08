@@ -6,17 +6,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AdminRepositoryImpl implements iAdminRepository {
-    private final List<String> defaultAdmins = List.of("admin");
-    private List<String> admins = new ArrayList<>(defaultAdmins);
+    private List<String> adminsIDs = new ArrayList<>();
     @Override
-    public boolean isAdmin(String adminName) {
-        return admins.contains(adminName);
+    public boolean isAdmin(String adminID) {
+        return adminsIDs.contains(adminID);
+    }
+
+    @Override
+    public void addAdmin(String adminID) {
+        if (!adminsIDs.contains(adminID)) {
+            adminsIDs.add(adminID);
+        }
     }
 
     @Override
     public void deleteAll() {
-//        admins.clear();
-//        admins.addAll(defaultAdmins);
+        adminsIDs.clear();
     }
 
 

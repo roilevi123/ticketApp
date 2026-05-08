@@ -12,7 +12,7 @@ public class QueueRepositoryImpl implements iQueueRepository {
     private final Map<String, LinkedList<QueueEntry>> eventQueues = new ConcurrentHashMap<>();
 
     @Override
-    public String checkStatusAtomic(String eventId, String username, int maxActiveUsers, long accessDuration) {
+    public String checkStatusAtomic(String eventId, String userID, int maxActiveUsers, long accessDuration) {
         AtomicReference<String> result = new AtomicReference<>("ERROR");
         long now = System.currentTimeMillis();
 
@@ -28,12 +28,12 @@ public class QueueRepositoryImpl implements iQueueRepository {
             );
 
             QueueEntry userEntry = queue.stream()
-                    .filter(e -> e.getUsername().equals(username))
+                    .filter(e -> e.getUserID().equals(userID))
                     .findFirst()
                     .orElse(null);
 
             if (userEntry == null) {
-                userEntry = new QueueEntry(username);
+                userEntry = new QueueEntry(userID);
                 queue.add(userEntry);
             }
 
@@ -47,7 +47,7 @@ public class QueueRepositoryImpl implements iQueueRepository {
                     .count();
 
             long waitingBefore = queue.stream()
-                    .takeWhile(e -> !e.getUsername().equals(username))
+                    .takeWhile(e -> !e.getUserID().equals(userID))
                     .filter(e -> e.getGrantedAccessTime() == null)
                     .count();
 
@@ -65,14 +65,14 @@ public class QueueRepositoryImpl implements iQueueRepository {
     }
 
     @Override
-    public void addToQueue(String eventId, String username) {
+    public void addToQueue(String eventId, String userID) {
         eventQueues.computeIfAbsent(eventId, k -> new LinkedList<>());
         eventQueues.computeIfPresent(eventId, (id, queue) -> {
             boolean alreadyIn = queue.stream()
-                    .anyMatch(e -> e.getUsername().equals(username));
+                    .anyMatch(e -> e.getUserID().equals(userID));
 
             if (!alreadyIn) {
-                queue.add(new QueueEntry(username));
+                queue.add(new QueueEntry(userID));
             }
 
             return queue;
@@ -89,9 +89,9 @@ public class QueueRepositoryImpl implements iQueueRepository {
     }
 
     @Override
-    public void removeFromQueue(String eventId, String username) {
+    public void removeFromQueue(String eventId, String userID) {
         eventQueues.computeIfPresent(eventId, (id, queue) -> {
-            queue.removeIf(e -> e.getUsername().equals(username));
+            queue.removeIf(e -> e.getUserID().equals(userID));
             return queue;
         });
     }
