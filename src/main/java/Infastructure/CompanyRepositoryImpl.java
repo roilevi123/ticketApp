@@ -2,12 +2,11 @@ package Infastructure;
 
 
 
-import Domain.Company.Company;
-import Domain.Company.iCompanyRepository;
-
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import Domain.Company.Company;
+import Domain.Company.iCompanyRepository;
 
 public class CompanyRepositoryImpl implements iCompanyRepository {
     private Map<String, Company> companies = new ConcurrentHashMap<String, Company>();

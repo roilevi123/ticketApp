@@ -2,9 +2,9 @@ package Appliction;
 
 public interface IAuth {
 
-    String register(String username, String password);
+    String register(String token, String username, String password);
 
-    String login(String username, String password);
+    String login(String token, String username, String password);
 
     String logout(String token);
 

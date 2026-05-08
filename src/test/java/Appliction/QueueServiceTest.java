@@ -3,84 +3,95 @@ package Appliction;
 import Domain.QueueAggregates.QueueEntry;
 import Domain.QueueAggregates.iQueueRepository;
 import Infastructure.QueueRepositoryImpl;
-import org.junit.jupiter.api.AfterEach;
+import Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 class QueueServiceTest {
 
     private QueueService queueService;
     private iQueueRepository queueRepository;
+
+    @Mock
+    private TokenService tokenService;
+
     private final String EVENT_ID = "Event123";
 
     @BeforeEach
     void setUp() {
+        MockitoAnnotations.openMocks(this);
         queueRepository = new QueueRepositoryImpl();
         queueRepository.initQueue(EVENT_ID);
-        queueService = new QueueService(queueRepository);
+        // token == userId for test simplicity
+        when(tokenService.validateToken(anyString())).thenReturn(true);
+        when(tokenService.extractUserId(anyString())).thenAnswer(inv -> inv.getArgument(0));
+        queueService = new QueueService(queueRepository, tokenService);
     }
 
 
     @Test
     void checkStatus_NewUser_Authorized() {
-        String status = queueService.checkStatus(EVENT_ID, "User1");
+        String status = queueService.checkStatus("User1", EVENT_ID);
         assertEquals("AUTHORIZED", status);
     }
 
     @Test
     void checkStatus_HitCapacity_Waiting() {
         for (int i = 0; i < 100; i++) {
-            queueService.checkStatus(EVENT_ID, "User" + i);
+            queueService.checkStatus("User" + i, EVENT_ID);
         }
 
-        String status = queueService.checkStatus(EVENT_ID, "Waiter1");
+        String status = queueService.checkStatus("Waiter1", EVENT_ID);
         assertEquals("WAITING_POSITION_1", status);
 
-        String status2 = queueService.checkStatus(EVENT_ID, "Waiter2");
+        String status2 = queueService.checkStatus("Waiter2", EVENT_ID);
         assertEquals("WAITING_POSITION_2", status2);
     }
 
     @Test
     void checkStatus_ReleaseSpace_ProgressesQueue() {
         for (int i = 1; i <= 100; i++) {
-            queueService.checkStatus(EVENT_ID, "User" + i);
+            queueService.checkStatus("User" + i, EVENT_ID);
         }
 
-        queueService.checkStatus(EVENT_ID, "NextInLine");
+        queueService.checkStatus("NextInLine", EVENT_ID);
 
         List<QueueEntry> queue = queueRepository.getQueue(EVENT_ID);
         queue.get(0).setGrantedAccessTime(System.currentTimeMillis() - (11 * 60 * 1000));
 
-        String status = queueService.checkStatus(EVENT_ID, "NextInLine");
+        String status = queueService.checkStatus("NextInLine", EVENT_ID);
         assertEquals("AUTHORIZED", status);
     }
 
     @Test
     void checkStatus_UserAlreadyAuthorized_RemainsAuthorized() {
-        queueService.checkStatus(EVENT_ID, "User1");
-        String status = queueService.checkStatus(EVENT_ID, "User1");
+        queueService.checkStatus("User1", EVENT_ID);
+        String status = queueService.checkStatus("User1", EVENT_ID);
         assertEquals("AUTHORIZED", status);
     }
 
     @Test
     void checkStatus_OrderIntegrity_NoJumping() {
         for (int i = 0; i < 100; i++) {
-            String res = queueService.checkStatus(EVENT_ID, "Active" + i);
+            String res = queueService.checkStatus("Active" + i, EVENT_ID);
             assertEquals("AUTHORIZED", res);
         }
 
-        queueService.checkStatus(EVENT_ID, "FirstWaiter");
-        String status2Before = queueService.checkStatus(EVENT_ID, "SecondWaiter");
+        queueService.checkStatus("FirstWaiter", EVENT_ID);
+        String status2Before = queueService.checkStatus("SecondWaiter", EVENT_ID);
         assertEquals("WAITING_POSITION_2", status2Before);
 
         queueRepository.removeFromQueue(EVENT_ID, "FirstWaiter");
 
-        String status2After = queueService.checkStatus(EVENT_ID, "SecondWaiter");
+        String status2After = queueService.checkStatus("SecondWaiter", EVENT_ID);
         assertEquals("WAITING_POSITION_1", status2After);
     }
 }

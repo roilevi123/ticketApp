@@ -1,7 +1,6 @@
 package AcceptanceTests;
 
 import Appliction.*;
-import Domain.AdminAggregate.iAdminRepository;
 import Domain.Company.iCompanyRepository;
 import Domain.Event.EventType;
 import Domain.Event.MapArea;
@@ -57,7 +56,7 @@ public class WaitingQueueTests {
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        this.queueService = new QueueService(queueRepository);
+        this.queueService = new QueueService(queueRepository, tokenService);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -68,6 +67,10 @@ public class WaitingQueueTests {
         ticketRepository.deleteAllTickets();
         userRepository.deleteAll();
         tokenService.clearAllData();
+    }
+
+    private String gt() {
+        return tokenService.generateGuestToken();
     }
 
     private MapArea[][] getMapArea() {
@@ -81,8 +84,8 @@ public class WaitingQueueTests {
     }
 
     private void createEventHelper(String creator, String eventName) {
-        userService.register(creator, creator);
-        String token = userService.login(creator, creator);
+        userService.register(gt(), creator, creator);
+        String token = userService.login(gt(), creator, creator);
         companyService.CreateCompany(creator, token);
         eventService.createEvent(token, eventName, "Artist", EventType.CONFERENCE, 100.0, new Date(), "City", creator, getMapArea());
     }
@@ -93,8 +96,10 @@ public class WaitingQueueTests {
         createEventHelper("creator", "Rock Festival");
         String eventId = "Rock Festivalcreator";
 
-        String status1 = queueService.checkStatus(eventId, "user1");
-        String status2 = queueService.checkStatus(eventId, "user2");
+        String user1Token = gt();
+        String user2Token = gt();
+        String status1 = queueService.checkStatus(user1Token, eventId);
+        String status2 = queueService.checkStatus(user2Token, eventId);
 
         assertEquals("AUTHORIZED", status1);
         assertEquals("AUTHORIZED", status2);
@@ -107,11 +112,11 @@ public class WaitingQueueTests {
         String eventId = "Rock Festivalcreator";
 
         for (int i = 1; i <= 100; i++) {
-            queueService.checkStatus(eventId, "dummyUser" + i);
+            queueService.checkStatus(gt(), eventId);
         }
 
-        String status101 = queueService.checkStatus(eventId, "waiter1");
-        String status102 = queueService.checkStatus(eventId, "waiter2");
+        String status101 = queueService.checkStatus(gt(), eventId);
+        String status102 = queueService.checkStatus(gt(), eventId);
 
         assertEquals("WAITING_POSITION_1", status101);
         assertEquals("WAITING_POSITION_2", status102);
@@ -124,16 +129,21 @@ public class WaitingQueueTests {
         String eventId = "Concurrent Festcreator3";
         int threadCount = 50;
 
+        List<String> tokens = new ArrayList<>();
+        for (int i = 0; i < threadCount; i++) {
+            tokens.add(gt());
+        }
+
         CountDownLatch latch = new CountDownLatch(1);
         ExecutorService service = Executors.newFixedThreadPool(threadCount);
         List<String> results = Collections.synchronizedList(new ArrayList<>());
 
         for (int i = 0; i < threadCount; i++) {
-            final String uname = "concurrentUser" + i;
+            final String tok = tokens.get(i);
             service.submit(() -> {
                 try {
                     latch.await();
-                    results.add(queueService.checkStatus(eventId, uname));
+                    results.add(queueService.checkStatus(tok, eventId));
                 } catch (Exception ignored) {}
             });
         }
@@ -153,16 +163,21 @@ public class WaitingQueueTests {
         String eventId = "Overfill Festcreator4";
         int threadCount = 150;
 
+        List<String> tokens = new ArrayList<>();
+        for (int i = 0; i < threadCount; i++) {
+            tokens.add(gt());
+        }
+
         CountDownLatch latch = new CountDownLatch(1);
         ExecutorService service = Executors.newFixedThreadPool(threadCount);
         List<String> results = Collections.synchronizedList(new ArrayList<>());
 
         for (int i = 0; i < threadCount; i++) {
-            final String uname = "overflowUser" + i;
+            final String tok = tokens.get(i);
             service.submit(() -> {
                 try {
                     latch.await();
-                    results.add(queueService.checkStatus(eventId, uname));
+                    results.add(queueService.checkStatus(tok, eventId));
                 } catch (Exception ignored) {}
             });
         }
@@ -185,11 +200,17 @@ public class WaitingQueueTests {
         String eventId = "Refresh Festcreator5";
 
         for (int i = 1; i <= 100; i++) {
-            queueService.checkStatus(eventId, "dummyUser" + i);
+            queueService.checkStatus(gt(), eventId);
         }
+
+        List<String> waitingTokens = new ArrayList<>();
         for (int i = 1; i <= 50; i++) {
-            queueService.checkStatus(eventId, "waitingUser" + i);
+            String wt = gt();
+            waitingTokens.add(wt);
+            queueService.checkStatus(wt, eventId);
         }
+
+        String waitingUser25Token = waitingTokens.get(24);
 
         int threadCount = 150;
         CountDownLatch latch = new CountDownLatch(1);
@@ -200,7 +221,7 @@ public class WaitingQueueTests {
             service.submit(() -> {
                 try {
                     latch.await();
-                    results.add(queueService.checkStatus(eventId, "waitingUser25"));
+                    results.add(queueService.checkStatus(waitingUser25Token, eventId));
                 } catch (Exception ignored) {}
             });
         }

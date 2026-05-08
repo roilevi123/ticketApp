@@ -1,25 +1,26 @@
 package Appliction;
 
-import Domain.Company.iCompanyRepository;
-import Domain.Event.*;
-import Domain.Ticket.Ticket;
-import Domain.OwnerManagerTree.*;
-import Domain.QueueAggregates.iQueueRepository;
-import Domain.Ticket.iTicketRepository;
-import Infastructure.TokenService;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.SimpleDateFormat;
-import java.util.*;
+import Domain.Company.iCompanyRepository;
+import Domain.Event.Event;
+import Domain.Event.EventDTO;
+import Domain.Event.EventType;
+import Domain.Event.MapArea;
+import Domain.Event.iEventRepository;
+import Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import Domain.QueueAggregates.iQueueRepository;
+import Domain.Ticket.iTicketRepository;
+import Infastructure.TokenService;
 
 
 public class EventService {
 
-    private String lastCreatorToken = "";
-    private boolean isDeleted = false;
-    private boolean hasEvents = false;
-    private String lastEventName = "";
 
     private iCompanyRepository companyRepository;
     private iEventRepository eventRepository;
@@ -47,7 +48,7 @@ public class EventService {
 
     public String createEvent(String token,String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] map) {
         String username = tokenService.extractUsername(token);
-        if (!isAuthorized(company,username)) {
+        if (username == null || !isAuthorized(company, username)) {
             logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, company);
             return "Unauthorized";
         }
@@ -70,7 +71,7 @@ public class EventService {
     public String deleteEvent(String eventId, String companyName, String token) {
         String username = tokenService.extractUsername(token);
 
-        if (!isAuthorized(companyName, username)) {
+        if (username == null || !isAuthorized(companyName, username)) {
             logger.info("Unauthorized attempt to delete event '{}' for company '{}'", eventId, companyName);
             return "Unauthorized";
         }
@@ -103,7 +104,7 @@ public class EventService {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            if (!isAuthorized(company, username)) {
+            if (username == null || !isAuthorized(company, username)) {
                 throw new RuntimeException("Unauthorized: User is not an owner or authorized manager");
             }
             Event event = eventRepository.getEvent(eventName, company);
@@ -129,14 +130,11 @@ public class EventService {
     }
 
 
-
-
-
-
-
-
-    public String getCompanyInfo(String company) {
+    public String getCompanyInfo(String token, String company) {
         try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
             logger.info("trying Getting company info: " + company);
             boolean c=companyRepository.isCompanyActive(company);
             if(!c){
@@ -149,8 +147,12 @@ public class EventService {
             return null;
         }
     }
-    public List<EventDTO> getCompanyEvents(String company) {
+
+    public List<EventDTO> getCompanyEvents(String token, String company) {
         try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
             logger.info("trying Getting company events: " + company);
             boolean c=companyRepository.isCompanyActive(company);
             if(!c){
@@ -162,7 +164,6 @@ public class EventService {
             for (Event event : events) {
                 eventsString.add(event.toString());
                 eventDTOs.add(EventDTO.fromEntity(event));
-
             }
             logger.info("Successfully Getting company events: " + company);
             return eventDTOs;
@@ -172,10 +173,13 @@ public class EventService {
             return null;
         }
     }
-    public MapArea[][] getMapArea(String company,String eventName) {
-        try {
-            logger.info("trying Getting map area: " + eventName);
 
+    public MapArea[][] getMapArea(String token, String company, String eventName) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
+            logger.info("trying Getting map area: " + eventName);
             MapArea[][] map=eventRepository.getMapArea(company,eventName);
             logger.info("Successfully Getting map area: " + eventName);
             return map;
@@ -184,20 +188,21 @@ public class EventService {
             return null;
         }
     }
-    public List<EventDTO> searchEvents(String query, String company, EventType type,
+
+    public List<EventDTO> searchEvents(String token, String query, String company, EventType type,
                                      Double minPrice, Double maxPrice,
                                      Date startDate, Date endDate,
                                      String location, Double minRating) {
         try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
             logger.info("Initiating search with parameters - Query: {}, Company: {}", query, company);
-
             List<EventDTO> results = eventRepository.searchEvents(
                     query, company, type, minPrice, maxPrice, startDate, endDate, location, minRating
             );
-
             logger.info("Search completed successfully. Found {} events", results.size());
             return results;
-
         } catch (Exception e) {
             logger.error("Error occurred during event search: {}", e.getMessage());
             return null;

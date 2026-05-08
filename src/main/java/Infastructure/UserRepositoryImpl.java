@@ -51,6 +51,15 @@ public class UserRepositoryImpl implements IUserRepository {
     }
 
     @Override
+    public String getUsernameByID(String ID) {
+        User user = usersByID.get(ID);
+        if (user == null) {
+            throw new RuntimeException("User not found for ID: " + ID);
+        }
+        return user.getName();
+    }
+
+    @Override
     public boolean usernameExists(String username) {
         return usernameToId.containsKey(username);
     }

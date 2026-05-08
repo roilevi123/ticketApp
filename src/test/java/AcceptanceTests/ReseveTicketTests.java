@@ -29,10 +29,10 @@ public class ReseveTicketTests {
     private CompanyService companyService;
     private EventService eventService;
     private OrderService reserveTicketService;
+    private TokenService tokenService;
 
     @BeforeEach
     void setUp() {
-        // Repositories & Infrastructure
         IUserRepository userRepository = new UserRepositoryImpl();
         iCompanyRepository companyRepository = new CompanyRepositoryImpl();
         iEventRepository eventRepository = new EventRepositoryImpl();
@@ -41,16 +41,14 @@ public class ReseveTicketTests {
         IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        TokenService tokenService = new TokenService();
+        this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
-        // Application Services
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository);
 
-        // Clear Data
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
         treeOfRoleRepository.deleteAllRoles();
@@ -60,6 +58,18 @@ public class ReseveTicketTests {
         ticketRepository.deleteAllTickets();
         userRepository.deleteAll();
         tokenService.clearAllData();
+    }
+
+    private String gt() {
+        return tokenService.generateGuestToken();
+    }
+
+    private void reg(String username, String password) {
+        userService.register(gt(), username, password);
+    }
+
+    private String log(String username, String password) {
+        return userService.login(gt(), username, password);
     }
 
     private MapArea[][] getMapArea() {
@@ -90,13 +100,13 @@ public class ReseveTicketTests {
 
     @Test @DisplayName("1. Reserve Ticket Success")
     void reserveTicketTestPass1() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
-        userService.register("2", "2");
-        String token1 = userService.login("2", "2");
+        reg("2", "2");
+        String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
 
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
@@ -105,27 +115,25 @@ public class ReseveTicketTests {
 
     @Test @DisplayName("2. Fail - Not Enough Tickets (Double Booking)")
     void reserveTicketNotEnoughTickets2() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
-        userService.register("2", "2");
-        String token1 = userService.login("2", "2");
+        reg("2", "2");
+        String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
 
-        // First reservation
         reserveTicketService.reserveTickets(token, "1", "1", requests);
 
-        // Second reservation (Conflict)
         String orderId1 = reserveTicketService.reserveTickets(token1, "1", "1", requests);
         assertFalse(isNumeric(orderId1), "Expected error message (non-numeric) for double booking");
     }
 
     @Test @DisplayName("3. Fail - Out of Bounds")
     void reserveTicketOutOfBounds3() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
@@ -136,8 +144,8 @@ public class ReseveTicketTests {
 
     @Test @DisplayName("4. Reserve Multiple Spots Success")
     void reserveTicketMultipleSpots4() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
@@ -148,13 +156,13 @@ public class ReseveTicketTests {
 
     @Test @DisplayName("5. Fail - Already Reserved Spot")
     void reserveTicketAlreadyReserved5() {
-        userService.register("1", "1");
-        String t1 = userService.login("1", "1");
+        reg("1", "1");
+        String t1 = log("1", "1");
         companyService.CreateCompany("1", t1);
         eventService.createEvent(t1, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
-        userService.register("2", "2");
-        String t2 = userService.login("2", "2");
+        reg("2", "2");
+        String t2 = log("2", "2");
         List<int[]> req = List.of(new int[]{0, 1, 1});
 
         assertTrue(isNumeric(reserveTicketService.reserveTickets(t2, "1", "1", req)), "First reservation should succeed");
@@ -163,8 +171,8 @@ public class ReseveTicketTests {
 
     @Test @DisplayName("6. Concurrent Reservations - Conflict")
     void reserveTicketConcurrentTwoThreads6() throws InterruptedException {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
@@ -177,10 +185,10 @@ public class ReseveTicketTests {
             final int id = i + 2;
             service.submit(() -> {
                 try {
-                    userService.register("u"+id, "p");
-                    String ut = userService.login("u"+id, "p");
+                    userService.register(gt(), "u" + id, "p");
+                    String ut = userService.login(gt(), "u" + id, "p");
                     latch.await();
-                    String oid = reserveTicketService.reserveTickets(ut, "1", "1", List.of(new int[]{0,0,1}));
+                    String oid = reserveTicketService.reserveTickets(ut, "1", "1", List.of(new int[]{0, 0, 1}));
                     if (isNumeric(oid)) results.add(oid);
                 } catch (Exception ignored) {}
             });
@@ -193,13 +201,13 @@ public class ReseveTicketTests {
 
     @Test @DisplayName("7. Sequential Stand/Seat Success")
     void reserveTicketStandSequential7() {
-        userService.register("1", "1");
-        String t = userService.login("1", "1");
+        reg("1", "1");
+        String t = log("1", "1");
         companyService.CreateCompany("1", t);
         eventService.createEvent(t, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea1());
 
-        userService.register("u1", "p"); String t1 = userService.login("u1", "p");
-        userService.register("u2", "p"); String t2 = userService.login("u2", "p");
+        reg("u1", "p"); String t1 = log("u1", "p");
+        reg("u2", "p"); String t2 = log("u2", "p");
 
         assertTrue(isNumeric(reserveTicketService.reserveTickets(t1, "1", "1", List.of(new int[]{1, 1, 1}))), "Stand reservation should be numeric");
         assertTrue(isNumeric(reserveTicketService.reserveTickets(t2, "1", "1", List.of(new int[]{0, 0, 1}))), "Seat reservation should be numeric");
@@ -207,31 +215,31 @@ public class ReseveTicketTests {
 
     @Test @DisplayName("9. Expired Ticket Becomes Available Again")
     void reserveTicketExpiredTicketAvailableAgain9() throws InterruptedException {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
-        userService.register("u1", "p"); String t1 = userService.login("u1", "p");
-        userService.register("u2", "p"); String t2 = userService.login("u2", "p");
+        reg("u1", "p"); String t1 = log("u1", "p");
+        reg("u2", "p"); String t2 = log("u2", "p");
         List<int[]> req = List.of(new int[]{0, 0, 1});
 
         assertTrue(isNumeric(reserveTicketService.reserveTickets(t1, "1", "1", req)), "T1 should get numeric ID");
         assertFalse(isNumeric(reserveTicketService.reserveTickets(t2, "1", "1", req)), "T2 should get error message");
 
-        Thread.sleep(10005); // Wait for order to expire
+        Thread.sleep(10005);
 
         assertTrue(isNumeric(reserveTicketService.reserveTickets(t2, "1", "1", req)), "T2 should get numeric ID after expiration");
     }
 
     @Test @DisplayName("10. Get Active Order Tickets - Single")
     void getActiveOrderTicketsSingle10() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
-        userService.register("u1", "p"); String t1 = userService.login("u1", "p");
+        reg("u1", "p"); String t1 = log("u1", "p");
         String oid = reserveTicketService.reserveTickets(t1, "1", "1", List.of(new int[]{0, 0, 1}));
         assertTrue(isNumeric(oid));
 
@@ -243,13 +251,13 @@ public class ReseveTicketTests {
 
     @Test @DisplayName("13. Get Active Order - Success After Expiration Replacement")
     void getActiveOrderTicketsExpired13() throws InterruptedException {
-        userService.register("1", "1");
-        String t = userService.login("1", "1");
+        reg("1", "1");
+        String t = log("1", "1");
         companyService.CreateCompany("1", t);
         eventService.createEvent(t, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
-        userService.register("u1", "p"); String t1 = userService.login("u1", "p");
-        userService.register("u2", "p"); String t2 = userService.login("u2", "p");
+        reg("u1", "p"); String t1 = log("u1", "p");
+        reg("u2", "p"); String t2 = log("u2", "p");
         List<int[]> req = List.of(new int[]{0, 0, 1});
 
         reserveTicketService.reserveTickets(t1, "1", "1", req);
@@ -265,32 +273,33 @@ public class ReseveTicketTests {
 
     @Test @DisplayName("14. Get Active Order Tickets - Guest Success")
     void getActiveOrderTicketsAsGuest14() {
-        userService.register("1", "1");
-        String t = userService.login("1", "1");
+        reg("1", "1");
+        String t = log("1", "1");
         companyService.CreateCompany("1", t);
         eventService.createEvent(t, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
-        String oid = reserveTicketService.reserveTickets("guestToken", "1", "1", List.of(new int[]{0, 0, 1}));
+        String guestToken = tokenService.generateGuestToken();
+        String oid = reserveTicketService.reserveTickets(guestToken, "1", "1", List.of(new int[]{0, 0, 1}));
         assertTrue(isNumeric(oid));
 
-        List<TicketDTO> tickets = reserveTicketService.getActiveOrderTickets("guestToken", oid);
+        List<TicketDTO> tickets = reserveTicketService.getActiveOrderTickets(guestToken, oid);
         assertNotNull(tickets);
         assertEquals("1", tickets.get(0).company());
     }
 
     @Test @DisplayName("15. Get Active Order Success After Re-Login")
     void getActiveOrderTicketsAAfterLogOut15() {
-        userService.register("1", "1");
-        String t = userService.login("1", "1");
+        reg("1", "1");
+        String t = log("1", "1");
         companyService.CreateCompany("1", t);
         eventService.createEvent(t, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
-        userService.register("u1", "p"); String t1 = userService.login("u1", "p");
+        reg("u1", "p"); String t1 = log("u1", "p");
         String oid = reserveTicketService.reserveTickets(t1, "1", "1", List.of(new int[]{0, 0, 1}));
         assertTrue(isNumeric(oid));
 
         userService.logout(t1);
-        String t1New = userService.login("u1", "p");
+        String t1New = log("u1", "p");
         List<TicketDTO> tickets = reserveTicketService.getActiveOrderTickets(t1New, null);
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
@@ -298,14 +307,15 @@ public class ReseveTicketTests {
 
     @Test @DisplayName("16. Get Active Order Guest Fail After Data Loss")
     void getActiveOrderTicketsAsGuestThatGetOUt16() {
-        userService.register("1", "1");
-        String t = userService.login("1", "1");
+        reg("1", "1");
+        String t = log("1", "1");
         companyService.CreateCompany("1", t);
         eventService.createEvent(t, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
-        String oid = reserveTicketService.reserveTickets("guestToken", "1", "1", List.of(new int[]{0, 0, 1}));
+        String guestToken = tokenService.generateGuestToken();
+        String oid = reserveTicketService.reserveTickets(guestToken, "1", "1", List.of(new int[]{0, 0, 1}));
         assertTrue(isNumeric(oid));
 
-        assertNull(reserveTicketService.getActiveOrderTickets("guestToken", "invalidOrderId"));
+        assertNull(reserveTicketService.getActiveOrderTickets(guestToken, "invalidOrderId"));
     }
 }
