@@ -1,23 +1,16 @@
 package Appliction;
 
-import Domain.Event.Event;
-import Domain.Event.iEventRepository;
 import Domain.Order.ActiveOrder;
 import Domain.Order.IActiveOrderRepository;
-import Domain.Order.IPurchasedOrderRepository;
-import Domain.Order.PurchasedOrder;
 import Domain.Ticket.Ticket;
 import Domain.Ticket.TicketDTO;
 import Domain.Ticket.iTicketRepository;
 import Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.Order;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 public class OrderService {
     
@@ -40,9 +33,9 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
 
         try {
             logger.info("Starting bulk ticket reservation for event: " + event);
-            String username = null;
+            String userID = null;
             if (tokenService.validateToken(token)) {
-                username = tokenService.extractUsername(token);
+                userID = tokenService.extractUserId(token);
             }
 
             long expirationTime = System.currentTimeMillis() + (10 * 10 * 100);
@@ -87,7 +80,7 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
 
 
 
-            String id = activeOrderRepository.store(company, event, reservedTicketIds, username, expiryDate);
+            String id = activeOrderRepository.store(company, event, reservedTicketIds, userID, expiryDate);
             logger.info("Successfully reserved " + reservedTicketIds.size() + " tickets");
             return id;
 
@@ -109,31 +102,33 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
             return e.getMessage();
         }
     }
-    public List<TicketDTO> getActiveOrderTickets(String token,String orderId) {
+    public List<TicketDTO> getActiveOrderTickets(String token, String orderId) {
         try {
             logger.info("get information about active order ticket reservation for token: " + token);
-            ActiveOrder activeOrder=activeOrderRepository.findById(orderId);
-            if (!tokenService.validateToken(token) && activeOrder == null) {
-                throw new RuntimeException("Invalid token3");
-            }
-            List<String> ticketsId=new ArrayList<>();
-            if(activeOrder!=null){
-                ticketsId=activeOrder.getTicketIds();
+            List<String> ticketsId;
+
+            if (orderId == null) {
+                // No order ID: recover by user identity from token (e.g. after re-login)
+                if (!tokenService.validateToken(token)) {
+                    throw new RuntimeException("Invalid token");
+                }
+                String userID = tokenService.extractUserId(token);
+                ticketsId = activeOrderRepository.getTicketsId(userID);
+            } else {
+                // Order ID provided: look up that specific order only
+                ActiveOrder activeOrder = activeOrderRepository.findById(orderId);
+                if (activeOrder == null) {
+                    return null;
+                }
+                ticketsId = activeOrder.getTicketIds();
             }
 
-            String username="";
-            if(tokenService.validateToken(token)){
-                username=tokenService.extractUsername(token);
-                ticketsId = activeOrderRepository.getTicketsId(username);
-
-            }
-            String tickets=ticketRepository.getTicketsDescription(ticketsId);
-            List<Ticket> ticketList=ticketRepository.getTickets(ticketsId);
+            List<Ticket> ticketList = ticketRepository.getTickets(ticketsId);
             List<TicketDTO> ticketDTOS = new ArrayList<>();
             for (Ticket ticket : ticketList) {
                 ticketDTOS.add(TicketDTO.fromEntity(ticket));
             }
-            logger.info("get active order tickets: " + tickets);
+            logger.info("get active order tickets: {} tickets found", ticketDTOS.size());
             return ticketDTOS;
         } catch (Exception e) {
             logger.error("Error retrieving active order: {}", e.getMessage());

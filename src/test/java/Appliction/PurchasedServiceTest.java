@@ -255,7 +255,7 @@ class PurchasedServiceTest {
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
         when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenReturn("new byte[]{1, 2, 3}");
         when(tokenService.validateToken(anyString())).thenReturn(true);
-        when(tokenService.extractUsername(anyString())).thenReturn(USERNAME);
+        when(tokenService.extractUserId(anyString())).thenReturn(USERNAME);
         purchasedService.PurchaseTicket(EMAIL, "",USERNAME);
 
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
@@ -333,7 +333,7 @@ class PurchasedServiceTest {
         PurchaseOrder po = new PurchaseOrder(COMPANY, EVENT, List.of("T1"), buyer, ORDER_ID);
 
         when(tokenService.validateToken(token)).thenReturn(true);
-        when(tokenService.extractUsername(token)).thenReturn(buyer);
+        when(tokenService.extractUserId(token)).thenReturn(buyer);
         when(purchasedOrderRepository.getPurchasedOrdersForUser(buyer)).thenReturn(List.of(po));
         when(ticketRepository.getTicketsDescription(anyList())).thenReturn("Seat 10");
 

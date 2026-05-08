@@ -13,6 +13,7 @@ import Domain.Ticket.Ticket;
 import Domain.Ticket.TicketDTO;
 import Domain.Ticket.iTicketRepository;
 import Domain.User.IUserRepository;
+import Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,15 +28,18 @@ public class AdminService {
     private iPurchasedOrderRepository purchasedOrderRepository;
     private iTicketRepository ticketRepository;
     private iEventRepository eventRepository;
+    private TokenService tokenService;
     private static final Logger logger = LoggerFactory.getLogger(AdminService.class);
+
     public AdminService(
              iTreeOfRoleRepository treeOfRoleRepository
             , iCompanyRepository companyRepository
             , iAdminRepository adminRepository
             , IUserRepository userRepository
             , iPurchasedOrderRepository purchasedOrderRepository
-            , iTicketRepository ticketRepository,
-             iEventRepository eventRepository
+            , iTicketRepository ticketRepository
+            , iEventRepository eventRepository
+            , TokenService tokenService
     ) {
         this.treeOfRoleRepository = treeOfRoleRepository;
         this.companyRepository = companyRepository;
@@ -44,6 +48,7 @@ public class AdminService {
         this.purchasedOrderRepository = purchasedOrderRepository;
         this.ticketRepository = ticketRepository;
         this.eventRepository = eventRepository;
+        this.tokenService = tokenService;
     }
     public String CloseCompany(String companyName,String adminID) {
         try {
@@ -109,8 +114,36 @@ public class AdminService {
         }
 
     }
+    public String banUser(String targetUserId, String adminId) {
+        try {
+            logger.info("Banning user " + targetUserId);
+            if (!adminRepository.isAdmin(adminId)) {
+                throw new Exception("Admin does not exist");
+            }
+            if (userRepository.getUserByID(targetUserId) == null) {
+                throw new Exception("User not found");
+            }
+            tokenService.banUser(targetUserId);
+            logger.info("Banned user " + targetUserId);
+            return "success";
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return e.getMessage();
+        }
+    }
 
-
-
-
+    public String unbanUser(String targetUserId, String adminId) {
+        try {
+            logger.info("Unbanning user " + targetUserId);
+            if (!adminRepository.isAdmin(adminId)) {
+                throw new Exception("Admin does not exist");
+            }
+            tokenService.unbanUser(targetUserId);
+            logger.info("Unbanned user " + targetUserId);
+            return "success";
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return e.getMessage();
+        }
+    }
 }

@@ -27,10 +27,10 @@ public class EventManagementTest {
     private UserService userService;
     private CompanyService companyService;
     private EventService eventService;
+    private TokenService tokenService;
 
     @BeforeEach
     void setUp() {
-        // Infrastructure & Repositories
         IUserRepository userRepository = new UserRepositoryImpl();
         iCompanyRepository companyRepository = new CompanyRepositoryImpl();
         iEventRepository eventRepository = new EventRepositoryImpl();
@@ -39,15 +39,13 @@ public class EventManagementTest {
         IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        TokenService tokenService = new TokenService();
+        this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
-        // Application Services
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
 
-        // Data Cleanup
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
         treeOfRoleRepository.deleteAllRoles();
@@ -57,6 +55,18 @@ public class EventManagementTest {
         ticketRepository.deleteAllTickets();
         userRepository.deleteAll();
         tokenService.clearAllData();
+    }
+
+    private String gt() {
+        return tokenService.generateGuestToken();
+    }
+
+    private void reg(String username, String password) {
+        userService.register(gt(), username, password);
+    }
+
+    private String log(String username, String password) {
+        return userService.login(gt(), username, password);
     }
 
     private MapArea[][] getMapArea() {
@@ -74,8 +84,8 @@ public class EventManagementTest {
     @Test
     @DisplayName("1. Create Event As Founder - Success")
     void createEventAsFounderSuccess1() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         String result = eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
         assertTrue(result.equals("success"));
@@ -84,10 +94,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("2. Create Event As Manager - Success")
     void createEventAsManagerSuccess2() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
@@ -100,10 +110,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("3. Create Event As Owner - Success")
     void createEventAsOwnerSuccess3() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
         companyService.ApproveAppointmentForOwner(token2, "1");
@@ -114,10 +124,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("4. Create Event - Fail (Not Part of Company)")
     void createEventFailedNotAuthorizedNotPartOfTheCompany4() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         String result = eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
         assertFalse(result.equals("success"));
@@ -126,10 +136,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("5. Create Event - Fail (Pending Ownership Approval)")
     void createEventFailedNotAuthorizedNotAprroveTheOwnerShip5() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
         String result = eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
@@ -139,10 +149,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("6. Create Event - Fail (No MANAGE_INVENTORY Permission)")
     void createEventFailedNotAuthorizedNotHaveTheRightPermission6() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.CHANGE_POLICIES);
@@ -157,8 +167,8 @@ public class EventManagementTest {
     @Test
     @DisplayName("7. Delete Event As Founder - Success")
     void deleteEventAsFounderSuccess7() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
         String result = eventService.deleteEvent("1", "1", token);
@@ -168,10 +178,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("8. Delete Event As Manager - Success")
     void deleteEventAsManagerSuccess8() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
@@ -185,10 +195,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("9. Delete Event As Owner - Success")
     void deleteEventAsOwnerSuccess9() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
         companyService.ApproveAppointmentForOwner(token2, "1");
@@ -200,8 +210,8 @@ public class EventManagementTest {
     @Test
     @DisplayName("10. Delete Event Failed (Event Not Found)")
     void deleteEventFailedNoEventFound10() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         String result = eventService.deleteEvent("1", "1", token);
         assertEquals(false, result.equals("success"));
@@ -210,10 +220,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("11. Delete Event Failed (Not Part of Company)")
     void deleteEventFailedNotAuthorizedNotPartOfTheCompany11() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
         String result = eventService.deleteEvent("1", "1", token2);
@@ -223,10 +233,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("12. Delete Event Failed (Pending Ownership Approval)")
     void deleteEventFailedNotAuthorizedNotAprroveTheOwnerShip12() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
@@ -237,10 +247,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("13. Delete Event Failed (Insufficient Permissions)")
     void deleteEventFailedNotAuthorizedNotHaveTheRightPermission13() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.CHANGE_POLICIES);
@@ -256,8 +266,8 @@ public class EventManagementTest {
     @Test
     @DisplayName("14. Update Event As Founder - Success")
     void updateEventAsFounderSuccess14() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
         String result = eventService.UpdateEvent(token, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0);
@@ -267,10 +277,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("15. Update Event As Manager - Success")
     void updateEventAsManagerSuccess15() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
@@ -284,10 +294,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("16. Update Event As Owner - Success")
     void updateEventAsOwnerSuccess16() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
         companyService.ApproveAppointmentForOwner(token2, "1");
@@ -299,8 +309,8 @@ public class EventManagementTest {
     @Test
     @DisplayName("17. Update Event Failed (Event Not Found)")
     void updateEventFailedNoEventFound17() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         String result = eventService.UpdateEvent(token, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0);
         assertNotEquals("success", result);
@@ -309,10 +319,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("18. Update Event Failed (Not Part of Company)")
     void updateEventFailedNotAuthorizedNotPartOfTheCompany18() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
         String result = eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0);
@@ -322,10 +332,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("19. Update Event Failed (Pending Ownership Approval)")
     void updateEventFailedNotAuthorizedNotAprroveTheOwnerShip19() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
@@ -336,10 +346,10 @@ public class EventManagementTest {
     @Test
     @DisplayName("20. Update Event Failed (Insufficient Permissions)")
     void updateEventFailedNotAuthorizedNotHaveTheRightPermission20() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
+        reg("1", "1");
+        String token = log("1", "1");
+        reg("2", "2");
+        String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.CHANGE_POLICIES);

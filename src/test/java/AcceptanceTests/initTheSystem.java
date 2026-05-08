@@ -44,9 +44,9 @@ public class initTheSystem {
         companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
         orderService = new OrderService(activeOrderRepository, tokenService, ticketRepository);
-        queueService = new QueueService(queueRepository);
+        queueService = new QueueService(queueRepository, tokenService);
         purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentService, barcodeGenerator, tokenService, treeOfRoleRepository);
-        adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository);
+        adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService);
     }
 
     public void init() {

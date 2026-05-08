@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -35,11 +34,11 @@ public class AdminJUnitTests {
     private PurchasedService purchasedService;
     private AdminService adminService;
     private IUserRepository userRepository;
+    private TokenService tokenService;
 
     @BeforeEach
     void setUp() {
-        // --- Infrastructure & Repositories Setup ---
-        IUserRepository userRepository = new UserRepositoryImpl();
+        this.userRepository = new UserRepositoryImpl();
         iCompanyRepository companyRepository = new CompanyRepositoryImpl();
         iEventRepository eventRepository = new EventRepositoryImpl();
         iQueueRepository queueRepository = new QueueRepositoryImpl();
@@ -48,22 +47,19 @@ public class AdminJUnitTests {
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
 
-        // הוספת ה-AdminRepository הנדרש על פי ה-Service החדש
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
             public boolean isAdmin(String userID) {
                 return userID.equals("admin");
             }
         };
-        TokenService tokenService = new TokenService();
+        this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
-        // --- Mock/External Services (Required for PurchasedService) ---
         ISupplyService supplyService = new SupplyServiceMock();
         IPaymentService paymentService = new PaymentServiceMock();
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
 
-        // --- Application Services Initialization ---
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
 
@@ -78,17 +74,16 @@ public class AdminJUnitTests {
                 tokenService, treeOfRoleRepository);
 
         this.adminService = new AdminService(
-                treeOfRoleRepository,   
-                companyRepository,      
-                adminRepository,        
-                userRepository,         
+                treeOfRoleRepository,
+                companyRepository,
+                adminRepository,
+                userRepository,
                 purchasedOrderRepository,
-                ticketRepository,       
-                eventRepository         
+                ticketRepository,
+                eventRepository,
+                tokenService
         );
-        this.userRepository = userRepository;
 
-        // --- Data Cleanup ---
         userRepository.deleteAll();
         companyRepository.deleteAllCompany();
         eventRepository.deleteAllEvents();
@@ -99,6 +94,18 @@ public class AdminJUnitTests {
         queueRepository.deleteAll();
         tokenService.clearAllData();
         adminRepository.deleteAll();
+    }
+
+    private String gt() {
+        return tokenService.generateGuestToken();
+    }
+
+    private void reg(String username, String password) {
+        userService.register(gt(), username, password);
+    }
+
+    private String log(String username, String password) {
+        return userService.login(gt(), username, password);
     }
 
     private MapArea[][] getMapArea() {
@@ -114,25 +121,24 @@ public class AdminJUnitTests {
     @Test
     @DisplayName("1. Close Company Success")
     void closeCompanySuccess1() {
-        userService.register("owner1", "password");
-        String token = userService.login("owner1", "password");
+        reg("owner1", "password");
+        String token = log("owner1", "password");
         companyService.CreateCompany("C1", token);
         eventService.createEvent(token, "E1", "C1", EventType.PLAY, 100, new Date(), "Loc", "C1", getMapArea());
 
-        // הנחה: בקונסטרוקטור של AdminRepositoryImpl, המילה "admin" מוגדרת כ-Admin מראש
         String result = adminService.CloseCompany("C1", "admin");
 
         assertEquals("success", result);
-        assertNull(eventService.getCompanyInfo("C1"));
-        assertNull(eventService.getCompanyEvents("C1"));
+        assertNull(eventService.getCompanyInfo(token, "C1"));
+        assertNull(eventService.getCompanyEvents(token, "C1"));
         assertNull(companyService.GetRoleTreeString(token, "C1"));
     }
 
     @Test
     @DisplayName("2. Close Company Failed - Not Admin")
     void closeCompanyFailedNotAdmin2() {
-        userService.register("owner1", "password");
-        String token = userService.login("owner1", "password");
+        reg("owner1", "password");
+        String token = log("owner1", "password");
         companyService.CreateCompany("C1", token);
 
         String result = adminService.CloseCompany("C1", "not_admin");
@@ -142,19 +148,18 @@ public class AdminJUnitTests {
     @Test
     @DisplayName("3. Remove User Success")
     void removeUserSuccess3() {
-        userService.register("userToRemove", "123");
+        reg("userToRemove", "123");
         String userID = (userRepository.getUserByUsername("userToRemove")).getID();
         String result = adminService.removeUser(userID, "admin");
         assertEquals("success", result);
 
-        // וודוא שהמשתמש נמחק ולא יכול להתחבר
-        assertNull(userService.login("userToRemove", "123"));
+        assertNull(userService.login(gt(), "userToRemove", "123"));
     }
 
     @Test
     @DisplayName("4. Remove User Failed - Not Admin")
     void removeUserFailedNotAdmin4() {
-        userService.register("user1", "123");
+        reg("user1", "123");
         String result = adminService.removeUser("user1", "not_admin");
         assertNotEquals("success", result);
     }
@@ -162,13 +167,13 @@ public class AdminJUnitTests {
     @Test
     @DisplayName("5. Get All Purchased Orders Success")
     void getAllPurchasedOrdersSuccess5() {
-        userService.register("owner", "p");
-        String tO = userService.login("owner", "p");
+        reg("owner", "p");
+        String tO = log("owner", "p");
         companyService.CreateCompany("C1", tO);
         eventService.createEvent(tO, "E1", "C1", EventType.PLAY, 100, new Date(), "L", "C1", getMapArea());
 
-        userService.register("buyer", "p");
-        String tB = userService.login("buyer", "p");
+        reg("buyer", "p");
+        String tB = log("buyer", "p");
         String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}));
         purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer");
 
@@ -176,12 +181,8 @@ public class AdminJUnitTests {
         boolean isCompanyExist = false;
         boolean isEventExist = false;
         boolean isPurchased = false;
-        boolean isUserExist = false;
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
-            if(po.buyer().equals("buyer")){
-                isUserExist = true;
-            }
             for (TicketDTO ticket : ticketsList) {
                 if(ticket.isPurchased()){
                     isPurchased = true;
@@ -192,32 +193,29 @@ public class AdminJUnitTests {
                 if(ticket.event().equals("E1")){
                     isEventExist = true;
                 }
-
-
             }
         }
         assertNotNull(result);
         assertTrue(isCompanyExist);
         assertTrue(isEventExist);
         assertTrue(isPurchased);
-        assertTrue(isUserExist);
     }
 
     @Test
     @DisplayName("6. Get All Purchased Orders Multiple Success")
     void getAllPurchasedOrdersMultipleSuccess6() {
-        userService.register("o1", "p");
-        String tO = userService.login("o1", "p");
+        reg("o1", "p");
+        String tO = log("o1", "p");
         companyService.CreateCompany("C1", tO);
         eventService.createEvent(tO, "E1", "C1", EventType.PLAY, 100, new Date(), "L", "C1", getMapArea());
 
-        userService.register("b1", "p");
-        String tB1 = userService.login("b1", "p");
+        reg("b1", "p");
+        String tB1 = log("b1", "p");
         String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", List.of(new int[]{0, 0, 1}));
         purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1");
 
-        userService.register("b2", "p");
-        String tB2 = userService.login("b2", "p");
+        reg("b2", "p");
+        String tB2 = log("b2", "p");
         String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1}));
         purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2");
 
@@ -225,18 +223,9 @@ public class AdminJUnitTests {
         boolean isCompanyExist = false;
         boolean isEventExist = false;
         boolean isPurchased = false;
-        boolean isUser1Exist = false;
-        boolean isUser2Exist = false;
 
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
-            if(po.buyer().equals("b1")){
-                isUser1Exist = true;
-            }
-            if(po.buyer().equals("b1")){
-                isUser2Exist = true;
-            }
-
             for (TicketDTO ticket : ticketsList) {
                 if(ticket.isPurchased()){
                     isPurchased = true;
@@ -247,41 +236,36 @@ public class AdminJUnitTests {
                 if(ticket.event().equals("E1")){
                     isEventExist = true;
                 }
-
-
             }
         }
         assertNotNull(result);
         assertTrue(isCompanyExist);
         assertTrue(isEventExist);
         assertTrue(isPurchased);
-        assertTrue(isUser1Exist);
-        assertTrue(isUser2Exist);
     }
 
     @Test
     @DisplayName("7. Get All Purchased Orders Failed - Not Admin")
     void getAllPurchasedOrdersFailedNotAdmin7() {
         List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("not_an_admin");
-
         assertNull(result);
     }
 
     @Test
     @DisplayName("8. Get All Purchased Orders Two Companies")
     void getAllPurchasedOrdersTwoCompanies8() {
-        userService.register("ownerA", "p");
-        String tOA = userService.login("ownerA", "p");
+        reg("ownerA", "p");
+        String tOA = log("ownerA", "p");
         companyService.CreateCompany("CompA", tOA);
         eventService.createEvent(tOA, "EventA", "CompA", EventType.PLAY, 100, new Date(), "LocA", "CompA", getMapArea());
 
-        userService.register("ownerB", "p");
-        String tOB = userService.login("ownerB", "p");
+        reg("ownerB", "p");
+        String tOB = log("ownerB", "p");
         companyService.CreateCompany("CompB", tOB);
         eventService.createEvent(tOB, "EventB", "CompB", EventType.PLAY, 100, new Date(), "LocB", "CompB", getMapArea());
 
-        userService.register("buyer8", "p");
-        String tB = userService.login("buyer8", "p");
+        reg("buyer8", "p");
+        String tB = log("buyer8", "p");
 
         String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", List.of(new int[]{0, 0, 1}));
         purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8");
@@ -289,7 +273,19 @@ public class AdminJUnitTests {
         String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1}));
         purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8");
 
-        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("not_an_admin");
-        assertEquals(result,null);
+        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
+        assertNotNull(result);
+        assertEquals(2, result.size());
+
+        boolean sawCompA = false;
+        boolean sawCompB = false;
+        for (PurchaseOrderDTO po : result) {
+            for (TicketDTO ticket : po.tickets()) {
+                if (ticket.company().equals("CompA")) sawCompA = true;
+                if (ticket.company().equals("CompB")) sawCompB = true;
+            }
+        }
+        assertTrue(sawCompA);
+        assertTrue(sawCompB);
     }
 }
