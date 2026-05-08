@@ -47,9 +47,9 @@ public class PurchasedService {
         this.tokenService = tokenService;
         this.treeOfRoleRepository = treeOfRoleRepository;
     }
-    public boolean isAuthorized(String company,String username) {
-        boolean o=treeOfRoleRepository.exitsOwner(username,company);
-        boolean m=treeOfRoleRepository.ManagerPermitToSeeTransactions(username,company);
+    public boolean isAuthorized(String company,String userID) {
+        boolean o=treeOfRoleRepository.exitsOwner(userID,company);
+        boolean m=treeOfRoleRepository.ManagerPermitToSeeTransactions(userID,company);
         return m || (o );
     }
 
@@ -116,9 +116,9 @@ public class PurchasedService {
             if(!tokenService.validateToken(token)) {
                 throw new Exception("Invalid token");
             }
-            String user=tokenService.extractUsername(token);
+            String userID=tokenService.extractUsername(token);
 
-            if(!isAuthorized(company,user)) {
+            if(!isAuthorized(company,userID)) {
                 throw new Exception("User not authorized");
             }
             List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForCompany(company);
@@ -138,13 +138,13 @@ public class PurchasedService {
     }
     public String getUserTransaction(String token) {
         try {
-            logger.info("getCompanyTransaction");
+            logger.info("getUserTransaction");
             if(!tokenService.validateToken(token)) {
                 throw new Exception("Invalid token");
             }
-            String user=tokenService.extractUsername(token);
+            String userID=tokenService.extractUsername(token);
 
-            List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForUser(user);
+            List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForUser(userID);
             StringBuilder stringBuilder=new StringBuilder();
             for (PurchaseOrder purchaseOrder : purchaseOrders) {
                 stringBuilder.append(purchaseOrder.toString()+"\n");

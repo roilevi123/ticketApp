@@ -14,10 +14,10 @@ public class QueueService {
         this.queueRepository = queueRepository;
     }
 
-    public String checkStatus(String eventId, String username) {
+    public String checkStatus(String eventId, String userID) {
         return queueRepository.checkStatusAtomic(
                 eventId,
-                username,
+                userID,
                 MAX_ACTIVE_USERS,
                 ACCESS_DURATION
         );

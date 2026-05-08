@@ -12,8 +12,8 @@ public class PurchasedOrderRepositoryImpl implements iPurchasedOrderRepository {
 
 
     @Override
-    public void StorePurchasedOrder(String company, String event, List<String> ticketsId, String buyer, String orderId) {
-        PurchaseOrder order=new PurchaseOrder(company, event, ticketsId, buyer, orderId);
+    public void StorePurchasedOrder(String company, String event, List<String> ticketsId, String buyerID, String orderId) {
+        PurchaseOrder order=new PurchaseOrder(company, event, ticketsId, buyerID, orderId);
         purchasedOrders.add(order);
 
     }
@@ -35,9 +35,9 @@ public class PurchasedOrderRepositoryImpl implements iPurchasedOrderRepository {
     }
 
     @Override
-    public List<PurchaseOrder> getPurchasedOrdersForUser(String userName) {
+    public List<PurchaseOrder> getPurchasedOrdersForUser(String userID) {
         return purchasedOrders.stream()
-                .filter(order -> order.getBuyer() != null && order.getBuyer().equals(userName))
+                .filter(order -> order.getBuyerID() != null && order.getBuyerID().equals(userID))
                 .collect(Collectors.toList());
     }
 

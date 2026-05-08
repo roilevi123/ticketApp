@@ -20,14 +20,14 @@ public class CompanyRepositoryImpl implements iCompanyRepository {
     }
 
     @Override
-    public void store(String company, String founder) {
-        companies.put(company, new Company(company, founder));
+    public void store(String company, String founderID) {
+        companies.put(company, new Company(company, founderID));
 
     }
 
     @Override
     public String getCompanyFounder(String company) {
-        return companies.get(company).getFounder();
+        return companies.get(company).getFounderID();
     }
     @Override
     public void save(Company companyToUpdate) {

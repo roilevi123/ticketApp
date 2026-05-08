@@ -1,4 +1,4 @@
-package AcceptanceTest;
+package AcceptanceTests;
 
 import Appliction.*;
 import Domain.AdminAggregate.iAdminRepository;

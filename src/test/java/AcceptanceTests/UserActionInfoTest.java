@@ -1,4 +1,4 @@
-package AcceptanceTest;
+package AcceptanceTests;
 
 import Appliction.UserService;
 import Domain.User.IUserRepository;

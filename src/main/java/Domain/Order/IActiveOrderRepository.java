@@ -5,11 +5,11 @@ import java.util.List;
 
 public interface IActiveOrderRepository {
     void save(ActiveOrder order);
-    String store(String company, String event, List<String> tickets,String username, Date expiryDate);
+    String store(String company, String event, List<String> tickets,String userID, Date expiryDate);
     ActiveOrder findById(String orderId);
     void update(ActiveOrder order);
     void delete(String orderId);
     void deleteAllActiveOrders();
-    public List<String> getTicketsId(String userId);
-    public ActiveOrder getOrder(String username);
+    public List<String> getTicketsId(String userID);
+    public ActiveOrder getOrder(String userID);
 }
