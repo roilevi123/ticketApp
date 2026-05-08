@@ -13,7 +13,7 @@ import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import Domain.QueueAggregates.iQueueRepository;
 import Domain.Ticket.TicketDTO;
 import Domain.Ticket.iTicketRepository;
-import Domain.User.IUserRepository;
+import Domain.User.*;
 import Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +34,7 @@ public class AdminJUnitTests {
     private OrderService reserveTicketService;
     private PurchasedService purchasedService;
     private AdminService adminService;
+    private IUserRepository userRepository;
 
     @BeforeEach
     void setUp() {
@@ -85,6 +86,7 @@ public class AdminJUnitTests {
                 ticketRepository,       
                 eventRepository         
         );
+        this.userRepository = userRepository;
 
         // --- Data Cleanup ---
         userRepository.deleteAll();
@@ -133,7 +135,7 @@ public class AdminJUnitTests {
         String token = userService.login("owner1", "password");
         companyService.CreateCompany("C1", token);
 
-        String result = adminService.CloseCompany("C1", "wrong_admin_token");
+        String result = adminService.CloseCompany("C1", "not_admin");
         assertNotEquals("success", result);
     }
 
@@ -141,8 +143,8 @@ public class AdminJUnitTests {
     @DisplayName("3. Remove User Success")
     void removeUserSuccess3() {
         userService.register("userToRemove", "123");
-        
-        String result = adminService.removeUser("userToRemove", "admin");
+        String userID = (userRepository.getUserByUsername("userToRemove")).getID();
+        String result = adminService.removeUser(userID, "admin");
         assertEquals("success", result);
 
         // וודוא שהמשתמש נמחק ולא יכול להתחבר
