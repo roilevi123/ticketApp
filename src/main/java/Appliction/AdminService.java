@@ -6,13 +6,17 @@ import Domain.Event.iEventRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 
 import Domain.PurchasedOrderAggregate.PurchaseOrder;
+import Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 
+import Domain.Ticket.Ticket;
+import Domain.Ticket.TicketDTO;
 import Domain.Ticket.iTicketRepository;
 import Domain.User.IUserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AdminService {
@@ -73,22 +77,32 @@ public class AdminService {
             return e.getMessage();
         }
     }
-    public String GetAllPurchasedOrders(String adminName) {
+    public List<PurchaseOrderDTO> GetAllPurchasedOrders(String adminName) {
         try {
             logger.info("Getting all purchased orders");
             if(!adminRepository.isAdmin(adminName)) {
                 throw new Exception("Admin does not exist");
             }
+
             List<PurchaseOrder> purchasedOrders = purchasedOrderRepository.GetAllPurchasedOrders();
             StringBuilder orders = new StringBuilder();
+            List<PurchaseOrderDTO> orderDTOS=new ArrayList<>();
+
             for(PurchaseOrder purchasedOrder : purchasedOrders) {
                 orders.append(purchasedOrder.toString()+"\n");
                 List<String> ticketsId = purchasedOrder.getTicketsId();
                 String tickets=ticketRepository.getTicketsDescription(ticketsId);
+                List<Ticket> ticketList=ticketRepository.getTickets(ticketsId);
+                List<TicketDTO> ticketDTOS=new ArrayList<>();
+                for(Ticket ticket : ticketList) {
+                    ticketDTOS.add(TicketDTO.fromEntity(ticket));
+                }
+                orderDTOS.add(PurchaseOrderDTO.create(purchasedOrder,ticketDTOS));
                 orders.append(tickets+"\n");
+
             }
 
-            return orders.toString();
+            return orderDTOS;
         }catch (Exception e) {
             logger.error(e.getMessage());
             return null;
