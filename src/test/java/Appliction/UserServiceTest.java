@@ -116,7 +116,7 @@ class UserServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
         String result = userService.getUserInfo(TOKEN);
 
-        assertEquals(null, result);
+        assertEquals("Invalid token", result);
     }
 
     @Test
@@ -127,7 +127,7 @@ class UserServiceTest {
 
         String result = userService.getUserInfo(TOKEN);
 
-        assertEquals(null, result);
+        assertEquals("User not found", result);
     }
 
 

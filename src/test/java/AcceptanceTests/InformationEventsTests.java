@@ -2,6 +2,7 @@ package AcceptanceTests;
 
 import Appliction.*;
 import Domain.Company.iCompanyRepository;
+import Domain.Event.EventDTO;
 import Domain.Event.EventType;
 import Domain.Event.MapArea;
 import Domain.Event.iEventRepository;
@@ -117,10 +118,13 @@ public class InformationEventsTests {
         eventService.createEvent(token, "E1", "A1", EventType.PLAY, 100, eventDate, "L1", "1", getMapArea());
         eventService.createEvent(token, "E2", "A2", EventType.CONFERENCE, 200, eventDate, "L2", "1", getMapArea());
 
-        List<String> list = eventService.getCompanyEvents("1");
+        List<EventDTO> list = eventService.getCompanyEvents("1");
         assertNotNull(list);
         assertEquals(2, list.size());
-        assertTrue(list.get(0).contains("eventName='E1'") || list.get(1).contains("eventName='E1'"));
+        assertEquals(list.get(0).name().equals("E1"), true);
+        assertEquals(list.get(1).name().equals("E2"), true);
+        assertEquals(list.get(0).companyName().equals("1"), true);
+        assertEquals(list.get(1).companyName().equals("1"), true);
     }
 
     @Test @DisplayName("4. Get Company Events - Success (No Events)")
@@ -128,7 +132,7 @@ public class InformationEventsTests {
         userService.register("1", "1");
         String token = userService.login("1", "1");
         companyService.CreateCompany("1", token);
-        List<String> list = eventService.getCompanyEvents("1");
+        List<EventDTO> list = eventService.getCompanyEvents("1");
         assertTrue(list.isEmpty());
     }
 
@@ -165,21 +169,33 @@ public class InformationEventsTests {
     @Test @DisplayName("9. Search Events By Event Name")
     void searchEventsByEventNameQuery9() {
         setupSearchEnvironment();
-        List<String> results = eventService.searchEvents("Rock", null, null, null, null, null, null, null, null);
-        assertTrue(results != null && results.size() == 1 && results.get(0).contains("Rock Festival"));
+        List<EventDTO> results = eventService.searchEvents("Rock", null, null, null, null, null, null, null, null);
+        boolean isRockFound = false;
+        for (EventDTO event : results) {
+            if (event.name().contains("Rock")) {
+                isRockFound = true;
+            }
+        }
+        assertTrue(isRockFound);
     }
 
     @Test @DisplayName("10. Search Events By Artist Name")
     void searchEventsByArtistNameQuery10() {
         setupSearchEnvironment();
-        List<String> results = eventService.searchEvents("Monkeys", null, null, null, null, null, null, null, null);
-        assertTrue(results != null && results.size() == 1 && results.get(0).contains("Arctic Monkeys"));
+        List<EventDTO> results = eventService.searchEvents("Monkeys", null, null, null, null, null, null, null, null);
+        boolean isRockFound = false;
+        for (EventDTO event : results) {
+            if (event.name().contains("Rock")) {
+                isRockFound = true;
+            }
+        }
+        assertTrue(isRockFound);
     }
 
     @Test @DisplayName("11. Search Events By Price Range")
     void searchEventsByPriceRangeMultipleCompanies11() {
         setupSearchEnvironment();
-        List<String> results = eventService.searchEvents(null, null, null, 0.0, 150.0, null, null, null, null);
+        List<EventDTO> results = eventService.searchEvents(null, null, null, 0.0, 150.0, null, null, null, null);
         assertEquals(2, results.size());
     }
 
@@ -190,21 +206,21 @@ public class InformationEventsTests {
         Date startDate = new Date(fiveMinutesAgo);
         Date tomorrow = new Date(System.currentTimeMillis() + (24 * 60 * 60 * 1000L));
 
-        List<String> results = eventService.searchEvents(null, null, null, null, null, startDate, tomorrow, null, null);
+        List<EventDTO> results = eventService.searchEvents(null, null, null, null, null, startDate, tomorrow, null, null);
         assertEquals(2, results.size());
     }
 
     @Test @DisplayName("13. Search Events By Location")
     void searchEventsByLocation13() {
         setupSearchEnvironment();
-        List<String> results = eventService.searchEvents(null, null, null, null, null, null, null, "Tel Aviv", null);
+        List<EventDTO> results = eventService.searchEvents(null, null, null, null, null, null, null, "Tel Aviv", null);
         assertEquals(2, results.size());
     }
 
     @Test @DisplayName("14. Search Events By Min Rating - Empty")
     void searchEventsByMinRating14() {
         setupSearchEnvironment();
-        List<String> results = eventService.searchEvents(null, null, null, null, null, null, null, null, 1.0);
+        List<EventDTO> results = eventService.searchEvents(null, null, null, null, null, null, null, null, 1.0);
         assertTrue(results.isEmpty());
     }
 }

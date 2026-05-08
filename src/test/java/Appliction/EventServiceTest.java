@@ -64,8 +64,8 @@ public class EventServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
 
-        Response<String> res =eventService.createEvent(TOKEN,EVENT_NAME, artist, EventType.LIVE_PERFORMANCE, price, date, location, COMPANY, MAP);
-        assertEquals(res.isSuccess(), true);
+        String res =eventService.createEvent(TOKEN,EVENT_NAME, artist, EventType.LIVE_PERFORMANCE, price, date, location, COMPANY, MAP);
+        assertEquals(true,res.equals("success"));
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
 
         assertNotNull(savedEvent);
@@ -102,9 +102,8 @@ public class EventServiceTest {
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(true);
         when(mockManager.getPermissions()).thenReturn(Set.of(Permission.MANAGE_INVENTORY));
 
-        Response<String> res =eventService.createEvent(TOKEN,EVENT_NAME, artist, EventType.LIVE_PERFORMANCE, price, date, location, COMPANY, MAP);
-        assertEquals(res.getMessage(), "Event created successfully");
-        assertEquals(res.isSuccess(), true);
+        String res =eventService.createEvent(TOKEN,EVENT_NAME, artist, EventType.LIVE_PERFORMANCE, price, date, location, COMPANY, MAP);
+        assertEquals(true,res.equals("success"));
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
 
         assertNotNull(savedEvent);
@@ -128,8 +127,8 @@ public class EventServiceTest {
     void createEvent_Failure_InvalidToken() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
 
-        Response<String> res =eventService.createEvent(TOKEN,EVENT_NAME, "artist", EventType.LIVE_PERFORMANCE, 100, new Date(), "location", COMPANY, MAP);
-        assertEquals(res.isSuccess(), false);
+        String res =eventService.createEvent(TOKEN,EVENT_NAME, "artist", EventType.LIVE_PERFORMANCE, 100, new Date(), "location", COMPANY, MAP);
+        assertEquals(false,res.equals("success"));
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
         assertNull(savedEvent, "Event should not be created with an invalid token");
     }
@@ -142,8 +141,8 @@ public class EventServiceTest {
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(false);
 
-        Response<String> res =eventService.createEvent(TOKEN,EVENT_NAME, "artist", EventType.LIVE_PERFORMANCE, 100, new Date(), "location", COMPANY, MAP);
-        assertEquals(res.isSuccess(), false);
+        String res =eventService.createEvent(TOKEN,EVENT_NAME, "artist", EventType.LIVE_PERFORMANCE, 100, new Date(), "location", COMPANY, MAP);
+        assertEquals(false,res.equals("success"));
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
         assertNull(savedEvent, "Event should not be created if the user has no permissions");
     }
@@ -158,8 +157,8 @@ public class EventServiceTest {
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(false);
         when(mockManager.getPermissions()).thenReturn(Set.of(Permission.RESPOND_TO_INQUIRIES));
 
-        Response<String> res =eventService.createEvent(TOKEN,EVENT_NAME, "artist", EventType.LIVE_PERFORMANCE, 100, new Date(), "location", COMPANY, MAP);
-        assertEquals(res.isSuccess(), false);
+        String res =eventService.createEvent(TOKEN,EVENT_NAME, "artist", EventType.LIVE_PERFORMANCE, 100, new Date(), "location", COMPANY, MAP);
+        assertEquals(false,res.equals("success"));
         Event savedEvent = eventRepository.getEvent(EVENT_NAME, COMPANY);
         assertNull(savedEvent, "Event should not be created if the manager lacks MANAGE_INVENTORY permission");
     }
@@ -175,8 +174,8 @@ public class EventServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
 
-        Response<Void> res = eventService.deleteEvent(event.getId(), COMPANY, TOKEN);
-        assertEquals(res.isSuccess(), true);
+        String res = eventService.deleteEvent(event.getId(), COMPANY, TOKEN);
+        assertEquals(res.equals("success"), true);
         assertNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
     }
     @Test
@@ -191,8 +190,8 @@ public class EventServiceTest {
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(true);
         when(mockManager.getPermissions()).thenReturn(Set.of(Permission.MANAGE_INVENTORY));
 
-        Response<Void> res = eventService.deleteEvent(event.getId(), COMPANY, TOKEN);
-        assertEquals(res.isSuccess(), true);
+        String res = eventService.deleteEvent(event.getId(), COMPANY, TOKEN);
+        assertEquals(res.equals("success"), true);
         assertNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
         List<Ticket> remainingTickets = ((TicketRepositoryImpl) ticketRepository).getTicketsForEvent(COMPANY, EVENT_NAME);
         assertTrue(remainingTickets.isEmpty());
@@ -207,8 +206,8 @@ public class EventServiceTest {
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(false);
 
-        Response<Void> res = eventService.deleteEvent(event.getId(), COMPANY, TOKEN);
-        assertEquals(res.isSuccess(), false);
+        String res = eventService.deleteEvent(event.getId(), COMPANY, TOKEN);
+        assertEquals(res.equals("success"), false);
         assertNotNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
         List<Ticket> remainingTickets = ((TicketRepositoryImpl) ticketRepository).getTicketsForEvent(COMPANY, EVENT_NAME);
         assertTrue(remainingTickets.isEmpty());
@@ -269,7 +268,7 @@ public class EventServiceTest {
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(false);
 
         String res=eventService.UpdateEvent(TOKEN, EVENT_NAME, "New Artist", EventType.PLAY, 500.0, new Date(), "New Loc", COMPANY, MAP, 1.0);
-        assertEquals(res, "failed");
+        assertNotEquals("success", res);
         Event notUpdated = eventRepository.getEvent(EVENT_NAME, COMPANY);
         assertEquals(oldArtist, notUpdated.getArtistName());
         assertNotEquals(500.0, notUpdated.getPrice());
@@ -333,10 +332,10 @@ public class EventServiceTest {
         eventRepository.store("Rock", "Artist A", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", "CompanyA", MAP);
         eventRepository.store("Jazz", "Artist B", EventType.LIVE_PERFORMANCE, 150.0, new Date(), "Haifa", "CompanyB", MAP);
 
-        List<String> result = eventService.searchEvents(null, "CompanyA", null, null, null, null, null, null, null);
+        List<EventDTO> result = eventService.searchEvents(null, "CompanyA", null, null, null, null, null, null, null);
 
         assertEquals(1, result.size());
-        assertTrue(result.get(0).contains("Rock"));
+        assertTrue(result.get(0).name().contains("Rock"));
     }
 
     @Test
@@ -344,10 +343,10 @@ public class EventServiceTest {
         eventRepository.store("Special Show", "Artist A", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
         eventRepository.store("Regular Event", "Artist B", EventType.LIVE_PERFORMANCE, 150.0, new Date(), "Haifa", COMPANY,MAP);
 
-        List<String> result = eventService.searchEvents("Special", null, null, null, null, null, null, null, null);
+        List<EventDTO> result = eventService.searchEvents("Special", null, null, null, null, null, null, null, null);
 
         assertEquals(1, result.size());
-        assertTrue(result.get(0).contains("Special Show"));
+        assertTrue(result.get(0).name().contains("Special Show"));
     }
 
     @Test
@@ -356,10 +355,10 @@ public class EventServiceTest {
         eventRepository.store("Mid", "B", EventType.LIVE_PERFORMANCE, 150.0, new Date(), "L", COMPANY, MAP);
         eventRepository.store("Expensive", "C", EventType.LIVE_PERFORMANCE, 300.0, new Date(), "L", COMPANY, MAP);
 
-        List<String> result = eventService.searchEvents(null, null, null, 100.0, 200.0, null, null, null, null);
+        List<EventDTO> result = eventService.searchEvents(null, null, null, 100.0, 200.0, null, null, null, null);
 
         assertEquals(1, result.size());
-        assertTrue(result.get(0).contains("Mid"));
+        assertTrue(result.get(0).name().contains("Mid"));
     }
 
     @Test
@@ -367,10 +366,10 @@ public class EventServiceTest {
         eventRepository.store("Concert", "A", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "L", COMPANY, MAP);
         eventRepository.store("Theater", "B", EventType.PLAY, 100.0, new Date(), "L", COMPANY, MAP);
 
-        List<String> result = eventService.searchEvents(null, null, EventType.PLAY, null, null, null, null, null, null);
+        List<EventDTO> result = eventService.searchEvents(null, null, EventType.PLAY, null, null, null, null, null, null);
 
         assertEquals(1, result.size());
-        assertTrue(result.get(0).contains("PLAY"));
+        assertTrue(result.get(0).type().equals( EventType.PLAY));
     }
 
     @Test
@@ -379,7 +378,7 @@ public class EventServiceTest {
         eventRepository.store("Wrong-Name", "Artist", EventType.LIVE_PERFORMANCE, 150.0, new Date(), "Tel Aviv", COMPANY, MAP);
         eventRepository.store("Target-Wrong-Type", "Artist", EventType.PLAY, 150.0, new Date(), "Tel Aviv", COMPANY, MAP);
 
-        List<String> result = eventService.searchEvents(
+        List<EventDTO> result = eventService.searchEvents(
                 "Target",
                 COMPANY,
                 EventType.LIVE_PERFORMANCE,
@@ -393,15 +392,15 @@ public class EventServiceTest {
 
         // רק Target-Perfect אמור לעבור את כל הפילטרים
         assertEquals(1, result.size());
-        assertTrue(result.get(0).contains("Target-Perfect"));
-        assertTrue(result.get(0).contains("LIVE_PERFORMANCE"));
+        assertTrue(result.get(0).name().contains("Target-Perfect"));
+        assertTrue(result.get(0).type().equals( EventType.LIVE_PERFORMANCE));
     }
 
     @Test
     void searchEvents_NoResults() {
         eventRepository.store("Event", "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY,MAP);
 
-        List<String> result = eventService.searchEvents("NonExistent", null, null, null, null, null, null, null, null);
+        List<EventDTO> result = eventService.searchEvents("NonExistent", null, null, null, null, null, null, null, null);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());

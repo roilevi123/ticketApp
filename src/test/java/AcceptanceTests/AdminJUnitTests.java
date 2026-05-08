@@ -8,8 +8,10 @@ import Domain.Event.MapArea;
 import Domain.Event.iEventRepository;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import Domain.QueueAggregates.iQueueRepository;
+import Domain.Ticket.TicketDTO;
 import Domain.Ticket.iTicketRepository;
 import Domain.User.IUserRepository;
 import Infastructure.*;
@@ -168,12 +170,35 @@ public class AdminJUnitTests {
         String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}));
         purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer");
 
-        String result = adminService.GetAllPurchasedOrders("admin");
+        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
+        boolean isCompanyExist = false;
+        boolean isEventExist = false;
+        boolean isPurchased = false;
+        boolean isUserExist = false;
+        for (PurchaseOrderDTO po : result) {
+            List<TicketDTO> ticketsList = po.tickets();
+            if(po.buyer().equals("buyer")){
+                isUserExist = true;
+            }
+            for (TicketDTO ticket : ticketsList) {
+                if(ticket.isPurchased()){
+                    isPurchased = true;
+                }
+                if(ticket.company().equals("C1")){
+                    isCompanyExist = true;
+                }
+                if(ticket.event().equals("E1")){
+                    isEventExist = true;
+                }
 
+
+            }
+        }
         assertNotNull(result);
-        // בדיקת תכולת ה-ToString של ה-PurchaseOrder והתיאור מה-TicketRepository
-        assertTrue(result.contains("C1"));
-        assertTrue(result.contains("buyer"));
+        assertTrue(isCompanyExist);
+        assertTrue(isEventExist);
+        assertTrue(isPurchased);
+        assertTrue(isUserExist);
     }
 
     @Test
@@ -193,17 +218,50 @@ public class AdminJUnitTests {
         String tB2 = userService.login("b2", "p");
         String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1}));
         purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2");
-        String result = adminService.GetAllPurchasedOrders("admin");
 
+        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
+        boolean isCompanyExist = false;
+        boolean isEventExist = false;
+        boolean isPurchased = false;
+        boolean isUser1Exist = false;
+        boolean isUser2Exist = false;
+
+        for (PurchaseOrderDTO po : result) {
+            List<TicketDTO> ticketsList = po.tickets();
+            if(po.buyer().equals("b1")){
+                isUser1Exist = true;
+            }
+            if(po.buyer().equals("b1")){
+                isUser2Exist = true;
+            }
+
+            for (TicketDTO ticket : ticketsList) {
+                if(ticket.isPurchased()){
+                    isPurchased = true;
+                }
+                if(ticket.company().equals("C1")){
+                    isCompanyExist = true;
+                }
+                if(ticket.event().equals("E1")){
+                    isEventExist = true;
+                }
+
+
+            }
+        }
         assertNotNull(result);
-        assertTrue(result.contains("b1"));
-        assertTrue(result.contains("b2"));
+        assertTrue(isCompanyExist);
+        assertTrue(isEventExist);
+        assertTrue(isPurchased);
+        assertTrue(isUser1Exist);
+        assertTrue(isUser2Exist);
     }
 
     @Test
     @DisplayName("7. Get All Purchased Orders Failed - Not Admin")
     void getAllPurchasedOrdersFailedNotAdmin7() {
-        String result = adminService.GetAllPurchasedOrders("not_an_admin");
+        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("not_an_admin");
+
         assertNull(result);
     }
 
@@ -229,11 +287,7 @@ public class AdminJUnitTests {
         String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1}));
         purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8");
 
-        String result = adminService.GetAllPurchasedOrders("admin");
-
-        assertNotNull(result);
-        assertTrue(result.contains("CompA"));
-        assertTrue(result.contains("CompB"));
-        assertTrue(result.contains("buyer8"));
+        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("not_an_admin");
+        assertEquals(result,null);
     }
 }

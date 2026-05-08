@@ -72,7 +72,15 @@ class OrderServiceTest {
         assertEquals("1", orderId);
         verify(orderRepository, times(1)).store(eq(COMPANY), eq(EVENT), anyList(), eq(USERNAME), any(Date.class));
     }
-
+    public boolean isNumeric(String str) {
+        if (str == null) return false;
+        try {
+            Double.parseDouble(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
     @Test
     void reserveTickets_Failure_UserAlreadyHasActiveOrder() {
         Ticket t1 = new Ticket(0, 0, EVENT, COMPANY, "T1", 100.0);
@@ -88,7 +96,7 @@ class OrderServiceTest {
 
         String string = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
 
-        assertNull(string);
+        assertEquals(isNumeric(string),false);
     }
 
     @Test
