@@ -160,7 +160,7 @@ public class EventRepositoryImpl implements iEventRepository {
     }
 
     @Override
-    public List<String> searchEvents(String query, String company, EventType type, Double minPrice, Double maxPrice, Date startDate, Date endDate, String location, Double minRating) {
+    public List<EventDTO> searchEvents(String query, String company, EventType type, Double minPrice, Double maxPrice, Date startDate, Date endDate, String location, Double minRating) {
         return events.values().stream()
                 .filter(e -> company == null || e.getCompany().equalsIgnoreCase(company))
                 .filter(e -> query == null || query.isEmpty() ||
@@ -176,7 +176,7 @@ public class EventRepositoryImpl implements iEventRepository {
                     if (company != null) return true;
                     return minRating == null || e.getRating() >= minRating;
                 })
-                .map(Event::toString)
+                .map(EventDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 

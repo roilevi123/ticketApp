@@ -7,6 +7,7 @@ import Domain.Order.IActiveOrderRepository;
 import Domain.Order.IPurchasedOrderRepository;
 import Domain.Order.PurchasedOrder;
 import Domain.Ticket.Ticket;
+import Domain.Ticket.TicketDTO;
 import Domain.Ticket.iTicketRepository;
 import Infastructure.TokenService;
 import org.slf4j.Logger;
@@ -105,10 +106,10 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
                     logger.error("Failed to rollback ticket " + id);
                 }
             }
-            return null;
+            return e.getMessage();
         }
     }
-    public String getActiveOrderTickets(String token,String orderId) {
+    public List<TicketDTO> getActiveOrderTickets(String token,String orderId) {
         try {
             logger.info("get information about active order ticket reservation for token: " + token);
             ActiveOrder activeOrder=activeOrderRepository.findById(orderId);
@@ -127,9 +128,13 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
 
             }
             String tickets=ticketRepository.getTicketsDescription(ticketsId);
-
+            List<Ticket> ticketList=ticketRepository.getTickets(ticketsId);
+            List<TicketDTO> ticketDTOS = new ArrayList<>();
+            for (Ticket ticket : ticketList) {
+                ticketDTOS.add(TicketDTO.fromEntity(ticket));
+            }
             logger.info("get active order tickets: " + tickets);
-            return tickets;
+            return ticketDTOS;
         } catch (Exception e) {
             logger.error("Error retrieving active order: {}", e.getMessage());
             return null;

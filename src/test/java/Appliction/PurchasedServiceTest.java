@@ -4,6 +4,7 @@ import Domain.Order.ActiveOrder;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import Domain.PurchasedOrderAggregate.PurchaseOrder;
+import Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 
 import Domain.Ticket.Ticket;
@@ -304,10 +305,9 @@ class PurchasedServiceTest {
         when(purchasedOrderRepository.getPurchasedOrdersForCompany(COMPANY)).thenReturn(List.of(po));
         when(ticketRepository.getTicketsDescription(anyList())).thenReturn("Ticket Info");
 
-        String result = purchasedService.getCompanyTransaction(COMPANY, token);
+        List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction(COMPANY, token);
 
-        assertTrue(result.contains(COMPANY));
-        assertTrue(result.contains("Ticket Info"));
+        assertTrue(result.get(0).buyer().equals(USERNAME));
     }
 //
     @Test
@@ -320,9 +320,9 @@ class PurchasedServiceTest {
         when(treeOfRoleRepository.exitsOwner(user, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitToSeeTransactions(user, COMPANY)).thenReturn(false);
 
-        String result = purchasedService.getCompanyTransaction(COMPANY, token);
+        List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction(COMPANY, token);
 
-        assertEquals("User not authorized", result);
+        assertEquals(null, result);
         verify(purchasedOrderRepository, never()).getPurchasedOrdersForCompany(anyString());
     }
 
@@ -337,10 +337,9 @@ class PurchasedServiceTest {
         when(purchasedOrderRepository.getPurchasedOrdersForUser(buyer)).thenReturn(List.of(po));
         when(ticketRepository.getTicketsDescription(anyList())).thenReturn("Seat 10");
 
-        String result = purchasedService.getUserTransaction(token);
+        List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(token);
 
-        assertTrue(result.contains(buyer));
-        assertTrue(result.contains("Seat 10"));
+        assertTrue(result.get(0).buyer().equals(buyer));
     }
 
     @Test
@@ -348,9 +347,9 @@ class PurchasedServiceTest {
         String token = "invalid_token";
         when(tokenService.validateToken(token)).thenReturn(false);
 
-        String result = purchasedService.getUserTransaction(token);
+        List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(token);
 
-        assertEquals("Invalid token", result);
+        assertEquals(null, result);
         verify(purchasedOrderRepository, never()).getPurchasedOrdersForUser(anyString());
     }
 }
