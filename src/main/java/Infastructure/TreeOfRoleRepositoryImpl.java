@@ -126,7 +126,6 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
     @Override
     public boolean isOwner(String ownerID, String company) {
         if(owners.containsKey(ownerID+company)) {
-            Owner m = owners.get(ownerID + company);
             return true;
         }
         return false;

@@ -5,6 +5,7 @@ public interface IUserRepository {
     public String getUserPassword(String username);
     public User getUserByUsername(String username);
     public User getUserByID(String ID);
+    public String getUsernameByID(String ID);
     public boolean usernameExists(String username);
     public void save(User userToUpdate);
     public void deleteAll();

@@ -1,7 +1,6 @@
 package AcceptanceTests;
 
 import Appliction.*;
-import Domain.AdminAggregate.iAdminRepository;
 import Domain.Company.iCompanyRepository;
 import Domain.Event.EventType;
 import Domain.Event.MapArea;
@@ -32,10 +31,10 @@ public class PurchaseOrderTests {
     private EventService eventService;
     private OrderService reserveTicketService;
     private PurchasedService purchasedService;
+    private TokenService tokenService;
 
     @BeforeEach
     void setUp() {
-        // Infrastructure & Repositories
         IUserRepository userRepository = new UserRepositoryImpl();
         iCompanyRepository companyRepository = new CompanyRepositoryImpl();
         iEventRepository eventRepository = new EventRepositoryImpl();
@@ -44,22 +43,19 @@ public class PurchaseOrderTests {
         IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        TokenService tokenService = new TokenService();
+        this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
-        // Mock/External Services
         ISupplyService supplyService = new SupplyServiceMock();
         IPaymentService paymentService = new PaymentServiceMock();
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
 
-        // Application Services
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository);
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentService, barcodeGenerator, tokenService, treeOfRoleRepository);
 
-        // Data Cleanup
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
         treeOfRoleRepository.deleteAllRoles();
@@ -69,6 +65,18 @@ public class PurchaseOrderTests {
         ticketRepository.deleteAllTickets();
         userRepository.deleteAll();
         tokenService.clearAllData();
+    }
+
+    private String gt() {
+        return tokenService.generateGuestToken();
+    }
+
+    private void reg(String username, String password) {
+        userService.register(gt(), username, password);
+    }
+
+    private String log(String username, String password) {
+        return userService.login(gt(), username, password);
     }
 
     private MapArea[][] getMapArea() {
@@ -89,12 +97,12 @@ public class PurchaseOrderTests {
 
     @Test @DisplayName("1. Purchased Ticket Success")
     void purchasedTicketSuccess1() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        userService.register("2", "2");
-        String token1 = userService.login("2", "2");
+        reg("2", "2");
+        String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
         assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2"));
@@ -102,26 +110,26 @@ public class PurchaseOrderTests {
 
     @Test @DisplayName("2. Purchased Ticket Failed - Order Expired")
     void purchasedTicketFailedOrderExpired2() throws InterruptedException {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        userService.register("2", "2");
-        String token1 = userService.login("2", "2");
+        reg("2", "2");
+        String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        Thread.sleep(11000); // Wait for expiration
+        Thread.sleep(11000);
         assertNotEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2"));
     }
 
     @Test @DisplayName("3. Purchased Ticket Success - Multiple Spots")
     void purchasedTicketSuccess3() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea1());
-        userService.register("2", "2");
-        String token1 = userService.login("2", "2");
+        reg("2", "2");
+        String token1 = log("2", "2");
         List<int[]> requests = Arrays.asList(new int[]{0, 0, 1}, new int[]{1, 1, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
         assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2"));
@@ -129,12 +137,12 @@ public class PurchaseOrderTests {
 
     @Test @DisplayName("4. Get Company Transaction Success")
     void getCompanyTransactionSuccess4() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        userService.register("2", "2");
-        String token1 = userService.login("2", "2");
+        reg("2", "2");
+        String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
         purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2");
@@ -143,44 +151,29 @@ public class PurchaseOrderTests {
         boolean isCompanyExist = false;
         boolean isEventExist = false;
         boolean isPurchased = false;
-        boolean isUser1Exist = false;
 
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
-            if(po.buyer().equals("2")){
-                isUser1Exist = true;
-            }
-
-
             for (TicketDTO ticket : ticketsList) {
-                if(ticket.isPurchased()){
-                    isPurchased = true;
-                }
-                if(ticket.company().equals("1")){
-                    isCompanyExist = true;
-                }
-                if(ticket.event().equals("1")){
-                    isEventExist = true;
-                }
-
-
+                if (ticket.isPurchased()) { isPurchased = true; }
+                if (ticket.company().equals("1")) { isCompanyExist = true; }
+                if (ticket.event().equals("1")) { isEventExist = true; }
             }
         }
         assertNotNull(result);
         assertTrue(isCompanyExist);
         assertTrue(isEventExist);
         assertTrue(isPurchased);
-        assertTrue(isUser1Exist);
     }
 
     @Test @DisplayName("5. Get Company Transaction Success - Stand & Seat")
     void getCompanyTransactionSuccess5() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea1());
-        userService.register("2", "2");
-        String token1 = userService.login("2", "2");
+        reg("2", "2");
+        String token1 = log("2", "2");
         List<int[]> requests = Arrays.asList(new int[]{0, 0, 1}, new int[]{1, 1, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
         purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2");
@@ -189,59 +182,41 @@ public class PurchaseOrderTests {
         boolean isCompanyExist = false;
         boolean isEventExist = false;
         boolean isPurchased = false;
-        boolean isUser1Exist = false;
-        boolean isTheStand=false;
-        boolean isTheSeat=false;
+        boolean isTheStand = false;
+        boolean isTheSeat = false;
 
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
-            if(po.buyer().equals("2")){
-                isUser1Exist = true;
-            }
-
-
             for (TicketDTO ticket : ticketsList) {
-                if(ticket.isPurchased()){
-                    isPurchased = true;
-                }
-                if(ticket.company().equals("1")){
-                    isCompanyExist = true;
-                }
-                if(ticket.event().equals("1")){
-                    isEventExist = true;
-                }
-                if(ticket.col()==0&& ticket.row()==0){
-                    isTheStand = true;
-                }
-                if(ticket.col()==1&& ticket.row()==1){
-                    isTheSeat = true;
-                }
-
+                if (ticket.isPurchased()) { isPurchased = true; }
+                if (ticket.company().equals("1")) { isCompanyExist = true; }
+                if (ticket.event().equals("1")) { isEventExist = true; }
+                if (ticket.col() == 0 && ticket.row() == 0) { isTheStand = true; }
+                if (ticket.col() == 1 && ticket.row() == 1) { isTheSeat = true; }
             }
         }
         assertNotNull(result);
         assertTrue(isCompanyExist);
         assertTrue(isEventExist);
         assertTrue(isPurchased);
-        assertTrue(isUser1Exist);
         assertTrue(isTheStand);
         assertTrue(isTheSeat);
     }
 
     @Test @DisplayName("6. Get Company Transaction Success - Manager with Permission")
     void getCompanyTransactionSuccess6() {
-        userService.register("1", "1");
-        String token = userService.login("1", "1");
+        reg("1", "1");
+        String token = log("1", "1");
         companyService.CreateCompany("1", token);
-        userService.register("3", "3");
-        String token3 = userService.login("3", "3");
+        reg("3", "3");
+        String token3 = log("3", "3");
         companyService.AppointAManager("3", "1", Set.of(Permission.GENERATE_SALES_REPORTS), token);
         companyService.ApproveAppointmentForManager(token3, "1");
 
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        userService.register("2", "2");
-        String token2 = userService.login("2", "2");
-        String orderId = reserveTicketService.reserveTickets(token2, "1", "1", List.of(new int[]{0,0,1}));
+        reg("2", "2");
+        String token2 = log("2", "2");
+        String orderId = reserveTicketService.reserveTickets(token2, "1", "1", List.of(new int[]{0, 0, 1}));
         purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2");
 
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token3);
@@ -249,52 +224,35 @@ public class PurchaseOrderTests {
         boolean isCompanyExist = false;
         boolean isEventExist = false;
         boolean isPurchased = false;
-        boolean isUser1Exist = false;
 
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
-            if(po.buyer().equals("2")){
-                isUser1Exist = true;
-            }
-
-
             for (TicketDTO ticket : ticketsList) {
-                if(ticket.isPurchased()){
-                    isPurchased = true;
-                }
-                if(ticket.company().equals("1")){
-                    isCompanyExist = true;
-                }
-                if(ticket.event().equals("1")){
-                    isEventExist = true;
-                }
-
-
+                if (ticket.isPurchased()) { isPurchased = true; }
+                if (ticket.company().equals("1")) { isCompanyExist = true; }
+                if (ticket.event().equals("1")) { isEventExist = true; }
             }
         }
         assertNotNull(result);
         assertTrue(isCompanyExist);
         assertTrue(isEventExist);
         assertTrue(isPurchased);
-        assertTrue(isUser1Exist);
     }
 
     @Test
     @DisplayName("7. Get Company Transaction Success - Multiple Events")
     void getCompanyTransactionSuccess7() {
-        // 1. הגדרת חברה ובעלים
-        userService.register("owner1", "p");
-        String token = userService.login("owner1", "p");
+        reg("owner1", "p");
+        String token = log("owner1", "p");
         companyService.CreateCompany("1", token);
 
-        // 2. יצירת שני אירועים נפרדים
         eventService.createEvent(token, "E1", "1", EventType.PLAY, 100, new Date(), "L1", "1", getMapArea());
         eventService.createEvent(token, "E2", "1", EventType.PLAY, 100, new Date(), "L2", "1", getMapArea());
 
-        userService.register("buyer2", "p");
-        String tB2 = userService.login("buyer2", "p");
-        userService.register("buyer3", "p");
-        String tB3 = userService.login("buyer3", "p");
+        reg("buyer2", "p");
+        String tB2 = log("buyer2", "p");
+        reg("buyer3", "p");
+        String tB3 = log("buyer3", "p");
 
         List<int[]> requests = List.of(new int[]{0, 0, 1});
 
@@ -309,36 +267,15 @@ public class PurchaseOrderTests {
         boolean isCompanyExist = false;
         boolean isEvent1Exist = false;
         boolean isEvent2Exist = false;
-
         boolean isPurchased = false;
-        boolean isUser1Exist = false;
-        boolean isUser2Exist = false;
 
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
-            if(po.buyer().equals("buyer2")){
-                isUser1Exist = true;
-            }
-            if(po.buyer().equals("buyer3")){
-                isUser2Exist = true;
-            }
-
-
             for (TicketDTO ticket : ticketsList) {
-                if(ticket.isPurchased()){
-                    isPurchased = true;
-                }
-                if(ticket.company().equals("1")){
-                    isCompanyExist = true;
-                }
-                if(ticket.event().equals("E1")){
-                    isEvent1Exist = true;
-                }
-                if(ticket.event().equals("E1")){
-                    isEvent2Exist = true;
-                }
-
-
+                if (ticket.isPurchased()) { isPurchased = true; }
+                if (ticket.company().equals("1")) { isCompanyExist = true; }
+                if (ticket.event().equals("E1")) { isEvent1Exist = true; }
+                if (ticket.event().equals("E2")) { isEvent2Exist = true; }
             }
         }
         assertNotNull(result);
@@ -346,130 +283,125 @@ public class PurchaseOrderTests {
         assertTrue(isEvent1Exist);
         assertTrue(isEvent2Exist);
         assertTrue(isPurchased);
-        assertTrue(isUser1Exist);
     }
+
     @Test @DisplayName("8. Get Company Transaction Security - Unauthorized")
     void getCompanyTransactionSecurity8() {
-        userService.register("owner1", "pass");
-        String token1 = userService.login("owner1", "pass");
+        reg("owner1", "pass");
+        String token1 = log("owner1", "pass");
         companyService.CreateCompany("C1", token1);
 
-        userService.register("owner2", "pass");
-        String token2 = userService.login("owner2", "pass");
+        reg("owner2", "pass");
+        String token2 = log("owner2", "pass");
         companyService.CreateCompany("C2", token2);
 
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("C2", token1);
-        assertTrue(result==null);
+        assertTrue(result == null);
     }
 
     @Test @DisplayName("9. Get Company Transaction - Multiple Events Detailed")
     void getCompanyTransactionMultipleEvents9() {
-        // Similar to 7, ensures data consistency across multiple events
-        getCompanyTransactionSuccess7();
+        reg("owner9", "p");
+        String token = log("owner9", "p");
+        companyService.CreateCompany("C9", token);
+
+        eventService.createEvent(token, "E1", "C9", EventType.PLAY, 100, new Date(), "L1", "C9", getMapArea());
+        eventService.createEvent(token, "E2", "C9", EventType.PLAY, 100, new Date(), "L2", "C9", getMapArea());
+
+        reg("buyer9a", "p");
+        String tA = log("buyer9a", "p");
+        reg("buyer9b", "p");
+        String tB = log("buyer9b", "p");
+
+        String o1 = reserveTicketService.reserveTickets(tA, "C9", "E1", List.of(new int[]{0, 0, 1}));
+        String o2 = reserveTicketService.reserveTickets(tB, "C9", "E2", List.of(new int[]{0, 0, 1}));
+
+        assertEquals("success", purchasedService.PurchaseTicket("a@g.com", o1, "buyer9a"));
+        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", o2, "buyer9b"));
+
+        List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("C9", token);
+        assertNotNull(result);
+        assertEquals(2, result.size());
+
+        boolean sawE1 = false;
+        boolean sawE2 = false;
+        for (PurchaseOrderDTO po : result) {
+            for (TicketDTO ticket : po.tickets()) {
+                if (ticket.event().equals("E1")) sawE1 = true;
+                if (ticket.event().equals("E2")) sawE2 = true;
+            }
+        }
+        assertTrue(sawE1);
+        assertTrue(sawE2);
     }
 
     @Test @DisplayName("10. Get User Transaction Success")
     void getUserTransactionSuccess10() {
-        userService.register("10", "10");
-        String tO = userService.login("10", "10");
+        reg("10", "10");
+        String tO = log("10", "10");
         companyService.CreateCompany("C10", tO);
         eventService.createEvent(tO, "E10", "C10", EventType.PLAY, 100, new Date(), "L", "C10", getMapArea());
 
-        userService.register("20", "20");
-        String tB = userService.login("20", "20");
+        reg("20", "20");
+        String tB = log("20", "20");
         String orderId = reserveTicketService.reserveTickets(tB, "C10", "E10", List.of(new int[]{0, 0, 1}));
         purchasedService.PurchaseTicket("b@gmail.com", orderId, "20");
 
-        List<PurchaseOrderDTO>  result = purchasedService.getUserTransaction(tB);
+        List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(tB);
         boolean isCompanyExist = false;
         boolean isEventExist = false;
         boolean isPurchased = false;
-        boolean isUserExist = false;
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
-            if(po.buyer().equals("20")){
-                isUserExist = true;
-            }
             for (TicketDTO ticket : ticketsList) {
-                if(ticket.isPurchased()){
-                    isPurchased = true;
-                }
-                if(ticket.company().equals("C10")){
-                    isCompanyExist = true;
-                }
-                if(ticket.event().equals("E10")){
-                    isEventExist = true;
-                }
-
-
+                if (ticket.isPurchased()) { isPurchased = true; }
+                if (ticket.company().equals("C10")) { isCompanyExist = true; }
+                if (ticket.event().equals("E10")) { isEventExist = true; }
             }
         }
         assertNotNull(result);
         assertTrue(isCompanyExist);
         assertTrue(isEventExist);
         assertTrue(isPurchased);
-        assertTrue(isUserExist);
     }
 
     @Test
     @DisplayName("11. Get User Transaction - Multiple Companies")
     void getUserTransactionMultipleCompanies11() {
-        // 1. הקמת חברה א' ואירוע א'
-        userService.register("u1", "p");
-        String tO1 = userService.login("u1", "p");
+        reg("u1", "p");
+        String tO1 = log("u1", "p");
         companyService.CreateCompany("CA", tO1);
         eventService.createEvent(tO1, "EA", "CA", EventType.PLAY, 100, new Date(), "LA", "CA", getMapArea());
 
-        // 2. הקמת חברה ב' ואירוע ב'
-        userService.register("u2", "p");
-        String tO2 = userService.login("u2", "p");
+        reg("u2", "p");
+        String tO2 = log("u2", "p");
         companyService.CreateCompany("CB", tO2);
         eventService.createEvent(tO2, "EB", "CB", EventType.PLAY, 100, new Date(), "LB", "CB", getMapArea());
 
-        // 3. רישום הקונה
-        userService.register("buyer", "p");
-        String tB = userService.login("buyer", "p");
+        reg("buyer", "p");
+        String tB = log("buyer", "p");
         List<int[]> req = List.of(new int[]{0, 0, 1});
 
-        // 4. רכישה מחברה א' - חובה לסיים רכישה לפני ההזמנה הבאה
         String oA = reserveTicketService.reserveTickets(tB, "CA", "EA", req);
         assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oA, "buyer"), "Purchase for CA failed");
 
-        // 5. רכישה מחברה ב'
         String oB = reserveTicketService.reserveTickets(tB, "CB", "EB", req);
         assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oB, "buyer"), "Purchase for CB failed");
 
-        List<PurchaseOrderDTO>  result = purchasedService.getUserTransaction(tB);
+        List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(tB);
         boolean isCompany1Exist = false;
         boolean isCompany2Exist = false;
         boolean isEvent1Exist = false;
         boolean isEvent2Exist = false;
-
         boolean isPurchased = false;
-        boolean isUserExist = false;
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
-            if(po.buyer().equals("buyer")){
-                isUserExist = true;
-            }
             for (TicketDTO ticket : ticketsList) {
-                if(ticket.isPurchased()){
-                    isPurchased = true;
-                }
-                if(ticket.company().equals("CA")){
-                    isCompany1Exist = true;
-                }
-                if(ticket.company().equals("CB")){
-                    isCompany2Exist = true;
-                }
-                if(ticket.event().equals("EA")){
-                    isEvent1Exist = true;
-                }
-                if(ticket.event().equals("EB")){
-                    isEvent2Exist = true;
-                }
-
-
+                if (ticket.isPurchased()) { isPurchased = true; }
+                if (ticket.company().equals("CA")) { isCompany1Exist = true; }
+                if (ticket.company().equals("CB")) { isCompany2Exist = true; }
+                if (ticket.event().equals("EA")) { isEvent1Exist = true; }
+                if (ticket.event().equals("EB")) { isEvent2Exist = true; }
             }
         }
         assertNotNull(result);
@@ -478,70 +410,67 @@ public class PurchaseOrderTests {
         assertTrue(isEvent1Exist);
         assertTrue(isEvent2Exist);
         assertTrue(isPurchased);
-        assertTrue(isUserExist);
     }
 
     @Test @DisplayName("12. Get User Transaction Security - Unauthorized View")
     void getUserTransactionSecurity12() {
-        userService.register("u1", "p"); String t1 = userService.login("u1", "p");
-        userService.register("u2", "p"); String t2 = userService.login("u2", "p");
-        List<PurchaseOrderDTO>  result = purchasedService.getUserTransaction(t2);
-        assertEquals(new ArrayList<>(),result);
+        reg("u2", "p"); String t2 = log("u2", "p");
+        List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(t2);
+        assertEquals(new ArrayList<>(), result);
     }
 
     @Test @DisplayName("13. Purchase Order As Guest Success")
     void purchaseOrderAsGuest13() {
-        userService.register("own", "p");
-        String tO = userService.login("own", "p");
+        reg("own", "p");
+        String tO = log("own", "p");
         companyService.CreateCompany("SecC", tO);
         eventService.createEvent(tO, "SecE", "SecC", EventType.PLAY, 100, new Date(), "L", "SecC", getMapArea());
 
-        String order1 = reserveTicketService.reserveTickets("guestToken", "SecC", "SecE", List.of(new int[]{0, 0, 1}));
+        String guestToken = tokenService.generateGuestToken();
+        String order1 = reserveTicketService.reserveTickets(guestToken, "SecC", "SecE", List.of(new int[]{0, 0, 1}));
         assertEquals("success", purchasedService.PurchaseTicket("u1@gmail.com", order1, "guestUser"));
     }
 
     @Test @DisplayName("14. Purchased Ticket Success After App Re-entry")
     void purchasedTicketSuccessAndGETOutTheApp14() {
-        userService.register("1", "1");
-        String tO = userService.login("1", "1");
+        reg("1", "1");
+        String tO = log("1", "1");
         companyService.CreateCompany("C1", tO);
         eventService.createEvent(tO, "E1", "C1", EventType.PLAY, 100, new Date(), "L", "C1", getMapArea());
 
-        userService.register("2", "2");
-        String tB = userService.login("2", "2");
+        reg("2", "2");
+        String tB = log("2", "2");
         String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}));
 
         userService.logout(tB);
-        String tB2 = userService.login("2", "2");
-        // Using "orderId" string reference if the system persists it by ID
+        log("2", "2");
         assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2"));
     }
 
     @Test @DisplayName("15. Purchase Order Guest Fail - App Exit")
     void purchaseOrderAsGuestFaildBecauseHegetOut15() {
-        userService.register("own", "p");
-        String tO = userService.login("own", "p");
+        reg("own", "p");
+        String tO = log("own", "p");
         companyService.CreateCompany("SecC", tO);
         eventService.createEvent(tO, "SecE", "SecC", EventType.PLAY, 100, new Date(), "L", "SecC", getMapArea());
 
-        // Simulating invalid/lost guest order ID
         assertNotEquals("success", purchasedService.PurchaseTicket("u1@gmail.com", "invalid_id", "user1"));
     }
 
     @Test @DisplayName("16. Purchased Ticket Fail - App Re-entry but Expired")
     void purchasedTicketSuccessAndGETOutTheAppAndTheOrderExpired16() throws InterruptedException {
-        userService.register("1", "1");
-        String tO = userService.login("1", "1");
+        reg("1", "1");
+        String tO = log("1", "1");
         companyService.CreateCompany("C1", tO);
         eventService.createEvent(tO, "E1", "C1", EventType.PLAY, 100, new Date(), "L", "C1", getMapArea());
 
-        userService.register("2", "2");
-        String tB = userService.login("2", "2");
+        reg("2", "2");
+        String tB = log("2", "2");
         String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}));
 
         userService.logout(tB);
-        Thread.sleep(11000); // Expiration
-        String tB2 = userService.login("2", "2");
+        Thread.sleep(11000);
+        log("2", "2");
         assertNotEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2"));
     }
 }

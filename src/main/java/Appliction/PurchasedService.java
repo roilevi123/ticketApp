@@ -60,8 +60,8 @@ public class PurchasedService {
         try {
             ActiveOrder order = repository.findById(orderId);
             if(tokenService.validateToken(token)){
-                String username=tokenService.extractUsername(token);
-                order=repository.getOrder(username);
+                String userID=tokenService.extractUserId(token);
+                order=repository.getOrder(userID);
             }
             if (order == null  || order.getExpirationTime().before(new Date())) {
 
@@ -119,9 +119,8 @@ public class PurchasedService {
             if(!tokenService.validateToken(token)) {
                 throw new Exception("Invalid token");
             }
-            String userID=tokenService.extractUsername(token);
-
-            if(!isAuthorized(company,userID)) {
+            String username = tokenService.extractUsername(token);
+            if (username == null || !isAuthorized(company, username)) {
                 throw new Exception("User not authorized");
             }
             List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForCompany(company);
@@ -154,7 +153,7 @@ public class PurchasedService {
             if(!tokenService.validateToken(token)) {
                 throw new Exception("Invalid token");
             }
-            String userID=tokenService.extractUsername(token);
+            String userID=tokenService.extractUserId(token);
 
             List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForUser(userID);
             StringBuilder orders = new StringBuilder();

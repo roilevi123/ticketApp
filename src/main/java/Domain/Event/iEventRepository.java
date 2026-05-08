@@ -1,9 +1,7 @@
 package Domain.Event;
 
-import java.awt.geom.Area;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 public interface iEventRepository {
     public Event store(String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] mapArea   );
