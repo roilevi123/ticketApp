@@ -34,7 +34,7 @@ public class UserService implements IAuth {
             return "success";
         }catch (Exception e){
             logger.error("Registering user " + username + " failed",e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
 
     }
@@ -75,7 +75,7 @@ public class UserService implements IAuth {
         throw new RuntimeException("Invalid token");
         } catch (Exception e) {
             logger.error("Logout failed", e);
-            return "failed";
+            return e.getMessage();
         }
     }
 
@@ -120,7 +120,7 @@ public class UserService implements IAuth {
             return "success";
         } catch (Exception e) {
             logger.error("Failed to update password", e);
-            return "failed";
+            return e.getMessage();
         }
     }
 }

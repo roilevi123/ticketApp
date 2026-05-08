@@ -1,0 +1,210 @@
+package AcceptanceTests;
+
+import Appliction.*;
+import Domain.Company.iCompanyRepository;
+import Domain.Event.EventType;
+import Domain.Event.MapArea;
+import Domain.Event.iEventRepository;
+import Domain.Order.IActiveOrderRepository;
+import Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
+import Domain.QueueAggregates.iQueueRepository;
+import Domain.Ticket.iTicketRepository;
+import Domain.User.IUserRepository;
+import Infastructure.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@DisplayName("Complete Event Information Acceptance Tests")
+public class InformationEventsTests {
+
+    private UserService userService;
+    private CompanyService companyService;
+    private EventService eventService;
+
+    @BeforeEach
+    void setUp() {
+        // Infrastructure & Repositories
+        IUserRepository userRepository = new UserRepositoryImpl();
+        iCompanyRepository companyRepository = new CompanyRepositoryImpl();
+        iEventRepository eventRepository = new EventRepositoryImpl();
+        iQueueRepository queueRepository = new QueueRepositoryImpl();
+        iTreeOfRoleRepository treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
+        IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
+        iTicketRepository ticketRepository = new TicketRepositoryImpl();
+        iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
+        TokenService tokenService = new TokenService();
+        IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
+
+        // Application Services
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
+        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
+
+        // Data Cleanup
+        activeOrderRepository.deleteAllActiveOrders();
+        eventRepository.deleteAllEvents();
+        treeOfRoleRepository.deleteAllRoles();
+        companyRepository.deleteAllCompany();
+        purchasedOrderRepository.deleteAll();
+        queueRepository.deleteAll();
+        ticketRepository.deleteAllTickets();
+        userRepository.deleteAll();
+        tokenService.clearAllData();
+    }
+
+    private MapArea[][] getMapArea() {
+        MapArea[][] map = new MapArea[2][2];
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                map[i][j] = MapArea.SEAT;
+            }
+        }
+        return map;
+    }
+
+    private void setupSearchEnvironment() {
+        userService.register("user1", "pass1");
+        String token1 = userService.login("user1", "pass1");
+        companyService.CreateCompany("CompanyA", token1);
+
+        userService.register("user2", "pass2");
+        String token2 = userService.login("user2", "pass2");
+        companyService.CreateCompany("CompanyB", token2);
+
+        long day = 24 * 60 * 60 * 1000L;
+        Date today = new Date();
+        Date nextWeek = new Date(today.getTime() + 7 * day);
+
+        eventService.createEvent(token1, "Rock Festival", "Arctic Monkeys", EventType.CONFERENCE, 100.0, today, "Tel Aviv", "CompanyA", getMapArea());
+        eventService.createEvent(token1, "Jazz Night", "Norah Jones", EventType.CONFERENCE, 200.0, nextWeek, "Haifa", "CompanyA", getMapArea());
+
+        eventService.createEvent(token2, "Tech Talk", "Elon Mask", EventType.CONFERENCE, 0.0, today, "Tel Aviv", "CompanyB", getMapArea());
+        eventService.createEvent(token2, "Opera Show", "Pavaraotti", EventType.PLAY, 500.0, nextWeek, "Jerusalem", "CompanyB", getMapArea());
+    }
+
+    @Test @DisplayName("1. Get Company Info - Success")
+    void getCompanyInfoSuccess1() {
+        userService.register("1", "1");
+        String token = userService.login("1", "1");
+        companyService.CreateCompany("1", token);
+        String companyInfo = eventService.getCompanyInfo("1");
+        String expectedInfo = "Company Summary:" +
+                "\nName: 1" +
+                "\nFounder/Owner: 1" +
+                "\nStatus: Active" +
+                "\nRating: 0.0";
+        assertEquals(expectedInfo, companyInfo);
+    }
+
+    @Test @DisplayName("2. Get Company Info - Fail (Company Not Found)")
+    void getCompanyInfoFailedCompanyNotExitst2() {
+        userService.register("1", "1");
+        assertNull(eventService.getCompanyInfo("1"));
+    }
+
+    @Test @DisplayName("3. Get Company Events - Success")
+    void getCompanyEventsSuccess3() {
+        userService.register("1", "1");
+        String token = userService.login("1", "1");
+        companyService.CreateCompany("1", token);
+        Date eventDate = new Date();
+        eventService.createEvent(token, "E1", "A1", EventType.PLAY, 100, eventDate, "L1", "1", getMapArea());
+        eventService.createEvent(token, "E2", "A2", EventType.CONFERENCE, 200, eventDate, "L2", "1", getMapArea());
+
+        List<String> list = eventService.getCompanyEvents("1");
+        assertNotNull(list);
+        assertEquals(2, list.size());
+        assertTrue(list.get(0).contains("eventName='E1'") || list.get(1).contains("eventName='E1'"));
+    }
+
+    @Test @DisplayName("4. Get Company Events - Success (No Events)")
+    void getCompanyEventsSuccessButNoEventsExist4() {
+        userService.register("1", "1");
+        String token = userService.login("1", "1");
+        companyService.CreateCompany("1", token);
+        List<String> list = eventService.getCompanyEvents("1");
+        assertTrue(list.isEmpty());
+    }
+
+    @Test @DisplayName("5. Get Company Events - Fail (Company Not Found)")
+    void getCompanyEventsFailedNoCompanyExist5() {
+        assertNull(eventService.getCompanyEvents("NonExistent"));
+    }
+
+    @Test @DisplayName("6. Get Event Map - Success")
+    void getEventMapSuccess6() {
+        userService.register("1", "1");
+        String token = userService.login("1", "1");
+        companyService.CreateCompany("1", token);
+        MapArea[][] map = getMapArea();
+        eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", map);
+
+        MapArea[][] fetchedMap = eventService.getMapArea("1", "1");
+        assertArrayEquals(map, fetchedMap);
+    }
+
+    @Test @DisplayName("7. Get Event Map - Fail (No Event)")
+    void getEventMapFailedNoEventsExist7() {
+        userService.register("1", "1");
+        String token = userService.login("1", "1");
+        companyService.CreateCompany("1", token);
+        assertNull(eventService.getMapArea("1", "NonExistent"));
+    }
+
+    @Test @DisplayName("8. Get Event Map - Fail (No Company)")
+    void getEventMapFailedNoCompanyExist8() {
+        assertNull(eventService.getMapArea("NonExistent", "EventName"));
+    }
+
+    @Test @DisplayName("9. Search Events By Event Name")
+    void searchEventsByEventNameQuery9() {
+        setupSearchEnvironment();
+        List<String> results = eventService.searchEvents("Rock", null, null, null, null, null, null, null, null);
+        assertTrue(results != null && results.size() == 1 && results.get(0).contains("Rock Festival"));
+    }
+
+    @Test @DisplayName("10. Search Events By Artist Name")
+    void searchEventsByArtistNameQuery10() {
+        setupSearchEnvironment();
+        List<String> results = eventService.searchEvents("Monkeys", null, null, null, null, null, null, null, null);
+        assertTrue(results != null && results.size() == 1 && results.get(0).contains("Arctic Monkeys"));
+    }
+
+    @Test @DisplayName("11. Search Events By Price Range")
+    void searchEventsByPriceRangeMultipleCompanies11() {
+        setupSearchEnvironment();
+        List<String> results = eventService.searchEvents(null, null, null, 0.0, 150.0, null, null, null, null);
+        assertEquals(2, results.size());
+    }
+
+    @Test @DisplayName("12. Search Events By Date Range")
+    void searchEventsByDateRange12() {
+        setupSearchEnvironment();
+        long fiveMinutesAgo = System.currentTimeMillis() - (5 * 60 * 1000L);
+        Date startDate = new Date(fiveMinutesAgo);
+        Date tomorrow = new Date(System.currentTimeMillis() + (24 * 60 * 60 * 1000L));
+
+        List<String> results = eventService.searchEvents(null, null, null, null, null, startDate, tomorrow, null, null);
+        assertEquals(2, results.size());
+    }
+
+    @Test @DisplayName("13. Search Events By Location")
+    void searchEventsByLocation13() {
+        setupSearchEnvironment();
+        List<String> results = eventService.searchEvents(null, null, null, null, null, null, null, "Tel Aviv", null);
+        assertEquals(2, results.size());
+    }
+
+    @Test @DisplayName("14. Search Events By Min Rating - Empty")
+    void searchEventsByMinRating14() {
+        setupSearchEnvironment();
+        List<String> results = eventService.searchEvents(null, null, null, null, null, null, null, null, 1.0);
+        assertTrue(results.isEmpty());
+    }
+}
