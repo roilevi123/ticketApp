@@ -97,7 +97,7 @@ public class InformationEventsTests {
         String companyInfo = eventService.getCompanyInfo("1");
         String expectedInfo = "Company Summary:" +
                 "\nName: 1" +
-                "\nFounder/Owner: 1" +
+                "\nFounder/Owner ID: 1" +
                 "\nStatus: Active" +
                 "\nRating: 0.0";
         assertEquals(expectedInfo, companyInfo);
