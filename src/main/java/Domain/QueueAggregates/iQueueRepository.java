@@ -3,11 +3,11 @@ package Domain.QueueAggregates;
 import java.util.List;
 
 public interface iQueueRepository {
-    void addToQueue(String eventId, String username);
+    void addToQueue(String eventId, String userID);
     List<QueueEntry> getQueue(String eventId);
-    void removeFromQueue(String eventId, String username);
+    void removeFromQueue(String eventId, String userID);
     void initQueue(String eventId);
     void deleteQueue(String eventId);
     public void deleteAll();
-    String checkStatusAtomic(String eventId, String username, int maxActiveUsers, long accessDuration);
+    String checkStatusAtomic(String eventId, String userID, int maxActiveUsers, long accessDuration);
 }

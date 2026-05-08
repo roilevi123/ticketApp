@@ -14,7 +14,7 @@ public record PurchaseOrderDTO(
     public static PurchaseOrderDTO create(PurchaseOrder order, List<TicketDTO> ticketDTOs) {
         return new PurchaseOrderDTO(
                 order.getOrderId(),
-                order.getBuyer(),
+                order.getBuyerID(),
                 order.getCompany(),
                 order.getEvent(),
                 ticketDTOs

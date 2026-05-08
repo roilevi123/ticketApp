@@ -14,26 +14,26 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
     private Map<String, Manager> managers=new ConcurrentHashMap<String,Manager>();
 
     @Override
-    public void storeOwner(String owner, String company, String appointer) {
-        Owner o=new Owner(owner,company,appointer);
-        if(appointer.equals("Administrator"))
+    public void storeOwner(String ownerID, String company, String appointerID) {
+        Owner o=new Owner(ownerID,company,appointerID);
+        if(appointerID.equals(FOUNDER_APPOINTER))
         {
             o.acceptAppointment();
         }
-        owners.put(owner+company,o);
+        owners.put(ownerID+company,o);
     }
 
     @Override
-    public boolean exitsOwner(String owner, String company) {
-        if(owners.containsKey(owner+company)){
-            return owners.get(owner+company).isAccepted();
+    public boolean exitsOwner(String ownerID, String company) {
+        if(owners.containsKey(ownerID+company)){
+            return owners.get(ownerID+company).isAccepted();
         }
         return false;
     }
     @Override
-    public void storeManager(String manager, String company, Set<Permission> permissions,String appointer) {
-        Manager m=new Manager(manager,company,permissions,appointer);
-        managers.put(manager+company,m);
+    public void storeManager(String managerID, String company, Set<Permission> permissions,String appointerID) {
+        Manager m=new Manager(managerID,company,permissions,appointerID);
+        managers.put(managerID+company,m);
 
     }
     @Override
@@ -41,12 +41,12 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         List<String> names=new ArrayList<>();
         for(Manager m:managers.values()) {
             if(m.getCompanyName().equals(company)) {
-                names.add(m.getUserName());
+                names.add(m.getUserID());
             }
         }
         for(Owner o:owners.values()) {
             if(o.getCompanyName().equals(company)) {
-                names.add(o.getUserName());
+                names.add(o.getUserID());
             }
         }
         for(String n:names) {
@@ -60,13 +60,13 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
     }
 
     @Override
-    public Manager getManager(String manager,String company) {
-        return managers.get(manager+company);
+    public Manager getManager(String managerID,String company) {
+        return managers.get(managerID+company);
     }
 
     @Override
     public void save(Owner ownerToUpdate) {
-        String key = ownerToUpdate.getUserName() + ownerToUpdate.getCompanyName();
+        String key = ownerToUpdate.getUserID() + ownerToUpdate.getCompanyName();
 
         Owner currentInDb = owners.get(key);
 
@@ -87,7 +87,7 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
 
     @Override
     public void save(Manager managerToUpdate) {
-        String key = managerToUpdate.getUserName() + managerToUpdate.getCompanyName();
+        String key = managerToUpdate.getUserID() + managerToUpdate.getCompanyName();
         Manager currentInDb = managers.get(key);
 
         if (currentInDb == null) {
@@ -106,66 +106,68 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
     }
 
     @Override
-    public void deleteManager(String manager, String company) {
-        managers.remove(manager+company);
+    public void deleteManager(String managerID, String company) {
+        managers.remove(managerID+company);
     }
 
     @Override
-    public void deleteOwner(String owner, String company) {
-        owners.remove(owner+company);
+    public void deleteOwner(String ownerID, String company) {
+        owners.remove(ownerID+company);
     }
 
     @Override
-    public boolean isManager(String manager, String company) {
-        if(managers.containsKey(manager+company)) {
+    public boolean isManager(String managerID, String company) {
+        if(managers.containsKey(managerID+company)) {
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean isOwner(String owner, String company) {
-        if(owners.containsKey(owner+company)) {
-            Owner m = owners.get(owner + company);
+    public boolean isOwner(String ownerID, String company) {
+        if(owners.containsKey(ownerID+company)) {
+            Owner m = owners.get(ownerID + company);
             return true;
         }
         return false;
     }
 
 
-    public boolean ManagerPermitedToCreateUpdateDelete(String manager,String company){
-        if (managers.containsKey(manager+company)) {
-            Manager m=managers.get(manager+company);
-            return m.getPermissions().contains(Permission.MANAGE_INVENTORY) && managers.get(manager+company).isAccepted();
+    public boolean ManagerPermitedToCreateUpdateDelete(String managerID,String company){
+        if (managers.containsKey(managerID + company)) {
+            Manager m=managers.get(managerID + company);
+            return m.getPermissions().contains(Permission.MANAGE_INVENTORY) && managers.get(managerID + company).isAccepted();
         }
         return false;
     }
 
 
     @Override
-    public Owner getOwner(String owner,String company) {
-        return owners.get(owner+company);
+    public Owner getOwner(String ownerID,String company) {
+        return owners.get(ownerID + company);
     }
     @Override
-    public boolean isAppointerManager(String manager, String company, String appointer) {
-        if(managers.containsKey(manager+company)) {
-            Manager m=managers.get(manager+company);
-            return m.isAccepted()&& appointer.equals(m.getAppointer());
+    public boolean isAppointerManager(String managerID, String company, String appointerID) {
+        String key = managerID + company;
+        if(managers.containsKey(key)) {
+            Manager m=managers.get(key);
+            return m.isAccepted()&& appointerID.equals(m.getAppointerID());
         }
         return false;
     }
 
     @Override
-    public boolean isAppointerOwner(String owner, String company, String appointer) {
-        if (owners.containsKey(owner+company)) {
-            Owner o=owners.get(owner+company);
-            return o.isAccepted()&& appointer.equals(o.getAppointer());
+    public boolean isAppointerOwner(String ownerID, String company, String appointer) {
+        String key = ownerID + company;
+        if (owners.containsKey(key)) {
+            Owner o=owners.get(key);
+            return o.isAccepted()&& appointer.equals(o.getAppointerID());
         }
         return false;
     }
     @Override
-    public Set<Permission> getManagerPermissions(String manager, String company) {
-        return managers.get(manager+company).getPermissions();
+    public Set<Permission> getManagerPermissions(String managerID, String company) {
+        return managers.get(managerID + company).getPermissions();
     }
     @Override
     public List<Owner> getAllOwnersByCompany(String company) {
@@ -195,24 +197,24 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         return false;
     }
     @Override
-    public void deleteUserRoles(String username) {
+    public void deleteUserRoles(String userID) {
         List<String> names=new ArrayList<>();
         for(Manager m:managers.values()) {
-            if(m.getUserName().equals(username)) {
+            if(m.getUserID().equals(userID)) {
                 names.add(m.getCompanyName());
             }
         }
         for(Owner o:owners.values()) {
-            if(o.getUserName().equals(username)) {
+            if(o.getUserID().equals(userID)) {
                 names.add(o.getCompanyName());
             }
         }
         for(String n:names) {
-            if(managers.containsKey(n+username)) {
-                managers.remove(username+n);
+            if(managers.containsKey(n + userID)) {
+                managers.remove(n + userID);
             }
-            if(owners.containsKey(n+username)) {
-                owners.remove(username+n);
+            if(owners.containsKey(n + userID)) {
+                owners.remove(n + userID);
             }
         }
     }

@@ -1,7 +1,7 @@
 package Domain.Company;
 
 public interface iCompanyRepository {
-    public void store(String company, String founder);
+    public void store(String company, String founderID);
     public String getCompanyFounder(String company);
     public Company getCompany(String company);
     public void save(Company companyToUpdate);

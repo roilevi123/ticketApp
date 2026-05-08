@@ -45,10 +45,10 @@ public class AdminService {
         this.ticketRepository = ticketRepository;
         this.eventRepository = eventRepository;
     }
-    public String CloseCompany(String companyName,String adminName) {
+    public String CloseCompany(String companyName,String adminID) {
         try {
             logger.info("Deleting company " + companyName);
-            if(!adminRepository.isAdmin(adminName)) {
+            if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
             companyRepository.deleteCompany(companyName);
@@ -62,25 +62,25 @@ public class AdminService {
         }
 
     }
-    public String removeUser(String username,String adminName) {
+    public String removeUser(String UserID,String adminID) {
         try {
-            logger.info("Deleting user " + username);
-            if(!adminRepository.isAdmin(adminName)) {
+            logger.info("Deleting user " + UserID);
+            if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
-            userRepository.deleteUser(username);
-            treeOfRoleRepository.deleteUserRoles(username);
-            logger.info("Deleted user " + username);
+            userRepository.deleteUser(UserID);
+            treeOfRoleRepository.deleteUserRoles(UserID);
+            logger.info("Deleted user " + UserID);
             return "success";
         }catch (Exception e) {
             logger.error(e.getMessage());
             return e.getMessage();
         }
     }
-    public List<PurchaseOrderDTO> GetAllPurchasedOrders(String adminName) {
+    public List<PurchaseOrderDTO> GetAllPurchasedOrders(String adminID) {
         try {
             logger.info("Getting all purchased orders");
-            if(!adminRepository.isAdmin(adminName)) {
+            if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
 

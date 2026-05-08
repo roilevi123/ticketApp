@@ -1,30 +1,27 @@
 package Domain.OwnerManagerTree;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 public class Owner {
-    private String userName;
+    private String userID;
     private String CompanyName;
     private boolean isAccepted;
     private int version;
-    private String appointer;
-    public Owner(String userName, String companyName,String appointer) {
-        this.userName = userName;
+    private String appointerID;
+    public Owner(String userID, String companyName,String appointerID) {
+        this.userID = userID;
         this.CompanyName = companyName;
 
         this.isAccepted = false;
         this.version = 0;
-        this.appointer = appointer;
+        this.appointerID = appointerID  ;
     }
     public Owner(Owner owner) {
-        this.userName = owner.getUserName();
+        this.userID = owner.getUserID();
         this.CompanyName = owner.getCompanyName();
 
         this.isAccepted = owner.isAccepted();
         this.version = owner.version;
-        this.appointer = owner.appointer;
+        this.appointerID = owner.getAppointerID();
     }
     public String getCompanyName() {
         return CompanyName;
@@ -33,9 +30,9 @@ public class Owner {
     public int getVersion() {
         return version;
     }
-    public String getAppointer()
+    public String getAppointerID()
     {
-        return appointer;
+        return appointerID;
     }
 
 
@@ -53,13 +50,13 @@ public class Owner {
 
     public void acceptAppointment() {
         if(isAccepted) {
-            throw  new RuntimeException("You are already accepted2");
+            throw  new RuntimeException("You are already accepted");
         }
         this.isAccepted = true;
     }
-    public void DisacceptAppointment() {
+    public void rejectAppointment() {
         if(!isAccepted) {
-            throw  new RuntimeException("You are already accepted2");
+            throw  new RuntimeException("You are already rejected");
         }
         this.isAccepted = false;
     }
@@ -70,8 +67,8 @@ public class Owner {
 
 
 
-    public String getUserName() {
-        return userName;
+    public String getUserID() {
+        return userID;
     }
 //
 //    public List<Owner> getOwners() {

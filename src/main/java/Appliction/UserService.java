@@ -43,11 +43,11 @@ public class UserService implements IAuth {
     public String login(String username, String password) {
         try {
             logger.info("User {} is trying to login", username);
-            boolean user = userRepository.userExists(username);
-            String passwordHash = userRepository.getUserPassword(username);
-            if (!user ) {
+            boolean user = userRepository.usernameExists(username);
+            if (!user) {
                 throw new RuntimeException( "User not found");
             }
+            String passwordHash = userRepository.getUserPassword(username);
             if (!passwordEncoder.matches(password, passwordHash)) {
                 logger.error("Invalid password for user {}", username);
                 throw new RuntimeException("Invalid password");
@@ -84,7 +84,7 @@ public class UserService implements IAuth {
             logger.info("Getting user info");
             if (tokenService.validateToken(token)){
                 String username = tokenService.extractUsername(token);
-                User user = userRepository.getUser(username);
+                User user = userRepository.getUserByUsername(username);
                 if (user == null) {
                     logger.error("User {} not found while getting user info", username);
                     throw new RuntimeException("User not found");
@@ -108,7 +108,7 @@ public class UserService implements IAuth {
                 throw new RuntimeException("Invalid token");
             }
             String username = tokenService.extractUsername(token);
-            User user = userRepository.getUser(username);
+            User user = userRepository.getUserByUsername(username);
             if (user == null) {
                 logger.error("User {} not found while updating password", username);
                 throw new RuntimeException("User not found");
@@ -123,4 +123,28 @@ public class UserService implements IAuth {
             return e.getMessage();
         }
     }
+
+    public String updateUserName(String token, String newUsername) {
+        try {
+            logger.info("Updating user name");
+            if (!tokenService.validateToken(token)) {
+                logger.error("Invalid token provided for updating username");
+                throw new RuntimeException("Invalid token");
+            }
+            String currentUsername = tokenService.extractUsername(token);
+            User user = userRepository.getUserByUsername(currentUsername);
+            if (user == null) {
+                logger.error("User {} not found while updating username", currentUsername);
+                throw new RuntimeException("User not found");
+            }
+            user.setName(newUsername);
+            userRepository.save(user);
+            logger.info("Username updated successfully from {} to {}", currentUsername, newUsername);
+            return "success";
+        } catch (Exception e) {
+            logger.error("Failed to update username", e);
+            return e.getMessage();
+        }
+    }
+
 }

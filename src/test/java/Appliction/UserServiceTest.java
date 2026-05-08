@@ -49,7 +49,7 @@ class UserServiceTest {
     void login_Success_ShouldReturnToken() {
         User mockUser = new User(USERNAME, ENCODED_PASSWORD);
 
-        when(userRepository.userExists(USERNAME)).thenReturn(true);
+        when(userRepository.usernameExists(USERNAME)).thenReturn(true);
         when(userRepository.getUserPassword(USERNAME)).thenReturn(ENCODED_PASSWORD);
         when(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD)).thenReturn(true);
         when(tokenService.generateToken(USERNAME)).thenReturn("mock-jwt-token");
@@ -62,7 +62,7 @@ class UserServiceTest {
 
     @Test
     void login_WrongPassword_ShouldReturnErrorMessage() {
-        when(userRepository.userExists(USERNAME)).thenReturn(true);
+        when(userRepository.usernameExists(USERNAME)).thenReturn(true);
         when(userRepository.getUserPassword(USERNAME)).thenReturn(ENCODED_PASSWORD);
 
         when(passwordEncoder.matches("wrong_pass", ENCODED_PASSWORD)).thenReturn(false);
@@ -74,7 +74,7 @@ class UserServiceTest {
     }
     @Test
     void login_UserDoesNotExist_ShouldReturnErrorMessage() {
-        when(userRepository.userExists("unknown_user")).thenReturn(false);
+        when(userRepository.usernameExists("unknown_user")).thenReturn(false);
 
         String result = userService.login("unknown_user", RAW_PASSWORD);
 
@@ -104,7 +104,7 @@ class UserServiceTest {
         User mockUser = new User(USERNAME, ENCODED_PASSWORD);
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-        when(userRepository.getUser(USERNAME)).thenReturn(mockUser);
+        when(userRepository.getUserByUsername(USERNAME)).thenReturn(mockUser);
 
         String result = userService.getUserInfo(TOKEN);
 
@@ -123,7 +123,7 @@ class UserServiceTest {
     void getUserInfo_UserNotFound_ShouldReturnErrorMessage() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-        when(userRepository.getUser(USERNAME)).thenReturn(null);
+        when(userRepository.getUserByUsername(USERNAME)).thenReturn(null);
 
         String result = userService.getUserInfo(TOKEN);
 
@@ -138,7 +138,7 @@ class UserServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-        when(userRepository.getUser(USERNAME)).thenReturn(mockUser);
+        when(userRepository.getUserByUsername(USERNAME)).thenReturn(mockUser);
         when(passwordEncoder.encode("new_password")).thenReturn("encoded_new_password");
 
         String result = userService.updateUserPassword(TOKEN, "new_password");
@@ -161,7 +161,7 @@ class UserServiceTest {
     void updateUserPassword_UserNotFound_ShouldReturnErrorMessage() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-        when(userRepository.getUser(USERNAME)).thenReturn(null);
+        when(userRepository.getUserByUsername(USERNAME)).thenReturn(null);
 
         String result = userService.updateUserPassword(TOKEN, "new_password");
 
@@ -176,7 +176,7 @@ class UserServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-        when(userRepository.getUser(USERNAME)).thenReturn(mockUser);
+        when(userRepository.getUserByUsername(USERNAME)).thenReturn(mockUser);
         when(passwordEncoder.encode("new_password")).thenReturn("encoded_new_password");
         doThrow(new RuntimeException("Optimistic Lock Failure")).when(userRepository).save(any(User.class));
 

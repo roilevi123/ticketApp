@@ -50,13 +50,13 @@ public class PurchasedService {
         this.tokenService = tokenService;
         this.treeOfRoleRepository = treeOfRoleRepository;
     }
-    public boolean isAuthorized(String company,String username) {
-        boolean o=treeOfRoleRepository.exitsOwner(username,company);
-        boolean m=treeOfRoleRepository.ManagerPermitToSeeTransactions(username,company);
+    public boolean isAuthorized(String company,String userID) {
+        boolean o=treeOfRoleRepository.exitsOwner(userID,company);
+        boolean m=treeOfRoleRepository.ManagerPermitToSeeTransactions(userID,company);
         return m || (o );
     }
 
-    public String  PurchaseTicket(String email, String orderId,String token) {
+    public String PurchaseTicket(String email, String orderId,String token) {
         try {
             ActiveOrder order = repository.findById(orderId);
             if(tokenService.validateToken(token)){
@@ -119,9 +119,9 @@ public class PurchasedService {
             if(!tokenService.validateToken(token)) {
                 throw new Exception("Invalid token");
             }
-            String user=tokenService.extractUsername(token);
+            String userID=tokenService.extractUsername(token);
 
-            if(!isAuthorized(company,user)) {
+            if(!isAuthorized(company,userID)) {
                 throw new Exception("User not authorized");
             }
             List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForCompany(company);
@@ -150,13 +150,13 @@ public class PurchasedService {
     }
     public List<PurchaseOrderDTO> getUserTransaction(String token) {
         try {
-            logger.info("getCompanyTransaction");
+            logger.info("getUserTransaction");
             if(!tokenService.validateToken(token)) {
                 throw new Exception("Invalid token");
             }
-            String user=tokenService.extractUsername(token);
+            String userID=tokenService.extractUsername(token);
 
-            List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForUser(user);
+            List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForUser(userID);
             StringBuilder orders = new StringBuilder();
             List<PurchaseOrderDTO> orderDTOS=new ArrayList<>();
 
