@@ -46,8 +46,12 @@ public class AdminJUnitTests {
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
 
         // הוספת ה-AdminRepository הנדרש על פי ה-Service החדש
-        iAdminRepository adminRepository = new AdminRepositoryImpl();
-
+        iAdminRepository adminRepository = new AdminRepositoryImpl(){
+            @Override
+            public boolean isAdmin(String userID) {
+                return userID.equals("admin");
+            }
+        };
         TokenService tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
@@ -70,15 +74,14 @@ public class AdminJUnitTests {
                 paymentService, barcodeGenerator,
                 tokenService, treeOfRoleRepository);
 
-        // עדכון אתחול AdminService לפי הקונסטרקטור שסיפקת (7 פרמטרים)
         this.adminService = new AdminService(
-                treeOfRoleRepository,   // 1
-                companyRepository,      // 2
-                adminRepository,        // 3
-                userRepository,         // 4
-                purchasedOrderRepository, // 5
-                ticketRepository,       // 6
-                eventRepository         // 7
+                treeOfRoleRepository,   
+                companyRepository,      
+                adminRepository,        
+                userRepository,         
+                purchasedOrderRepository,
+                ticketRepository,       
+                eventRepository         
         );
 
         // --- Data Cleanup ---
@@ -91,7 +94,7 @@ public class AdminJUnitTests {
         ticketRepository.deleteAllTickets();
         queueRepository.deleteAll();
         tokenService.clearAllData();
-        // הערה: יש לוודא שיש מתודת cleanup גם ל-AdminRepository אם הוא שומר נתונים
+        adminRepository.deleteAll();
     }
 
     private MapArea[][] getMapArea() {
@@ -136,7 +139,7 @@ public class AdminJUnitTests {
     @DisplayName("3. Remove User Success")
     void removeUserSuccess3() {
         userService.register("userToRemove", "123");
-
+        
         String result = adminService.removeUser("userToRemove", "admin");
         assertEquals("success", result);
 
@@ -190,7 +193,6 @@ public class AdminJUnitTests {
         String tB2 = userService.login("b2", "p");
         String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1}));
         purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2");
-
         String result = adminService.GetAllPurchasedOrders("admin");
 
         assertNotNull(result);

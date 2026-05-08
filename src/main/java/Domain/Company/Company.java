@@ -5,27 +5,27 @@ package Domain.Company;
 public class Company {
 
     private String companyName;
-    private String founder;
+    private String founderID;
     private boolean active=true;
     private int version;
     private double rating;
-    public Company(String companyName, String founder) {
+    public Company(String companyName, String founderID) {
         this.companyName = companyName;
 
-        this.founder = founder;
+        this.founderID = founderID;
         this.version = 0;
         this.rating = 0;
     }
     public Company(Company other) {
         this.companyName = other.getCompanyName();
-        this.founder = other.getFounder();
+        this.founderID = other.getFounderID();
 
         this.active=other.getActive();
         this.version=other.getVersion();
     }
 
-    public void freezeCompany(String username) {
-        if(!founder.equals(username)) {
+    public void freezeCompany(String userID) {
+        if(!founderID.equals(userID)) {
             throw new RuntimeException("this is not the founder so we don't freeze the company");
 
 
@@ -35,11 +35,9 @@ public class Company {
         }
         active=false;
     }
-    public void unfreezeCompany(String username) {
-        if(!founder.equals( username)) {
+    public void unfreezeCompany(String userID) {
+        if(!founderID.equals(userID)) {
             throw new RuntimeException("this is not the founder so we don't unfreeze the company");
-
-
         }
         if(active) {
             throw new RuntimeException("already unfreeze the company");
@@ -53,11 +51,11 @@ public class Company {
     public void setCompanyName(String companyName) {
         this.companyName = companyName;
     }
-    public String getFounder() {
-        return founder;
+    public String getFounderID() {
+        return founderID;
     }
-    public void setFounder(String founder) {
-        this.founder = founder;
+    public void setFounderID(String founderID) {
+        this.founderID = founderID;
     }
     public boolean getActive() {
         return active;
@@ -82,7 +80,7 @@ public class Company {
 public String toString() {
     return "Company Summary:" +
             "\nName: " + companyName +
-            "\nFounder/Owner: " + founder +
+            "\nFounder/Owner ID: " + founderID +
             "\nStatus: " + (active ? "Active" : "Frozen") +
             "\nRating: " + rating;
 }

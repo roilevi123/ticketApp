@@ -4,27 +4,27 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Manager {
-    private String userName;
+    private String userID;
     private String companyName;
     private Set<Permission> permissions;
     private boolean isAccepted;
     private int version;
-    private String appointer;
-    public Manager(String userName, String companyName, Set<Permission> permissions,String appointer) {
-        this.userName = userName;
+    private String appointerID;
+    public Manager(String userID, String companyName, Set<Permission> permissions,String appointerID) {
+        this.userID = userID;
         this.companyName = companyName;
         this.permissions = new HashSet<>(permissions);
         this.isAccepted = false;
         this.version = 0;
-        this.appointer = appointer;
+        this.appointerID = appointerID;
     }
     public Manager(Manager other) {
-        this.userName = other.getUserName();
+        this.userID = other.getUserID();
         this.companyName = other.getCompanyName();
         this.permissions = new HashSet<>(other.getPermissions());
         this.isAccepted = other.isAccepted();
         this.version = other.getVersion();
-        this.appointer = other.getAppointer();
+        this.appointerID = other.getAppointerID();
     }
     public int getVersion() {
         return version;
@@ -33,8 +33,8 @@ public class Manager {
     public void setVersion(int version) {
         this.version = version;
     }
-    public String getAppointer(){
-        return appointer;
+    public String getAppointerID(){
+        return appointerID;
     }
     public void acceptAppointment() {
         if (isAccepted) {
@@ -53,8 +53,8 @@ public class Manager {
         return isAccepted && permissions.contains(permission);
     }
 
-    public String getUserName() {
-        return userName;
+    public String getUserID() {
+        return userID;
     }
 
     public String getCompanyName() {

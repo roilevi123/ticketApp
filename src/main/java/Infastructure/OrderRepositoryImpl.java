@@ -12,20 +12,20 @@ public class OrderRepositoryImpl  implements IActiveOrderRepository {
     private  AtomicLong idCounter = new AtomicLong(1);
 
     @Override
-    public String store(String company, String event, List<String> ticketsId, String buyer, Date expiration) {
+    public String store(String company, String event, List<String> ticketsId, String buyerID, Date expiration) {
         for(ActiveOrder order : orders.values()) {
-            if (order.getUserId() != null && order.getUserId().equals(buyer)) {
+            if (order.getUserId() != null && order.getUserId().equals(buyerID)) {
                 if (order.getExpirationTime().after(new Date())) {
                     throw new RuntimeException("you have already order");
                 }
                 else {
-                    delete(buyer);
+                    delete(buyerID);
                     break;
                 }
             }
         }
         String id=String.valueOf(idCounter.getAndIncrement());
-        orders.put(id,new ActiveOrder(company,event,ticketsId,buyer,id,expiration));
+        orders.put(id,new ActiveOrder(company,event,ticketsId,buyerID,id,expiration));
         return id;
     }
 
@@ -70,18 +70,18 @@ public class OrderRepositoryImpl  implements IActiveOrderRepository {
         orders.clear();
     }
     @Override
-    public List<String> getTicketsId(String userId) {
+    public List<String> getTicketsId(String userID) {
         for(ActiveOrder order : orders.values()) {
-            if (order.getUserId() != null && order.getUserId().equals(userId)) {
+            if (order.getUserId() != null && order.getUserId().equals(userID)) {
                 return order.getTicketIds();
             }
         }
         return new ArrayList<>();
     }
     @Override
-    public ActiveOrder getOrder(String username) {
+    public ActiveOrder getOrder(String userID) {
         for(ActiveOrder order : orders.values()) {
-            if (order.getUserId() != null && order.getUserId().equals(username)) {
+            if (order.getUserId() != null && order.getUserId().equals(userID)) {
                 return order;
             }
         }
