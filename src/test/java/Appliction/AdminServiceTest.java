@@ -10,6 +10,7 @@ import Domain.Ticket.Ticket;
 import Domain.Ticket.TicketDTO;
 import Domain.Ticket.iTicketRepository;
 import Domain.User.IUserRepository;
+import Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -31,6 +32,7 @@ class AdminServiceTest {
     @Mock private iPurchasedOrderRepository purchasedOrderRepository;
     @Mock private iTicketRepository ticketRepository;
     @Mock private Domain.Event.iEventRepository eventRepository;
+    @Mock private TokenService tokenService;
     @InjectMocks
     private AdminService adminService;
 

@@ -25,8 +25,11 @@ public class UserService implements IAuth {
     }
 
     @Override
-    public String register(String username, String password) {
+    public String register(String token, String username, String password) {
         try{
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
             logger.info("Registering user " + username );
             String encodedPassword = passwordEncoder.encode(password);
             userRepository.Store(username, encodedPassword);
@@ -40,8 +43,11 @@ public class UserService implements IAuth {
     }
 
     @Override
-    public String login(String username, String password) {
+    public String login(String token, String username, String password) {
         try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
             logger.info("User {} is trying to login", username);
             boolean user = userRepository.usernameExists(username);
             if (!user) {
@@ -52,9 +58,10 @@ public class UserService implements IAuth {
                 logger.error("Invalid password for user {}", username);
                 throw new RuntimeException("Invalid password");
             }
-            String token = tokenService.generateToken(username);
+            User userObj = userRepository.getUserByUsername(username);
+            String memberToken = tokenService.generateMemberToken(userObj.getID(), userObj.getName());
             logger.info("User {} logged in successfully", username);
-            return token;
+            return memberToken;
 
         } catch (Exception e) {
             logger.error("Login failed for user {}", username, e);
@@ -67,7 +74,7 @@ public class UserService implements IAuth {
         try {
             logger.info("Logout requested");
             if (tokenService.validateToken(token)){
-                tokenService.addBlacklistToken(tokenService.extractUsername(token));
+                tokenService.addBlacklistToken(token);
             logger.info("Logout completed successfully");
             return "success";
             }
@@ -83,13 +90,13 @@ public class UserService implements IAuth {
         try {
             logger.info("Getting user info");
             if (tokenService.validateToken(token)){
-                String username = tokenService.extractUsername(token);
-                User user = userRepository.getUserByUsername(username);
+                String userId = tokenService.extractUserId(token);
+                User user = userRepository.getUserByID(userId);
                 if (user == null) {
-                    logger.error("User {} not found while getting user info", username);
+                    logger.error("User {} not found while getting user info", userId);
                     throw new RuntimeException("User not found");
                 }
-                logger.info("User info retrieved successfully for user {}", username);
+                logger.info("User info retrieved successfully for user {}", userId);
                 return user.getUserInfo();
             }
             logger.error("Invalid token provided for getting user info");
@@ -107,16 +114,16 @@ public class UserService implements IAuth {
                 logger.error("Invalid token provided for updating password");
                 throw new RuntimeException("Invalid token");
             }
-            String username = tokenService.extractUsername(token);
-            User user = userRepository.getUserByUsername(username);
+            String userId = tokenService.extractUserId(token);
+            User user = userRepository.getUserByID(userId);
             if (user == null) {
-                logger.error("User {} not found while updating password", username);
+                logger.error("User {} not found while updating password", userId);
                 throw new RuntimeException("User not found");
             }
             String encodedPassword = passwordEncoder.encode(newPassword);
             user.setPassword(encodedPassword);
             userRepository.save(user);
-            logger.info("Password updated successfully for user {}", username);
+            logger.info("Password updated successfully for user {}", userId);
             return "success";
         } catch (Exception e) {
             logger.error("Failed to update password", e);
@@ -131,15 +138,16 @@ public class UserService implements IAuth {
                 logger.error("Invalid token provided for updating username");
                 throw new RuntimeException("Invalid token");
             }
-            String currentUsername = tokenService.extractUsername(token);
-            User user = userRepository.getUserByUsername(currentUsername);
+            String currentUserId = tokenService.extractUserId(token);
+            User user = userRepository.getUserByID(currentUserId);
             if (user == null) {
-                logger.error("User {} not found while updating username", currentUsername);
+                logger.error("User {} not found while updating username", currentUserId);
                 throw new RuntimeException("User not found");
             }
+            String oldUsername = userRepository.getUsernameByID(currentUserId);
             user.setName(newUsername);
             userRepository.save(user);
-            logger.info("Username updated successfully from {} to {}", currentUsername, newUsername);
+            logger.info("Username updated successfully from {} to {}", oldUsername, newUsername);
             return "success";
         } catch (Exception e) {
             logger.error("Failed to update username", e);
