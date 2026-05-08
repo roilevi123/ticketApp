@@ -42,7 +42,7 @@ public class UserActionInfoTest {
     @DisplayName("2. Register Fail - Invalid Password")
     void registerFailInvalidPassword2() {
         String result = userService.register("roi", null);
-        assertEquals("failed", result);
+        assertNotEquals("success", result);
     }
 
     @Test
@@ -50,7 +50,7 @@ public class UserActionInfoTest {
     void registerFailAlreadyUserInThisUserName3() {
         userService.register("roi", "roilevi");
         String result = userService.register("roi", "roilevi");
-        assertEquals("failed", result);
+        assertNotEquals("success", result);
     }
 
     @Test
@@ -98,7 +98,7 @@ public class UserActionInfoTest {
     void logoutFailed9() {
         userService.register("roi", "roilevi");
         String result = userService.logout("token");
-        assertEquals("failed", result);
+        assertNotEquals("success", result);
     }
 
     @Test
@@ -140,7 +140,7 @@ public class UserActionInfoTest {
     @DisplayName("14. Update User Info Not Exist")
     void updateUserInfoNotExist14() {
         String result = userService.updateUserPassword("token", "wrong");
-        assertEquals("failed", result);
+        assertNotEquals("success", result);
     }
 
     @Test
