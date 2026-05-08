@@ -9,5 +9,5 @@ public interface iQueueRepository {
     void initQueue(String eventId);
     void deleteQueue(String eventId);
     public void deleteAll();
-
+    String checkStatusAtomic(String eventId, String username, int maxActiveUsers, long accessDuration);
 }
