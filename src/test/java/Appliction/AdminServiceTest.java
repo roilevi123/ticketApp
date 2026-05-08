@@ -4,7 +4,10 @@ import Domain.AdminAggregate.iAdminRepository;
 import Domain.Company.iCompanyRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import Domain.PurchasedOrderAggregate.PurchaseOrder;
+import Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
+import Domain.Ticket.Ticket;
+import Domain.Ticket.TicketDTO;
 import Domain.Ticket.iTicketRepository;
 import Domain.User.IUserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,10 +16,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class AdminServiceTest {
@@ -82,22 +85,50 @@ class AdminServiceTest {
     @Test
     void GetAllPurchasedOrders_Success() {
         List<String> tickets = List.of("T1");
-        PurchaseOrder po = new PurchaseOrder("Comp", "Ev", tickets, "Buyer", "O1");
+        PurchaseOrder po1 = new PurchaseOrder("Comp", "Ev", tickets, "Buyer", "O1");
 
-        when(purchasedOrderRepository.GetAllPurchasedOrders()).thenReturn(List.of(po));
-        when(ticketRepository.getTicketsDescription(tickets)).thenReturn("Desc1");
+        when(purchasedOrderRepository.GetAllPurchasedOrders()).thenReturn(List.of(po1));
+        List<Ticket> ticketList=new ArrayList<>();
+        Ticket ticket1=new Ticket(1,1,"Ev","Comp","T1",100);
+        ticket1.purchase();
+        ticketList.add(ticket1);
+        when(ticketRepository.getTickets(tickets)).thenReturn(ticketList);
 
-        String result = adminService.GetAllPurchasedOrders(ADMIN_NAME);
+        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
+        boolean isCompanyExist = false;
+        boolean isEventExist = false;
+        boolean isPurchased = false;
+        boolean isUserExist = false;
+        for (PurchaseOrderDTO po : result) {
+            List<TicketDTO> ticketsList = po.tickets();
+            if(po.buyer().equals("Buyer")){
+                isUserExist = true;
+            }
+            for (TicketDTO ticket : ticketsList) {
+                if(ticket.isPurchased()){
+                    isPurchased = true;
+                }
+                if(ticket.company().equals("Comp")){
+                    isCompanyExist = true;
+                }
+                if(ticket.event().equals("Ev")){
+                    isEventExist = true;
+                }
 
-        assertTrue(result.contains("Comp"));
-        assertTrue(result.contains("Ev"));
-        assertTrue(result.contains("Buyer"));
-        assertTrue(result.contains("Desc1"));
+
+            }
+        }
+        assertNotNull(result);
+        assertTrue(isCompanyExist);
+        assertTrue(isEventExist);
+        assertTrue(isPurchased);
+        assertTrue(isUserExist);
     }
 
     @Test
     void GetAllPurchasedOrders_Fail_NotAdmin() {
-        String result = adminService.GetAllPurchasedOrders(NOT_ADMIN);
+        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders(NOT_ADMIN);
+        assertNull(result);
 
 
 }}

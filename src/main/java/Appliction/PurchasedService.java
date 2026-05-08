@@ -5,14 +5,17 @@ import Domain.Order.ActiveOrder;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import Domain.PurchasedOrderAggregate.PurchaseOrder;
+import Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 
 import Domain.Ticket.Ticket;
+import Domain.Ticket.TicketDTO;
 import Domain.Ticket.iTicketRepository;
 import Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -107,10 +110,10 @@ public class PurchasedService {
             return "success";
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return "error";
+            return e.getMessage();
         }
     }
-    public String getCompanyTransaction(String company,String token) {
+    public List<PurchaseOrderDTO> getCompanyTransaction(String company,String token) {
         try {
             logger.info("getCompanyTransaction");
             if(!tokenService.validateToken(token)) {
@@ -122,21 +125,30 @@ public class PurchasedService {
                 throw new Exception("User not authorized");
             }
             List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForCompany(company);
-            StringBuilder stringBuilder=new StringBuilder();
-            for (PurchaseOrder purchaseOrder : purchaseOrders) {
-                stringBuilder.append(purchaseOrder.toString()+"\n");
-                List<String> ticketsId=purchaseOrder.getTicketsId();
+            StringBuilder orders = new StringBuilder();
+            List<PurchaseOrderDTO> orderDTOS=new ArrayList<>();
+
+            for(PurchaseOrder purchasedOrder : purchaseOrders) {
+                orders.append(purchasedOrder.toString()+"\n");
+                List<String> ticketsId = purchasedOrder.getTicketsId();
                 String tickets=ticketRepository.getTicketsDescription(ticketsId);
-                stringBuilder.append(tickets+"\n");
+                List<Ticket> ticketList=ticketRepository.getTickets(ticketsId);
+                List<TicketDTO> ticketDTOS=new ArrayList<>();
+                for(Ticket ticket : ticketList) {
+                    ticketDTOS.add(TicketDTO.fromEntity(ticket));
+                }
+                orderDTOS.add(PurchaseOrderDTO.create(purchasedOrder,ticketDTOS));
+                orders.append(tickets+"\n");
+
             }
-            return stringBuilder.toString();
+            return orderDTOS;
         }
         catch (Exception e) {
             logger.error(e.getMessage());
-            return e.getMessage();
+            return null;
         }
     }
-    public String getUserTransaction(String token) {
+    public List<PurchaseOrderDTO> getUserTransaction(String token) {
         try {
             logger.info("getCompanyTransaction");
             if(!tokenService.validateToken(token)) {
@@ -145,18 +157,27 @@ public class PurchasedService {
             String user=tokenService.extractUsername(token);
 
             List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForUser(user);
-            StringBuilder stringBuilder=new StringBuilder();
-            for (PurchaseOrder purchaseOrder : purchaseOrders) {
-                stringBuilder.append(purchaseOrder.toString()+"\n");
-                List<String> ticketsId=purchaseOrder.getTicketsId();
+            StringBuilder orders = new StringBuilder();
+            List<PurchaseOrderDTO> orderDTOS=new ArrayList<>();
+
+            for(PurchaseOrder purchasedOrder : purchaseOrders) {
+                orders.append(purchasedOrder.toString()+"\n");
+                List<String> ticketsId = purchasedOrder.getTicketsId();
                 String tickets=ticketRepository.getTicketsDescription(ticketsId);
-                stringBuilder.append(tickets+"\n");
+                List<Ticket> ticketList=ticketRepository.getTickets(ticketsId);
+                List<TicketDTO> ticketDTOS=new ArrayList<>();
+                for(Ticket ticket : ticketList) {
+                    ticketDTOS.add(TicketDTO.fromEntity(ticket));
+                }
+                orderDTOS.add(PurchaseOrderDTO.create(purchasedOrder,ticketDTOS));
+                orders.append(tickets+"\n");
+
             }
-            return stringBuilder.toString();
+            return orderDTOS;
         }
         catch (Exception e) {
             logger.error(e.getMessage());
-            return e.getMessage();
+            return null;
         }
     }
 }

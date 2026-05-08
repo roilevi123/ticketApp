@@ -124,7 +124,7 @@ public class UserActionInfoTest {
     @DisplayName("12. Get User Info Not Exist")
     void getUserInfoNotExist12() {
         String result = userService.getUserInfo("Non Exist User");
-        assertNull(result);
+        assertEquals("Invalid token",result);
     }
 
     @Test

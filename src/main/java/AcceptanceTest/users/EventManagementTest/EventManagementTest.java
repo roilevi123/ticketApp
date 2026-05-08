@@ -31,19 +31,19 @@ public class EventManagementTest {
     }
 
     private void initTestMap() {
-        testMap.put("1", this::CreateEventAsFounderSuccess1);
-        testMap.put("2", this::CreateEventAsManagerSuccess2);
-        testMap.put("3", this::CreateEventAsOwnerSuccess3);
-        testMap.put("4", this::CreateEventFailedNotAuthorizedNotPartOfTheCompany4);
-        testMap.put("5", this::CreateEventFailedNotAuthorizedNotAprroveTheOwnerShip5);
-        testMap.put("6", this::CreateEventFailedNotAuthorizedNotHaveTheRightPermission6);
-        testMap.put("7", this::DeleteEventAsFounderSuccess7);
-        testMap.put("8", this::DeleteEventAsManagerSuccess8);
-        testMap.put("9", this::DeleteEventAsOwnerSuccess9);
-        testMap.put("10", this::DeleteEventFailedNoEventFound10);
-        testMap.put("11", this::DeleteEventFailedNotAuthorizedNotPartOfTheCompany11);
-        testMap.put("12", this::DeleteEventFailedNotAuthorizedNotAprroveTheOwnerShip12);
-        testMap.put("13", this::DeleteEventFailedNotAuthorizedNotHaveTheRightPermission13);
+//        testMap.put("1", this::CreateEventAsFounderSuccess1);
+//        testMap.put("2", this::CreateEventAsManagerSuccess2);
+//        testMap.put("3", this::CreateEventAsOwnerSuccess3);
+//        testMap.put("4", this::CreateEventFailedNotAuthorizedNotPartOfTheCompany4);
+//        testMap.put("5", this::CreateEventFailedNotAuthorizedNotAprroveTheOwnerShip5);
+//        testMap.put("6", this::CreateEventFailedNotAuthorizedNotHaveTheRightPermission6);
+//        testMap.put("7", this::DeleteEventAsFounderSuccess7);
+//        testMap.put("8", this::DeleteEventAsManagerSuccess8);
+//        testMap.put("9", this::DeleteEventAsOwnerSuccess9);
+//        testMap.put("10", this::DeleteEventFailedNoEventFound10);
+//        testMap.put("11", this::DeleteEventFailedNotAuthorizedNotPartOfTheCompany11);
+//        testMap.put("12", this::DeleteEventFailedNotAuthorizedNotAprroveTheOwnerShip12);
+//        testMap.put("13", this::DeleteEventFailedNotAuthorizedNotHaveTheRightPermission13);
 
         testMap.put("14", this::UpdateEventAsFounderSuccess14);
         testMap.put("15", this::UpdateEventAsManagerSuccess15);
@@ -99,163 +99,163 @@ public class EventManagementTest {
         return MAP;
     }
 
-    public boolean CreateEventAsFounderSuccess1() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        Response<String> result=eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        return result.isSuccess();
-    }
-    public boolean CreateEventAsManagerSuccess2() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        userService.register("2","2");
-        String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        Set<Permission> permissions = new HashSet<>();
-        permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        return result.isSuccess();
-    }
-    public boolean CreateEventAsOwnerSuccess3() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        userService.register("2","2");
-        String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        companyService.ApproveAppointmentForOwner(token2,"1");
-        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        return result.isSuccess();
-    }
-    public boolean CreateEventFailedNotAuthorizedNotPartOfTheCompany4() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        userService.register("2","2");
-        String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+//    public boolean CreateEventAsFounderSuccess1() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        companyService.CreateCompany("1",token);
+//        Response<String> result=eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        return result.isSuccess();
+//    }
+//    public boolean CreateEventAsManagerSuccess2() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        userService.register("2","2");
+//        String token2=userService.login("2","2");
+//        companyService.CreateCompany("1",token);
+//        Set<Permission> permissions = new HashSet<>();
+//        permissions.add(Permission.MANAGE_INVENTORY);
+//        companyService.AppointAManager("2","1",permissions,token);
+//        companyService.ApproveAppointmentForManager(token2,"1");
+//        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        return result.isSuccess();
+//    }
+//    public boolean CreateEventAsOwnerSuccess3() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        userService.register("2","2");
+//        String token2=userService.login("2","2");
+//        companyService.CreateCompany("1",token);
 //        companyService.AppointOwner("2","1",token);
 //        companyService.ApproveAppointmentForOwner(token2,"1");
-        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        return !result.isSuccess();
-    }
-    public boolean CreateEventFailedNotAuthorizedNotAprroveTheOwnerShip5() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        userService.register("2","2");
-        String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-//        companyService.ApproveAppointmentForOwner(token2,"1");
-        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        return !result.isSuccess();
-    }
-    public boolean CreateEventFailedNotAuthorizedNotHaveTheRightPermission6() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        userService.register("2","2");
-        String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        Set<Permission> permissions = new HashSet<>();
-        permissions.add(Permission.CHANGE_POLICIES);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        return !result.isSuccess();
-    }
-    public boolean DeleteEventAsFounderSuccess7() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        companyService.CreateCompany("1",token);
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token);
-        return result.isSuccess();
-    }
-    public boolean DeleteEventAsManagerSuccess8() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        userService.register("2","2");
-        String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        Set<Permission> permissions = new HashSet<>();
-        permissions.add(Permission.MANAGE_INVENTORY);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
-
-        return result.isSuccess();
-    }
-    public boolean DeleteEventAsOwnerSuccess9() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        userService.register("2","2");
-        String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        companyService.ApproveAppointmentForOwner(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
-        return result.isSuccess();
-
-    }
-    public boolean DeleteEventFailedNoEventFound10() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        userService.register("2","2");
-        String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
-        companyService.ApproveAppointmentForOwner(token2,"1");
-//        eventService.CreateEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
-        return !result.isSuccess();
-    }
-
-
-    public boolean DeleteEventFailedNotAuthorizedNotPartOfTheCompany11() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        userService.register("2","2");
-        String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
+//        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        return result.isSuccess();
+//    }
+//    public boolean CreateEventFailedNotAuthorizedNotPartOfTheCompany4() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        userService.register("2","2");
+//        String token2=userService.login("2","2");
+//        companyService.CreateCompany("1",token);
+////        companyService.AppointOwner("2","1",token);
+////        companyService.ApproveAppointmentForOwner(token2,"1");
+//        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        return !result.isSuccess();
+//    }
+//    public boolean CreateEventFailedNotAuthorizedNotAprroveTheOwnerShip5() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        userService.register("2","2");
+//        String token2=userService.login("2","2");
+//        companyService.CreateCompany("1",token);
+//        companyService.AppointOwner("2","1",token);
+////        companyService.ApproveAppointmentForOwner(token2,"1");
+//        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        return !result.isSuccess();
+//    }
+//    public boolean CreateEventFailedNotAuthorizedNotHaveTheRightPermission6() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        userService.register("2","2");
+//        String token2=userService.login("2","2");
+//        companyService.CreateCompany("1",token);
+//        Set<Permission> permissions = new HashSet<>();
+//        permissions.add(Permission.CHANGE_POLICIES);
+//        companyService.AppointAManager("2","1",permissions,token);
+//        companyService.ApproveAppointmentForManager(token2,"1");
+//        Response<String> result=eventService.createEvent(token2,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        return !result.isSuccess();
+//    }
+//    public boolean DeleteEventAsFounderSuccess7() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        companyService.CreateCompany("1",token);
+//        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        Response<Void> result=eventService.deleteEvent("1","1",token);
+//        return result.isSuccess();
+//    }
+//    public boolean DeleteEventAsManagerSuccess8() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        userService.register("2","2");
+//        String token2=userService.login("2","2");
+//        companyService.CreateCompany("1",token);
+//        Set<Permission> permissions = new HashSet<>();
+//        permissions.add(Permission.MANAGE_INVENTORY);
+//        companyService.AppointAManager("2","1",permissions,token);
+//        companyService.ApproveAppointmentForManager(token2,"1");
+//        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        Response<Void> result=eventService.deleteEvent("1","1",token2);
+//
+//        return result.isSuccess();
+//    }
+//    public boolean DeleteEventAsOwnerSuccess9() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        userService.register("2","2");
+//        String token2=userService.login("2","2");
+//        companyService.CreateCompany("1",token);
 //        companyService.AppointOwner("2","1",token);
 //        companyService.ApproveAppointmentForOwner(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
-
-        return !result.isSuccess();
-    }
-    public boolean DeleteEventFailedNotAuthorizedNotAprroveTheOwnerShip12() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        userService.register("2","2");
-        String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        companyService.AppointOwner("2","1",token);
+//        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        Response<Void> result=eventService.deleteEvent("1","1",token2);
+//        return result.isSuccess();
+//
+//    }
+//    public boolean DeleteEventFailedNoEventFound10() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        userService.register("2","2");
+//        String token2=userService.login("2","2");
+//        companyService.CreateCompany("1",token);
+//        companyService.AppointOwner("2","1",token);
 //        companyService.ApproveAppointmentForOwner(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
-
-        return !result.isSuccess();
-    }
-    public boolean DeleteEventFailedNotAuthorizedNotHaveTheRightPermission13() {
-        userService.register("1","1");
-        String token=userService.login("1","1");
-        userService.register("2","2");
-        String token2=userService.login("2","2");
-        companyService.CreateCompany("1",token);
-        Set<Permission> permissions = new HashSet<>();
-        permissions.add(Permission.CHANGE_POLICIES);
-        companyService.AppointAManager("2","1",permissions,token);
-        companyService.ApproveAppointmentForManager(token2,"1");
-        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
-        Response<Void> result=eventService.deleteEvent("1","1",token2);
-
-        return !result.isSuccess();
-    }
+////        eventService.CreateEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        Response<Void> result=eventService.deleteEvent("1","1",token2);
+//        return !result.isSuccess();
+//    }
+//
+//
+//    public boolean DeleteEventFailedNotAuthorizedNotPartOfTheCompany11() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        userService.register("2","2");
+//        String token2=userService.login("2","2");
+//        companyService.CreateCompany("1",token);
+////        companyService.AppointOwner("2","1",token);
+////        companyService.ApproveAppointmentForOwner(token2,"1");
+//        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        Response<Void> result=eventService.deleteEvent("1","1",token2);
+//
+//        return !result.isSuccess();
+//    }
+//    public boolean DeleteEventFailedNotAuthorizedNotAprroveTheOwnerShip12() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        userService.register("2","2");
+//        String token2=userService.login("2","2");
+//        companyService.CreateCompany("1",token);
+//        companyService.AppointOwner("2","1",token);
+////        companyService.ApproveAppointmentForOwner(token2,"1");
+//        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        Response<Void> result=eventService.deleteEvent("1","1",token2);
+//
+//        return !result.isSuccess();
+//    }
+//    public boolean DeleteEventFailedNotAuthorizedNotHaveTheRightPermission13() {
+//        userService.register("1","1");
+//        String token=userService.login("1","1");
+//        userService.register("2","2");
+//        String token2=userService.login("2","2");
+//        companyService.CreateCompany("1",token);
+//        Set<Permission> permissions = new HashSet<>();
+//        permissions.add(Permission.CHANGE_POLICIES);
+//        companyService.AppointAManager("2","1",permissions,token);
+//        companyService.ApproveAppointmentForManager(token2,"1");
+//        eventService.createEvent(token,"1","1", EventType.PLAY,100,new Date(),"1","1",getMapArea());
+//        Response<Void> result=eventService.deleteEvent("1","1",token2);
+//
+//        return !result.isSuccess();
+//    }
 //
     public boolean UpdateEventAsFounderSuccess14() {
         userService.register("1","1");
