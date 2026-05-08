@@ -42,6 +42,15 @@ public class TicketRepositoryImpl implements iTicketRepository {
 
         return sb.toString().trim();
     }
+    @Override
+    public List<Ticket> getTickets(List<String> ticketIds) {
+        Set<String> idSet = new HashSet<>(ticketIds);
+
+        return tickets.values().stream()
+                .flatMap(List::stream)
+                .filter(t -> idSet.contains(t.getId()))
+                .toList();
+    }
 
     @Override
     public boolean ticketExists(String id) {

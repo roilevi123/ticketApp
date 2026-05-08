@@ -96,7 +96,7 @@ public class UserService implements IAuth {
             throw new RuntimeException("Invalid token");
         } catch (Exception e) {
             logger.error("Failed to get user info", e);
-            return null;
+            return e.getMessage();
         }
     }
 
