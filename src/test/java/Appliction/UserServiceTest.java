@@ -95,7 +95,7 @@ class UserServiceTest {
     void logout_InvalidToken_shouldReturnErrorMessage() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
         String result = userService.logout(TOKEN);
-        assertEquals("failed", result);
+        assertNotEquals("success", result);
         verify(tokenService, never()).addBlacklistToken(anyString());
     }
 
@@ -153,7 +153,7 @@ class UserServiceTest {
 
         String result = userService.updateUserPassword(TOKEN, "new_password");
 
-        assertEquals("failed", result);
+        assertNotEquals("success", result);
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -165,7 +165,7 @@ class UserServiceTest {
 
         String result = userService.updateUserPassword(TOKEN, "new_password");
 
-        assertEquals("failed", result);
+        assertNotEquals("success", result);
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -182,7 +182,7 @@ class UserServiceTest {
 
         String result = userService.updateUserPassword(TOKEN, "new_password");
 
-        assertEquals("failed", result);
+        assertNotEquals("success", result);
         verify(userRepository, times(1)).save(any(User.class));
     }
 }

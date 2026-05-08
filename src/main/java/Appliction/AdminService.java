@@ -54,7 +54,7 @@ public class AdminService {
             return "success";
         }catch (Exception e) {
             logger.error(e.getMessage());
-            return "error";
+            return e.getMessage();
         }
 
     }
@@ -70,7 +70,7 @@ public class AdminService {
             return "success";
         }catch (Exception e) {
             logger.error(e.getMessage());
-            return "error";
+            return e.getMessage();
         }
     }
     public String GetAllPurchasedOrders(String adminName) {

@@ -45,7 +45,7 @@ public class CompanyService {
             return "success";
         }catch (Exception e) {
             logger.error(e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public String AppointAManager(String manager, String company, Set<Permission> permissions,String token) {
@@ -68,7 +68,7 @@ public class CompanyService {
             return "success";
         }catch (Exception e) {
             logger.error(e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public String ApproveAppointmentForManager(String token, String company) {
@@ -86,7 +86,7 @@ public class CompanyService {
         }
         catch (Exception e) {
             logger.error(e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public String RejectAppointmentForManager(String token, String company) {
@@ -106,7 +106,7 @@ public class CompanyService {
         }
         catch (Exception e) {
             logger.error(e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public String AppointOwner(String owner, String company,String token) {
@@ -129,7 +129,7 @@ public class CompanyService {
             return "success";
         }catch (Exception e) {
             logger.error(e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public String  ApproveAppointmentForOwner(String token, String company) {
@@ -147,7 +147,7 @@ public class CompanyService {
         }
         catch (Exception e) {
             logger.error(e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public String RejectAppointmentForOwner(String token, String company) {
@@ -171,7 +171,7 @@ public class CompanyService {
         }
         catch (Exception e) {
             logger.error(e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public String FireOwner(String token, String company,String owner) {
@@ -193,7 +193,7 @@ public class CompanyService {
         }
         catch (Exception e) {
             logger.error(e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public String FireManager(String token, String company,String manager) {
@@ -213,7 +213,7 @@ public class CompanyService {
         }
         catch (Exception e) {
             logger.error(e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public String ChangeManagerPermissions(String token, String company, String managerName, Set<Permission> newPermissions) {
@@ -242,7 +242,7 @@ public class CompanyService {
             return "success";
         } catch (Exception e) {
             logger.error("Failed to change permissions: " + e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public String freezeCompany(String company, String token) {
@@ -259,7 +259,7 @@ public class CompanyService {
             return "success";
         }catch (Exception e) {
             logger.error(e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public String unfreezeCompany(String company, String token) {
@@ -276,7 +276,7 @@ public class CompanyService {
             return "success";
         }catch (Exception e) {
             logger.error(e.getMessage());
-            return "failed";
+            return e.getMessage();
         }
     }
     public Set<Permission> GetManagerPermissions(String token, String company, String managerName) {
