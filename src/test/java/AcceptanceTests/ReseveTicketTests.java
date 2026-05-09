@@ -48,7 +48,7 @@ public class ReseveTicketTests {
         iPurchasePolicyRepository purchasePolicyRepository=new InMemoryPurchasePolicyRepository();
         INotifer notifer= Mockito.mock(INotifer.class);
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService,notifer);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,notifer);
         this.eventService = new EventService(companyRepository, eventRepository,
                 tokenService, treeOfRoleRepository, ticketRepository, queueRepository,purchasedOrderRepository,notifer);

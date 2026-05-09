@@ -45,7 +45,7 @@ public class FullCompanyManagementTest {
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
         INotifer notifer= Mockito.mock(INotifer.class);
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService,notifer);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,notifer);
 
         activeOrderRepository.deleteAllActiveOrders();

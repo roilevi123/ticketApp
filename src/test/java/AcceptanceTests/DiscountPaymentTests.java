@@ -59,7 +59,7 @@ public class DiscountPaymentTests {
         this.paymentServiceSpy = spy(new PaymentServiceMock());
         INotifer iNotifer = Mockito.mock(INotifer.class);
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService,iNotifer);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,iNotifer);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository,
                 queueRepository,purchasedOrderRepository,iNotifer);

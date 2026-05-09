@@ -42,11 +42,10 @@ public class EventManagementTest {
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-        INotifer notifer= Mockito.mock(INotifer.class);
         INotifer notifier2 = Mockito.mock(INotifer.class);
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,notifer);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService,notifier2);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,notifier2);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository
                 , ticketRepository, queueRepository,purchasedOrderRepository,notifier2);
 

@@ -64,13 +64,12 @@ public class AdminJUnitTests {
         ISupplyService supplyService = new SupplyServiceMock();
         IPaymentService paymentService = new PaymentServiceMock();
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
-
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,notifer);
-        INotifer notifier2 = Mockito.mock(INotifer.class);
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService,
-                treeOfRoleRepository, ticketRepository, queueRepository,purchasedOrderRepository,notifier2);
         INotifer iNotifer = Mockito.mock(INotifer.class);
+
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService,iNotifer);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,notifer);
+        this.eventService = new EventService(companyRepository, eventRepository, tokenService,
+                treeOfRoleRepository, ticketRepository, queueRepository,purchasedOrderRepository,iNotifer);
 
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository,notifer);
 

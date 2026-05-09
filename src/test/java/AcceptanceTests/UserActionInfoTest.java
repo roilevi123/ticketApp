@@ -1,5 +1,6 @@
 package AcceptanceTests;
 
+import Appliction.INotifer;
 import Appliction.UserService;
 import Domain.User.IUserRepository;
 import Infastructure.PasswordEncoderImpl;
@@ -9,6 +10,7 @@ import Appliction.IPasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,13 +21,14 @@ public class UserActionInfoTest {
     private IUserRepository userRepository;
     private IPasswordEncoder passwordEncoder;
     private TokenService tokenService;
-
+    private INotifer notifier;
     @BeforeEach
     void setUp() {
         this.userRepository = new UserRepositoryImpl();
         this.passwordEncoder = new PasswordEncoderImpl();
         this.tokenService = new TokenService();
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
+        this.notifier = Mockito.mock(INotifer.class);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService,notifier);
 
         userRepository.deleteAll();
         tokenService.clearAllData();
