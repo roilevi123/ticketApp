@@ -7,6 +7,7 @@ import Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
@@ -45,8 +46,8 @@ class OrderServiceTest {
         orderRepository = spy(new OrderRepositoryImpl());
         userRepository=spy(new UserRepositoryImpl());
         purchasePolicyRepository = spy(new InMemoryPurchasePolicyRepository());
-
-        reserveTicketService = new OrderService(orderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository);
+        INotifer iNotifer = Mockito.mock(INotifer.class);
+        reserveTicketService = new OrderService(orderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository,iNotifer);
     }
 
     @Test

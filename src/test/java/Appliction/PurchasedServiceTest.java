@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Date;
@@ -64,6 +65,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
         iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        INotifer iNotifer = Mockito.mock(INotifer.class);
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -75,6 +77,8 @@ class PurchasedServiceTest {
                 tokenService,
                 treeOfRoleRepository,
                 discountPolicyRepository
+                ,iNotifer
+
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -116,6 +120,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
         iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        INotifer iNotifer = Mockito.mock(INotifer.class);
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -127,6 +132,8 @@ class PurchasedServiceTest {
                 tokenService,
                 treeOfRoleRepository,
                 discountPolicyRepository
+                ,iNotifer
+
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -152,6 +159,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
         iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        INotifer iNotifer = Mockito.mock(INotifer.class);
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -163,6 +171,8 @@ class PurchasedServiceTest {
                 tokenService,
                 treeOfRoleRepository,
                 discountPolicyRepository
+                ,iNotifer
+
         );
 
         Date pastDate = new Date(System.currentTimeMillis() - 1000000);
@@ -181,6 +191,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
         iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        INotifer iNotifer = Mockito.mock(INotifer.class);
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -192,6 +203,8 @@ class PurchasedServiceTest {
                 tokenService,
                 treeOfRoleRepository,
                 discountPolicyRepository
+                ,iNotifer
+
         );
 
         Date pastDate = new Date(System.currentTimeMillis() - 1000000);
@@ -211,6 +224,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
         iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        INotifer iNotifer = Mockito.mock(INotifer.class);
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -222,6 +236,7 @@ class PurchasedServiceTest {
                 tokenService,
                 treeOfRoleRepository,
                 discountPolicyRepository
+                ,iNotifer
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -243,6 +258,7 @@ class PurchasedServiceTest {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
         iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        INotifer iNotifer = Mockito.mock(INotifer.class);
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -254,6 +270,7 @@ class PurchasedServiceTest {
                 tokenService,
                 treeOfRoleRepository,
                 discountPolicyRepository
+                ,iNotifer
 
         );
 

@@ -9,5 +9,6 @@ public interface iPurchasedOrderRepository {
     public List<PurchaseOrder> getPurchasedOrdersForUser(String userID);
     public List<PurchaseOrder> getPurchasedOrdersForCompany(String company);
     public void deleteAll();
+    public List<String > getUserForEvent(String event,String company);
 
 }

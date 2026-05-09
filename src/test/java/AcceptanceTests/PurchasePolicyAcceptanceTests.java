@@ -9,6 +9,7 @@ import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import Domain.PurchasePolicy.PurchaseTargetType;
 import Domain.PurchasePolicy.iPurchasePolicyRepository;
+import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import Domain.QueueAggregates.iQueueRepository;
 import Domain.Ticket.iTicketRepository;
 import Domain.User.IUserRepository;
@@ -16,6 +17,7 @@ import Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.*;
 
@@ -41,14 +43,16 @@ public class PurchasePolicyAcceptanceTests {
         IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasePolicyRepository purchasePolicyRepository = new InMemoryPurchasePolicyRepository();
-
+        iPurchasedOrderRepository  purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
+        INotifer notifer= Mockito.mock(INotifer.class);
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        this.reserveService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService,notifer);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,notifer);
+        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository
+                , ticketRepository, queueRepository,purchasedOrderRepository,notifer);
+        this.reserveService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository,notifer);
         this.policyService = new PurchasePolicyService(purchasePolicyRepository, tokenService);
 
         userRepository.deleteAll();

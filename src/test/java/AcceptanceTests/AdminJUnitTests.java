@@ -20,6 +20,7 @@ import Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.Date;
 import java.util.List;
@@ -50,6 +51,7 @@ public class AdminJUnitTests {
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         iDiscountPolicyRepository discountPolicyRepository=new InMemoryDiscountPolicyRepository();
         iPurchasePolicyRepository purchasePolicyRepository=new InMemoryPurchasePolicyRepository();
+        INotifer notifer= Mockito.mock(INotifer.class);
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
             public boolean isAdmin(String userID) {
@@ -62,20 +64,19 @@ public class AdminJUnitTests {
         ISupplyService supplyService = new SupplyServiceMock();
         IPaymentService paymentService = new PaymentServiceMock();
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
+        INotifer iNotifer = Mockito.mock(INotifer.class);
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
-
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService,iNotifer);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,notifer);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService,
-                treeOfRoleRepository, ticketRepository, queueRepository);
+                treeOfRoleRepository, ticketRepository, queueRepository,purchasedOrderRepository,iNotifer);
 
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository);
-
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository,notifer);
 
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository,
                 purchasedOrderRepository, supplyService,
                 paymentService, barcodeGenerator,
-                tokenService, treeOfRoleRepository, discountPolicyRepository);
+                tokenService, treeOfRoleRepository, discountPolicyRepository,iNotifer);
 
         this.adminService = new AdminService(
                 treeOfRoleRepository,

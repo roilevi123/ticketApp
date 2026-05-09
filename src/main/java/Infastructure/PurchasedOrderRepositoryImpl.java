@@ -54,4 +54,17 @@ public class PurchasedOrderRepositoryImpl implements iPurchasedOrderRepository {
 
     }
 
+    @Override
+    public List<String> getUserForEvent(String event, String company) {
+        List<String> users=new ArrayList<>();
+        for (PurchaseOrder order : purchasedOrders) {
+            if (order.getCompany() != null && order.getCompany().equals(company)) {
+                if (order.getEvent() != null && order.getEvent().equals(event)) {
+                    users.add(order.getBuyerID());
+                }
+            }
+        }
+        return users;
+    }
+
 }

@@ -1,6 +1,7 @@
 package AcceptanceTests;
 
 import Appliction.CompanyService;
+import Appliction.INotifer;
 import Appliction.IPasswordEncoder;
 import Appliction.UserService;
 import Domain.Company.iCompanyRepository;
@@ -16,6 +17,7 @@ import Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -41,9 +43,10 @@ public class FullCompanyManagementTest {
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
+        INotifer notifer= Mockito.mock(INotifer.class);
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService,notifer);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,notifer);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();

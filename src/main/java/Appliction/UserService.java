@@ -14,14 +14,16 @@ public class UserService implements IAuth {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final IUserRepository userRepository;
     private final TokenService tokenService;
-
+    private INotifer notifier;
     public UserService(IPasswordEncoder passwordEncoder,
                        IUserRepository userRepository,
-                       TokenService tokenService
+                       TokenService tokenService,
+                       INotifer notifier
                        ) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
+        this.notifier = notifier;
     }
 
     @Override
@@ -60,6 +62,8 @@ public class UserService implements IAuth {
             }
             User userObj = userRepository.getUserByUsername(username);
             String memberToken = tokenService.generateMemberToken(userObj.getID(), userObj.getName());
+            String userId=userObj.getID();
+            notifier.sendReserveMessage(userId);
             logger.info("User {} logged in successfully", username);
             return memberToken;
 
