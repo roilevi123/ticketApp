@@ -5,6 +5,7 @@ import Domain.OwnerManagerTree.Permission;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import Domain.Company.Company;
 import Domain.Company.iCompanyRepository;
+import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import Domain.QueueAggregates.iQueueRepository;
 import Domain.User.IUserRepository;
 import Domain.Ticket.iTicketRepository;
@@ -13,6 +14,7 @@ import Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.util.*;
@@ -30,7 +32,7 @@ public class EventServiceTest {
     @Mock private TokenService tokenService;
     @Mock private iTicketRepository ticketRepository;
     @Mock private iQueueRepository queueRepository;
-
+    @Mock private iPurchasedOrderRepository purchasedOrderRepository;
     private final String TOKEN = "valid_token";
     private final String USERNAME = "test_user";
     private final String COMPANY = "test_company";
@@ -46,7 +48,11 @@ public class EventServiceTest {
         }
         eventRepository = new EventRepositoryImpl();
         ticketRepository = spy(new TicketRepositoryImpl());
-        eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository,queueRepository);
+        purchasedOrderRepository = spy(new PurchasedOrderRepositoryImpl());
+        INotifer notifier2 = Mockito.mock(INotifer.class);
+
+        eventService = new EventService(companyRepository, eventRepository, tokenService
+                , treeOfRoleRepository, ticketRepository,queueRepository,purchasedOrderRepository,notifier2);
     }
 
     @Test

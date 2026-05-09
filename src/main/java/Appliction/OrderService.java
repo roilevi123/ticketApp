@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class OrderService {
     
@@ -25,13 +27,15 @@ public class OrderService {
     private IUserRepository userRepository;
     private iPurchasePolicyRepository purchasePolicyRepo;
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
-
-public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService, iTicketRepository ticketRepository,IUserRepository userRepository,iPurchasePolicyRepository purchasePolicyRepo) {
+    private INotifer notifier;
+public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService, iTicketRepository ticketRepository
+        ,IUserRepository userRepository,iPurchasePolicyRepository purchasePolicyRepo, INotifer notifier) {
         this.activeOrderRepository = activeOrderRepository;
         this.tokenService = tokenService;
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.purchasePolicyRepo = purchasePolicyRepo;
+        this.notifier = notifier;
 
     }
 
@@ -90,6 +94,7 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
 
 
             String id = activeOrderRepository.store(company, event, reservedTicketIds, userID, expiryDate);
+            scheduleExpiryNotification(userID, id, expiryDate);
             logger.info("Successfully reserved " + reservedTicketIds.size() + " tickets");
             return id;
 
@@ -109,6 +114,17 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
                 }
             }
             return e.getMessage();
+        }
+    }
+    private void scheduleExpiryNotification(String userId, String orderId, Date expiryDate) {
+        long delay = expiryDate.getTime() - System.currentTimeMillis() - 60000; // דקה לפני הסוף
+
+        if (delay > 0) {
+            Executors.newSingleThreadScheduledExecutor().schedule(() -> {
+                if (activeOrderRepository.findById(orderId) != null) {
+                    notifier.notifyUser(userId, "you have only one minute of this order  " + orderId);
+                }
+            }, delay, TimeUnit.MILLISECONDS);
         }
     }
     public List<TicketDTO> getActiveOrderTickets(String token, String orderId) {

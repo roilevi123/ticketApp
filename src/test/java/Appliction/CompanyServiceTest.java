@@ -46,6 +46,9 @@ class CompanyServiceTest {
     @Mock
     private TokenService tokenService;
 
+    @Mock
+    private INotifer notifier;
+
     @InjectMocks
     private CompanyService companyService;
 
@@ -315,6 +318,8 @@ class CompanyServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(notifier.notifyUser(anyString(),anyString())).thenReturn(true);
+
         when(treeOfRoleRepository.isAppointerOwner(ownerToFire, COMPANY, USERNAME)).thenReturn(true);
 
         String res = companyService.FireOwner(TOKEN, COMPANY, ownerToFire);
@@ -342,6 +347,8 @@ class CompanyServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(notifier.notifyUser(anyString(),anyString())).thenReturn(true);
+
         when(treeOfRoleRepository.isAppointerManager(managerToFire, COMPANY, USERNAME)).thenReturn(true);
 
         String res = companyService.FireManager(TOKEN, COMPANY, managerToFire);
@@ -372,7 +379,7 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getManager(managerName, COMPANY)).thenReturn(mockManager);
         when(treeOfRoleRepository.isAppointerManager(managerName, COMPANY, USERNAME)).thenReturn(true);
-
+        when(notifier.notifyUser(anyString(),anyString())).thenReturn(true);
         String res = companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerName, newPermissions);
         assertEquals(res, "success");
         verify(mockManager).setPermissions(newPermissions);

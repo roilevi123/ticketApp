@@ -20,6 +20,7 @@ public class TicketRepositoryImpl implements iTicketRepository {
                 .add(new Ticket(row, col, event, company, String.valueOf(idCounter.getAndIncrement()), price));
     }
 
+
     @Override
     public Ticket getTicketById(String id) {
         for (List<Ticket> ticketList : tickets.values()) {
@@ -50,6 +51,17 @@ public class TicketRepositoryImpl implements iTicketRepository {
                 .flatMap(List::stream)
                 .filter(t -> idSet.contains(t.getId()))
                 .toList();
+    }
+
+    @Override
+    public boolean isSoldOut(String event, String company) {
+        List<Ticket> ticketList=tickets.get(event + company);
+        for (Ticket ticket : ticketList) {
+            if(!ticket.isPurchased()){
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

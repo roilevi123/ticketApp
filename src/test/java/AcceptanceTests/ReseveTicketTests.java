@@ -17,6 +17,7 @@ import Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -45,11 +46,13 @@ public class ReseveTicketTests {
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
         iPurchasePolicyRepository purchasePolicyRepository=new InMemoryPurchasePolicyRepository();
+        INotifer notifer= Mockito.mock(INotifer.class);
 
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,notifer);
+        this.eventService = new EventService(companyRepository, eventRepository,
+                tokenService, treeOfRoleRepository, ticketRepository, queueRepository,purchasedOrderRepository,notifer);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository,notifer);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();

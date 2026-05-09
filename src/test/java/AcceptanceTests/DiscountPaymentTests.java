@@ -18,6 +18,7 @@ import Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -56,16 +57,19 @@ public class DiscountPaymentTests {
         ISupplyService supplyService = new SupplyServiceMock();
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
         this.paymentServiceSpy = spy(new PaymentServiceMock());
+        INotifer iNotifer = Mockito.mock(INotifer.class);
 
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,iNotifer);
+        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository,
+                queueRepository,purchasedOrderRepository,iNotifer);
+
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository,iNotifer);
 
         this.purchasedService = new PurchasedService(
                 activeOrderRepository, ticketRepository, purchasedOrderRepository,
                 supplyService, paymentServiceSpy, barcodeGenerator,
-                tokenService, treeOfRoleRepository, discountRepo
+                tokenService, treeOfRoleRepository, discountRepo,iNotifer
         );
 
         this.discountService = new DiscountService(discountRepo, tokenService, purchasedService);

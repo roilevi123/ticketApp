@@ -16,6 +16,7 @@ import Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.*;
 
@@ -41,10 +42,13 @@ public class InformationEventsTests {
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
+        INotifer notifer= Mockito.mock(INotifer.class);
+        INotifer notifier2 = Mockito.mock(INotifer.class);
 
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService,notifer);
+        this.eventService = new EventService(companyRepository, eventRepository, tokenService,
+                treeOfRoleRepository, ticketRepository, queueRepository,purchasedOrderRepository,notifier2);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();

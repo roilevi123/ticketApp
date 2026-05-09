@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import Domain.Order.IPurchasedOrderRepository;
+import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,16 +30,21 @@ public class EventService {
     private iTreeOfRoleRepository treeOfRoleRepository;
     private iTicketRepository ticketRepository;
     private iQueueRepository iQueueRepository;
+    private iPurchasedOrderRepository purchasedOrderRepository;
+    private INotifer notifier;
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
 
-    public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository, TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository, iTicketRepository ticketRepository, iQueueRepository iQueueRepository) {
+    public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository, TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository, iTicketRepository ticketRepository,
+                        iQueueRepository iQueueRepository, iPurchasedOrderRepository purchasedOrderRepository, INotifer notifier) {
         this.companyRepository = companyRepository;
         this.eventRepository = eventRepository;
         this.tokenService = tokenService;
         this.treeOfRoleRepository = treeOfRoleRepository;
         this.ticketRepository = ticketRepository;
         this.iQueueRepository = iQueueRepository;
+        this.purchasedOrderRepository = purchasedOrderRepository;
+        this.notifier = notifier;
     }
 
     public boolean isAuthorized(String company,String username) {
@@ -89,6 +96,14 @@ public class EventService {
 
             eventRepository.deleteEvent(eventId, companyName);
             logger.info("Event '{}' deleted successfully for company '{}'", eventId, companyName);
+            List<String > users=purchasedOrderRepository.getUserForEvent(eventId, companyName);
+            for(String u:users) {
+                String message="sorry user the event "+eventId+" has been cancelled";
+                boolean isSend= notifier.notifyUser(u,message);
+                if(!isSend) {
+                    notifier.saveMessage(u,message);
+                }
+            }
             return "success";
 
         } catch (Exception e) {
@@ -122,6 +137,15 @@ public class EventService {
             event.setRating(rating);
             eventRepository.save(event);
             logger.info("Successfully update  event: " + eventName);
+            List<String> users=purchasedOrderRepository.getUserForEvent(eventName, company);
+            for(String u:users) {
+                String message="sorry user the event "+eventName+" has been updated";
+                boolean isSend= notifier.notifyUser(u,message);
+                if(!isSend) {
+                    notifier.saveMessage(u,message);
+
+                }
+            }
             return "success";
         } catch (Exception e) {
             logger.error(e.getMessage());

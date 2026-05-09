@@ -17,13 +17,15 @@ public class CompanyService {
     private iCompanyRepository companyRepository;
     private IUserRepository userRepository;
     private iTreeOfRoleRepository treeOfRoleRepository;
+    private INotifer notifier;
     private TokenService tokenService;
     private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
-    public CompanyService(iCompanyRepository companyRepository,IUserRepository userRepository,iTreeOfRoleRepository iTreeOfRoleRepository, TokenService tokenService) {
+    public CompanyService(iCompanyRepository companyRepository,IUserRepository userRepository,iTreeOfRoleRepository iTreeOfRoleRepository, TokenService tokenService, INotifer notifier) {
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.treeOfRoleRepository = iTreeOfRoleRepository;
+        this.notifier = notifier;
     }
     public String CreateCompany(String company, String token) {
         try {
@@ -188,6 +190,10 @@ public class CompanyService {
             }
 
             treeOfRoleRepository.deleteOwner(ownerID,company);
+            boolean isSend=notifier.notifyUser(ownerID,"you are not owner anymore for company: "+company);
+            if(!isSend) {
+                notifier.saveMessage(ownerID,"you are not owner anymore for company: "+company);
+            }
             logger.info("successfully fire owner", ownerID, company);
             return "success";
         }
@@ -209,6 +215,10 @@ public class CompanyService {
             }
             treeOfRoleRepository.deleteManager(managerID,company);
             logger.info("successfully fire manager", managerID, company);
+            boolean isSend=notifier.notifyUser(managerID,"you are not manager anymore for company: "+company);
+            if(!isSend) {
+                notifier.saveMessage(managerID,"you are not manager anymore for company: "+company);
+            }
             return "success";
         }
         catch (Exception e) {
@@ -239,6 +249,11 @@ public class CompanyService {
             treeOfRoleRepository.save(manager);
 
             logger.info("Successfully changed permissions for manager {} by {}", managerID, username);
+            boolean isSend=notifier.notifyUser(managerID,"your manager permission change for company"+company);
+            if(!isSend){
+                notifier.saveMessage(managerID,"your manager permission change for company"+company);
+            }
+
             return "success";
         } catch (Exception e) {
             logger.error("Failed to change permissions: " + e.getMessage());
@@ -256,6 +271,21 @@ public class CompanyService {
             companyObj.freezeCompany(username);
             companyRepository.save(companyObj);
             logger.info("successfully freeze company", username, company);
+            String message = "successfully freeze company : "+company;
+            List<Owner> owners = treeOfRoleRepository.getAllOwnersByCompany(company);
+            for (Owner owner : owners) {
+                boolean isSend=notifier.notifyUser(owner.getUserID(), message);
+                if(!isSend){
+                    notifier.saveMessage(owner.getUserID(), message);
+                }
+            }
+            List<Manager> managers = treeOfRoleRepository.getAllManagersByCompany(company);
+            for (Manager manager : managers) {
+                boolean isSend=notifier.notifyUser(manager.getUserID(), message);
+                if(!isSend){
+                    notifier.saveMessage(manager.getUserID(), message);
+                }
+            }
             return "success";
         }catch (Exception e) {
             logger.error(e.getMessage());

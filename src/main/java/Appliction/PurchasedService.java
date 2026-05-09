@@ -7,6 +7,8 @@ import Domain.Discount.PurchaseContext;
 import Domain.Discount.iDiscountPolicyRepository;
 import Domain.Order.ActiveOrder;
 import Domain.Order.IActiveOrderRepository;
+import Domain.OwnerManagerTree.Manager;
+import Domain.OwnerManagerTree.Owner;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import Domain.PurchasedOrderAggregate.PurchaseOrder;
 import Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
@@ -34,6 +36,7 @@ public class PurchasedService {
     private static final Logger logger = LoggerFactory.getLogger(PurchasedService.class);
     private TokenService tokenService;
     private iDiscountPolicyRepository discountRepo;
+    private INotifer notifier;
 
 
     public PurchasedService(
@@ -45,7 +48,8 @@ public class PurchasedService {
             IBarcodeGenerator barcodeGenerator,
             TokenService tokenService,
             iTreeOfRoleRepository treeOfRoleRepository,
-            iDiscountPolicyRepository discountRepo
+            iDiscountPolicyRepository discountRepo,
+            INotifer notifier
             ) {
 
         this.repository = repository;
@@ -57,6 +61,7 @@ public class PurchasedService {
         this.tokenService = tokenService;
         this.treeOfRoleRepository = treeOfRoleRepository;
         this.discountRepo = discountRepo;
+        this.notifier = notifier;
     }
     public boolean isAuthorized(String company,String userID) {
         boolean o=treeOfRoleRepository.exitsOwner(userID,company);
@@ -126,6 +131,26 @@ public class PurchasedService {
             } catch (Exception e) {
                 paymentService.refund(email, totalPriceAfterDiscounts);
                 throw e;
+            }
+            boolean isSoldout=ticketRepository.isSoldOut(order.getEventId(),order.getCompanyId());
+            String message = "successfully sold out for event: "+order.getEventId()+ "for company: "+order.getCompanyId();
+            List<Owner> owners = treeOfRoleRepository.getAllOwnersByCompany(order.getCompanyId());
+            for (Owner owner : owners) {
+                boolean isSend=notifier.notifyUser(owner.getUserID(), message);
+                if(!isSend){
+                    notifier.saveMessage(owner.getUserID(), message);
+                }
+            }
+            List<Manager> managers = treeOfRoleRepository.getAllManagersByCompany(order.getCompanyId());
+            for (Manager manager : managers) {
+                boolean isSend= notifier.notifyUser(manager.getUserID(), message);
+                if(!isSend){
+                    notifier.saveMessage(manager.getUserID(), message);
+                }
+            }
+            boolean isSend=notifier.notifyUser(order.getCompanyId(), message);
+            if(!isSend){
+                notifier.saveMessage(order.getCompanyId(), message);
             }
             return "success";
         } catch (Exception e) {
