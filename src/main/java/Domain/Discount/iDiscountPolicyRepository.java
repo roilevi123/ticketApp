@@ -1,0 +1,14 @@
+package Domain.Discount;
+
+import java.util.List;
+
+public interface iDiscountPolicyRepository {
+    void save(DiscountPolicy policy);
+
+    DiscountPolicy findByEvent(String eventId);
+
+    DiscountPolicy findByCompany(String companyName);
+    public DiscountPolicy getPolicy(String policyId);
+    void delete(String policyId);
+    public void deleteAll();
+}

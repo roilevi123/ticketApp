@@ -3,6 +3,7 @@ package AcceptanceTests;
 import Appliction.*;
 import Domain.AdminAggregate.iAdminRepository;
 import Domain.Company.iCompanyRepository;
+import Domain.Discount.iDiscountPolicyRepository;
 import Domain.Event.EventType;
 import Domain.Event.MapArea;
 import Domain.Event.iEventRepository;
@@ -46,7 +47,7 @@ public class AdminJUnitTests {
         IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-
+        iDiscountPolicyRepository discountPolicyRepository=new InMemoryDiscountPolicyRepository();
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
             public boolean isAdmin(String userID) {
@@ -68,10 +69,11 @@ public class AdminJUnitTests {
 
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository);
 
+
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository,
                 purchasedOrderRepository, supplyService,
                 paymentService, barcodeGenerator,
-                tokenService, treeOfRoleRepository);
+                tokenService, treeOfRoleRepository, discountPolicyRepository);
 
         this.adminService = new AdminService(
                 treeOfRoleRepository,
@@ -175,7 +177,7 @@ public class AdminJUnitTests {
         reg("buyer", "p");
         String tB = log("buyer", "p");
         String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer");
+        purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer","none");
 
         List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
         boolean isCompanyExist = false;
@@ -212,12 +214,12 @@ public class AdminJUnitTests {
         reg("b1", "p");
         String tB1 = log("b1", "p");
         String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1");
+        purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1","none");
 
         reg("b2", "p");
         String tB2 = log("b2", "p");
         String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1}));
-        purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2");
+        purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2","none");
 
         List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
         boolean isCompanyExist = false;
@@ -268,10 +270,10 @@ public class AdminJUnitTests {
         String tB = log("buyer8", "p");
 
         String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8");
+        purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8","none");
 
         String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8");
+        purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8","none");
 
         List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
         assertNotNull(result);

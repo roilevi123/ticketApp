@@ -1,5 +1,6 @@
 package Appliction;
 
+import Domain.Discount.iDiscountPolicyRepository;
 import Domain.Order.ActiveOrder;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
@@ -9,6 +10,7 @@ import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 
 import Domain.Ticket.Ticket;
 import Domain.Ticket.iTicketRepository;
+import Infastructure.InMemoryDiscountPolicyRepository;
 import Infastructure.OrderRepositoryImpl;
 import Infastructure.TicketRepositoryImpl;
 import Infastructure.TokenService;
@@ -61,6 +63,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Success_WithSpyAndStateCheck() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
+        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -70,7 +73,8 @@ class PurchasedServiceTest {
                 paymentService,
                 barcodeGenerator,
                 tokenService,
-                treeOfRoleRepository
+                treeOfRoleRepository,
+                discountPolicyRepository
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -86,7 +90,7 @@ class PurchasedServiceTest {
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
         when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenReturn("new byte[]{1, 2, 3}");
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
+        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME,"none");
 
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
 
@@ -111,6 +115,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Failure_PaymentDeclined() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
+        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -120,7 +125,8 @@ class PurchasedServiceTest {
                 paymentService,
                 barcodeGenerator,
                 tokenService,
-                treeOfRoleRepository
+                treeOfRoleRepository,
+                discountPolicyRepository
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -130,7 +136,7 @@ class PurchasedServiceTest {
 
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(false);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
+        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME,"none");
 
         verify(paymentService).processPayment(EMAIL, 100.0);
         verify(supplyService, never()).supplyToEmail(anyString(), anyString());
@@ -145,6 +151,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Failure_OrderExpired() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
+        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -154,7 +161,8 @@ class PurchasedServiceTest {
                 paymentService,
                 barcodeGenerator,
                 tokenService,
-                treeOfRoleRepository
+                treeOfRoleRepository,
+                discountPolicyRepository
         );
 
         Date pastDate = new Date(System.currentTimeMillis() - 1000000);
@@ -162,7 +170,7 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
+        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME,"none");
 
         verify(paymentService, never()).processPayment(anyString(), anyDouble());
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
@@ -172,6 +180,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Failure_OrderNotExist() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
+        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -181,7 +190,8 @@ class PurchasedServiceTest {
                 paymentService,
                 barcodeGenerator,
                 tokenService,
-                treeOfRoleRepository
+                treeOfRoleRepository,
+                discountPolicyRepository
         );
 
         Date pastDate = new Date(System.currentTimeMillis() - 1000000);
@@ -189,7 +199,7 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, "orderId",USERNAME);
+        purchasedService.PurchaseTicket(EMAIL, "orderId",USERNAME,"none");
 
         verify(paymentService, never()).processPayment(anyString(), anyDouble());
         assertNotNull(orderRepoSpy.findById(orderId));
@@ -200,6 +210,7 @@ class PurchasedServiceTest {
     void purchaseTicket_RefundOnSupplyFailure() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
+        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -209,7 +220,8 @@ class PurchasedServiceTest {
                 paymentService,
                 barcodeGenerator,
                 tokenService,
-                treeOfRoleRepository
+                treeOfRoleRepository,
+                discountPolicyRepository
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -220,7 +232,7 @@ class PurchasedServiceTest {
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
         when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenThrow(new RuntimeException("Generator Error"));
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME);
+        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME,"none");
 
         verify(paymentService).refund(EMAIL, 100.0);
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
@@ -230,6 +242,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Success_WithSpyAndStateCheckAsLogoutUser() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
+        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -239,7 +252,9 @@ class PurchasedServiceTest {
                 paymentService,
                 barcodeGenerator,
                 tokenService,
-                treeOfRoleRepository
+                treeOfRoleRepository,
+                discountPolicyRepository
+
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -256,7 +271,7 @@ class PurchasedServiceTest {
         when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenReturn("new byte[]{1, 2, 3}");
         when(tokenService.validateToken(anyString())).thenReturn(true);
         when(tokenService.extractUserId(anyString())).thenReturn(USERNAME);
-        purchasedService.PurchaseTicket(EMAIL, "",USERNAME);
+        purchasedService.PurchaseTicket(EMAIL, "",USERNAME,"none");
 
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
 
