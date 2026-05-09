@@ -84,7 +84,7 @@ public class WaitingQueueTests {
     }
 
     private void createEventHelper(String creator, String eventName) {
-        userService.register(gt(), creator, creator);
+        userService.register(gt(), creator, creator,10);
         String token = userService.login(gt(), creator, creator);
         companyService.CreateCompany(creator, token);
         eventService.createEvent(token, eventName, "Artist", EventType.CONFERENCE, 100.0, new Date(), "City", creator, getMapArea());

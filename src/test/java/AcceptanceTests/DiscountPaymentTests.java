@@ -9,6 +9,7 @@ import Domain.Event.MapArea;
 import Domain.Event.iEventRepository;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import Domain.PurchasePolicy.iPurchasePolicyRepository;
 import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import Domain.QueueAggregates.iQueueRepository;
 import Domain.Ticket.iTicketRepository;
@@ -48,6 +49,7 @@ public class DiscountPaymentTests {
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.discountRepo = new InMemoryDiscountPolicyRepository();
+        iPurchasePolicyRepository purchasePolicyRepository=new InMemoryPurchasePolicyRepository();
 
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
@@ -58,7 +60,7 @@ public class DiscountPaymentTests {
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository);
 
         this.purchasedService = new PurchasedService(
                 activeOrderRepository, ticketRepository, purchasedOrderRepository,
@@ -76,7 +78,7 @@ public class DiscountPaymentTests {
 
     private String setupEventAndGetToken(String owner, String company, String event, double price) {
         String guestToken = tokenService.generateGuestToken();
-        userService.register(guestToken, owner, "password");
+        userService.register(guestToken, owner, "password",10);
         String token = userService.login(guestToken, owner, "password");
         companyService.CreateCompany(company, token);
         eventService.createEvent(token, event, company, EventType.PLAY, price, new Date(), "Location", company, getLargeMap());
@@ -85,7 +87,7 @@ public class DiscountPaymentTests {
 
     private String registerAndLoginBuyer(String name) {
         String guestToken = tokenService.generateGuestToken();
-        userService.register(guestToken, name, "password");
+        userService.register(guestToken, name, "password",10);
         return userService.login(guestToken, name, "password");
     }
 

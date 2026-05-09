@@ -2,9 +2,14 @@ package Appliction;
 
 import Domain.Order.ActiveOrder;
 import Domain.Order.IActiveOrderRepository;
+import Domain.PurchasePolicy.PurchasePolicy;
+import Domain.PurchasePolicy.PurchaseValidationData;
+import Domain.PurchasePolicy.iPurchasePolicyRepository;
 import Domain.Ticket.Ticket;
 import Domain.Ticket.TicketDTO;
 import Domain.Ticket.iTicketRepository;
+import Domain.User.IUserRepository;
+import Domain.User.User;
 import Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,14 +22,16 @@ public class OrderService {
     private IActiveOrderRepository activeOrderRepository;
     private iTicketRepository ticketRepository;
     private TokenService tokenService;
-
-
+    private IUserRepository userRepository;
+    private iPurchasePolicyRepository purchasePolicyRepo;
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
-public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService, iTicketRepository ticketRepository) {
+public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService, iTicketRepository ticketRepository,IUserRepository userRepository,iPurchasePolicyRepository purchasePolicyRepo) {
         this.activeOrderRepository = activeOrderRepository;
         this.tokenService = tokenService;
         this.ticketRepository = ticketRepository;
+        this.userRepository = userRepository;
+        this.purchasePolicyRepo = purchasePolicyRepo;
 
     }
 
@@ -37,6 +44,8 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
             if (tokenService.validateToken(token)) {
                 userID = tokenService.extractUserId(token);
             }
+            int totalRequested = requests.stream().mapToInt(r -> (r.length > 2) ? r[2] : 1).sum();
+            validatePurchasePolicies(event, company, userID, totalRequested);
 
             long expirationTime = System.currentTimeMillis() + (10 * 10 * 100);
             Date expiryDate = new Date(expirationTime);
@@ -133,6 +142,22 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
         } catch (Exception e) {
             logger.error("Error retrieving active order: {}", e.getMessage());
             return null;
+        }
+    }
+    private void validatePurchasePolicies(String eventId, String companyName, String userId, int totalRequested) throws Exception {
+        User user = userRepository.getUserByID(userId);
+        int age = (user != null) ? user.getAge() : 10000;
+
+        PurchaseValidationData data = new PurchaseValidationData(age, totalRequested);
+
+        PurchasePolicy eventPolicy = purchasePolicyRepo.findByEvent(eventId);
+        if (eventPolicy != null && !eventPolicy.validate(data)) {
+            throw new Exception("Doesn't stand in Event Purchase Policy");
+        }
+
+        PurchasePolicy companyPolicy = purchasePolicyRepo.findByCompany(companyName);
+        if (companyPolicy != null && !companyPolicy.validate(data)) {
+            throw new Exception("Doesn't stand in Company Purchase Policy");
         }
     }
 

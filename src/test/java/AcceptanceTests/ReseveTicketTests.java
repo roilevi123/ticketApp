@@ -7,6 +7,7 @@ import Domain.Event.MapArea;
 import Domain.Event.iEventRepository;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import Domain.PurchasePolicy.iPurchasePolicyRepository;
 import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import Domain.QueueAggregates.iQueueRepository;
 import Domain.Ticket.TicketDTO;
@@ -43,11 +44,12 @@ public class ReseveTicketTests {
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
+        iPurchasePolicyRepository purchasePolicyRepository=new InMemoryPurchasePolicyRepository();
 
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -65,7 +67,7 @@ public class ReseveTicketTests {
     }
 
     private void reg(String username, String password) {
-        userService.register(gt(), username, password);
+        userService.register(gt(), username, password,10);
     }
 
     private String log(String username, String password) {
@@ -185,7 +187,7 @@ public class ReseveTicketTests {
             final int id = i + 2;
             service.submit(() -> {
                 try {
-                    userService.register(gt(), "u" + id, "p");
+                    userService.register(gt(), "u" + id, "p",10);
                     String ut = userService.login(gt(), "u" + id, "p");
                     latch.await();
                     String oid = reserveTicketService.reserveTickets(ut, "1", "1", List.of(new int[]{0, 0, 1}));
