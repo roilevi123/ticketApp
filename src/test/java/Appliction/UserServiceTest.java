@@ -28,6 +28,9 @@ class UserServiceTest {
     @Mock
     private IActiveOrderRepository activeOrderRepository;
 
+    @Mock
+    private INotifer notifier;
+
     @InjectMocks
     private UserService userService;
 
@@ -57,7 +60,7 @@ class UserServiceTest {
         when(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD)).thenReturn(true);
         when(userRepository.getUserByUsername(USERNAME)).thenReturn(mockUser);
         when(tokenService.generateMemberToken(mockUser.getID(), USERNAME)).thenReturn(TOKEN);
-
+        when(notifier.sendReserveMessage(any())).thenReturn(true);
         String result = userService.login(TOKEN, USERNAME, RAW_PASSWORD);
 
         assertEquals(TOKEN, result);
