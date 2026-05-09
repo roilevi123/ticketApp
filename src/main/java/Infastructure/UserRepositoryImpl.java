@@ -13,11 +13,11 @@ public class UserRepositoryImpl implements IUserRepository {
 
 
     @Override
-    public User Store(String username, String password) {
+    public User Store(String username, String password,int age) {
         if(usernameExists(username)) {
             throw new RuntimeException("User already exists");
         }
-        User u=new User(username, password);
+        User u=new User(username, password,age);
         usersByID.put(u.getID(), u);
         usernameToId.put(username, u.getID());
         return u;
@@ -102,6 +102,16 @@ public class UserRepositoryImpl implements IUserRepository {
             usersByID.remove(ID);
             usernameToId.remove(user.getName());
         }
+    }
+
+    @Override
+    public boolean userAboveAge(String username, int age) {
+        String id = usernameToId.get(username);
+        User user = usersByID.get(id);
+        if (user == null) {
+            return true;
+        }
+        return user.getAge() >= age;
     }
 
 

@@ -9,6 +9,7 @@ import Domain.Event.MapArea;
 import Domain.Event.iEventRepository;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import Domain.PurchasePolicy.iPurchasePolicyRepository;
 import Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import Domain.QueueAggregates.iQueueRepository;
@@ -48,6 +49,7 @@ public class AdminJUnitTests {
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         iDiscountPolicyRepository discountPolicyRepository=new InMemoryDiscountPolicyRepository();
+        iPurchasePolicyRepository purchasePolicyRepository=new InMemoryPurchasePolicyRepository();
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
             public boolean isAdmin(String userID) {
@@ -67,7 +69,7 @@ public class AdminJUnitTests {
         this.eventService = new EventService(companyRepository, eventRepository, tokenService,
                 treeOfRoleRepository, ticketRepository, queueRepository);
 
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository);
 
 
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository,
@@ -103,7 +105,7 @@ public class AdminJUnitTests {
     }
 
     private void reg(String username, String password) {
-        userService.register(gt(), username, password);
+        userService.register(gt(), username, password,10);
     }
 
     private String log(String username, String password) {
