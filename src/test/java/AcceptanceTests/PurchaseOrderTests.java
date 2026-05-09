@@ -2,6 +2,7 @@ package AcceptanceTests;
 
 import Appliction.*;
 import Domain.Company.iCompanyRepository;
+import Domain.Discount.iDiscountPolicyRepository;
 import Domain.Event.EventType;
 import Domain.Event.MapArea;
 import Domain.Event.iEventRepository;
@@ -43,6 +44,8 @@ public class PurchaseOrderTests {
         IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
+        iDiscountPolicyRepository discountPolicyRepository=new InMemoryDiscountPolicyRepository();
+
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
@@ -54,7 +57,7 @@ public class PurchaseOrderTests {
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository);
-        this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentService, barcodeGenerator, tokenService, treeOfRoleRepository);
+        this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentService, barcodeGenerator, tokenService, treeOfRoleRepository,discountPolicyRepository);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -105,7 +108,7 @@ public class PurchaseOrderTests {
         String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2"));
+        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2","none"));
     }
 
     @Test @DisplayName("2. Purchased Ticket Failed - Order Expired")
@@ -119,7 +122,7 @@ public class PurchaseOrderTests {
         List<int[]> requests = List.of(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
         Thread.sleep(11000);
-        assertNotEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2"));
+        assertNotEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2","none"));
     }
 
     @Test @DisplayName("3. Purchased Ticket Success - Multiple Spots")
@@ -132,7 +135,7 @@ public class PurchaseOrderTests {
         String token1 = log("2", "2");
         List<int[]> requests = Arrays.asList(new int[]{0, 0, 1}, new int[]{1, 1, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2"));
+        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2","none"));
     }
 
     @Test @DisplayName("4. Get Company Transaction Success")
@@ -145,7 +148,7 @@ public class PurchaseOrderTests {
         String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2");
+        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2","none");
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token);
 
         boolean isCompanyExist = false;
@@ -176,7 +179,7 @@ public class PurchaseOrderTests {
         String token1 = log("2", "2");
         List<int[]> requests = Arrays.asList(new int[]{0, 0, 1}, new int[]{1, 1, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests);
-        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2");
+        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2","none");
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token);
 
         boolean isCompanyExist = false;
@@ -217,7 +220,7 @@ public class PurchaseOrderTests {
         reg("2", "2");
         String token2 = log("2", "2");
         String orderId = reserveTicketService.reserveTickets(token2, "1", "1", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2");
+        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2","none");
 
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token3);
 
@@ -259,8 +262,8 @@ public class PurchaseOrderTests {
         String o1 = reserveTicketService.reserveTickets(tB2, "1", "E1", requests);
         String o2 = reserveTicketService.reserveTickets(tB3, "1", "E2", requests);
 
-        assertEquals("success", purchasedService.PurchaseTicket("r2@g.com", o1, "buyer2"));
-        assertEquals("success", purchasedService.PurchaseTicket("r3@g.com", o2, "buyer3"));
+        assertEquals("success", purchasedService.PurchaseTicket("r2@g.com", o1, "buyer2","none"));
+        assertEquals("success", purchasedService.PurchaseTicket("r3@g.com", o2, "buyer3","none"));
 
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token);
 
@@ -316,8 +319,8 @@ public class PurchaseOrderTests {
         String o1 = reserveTicketService.reserveTickets(tA, "C9", "E1", List.of(new int[]{0, 0, 1}));
         String o2 = reserveTicketService.reserveTickets(tB, "C9", "E2", List.of(new int[]{0, 0, 1}));
 
-        assertEquals("success", purchasedService.PurchaseTicket("a@g.com", o1, "buyer9a"));
-        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", o2, "buyer9b"));
+        assertEquals("success", purchasedService.PurchaseTicket("a@g.com", o1, "buyer9a","none"));
+        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", o2, "buyer9b","none"));
 
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("C9", token);
         assertNotNull(result);
@@ -345,7 +348,7 @@ public class PurchaseOrderTests {
         reg("20", "20");
         String tB = log("20", "20");
         String orderId = reserveTicketService.reserveTickets(tB, "C10", "E10", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b@gmail.com", orderId, "20");
+        purchasedService.PurchaseTicket("b@gmail.com", orderId, "20","none");
 
         List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(tB);
         boolean isCompanyExist = false;
@@ -383,10 +386,10 @@ public class PurchaseOrderTests {
         List<int[]> req = List.of(new int[]{0, 0, 1});
 
         String oA = reserveTicketService.reserveTickets(tB, "CA", "EA", req);
-        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oA, "buyer"), "Purchase for CA failed");
+        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oA, "buyer","none"), "Purchase for CA failed");
 
         String oB = reserveTicketService.reserveTickets(tB, "CB", "EB", req);
-        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oB, "buyer"), "Purchase for CB failed");
+        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oB, "buyer","none"), "Purchase for CB failed");
 
         List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(tB);
         boolean isCompany1Exist = false;
@@ -428,7 +431,7 @@ public class PurchaseOrderTests {
 
         String guestToken = tokenService.generateGuestToken();
         String order1 = reserveTicketService.reserveTickets(guestToken, "SecC", "SecE", List.of(new int[]{0, 0, 1}));
-        assertEquals("success", purchasedService.PurchaseTicket("u1@gmail.com", order1, "guestUser"));
+        assertEquals("success", purchasedService.PurchaseTicket("u1@gmail.com", order1, "guestUser","none"));
     }
 
     @Test @DisplayName("14. Purchased Ticket Success After App Re-entry")
@@ -444,7 +447,7 @@ public class PurchaseOrderTests {
 
         userService.logout(tB);
         log("2", "2");
-        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2"));
+        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2","none"));
     }
 
     @Test @DisplayName("15. Purchase Order Guest Fail - App Exit")
@@ -454,7 +457,7 @@ public class PurchaseOrderTests {
         companyService.CreateCompany("SecC", tO);
         eventService.createEvent(tO, "SecE", "SecC", EventType.PLAY, 100, new Date(), "L", "SecC", getMapArea());
 
-        assertNotEquals("success", purchasedService.PurchaseTicket("u1@gmail.com", "invalid_id", "user1"));
+        assertNotEquals("success", purchasedService.PurchaseTicket("u1@gmail.com", "invalid_id", "user1","none"));
     }
 
     @Test @DisplayName("16. Purchased Ticket Fail - App Re-entry but Expired")
@@ -471,6 +474,6 @@ public class PurchaseOrderTests {
         userService.logout(tB);
         Thread.sleep(11000);
         log("2", "2");
-        assertNotEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2"));
+        assertNotEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2","none"));
     }
 }
