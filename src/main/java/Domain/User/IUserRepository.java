@@ -1,7 +1,7 @@
 package Domain.User;
 
 public interface IUserRepository {
-    public User Store(String username, String password);
+    public User Store(String username, String password,int age);
     public String getUserPassword(String username);
     public User getUserByUsername(String username);
     public User getUserByID(String ID);
@@ -10,6 +10,6 @@ public interface IUserRepository {
     public void save(User userToUpdate);
     public void deleteAll();
     public void deleteUser(String ID);
-
+    public boolean userAboveAge(String username, int age);
 
 }
