@@ -62,7 +62,7 @@ public class InformationEventsTests {
     }
 
     private void reg(String username, String password) {
-        userService.register(gt(), username, password);
+        userService.register(gt(), username, password,10);
     }
 
     private String log(String username, String password) {

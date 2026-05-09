@@ -1,10 +1,9 @@
 package Appliction;
 
+import Domain.PurchasePolicy.iPurchasePolicyRepository;
 import Domain.Ticket.Ticket;
 import Domain.User.IUserRepository;
-import Infastructure.OrderRepositoryImpl;
-import Infastructure.TicketRepositoryImpl;
-import Infastructure.TokenService;
+import Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -26,6 +25,8 @@ class OrderServiceTest {
     private OrderService reserveTicketService;
     private TicketRepositoryImpl ticketRepository;
     private OrderRepositoryImpl orderRepository;
+    private InMemoryPurchasePolicyRepository purchasePolicyRepository;
+
 
     @Mock
     private TokenService tokenService;
@@ -42,7 +43,10 @@ class OrderServiceTest {
         MockitoAnnotations.openMocks(this);
         ticketRepository = spy(new TicketRepositoryImpl());
         orderRepository = spy(new OrderRepositoryImpl());
-        reserveTicketService = new OrderService(orderRepository, tokenService, ticketRepository);
+        userRepository=spy(new UserRepositoryImpl());
+        purchasePolicyRepository = spy(new InMemoryPurchasePolicyRepository());
+
+        reserveTicketService = new OrderService(orderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository);
     }
 
     @Test
