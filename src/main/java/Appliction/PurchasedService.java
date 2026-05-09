@@ -1,6 +1,10 @@
 package Appliction;
 
 
+import Domain.Discount.DiscountPolicy;
+import Domain.Discount.MaxDiscountComposite;
+import Domain.Discount.PurchaseContext;
+import Domain.Discount.iDiscountPolicyRepository;
 import Domain.Order.ActiveOrder;
 import Domain.Order.IActiveOrderRepository;
 import Domain.OwnerManagerTree.iTreeOfRoleRepository;
@@ -29,6 +33,7 @@ public class PurchasedService {
     private iTreeOfRoleRepository treeOfRoleRepository;
     private static final Logger logger = LoggerFactory.getLogger(PurchasedService.class);
     private TokenService tokenService;
+    private iDiscountPolicyRepository discountRepo;
 
     public PurchasedService(
             IActiveOrderRepository repository,
@@ -38,7 +43,8 @@ public class PurchasedService {
             IPaymentService paymentService,
             IBarcodeGenerator barcodeGenerator,
             TokenService tokenService,
-            iTreeOfRoleRepository treeOfRoleRepository
+            iTreeOfRoleRepository treeOfRoleRepository,
+            iDiscountPolicyRepository discountRepo
             ) {
 
         this.repository = repository;
@@ -49,6 +55,7 @@ public class PurchasedService {
         this.purchasedOrderRepository = purchasedOrderRepository;
         this.tokenService = tokenService;
         this.treeOfRoleRepository = treeOfRoleRepository;
+        this.discountRepo = discountRepo;
     }
     public boolean isAuthorized(String company,String userID) {
         boolean o=treeOfRoleRepository.exitsOwner(userID,company);
@@ -56,7 +63,7 @@ public class PurchasedService {
         return m || (o );
     }
 
-    public String PurchaseTicket(String email, String orderId,String token) {
+    public String PurchaseTicket(String email, String orderId,String token,String userCoupon) {
         try {
             ActiveOrder order = repository.findById(orderId);
             if(tokenService.validateToken(token)){
@@ -70,6 +77,11 @@ public class PurchasedService {
 
             }
 
+            PurchaseContext context = new PurchaseContext(
+                    order.getTicketIds().size(),
+                    userCoupon,
+                    new Date()
+            );
             List<Ticket> purchasedTickets = order.getTicketIds().stream()
                     .map(id -> ticketRepository.getTicketById(id))
                     .filter(java.util.Objects::nonNull)
@@ -80,11 +92,18 @@ public class PurchasedService {
                     })
                     .toList();
 
-            double totalPrice = purchasedTickets.stream()
-                    .mapToDouble(Ticket::getPrice)
-                    .sum();
+            final String finalEventId = order.getEventId();
+            final String finalCompanyId = order.getCompanyId();
+            final PurchaseContext finalContext = context;
 
-            if (!paymentService.processPayment(email, totalPrice)) {
+            double totalPriceAfterDiscounts = purchasedTickets.stream()
+                    .mapToDouble(t -> getPriceAfterDiscounts(
+                            finalEventId,
+                            finalCompanyId,
+                            t.getPrice(),
+                            finalContext))
+                    .sum();
+            if (!paymentService.processPayment(email, totalPriceAfterDiscounts)) {
                 throw new Exception("Payment failed");
             }
 
@@ -104,7 +123,7 @@ public class PurchasedService {
                 repository.delete(order.getOrderId());
 
             } catch (Exception e) {
-                paymentService.refund(email, totalPrice);
+                paymentService.refund(email, totalPriceAfterDiscounts);
                 throw e;
             }
             return "success";
@@ -178,5 +197,17 @@ public class PurchasedService {
             logger.error(e.getMessage());
             return null;
         }
+    }
+    public double getPriceAfterDiscounts(String eventId, String companyName, double originalPrice, PurchaseContext context) {
+        DiscountPolicy eventPolicy = discountRepo.findByEvent(eventId);
+        DiscountPolicy companyPolicy = discountRepo.findByCompany(companyName);
+
+        MaxDiscountComposite combinedRoot = new MaxDiscountComposite();
+
+        if (eventPolicy != null) combinedRoot.add(eventPolicy.getRoot());
+        if (companyPolicy != null) combinedRoot.add(companyPolicy.getRoot());
+
+        double discountAmount = combinedRoot.calculateDiscount(originalPrice, context);
+        return originalPrice - discountAmount;
     }
 }
