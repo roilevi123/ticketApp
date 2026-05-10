@@ -5,5 +5,6 @@ public enum MapArea {
     SEAT,
     STAND,
     STAGE,
-    ENTRANCE
+    ENTRANCE,
+    TAKEN,
 }
