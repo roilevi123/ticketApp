@@ -314,6 +314,9 @@ public class EventServiceTest {
         eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, customMap);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
+
+        doReturn(customMap).when(ticketRepository).getMapAreas(eq(COMPANY), eq(EVENT_NAME), any(MapArea[][].class));
+
         MapArea[][] result = eventService.getMapArea(TOKEN, COMPANY, EVENT_NAME);
 
         assertNotNull(result);
