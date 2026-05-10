@@ -181,8 +181,9 @@ public class EventService {
             }
             logger.info("trying Getting map area: " + eventName);
             MapArea[][] map=eventRepository.getMapArea(company,eventName);
+            MapArea[][] mapArea=ticketRepository.getMapAreas(company,eventName,map);
             logger.info("Successfully Getting map area: " + eventName);
-            return map;
+            return mapArea;
         }catch (Exception e) {
             logger.error(e.getMessage());
             return null;

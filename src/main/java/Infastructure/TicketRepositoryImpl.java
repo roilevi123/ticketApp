@@ -53,6 +53,25 @@ public class TicketRepositoryImpl implements iTicketRepository {
     }
 
     @Override
+    public MapArea[][] getMapAreas(String company, String event,MapArea[][] mapAreas) {
+        List<Ticket> ticketList = tickets.get(event + company);
+        int rows = mapAreas.length;
+        int cols = mapAreas[0].length;
+        MapArea[][] newMapAreas = new MapArea[rows][cols];
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                newMapAreas[i][j] = mapAreas[i][j];
+            }
+        }
+        for (Ticket ticket : ticketList) {
+            if(ticket.isPurchased()){
+                newMapAreas[ticket.getRow()][ticket.getCol()]=MapArea.TAKEN;
+            }
+        }
+        return newMapAreas;
+    }
+
+    @Override
     public boolean ticketExists(String id) {
         for (List<Ticket> ticketList : tickets.values()) {
             for (Ticket ticket : ticketList) {
