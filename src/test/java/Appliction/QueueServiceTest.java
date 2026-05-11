@@ -1,9 +1,11 @@
 package Appliction;
 
-import Domain.QueueAggregates.QueueEntry;
-import Domain.QueueAggregates.iQueueRepository;
-import Infastructure.QueueRepositoryImpl;
-import Infastructure.TokenService;
+import com.ticketing.ticketapp.Appliction.*;
+
+import com.ticketing.ticketapp.Domain.QueueAggregates.QueueEntry;
+import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
+import com.ticketing.ticketapp.Infastructure.QueueRepositoryImpl;
+import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;

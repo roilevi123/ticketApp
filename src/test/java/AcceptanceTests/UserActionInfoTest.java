@@ -1,11 +1,11 @@
 package AcceptanceTests;
 
-import Appliction.UserService;
-import Domain.User.IUserRepository;
-import Infastructure.PasswordEncoderImpl;
-import Infastructure.TokenService;
-import Infastructure.UserRepositoryImpl;
-import Appliction.IPasswordEncoder;
+import com.ticketing.ticketapp.Appliction.UserService;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Infastructure.PasswordEncoderImpl;
+import com.ticketing.ticketapp.Infastructure.TokenService;
+import com.ticketing.ticketapp.Infastructure.UserRepositoryImpl;
+import com.ticketing.ticketapp.Appliction.IPasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

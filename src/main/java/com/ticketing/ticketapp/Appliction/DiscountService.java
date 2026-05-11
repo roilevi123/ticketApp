@@ -1,0 +1,125 @@
+package com.ticketing.ticketapp.Appliction;
+
+import com.ticketing.ticketapp.Domain.Discount.*;
+import com.ticketing.ticketapp.Infastructure.TokenService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+public class DiscountService {
+    private final iDiscountPolicyRepository discountRepo;
+    private final TokenService tokenService;
+    private final PurchasedService purchasedService;
+    private static final Logger logger = LoggerFactory.getLogger(DiscountService.class);
+
+    public DiscountService(iDiscountPolicyRepository discountRepo, TokenService tokenService, PurchasedService purchasedService) {
+        this.discountRepo = discountRepo;
+        this.tokenService = tokenService;
+        this.purchasedService = purchasedService;
+    }
+
+    public String createSimpleDiscount(String token, String targetId, DiscountTargetType type, double percentage, String companyName) {
+        try {
+            validateAuthority(token, companyName);
+            DiscountComponent simple = new ConditionalDiscount(percentage, null);
+            return savePolicy(targetId, type, simple);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
+    }
+
+    public String createQuantityDiscount(String token, String targetId, DiscountTargetType type, double percentage, int minQuantity, String companyName) {
+        try {
+            validateAuthority(token, companyName);
+            DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getQuantity() >= minQuantity);
+            return savePolicy(targetId, type, discount);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
+    }
+
+    public String createTimeLimitedDiscount(String token, String targetId, DiscountTargetType type, double percentage, Date deadline, String companyName) {
+        try {
+            validateAuthority(token, companyName);
+            DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getPurchaseDate().before(deadline));
+            return savePolicy(targetId, type, discount);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
+    }
+
+    public String createCouponDiscount(String token, String targetId, DiscountTargetType type, String code, double percentage, String companyName) {
+        try {
+            validateAuthority(token, companyName);
+            DiscountComponent coupon = new CouponDiscount(code, percentage);
+            return savePolicy(targetId, type, coupon);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
+    }
+
+    public String createSumDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
+        try {
+            validateAuthority(token, companyName);
+            SumDiscountComposite sumComposite = new SumDiscountComposite();
+
+            for (String id : existingPolicyIds) {
+                DiscountPolicy existingPolicy = discountRepo.getPolicy(id);
+                if (existingPolicy != null) {
+                    sumComposite.add(existingPolicy.getRoot());
+                    discountRepo.delete(id);
+                } else {
+                    throw new Exception("Policy not found: " + id);
+                }
+            }
+
+            return savePolicy(targetId, type, sumComposite);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
+    }
+
+    public String createMaxDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
+        try {
+            validateAuthority(token, companyName);
+            MaxDiscountComposite maxComposite = new MaxDiscountComposite();
+
+            for (String id : existingPolicyIds) {
+                DiscountPolicy existingPolicy = discountRepo.getPolicy(id);
+                if (existingPolicy != null) {
+                    maxComposite.add(existingPolicy.getRoot());
+                    discountRepo.delete(id);
+                } else {
+                    throw new Exception("Policy not found: " + id);
+                }
+            }
+
+            return savePolicy(targetId, type, maxComposite);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
+    }
+
+    private void validateAuthority(String token, String companyName) throws Exception {
+        if (!tokenService.validateToken(token)) throw new Exception("Invalid token");
+        String userId = tokenService.extractUsername(token);
+        if (!purchasedService.isAuthorized(companyName, userId)) throw new Exception("Unauthorized");
+    }
+
+    private String savePolicy(String targetId, DiscountTargetType type, DiscountComponent root) {
+        String policyId = UUID.randomUUID().toString();
+        DiscountPolicy policy = new DiscountPolicy(policyId, targetId, type, root);
+        discountRepo.save(policy);
+        return policyId;
+    }
+}

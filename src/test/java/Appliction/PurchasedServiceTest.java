@@ -1,19 +1,21 @@
 package Appliction;
 
-import Domain.Discount.iDiscountPolicyRepository;
-import Domain.Order.ActiveOrder;
-import Domain.Order.IActiveOrderRepository;
-import Domain.OwnerManagerTree.iTreeOfRoleRepository;
-import Domain.PurchasedOrderAggregate.PurchaseOrder;
-import Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
-import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
+import com.ticketing.ticketapp.Appliction.*;
 
-import Domain.Ticket.Ticket;
-import Domain.Ticket.iTicketRepository;
-import Infastructure.InMemoryDiscountPolicyRepository;
-import Infastructure.OrderRepositoryImpl;
-import Infastructure.TicketRepositoryImpl;
-import Infastructure.TokenService;
+import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
+import com.ticketing.ticketapp.Domain.Order.ActiveOrder;
+import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
+
+import com.ticketing.ticketapp.Domain.Ticket.Ticket;
+import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
+import com.ticketing.ticketapp.Infastructure.InMemoryDiscountPolicyRepository;
+import com.ticketing.ticketapp.Infastructure.OrderRepositoryImpl;
+import com.ticketing.ticketapp.Infastructure.TicketRepositoryImpl;
+import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
