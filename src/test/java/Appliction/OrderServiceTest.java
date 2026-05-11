@@ -1,9 +1,11 @@
 package Appliction;
 
-import Domain.PurchasePolicy.iPurchasePolicyRepository;
-import Domain.Ticket.Ticket;
-import Domain.User.IUserRepository;
-import Infastructure.*;
+import com.ticketing.ticketapp.Appliction.*;
+
+import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
+import com.ticketing.ticketapp.Domain.Ticket.Ticket;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;

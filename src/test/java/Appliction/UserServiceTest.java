@@ -1,9 +1,11 @@
 package Appliction;
 
-import Domain.Order.IActiveOrderRepository;
-import Domain.User.IUserRepository;
-import Domain.User.User;
-import Infastructure.TokenService;
+import com.ticketing.ticketapp.Appliction.*;
+
+import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.User;
+import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
