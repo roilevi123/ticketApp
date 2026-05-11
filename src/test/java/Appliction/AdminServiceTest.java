@@ -1,16 +1,18 @@
 package Appliction;
 
-import Domain.AdminAggregate.iAdminRepository;
-import Domain.Company.iCompanyRepository;
-import Domain.OwnerManagerTree.iTreeOfRoleRepository;
-import Domain.PurchasedOrderAggregate.PurchaseOrder;
-import Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
-import Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
-import Domain.Ticket.Ticket;
-import Domain.Ticket.TicketDTO;
-import Domain.Ticket.iTicketRepository;
-import Domain.User.IUserRepository;
-import Infastructure.TokenService;
+import com.ticketing.ticketapp.Appliction.*;
+
+import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
+import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
+import com.ticketing.ticketapp.Domain.Ticket.Ticket;
+import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
+import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -31,7 +33,7 @@ class AdminServiceTest {
     @Mock private IUserRepository userRepository;
     @Mock private iPurchasedOrderRepository purchasedOrderRepository;
     @Mock private iTicketRepository ticketRepository;
-    @Mock private Domain.Event.iEventRepository eventRepository;
+    @Mock private com.ticketing.ticketapp.Domain.Event.iEventRepository eventRepository;
     @Mock private TokenService tokenService;
     @InjectMocks
     private AdminService adminService;

@@ -1,10 +1,12 @@
 package Appliction;
 
+import com.ticketing.ticketapp.Appliction.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import Domain.Discount.*;
-import Infastructure.TokenService;
+import com.ticketing.ticketapp.Domain.Discount.*;
+import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
