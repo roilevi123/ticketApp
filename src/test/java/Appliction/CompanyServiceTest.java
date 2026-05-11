@@ -1,5 +1,7 @@
 package Appliction;
 
+import com.ticketing.ticketapp.Appliction.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -25,15 +27,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import Domain.Company.Company;
-import Domain.Company.iCompanyRepository;
-import Domain.OwnerManagerTree.Manager;
-import Domain.OwnerManagerTree.Owner;
-import Domain.OwnerManagerTree.Permission;
-import Domain.OwnerManagerTree.iTreeOfRoleRepository;
-import Domain.User.IUserRepository;
-import Domain.User.User;
-import Infastructure.TokenService;
+import com.ticketing.ticketapp.Domain.Company.Company;
+import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.Manager;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.Owner;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.Permission;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.User;
+import com.ticketing.ticketapp.Infastructure.TokenService;
 
 class CompanyServiceTest {
 

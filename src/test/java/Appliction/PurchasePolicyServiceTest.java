@@ -1,7 +1,9 @@
 package Appliction;
 
-import Domain.PurchasePolicy.*;
-import Infastructure.TokenService;
+import com.ticketing.ticketapp.Appliction.*;
+
+import com.ticketing.ticketapp.Domain.PurchasePolicy.*;
+import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.util.List;
