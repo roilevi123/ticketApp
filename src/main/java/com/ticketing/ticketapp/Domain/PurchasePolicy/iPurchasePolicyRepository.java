@@ -10,4 +10,5 @@ public interface iPurchasePolicyRepository {
     PurchasePolicy findByCompany(String companyName);
     void delete(String policyId);
     void deleteAll();
+    List<PurchasePolicy> findByEventAndCompany(String eventId, String companyName);
 }
