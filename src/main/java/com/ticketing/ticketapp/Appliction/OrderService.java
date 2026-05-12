@@ -69,9 +69,7 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
 
 
                 for (Ticket ticketInDb : availableAtSpot) {
-                    if (securedForThisSpot >= numRequested) {
-                        break;
-                    }
+
 
                     try {
                         Ticket updatedTicket = new Ticket(ticketInDb);
@@ -98,18 +96,7 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
         } catch (Exception e) {
             logger.error("Reservation failed: " + e.getMessage());
 
-            for (String id : reservedTicketIds) {
-                try {
-                    Ticket t = ticketRepository.getTicketById(id);
-                    if (t != null) {
-                        Ticket reverted = new Ticket(t);
-                        reverted.setDate(null);
-                        ticketRepository.save(reverted);
-                    }
-                } catch (Exception rollbackEx) {
-                    logger.error("Failed to rollback ticket " + id);
-                }
-            }
+
             return e.getMessage();
         }
     }
