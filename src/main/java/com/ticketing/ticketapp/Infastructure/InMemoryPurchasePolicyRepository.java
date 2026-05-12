@@ -5,8 +5,10 @@ import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchaseTargetType;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Repository
 public class InMemoryPurchasePolicyRepository implements iPurchasePolicyRepository {
@@ -59,5 +61,12 @@ public class InMemoryPurchasePolicyRepository implements iPurchasePolicyReposito
         allPolicies.clear();
         eventPolicies.clear();
         companyPolicies.clear();
+    }
+    @Override
+    public List<PurchasePolicy> findByEventAndCompany(String eventId, String companyName) {
+        return allPolicies.values().stream()
+                .filter(p -> (p.getTargetType() == PurchaseTargetType.EVENT && p.getTargetId().equals(eventId)) ||
+                        (p.getTargetType() == PurchaseTargetType.COMPANY && p.getTargetId().equals(companyName)))
+                .collect(Collectors.toList());
     }
 }

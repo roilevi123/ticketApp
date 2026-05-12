@@ -4,6 +4,8 @@ import com.ticketing.ticketapp.Domain.PurchasePolicy.*;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -91,4 +93,24 @@ public class PurchasePolicyService {
             throw new Exception("Invalid session token");
         }
     }
+    public List<PurchasePolicyDTO> getPoliciesForEventAndCompany(String token,String eventId, String companyName) {
+        try {
+            validateToken(token);
+
+            List<PurchasePolicy> policies = purchaseRepo.findByEventAndCompany(eventId, companyName);
+            return policies.stream()
+                    .map(p -> new PurchasePolicyDTO(
+                            p.getPolicyId(),
+                            p.getTargetId(),
+                            p.getTargetType().toString(),
+                            p.getRoot().getDescription() // שימוש במימוש הפנימי
+                    ))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error retrieving purchase policies: " + e.getMessage());
+            return List.of();
+        }
+    }
+
+
 }

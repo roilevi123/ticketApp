@@ -13,4 +13,15 @@ public class QuantityLimitCondition implements PurchaseComponent {
     public boolean isSatisfied(PurchaseValidationData data) {
         return data.getQuantity() >= minQuantity && data.getQuantity() <= maxQuantity;
     }
+    public int getMinQuantity() {
+        return minQuantity;
+
+    }
+    public int getMaxQuantity() {
+        return maxQuantity;
+    }
+    @Override
+    public String getDescription() {
+        return String.format("Quantity between %d and %d", minQuantity, maxQuantity);
+    }
 }

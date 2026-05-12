@@ -113,8 +113,8 @@ public class DiscountServiceTest {
     @Test
     void test8_MaxDiscountPolicy_Success() {
         String p1Id = "p1", p2Id = "p2";
-        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null));
-        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(30.0, null));
+        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null,""));
+        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(30.0, null,""));
 
         when(discountRepo.getPolicy(p1Id)).thenReturn(p1);
         when(discountRepo.getPolicy(p2Id)).thenReturn(p2);
@@ -133,8 +133,8 @@ public class DiscountServiceTest {
     @Test
     void test9_SumDiscountPolicy_Success() {
         String p1Id = "p1", p2Id = "p2";
-        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null));
-        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(5.0, null));
+        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null,""));
+        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(5.0, null,""));
 
         when(discountRepo.getPolicy(p1Id)).thenReturn(p1);
         when(discountRepo.getPolicy(p2Id)).thenReturn(p2);
@@ -156,5 +156,71 @@ public class DiscountServiceTest {
         String result = discountService.createSimpleDiscount("token", "e1", DiscountTargetType.EVENT, 10.0, "Comp");
         assertNull(result);
         verify(discountRepo, never()).save(any());
+    }
+    @Test
+    void test11_GetDiscountsForEventAndCompany_Success() {
+        String eventId = "e1", company = "Comp";
+        DiscountPolicy p1 = new DiscountPolicy("p1", eventId, DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, "desc1"));
+
+        when(discountRepo.findByEventAndCompany(eventId, company)).thenReturn(Arrays.asList(p1));
+
+        var results = discountService.getDiscountsForEventAndCompany("token", eventId, company);
+
+        assertEquals(1, results.size());
+        assertEquals("p1", results.get(0).id());
+        assertEquals("10.0% discount (condition: desc1)", results.get(0).description());
+    }
+
+    @Test
+    void test12_CreateSumDiscount_PolicyNotFound() {
+        String existingId = "valid", missingId = "invalid";
+        when(discountRepo.getPolicy(existingId)).thenReturn(new DiscountPolicy(existingId, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, "")));
+        when(discountRepo.getPolicy(missingId)).thenReturn(null);
+
+        String result = discountService.createSumDiscountPolicy("token", "e1", DiscountTargetType.EVENT, Arrays.asList(existingId, missingId), "Comp");
+
+        assertNull(result);
+        verify(discountRepo, never()).save(any()); // Save shouldn't happen if one policy is missing
+    }
+
+    @Test
+    void test13_RecursiveCompositeDescription() {
+        // Test that a Max policy containing a Sum policy generates the correct combined description
+        SumDiscountComposite sum = new SumDiscountComposite();
+        sum.add(new ConditionalDiscount(10.0, null, "cond1"));
+        sum.add(new CouponDiscount("C1", 5.0));
+
+        MaxDiscountComposite max = new MaxDiscountComposite();
+        max.add(sum);
+        max.add(new ConditionalDiscount(20.0, null, "cond2"));
+
+        String desc = max.getDescription();
+
+        assertTrue(desc.contains("Best of"));
+        assertTrue(desc.contains("Combined"));
+        assertTrue(desc.contains("10.0%"));
+        assertTrue(desc.contains("C1"));
+    }
+
+    @Test
+    void test14_CreateCouponDiscount_CaseInsensitive() {
+        ArgumentCaptor<DiscountPolicy> captor = ArgumentCaptor.forClass(DiscountPolicy.class);
+        discountService.createCouponDiscount("token", "e1", DiscountTargetType.EVENT, "promo123", 10.0, "Comp");
+        verify(discountRepo).save(captor.capture());
+
+        // Check that the logic handles uppercase/lowercase correctly
+        PurchaseContext ctx = new PurchaseContext(1, "PROMO123", new Date());
+        assertEquals(10.0, captor.getValue().getRoot().calculateDiscount(100.0, ctx));
+    }
+
+    @Test
+    void test15_InvalidToken_Failure() {
+        when(tokenService.validateToken("bad_token")).thenReturn(false);
+
+        String result = discountService.createSimpleDiscount("bad_token", "e1", DiscountTargetType.EVENT, 10.0, "Comp");
+
+        assertNull(result);
+        verify(discountRepo, never()).save(any());
+        verify(purchasedService, never()).isAuthorized(any(), any());
     }
 }
