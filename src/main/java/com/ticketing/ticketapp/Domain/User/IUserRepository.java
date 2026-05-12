@@ -10,6 +10,5 @@ public interface IUserRepository {
     public void save(User userToUpdate);
     public void deleteAll();
     public void deleteUser(String ID);
-    public boolean userAboveAge(String username, int age);
 
 }

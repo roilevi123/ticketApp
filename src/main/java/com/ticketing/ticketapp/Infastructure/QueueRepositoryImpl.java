@@ -66,20 +66,7 @@ public class QueueRepositoryImpl implements iQueueRepository {
         return result.get();
     }
 
-    @Override
-    public void addToQueue(String eventId, String userID) {
-        eventQueues.computeIfAbsent(eventId, k -> new LinkedList<>());
-        eventQueues.computeIfPresent(eventId, (id, queue) -> {
-            boolean alreadyIn = queue.stream()
-                    .anyMatch(e -> e.getUserID().equals(userID));
 
-            if (!alreadyIn) {
-                queue.add(new QueueEntry(userID));
-            }
-
-            return queue;
-        });
-    }
 
     @Override
     public List<QueueEntry> getQueue(String eventId) {
@@ -103,10 +90,7 @@ public class QueueRepositoryImpl implements iQueueRepository {
         eventQueues.putIfAbsent(eventId, new LinkedList<>());
     }
 
-    @Override
-    public void deleteQueue(String eventId) {
-        eventQueues.remove(eventId);
-    }
+
 
     @Override
     public void deleteAll() {

@@ -18,13 +18,7 @@ public class PurchaseOrder {
         this.orderId = orderId;
 
     }
-    public PurchaseOrder(ActiveOrder order) {
-        this.company = order.getOrderId();
-        this.event = order.getEventId();
-        this.ticketsId = order.getTicketIds();
-        this.buyerID = order.getUserId();
-        this.orderId = order.getOrderId();
-    }
+
     public String getCompany() {
         return company;
     }

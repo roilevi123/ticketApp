@@ -320,4 +320,9 @@ public class ReseveTicketTests {
 
         assertNull(reserveTicketService.getActiveOrderTickets(guestToken, "invalidOrderId"));
     }
+    @Test
+    void InValidToken(){
+        assertEquals( reserveTicketService.getActiveOrderTickets("", null),null);
+    }
+
 }

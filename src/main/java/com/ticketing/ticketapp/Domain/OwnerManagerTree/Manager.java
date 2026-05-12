@@ -42,16 +42,8 @@ public class Manager {
         }
         this.isAccepted = true;
     }
-    public void DisacceptAppointment() {
-        if(!isAccepted) {
-            throw  new RuntimeException("You are already accepted2");
-        }
-        this.isAccepted = false;
-    }
 
-    public boolean hasPermission(Permission permission) {
-        return isAccepted && permissions.contains(permission);
-    }
+
 
     public String getUserID() {
         return userID;

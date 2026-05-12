@@ -106,15 +106,7 @@ public class UserRepositoryImpl implements IUserRepository {
         }
     }
 
-    @Override
-    public boolean userAboveAge(String username, int age) {
-        String id = usernameToId.get(username);
-        User user = usersByID.get(id);
-        if (user == null) {
-            return true;
-        }
-        return user.getAge() >= age;
-    }
+
 
 
 }

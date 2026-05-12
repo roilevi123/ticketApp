@@ -232,4 +232,34 @@ public class InformationEventsTests {
         List<EventDTO> results = eventService.searchEvents(gt(), null, null, null, null, null, null, null, null, 1.0);
         assertTrue(results.isEmpty());
     }
+    @Test
+    void getCompanyInfoInvalidToken() {
+        String s=eventService.getCompanyInfo("a", "C1");
+        assertEquals(null,s);
+    }
+    @Test
+    void getCompanyEventsInvalidToken() {
+        List<EventDTO> s=eventService.getCompanyEvents("a", "C1");
+        assertEquals(null,s);
+    }
+    @Test
+    void getCompanyEventsNotFound() {
+        reg("1", "1");
+        String a=log("1", "1");
+        List<EventDTO> s=eventService.getCompanyEvents(a, "C1");
+        assertEquals(null,s);
+    }
+    @Test
+    void getMapAreaInvalidToken() {
+        MapArea[][] s=eventService.getMapArea("a", "C1","");
+        assertEquals(null,s);
+    }
+    @Test
+    void searchEventsInvalidToken() {
+        List<EventDTO> results = eventService.searchEvents("gt", null, null, null, null, null, null, null, null, 1.0);
+        assertEquals(null,results);
+    }
+
+
+
 }
