@@ -11,4 +11,5 @@ public interface iDiscountPolicyRepository {
     public DiscountPolicy getPolicy(String policyId);
     void delete(String policyId);
     public void deleteAll();
+    List<DiscountPolicy> findByEventAndCompany(String eventId, String companyName);
 }
