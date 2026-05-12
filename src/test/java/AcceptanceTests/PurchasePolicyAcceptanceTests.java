@@ -7,6 +7,7 @@ import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchasePolicyDTO;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchaseTargetType;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
@@ -184,5 +185,132 @@ public class PurchasePolicyAcceptanceTests {
         List<int[]> reqs = List.of(new int[]{4, 4, 2}, new int[]{5, 5, 2});
         String result = reserveService.reserveTickets(user, "C1", "E1", reqs);
         assertFalse(isNumeric(result));
+    }
+    @Test @DisplayName("21. Success - Get Single Event Policy DTO")
+    void getSinglePolicyDTO() {
+        String admin = regAndSetup("admin", "C1", "E1", 18);
+        List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1");
+
+        assertEquals(1, policies.size());
+        assertTrue(policies.get(0).description().contains("18"));
+        assertEquals("EVENT", policies.get(0).type());
+    }
+
+    @Test @DisplayName("22. Success - Get Multiple Policies DTO (Event + Company)")
+    void getMultiplePoliciesDTO() {
+        String admin = regAndSetup("admin", "C1", "E1", 18);
+        policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 1, 5);
+        policyService.createAgeLimitPolicy(admin, "C1", PurchaseTargetType.COMPANY, 10);
+
+        List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1");
+
+        assertEquals(3, policies.size()); // 1 Age (Event), 1 Qty (Event), 1 Age (Company)
+    }
+
+    @Test @DisplayName("23. Success - DTO Description After Composite AND Creation")
+    void dtoDescriptionAfterAndComposite() {
+        String admin = regAndSetup("admin", "C1", "E1", 0);
+        String p1 = policyService.createAgeLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 18);
+        String p2 = policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 1, 2);
+
+        policyService.createAndPolicy(admin, "E1", PurchaseTargetType.EVENT, Arrays.asList(p1, p2));
+
+        List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1");
+
+        assertEquals(1, policies.size()); // הילדים נמחקו, נשאר רק ה-Composite
+        String desc = policies.get(0).description();
+        assertTrue(desc.contains("AND") || desc.contains("&&") || desc.toLowerCase().contains("combined"));
+        assertTrue(desc.contains("18") && desc.contains("1") && desc.contains("2"));
+    }
+
+    @Test @DisplayName("24. Success - DTO Description After Composite OR Creation")
+    void dtoDescriptionAfterOrComposite() {
+        String admin = regAndSetup("admin", "C1", "E1", 0);
+        String p1 = policyService.createAgeLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 60);
+        String p2 = policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 1, 1);
+
+        policyService.createOrPolicy(admin, "E1", PurchaseTargetType.EVENT, Arrays.asList(p1, p2));
+
+        List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1");
+
+        String desc = policies.get(0).description();
+        assertTrue(desc.contains("OR") || desc.contains("||") || desc.toLowerCase().contains("either"));
+    }
+
+    @Test @DisplayName("25. Success - Get Policies for Event with No Policies")
+    void getPoliciesEmptyList() {
+        String admin = regAndSetup("admin", "C1", "E1", 0);
+        // regAndSetup יוצר פוליסי רק אם minAge > 0, אז נשלח 0 כדי שיהיה נקי
+
+        List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1");
+        assertTrue(policies.isEmpty());
+    }
+
+    @Test @DisplayName("26. Success - Filter Policies by Company Only")
+    void getPoliciesFilteringByCompany() {
+        String admin = regAndSetup("admin", "C1", "E1", 0);
+        policyService.createAgeLimitPolicy(admin, "C1", PurchaseTargetType.COMPANY, 21);
+
+        companyService.CreateCompany("C2", admin);
+        eventService.createEvent(admin, "E2", "E2", EventType.PLAY, 100, new Date(), "Loc", "C2", getMap());
+        policyService.createAgeLimitPolicy(admin, "E2", PurchaseTargetType.EVENT, 50);
+
+        List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1");
+
+        assertEquals(1, policies.size());
+        assertEquals("C1", policies.get(0).targetId());
+    }
+
+    @Test @DisplayName("27. Success - Verify Recursive DTO Description (Nested Composites)")
+    void recursiveCompositeDescriptionDTO() {
+        String admin = regAndSetup("admin", "C1", "E1", 0);
+        String p1 = policyService.createAgeLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 18);
+        String p2 = policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 1, 1);
+        String andId = policyService.createAndPolicy(admin, "E1", PurchaseTargetType.EVENT, Arrays.asList(p1, p2));
+
+        String p3 = policyService.createAgeLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 65);
+        policyService.createOrPolicy(admin, "E1", PurchaseTargetType.EVENT, Arrays.asList(andId, p3));
+
+        List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1");
+
+        assertEquals(1, policies.size());
+        String desc = policies.get(0).description();
+        assertTrue(desc.contains("18") && desc.contains("1") && desc.contains("65"));
+    }
+
+    @Test @DisplayName("28. Fail - Get Policies with Invalid Token")
+    void getPoliciesInvalidToken() {
+        regAndSetup("admin", "C1", "E1", 18);
+        List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany("invalid_token", "E1", "C1");
+
+        assertTrue(policies.isEmpty());
+    }
+
+    @Test @DisplayName("29. Success - DTO Fields Consistency")
+    void dtoFieldsIntegrity() {
+        String admin = regAndSetup("admin", "C1", "E1", 25);
+        List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1");
+
+        PurchasePolicyDTO dto = policies.get(0);
+        assertNotNull(dto.id());
+        assertEquals("E1", dto.targetId());
+        assertEquals("EVENT", dto.type());
+        assertNotNull(dto.description());
+    }
+
+    @Test @DisplayName("30. Success - Multiple Concurrent Policies DTO")
+    void multipleConcurrentPoliciesDTO() {
+        String admin = regAndSetup("admin", "C1", "E1", 0);
+        policyService.createAgeLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 18);
+        policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 1, 10);
+        policyService.createAgeLimitPolicy(admin, "C1", PurchaseTargetType.COMPANY, 12);
+
+        List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1");
+
+        long eventCount = policies.stream().filter(p -> p.type().equals("EVENT")).count();
+        long companyCount = policies.stream().filter(p -> p.type().equals("COMPANY")).count();
+
+        assertEquals(2, eventCount);
+        assertEquals(1, companyCount);
     }
 }

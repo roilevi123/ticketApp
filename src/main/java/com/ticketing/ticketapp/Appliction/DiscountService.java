@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class DiscountService {
@@ -25,7 +26,7 @@ public class DiscountService {
     public String createSimpleDiscount(String token, String targetId, DiscountTargetType type, double percentage, String companyName) {
         try {
             validateAuthority(token, companyName);
-            DiscountComponent simple = new ConditionalDiscount(percentage, null);
+            DiscountComponent simple = new ConditionalDiscount(percentage, null,"no conditions");
             return savePolicy(targetId, type, simple);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -36,7 +37,8 @@ public class DiscountService {
     public String createQuantityDiscount(String token, String targetId, DiscountTargetType type, double percentage, int minQuantity, String companyName) {
         try {
             validateAuthority(token, companyName);
-            DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getQuantity() >= minQuantity);
+            String conditionDesc = "quantity >= " + minQuantity;
+            DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getQuantity() >= minQuantity, conditionDesc);
             return savePolicy(targetId, type, discount);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -47,7 +49,8 @@ public class DiscountService {
     public String createTimeLimitedDiscount(String token, String targetId, DiscountTargetType type, double percentage, Date deadline, String companyName) {
         try {
             validateAuthority(token, companyName);
-            DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getPurchaseDate().before(deadline));
+            String conditionDesc = "purchase date before " + deadline.toString();
+            DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getPurchaseDate().before(deadline), conditionDesc);
             return savePolicy(targetId, type, discount);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -122,4 +125,24 @@ public class DiscountService {
         discountRepo.save(policy);
         return policyId;
     }
+    public List<DiscountPolicyDTO> getDiscountsForEventAndCompany(String token,String eventId, String companyName) {
+        try {
+            validateAuthority(token, companyName);
+            List<DiscountPolicy> policies = discountRepo.findByEventAndCompany(eventId, companyName);
+            return policies.stream()
+                    .map(p -> new DiscountPolicyDTO(
+                            p.getPolicyId(),
+                            p.getTargetId(),
+                            p.getTargetType().toString(),
+                            p.getRoot().getDescription(),
+                            0.0
+                    ))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error retrieving discounts: " + e.getMessage());
+            return List.of();
+        }
+    }
+
+
 }

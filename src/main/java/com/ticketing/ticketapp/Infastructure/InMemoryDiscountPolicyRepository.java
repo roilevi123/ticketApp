@@ -5,8 +5,10 @@ import com.ticketing.ticketapp.Domain.Discount.DiscountTargetType;
 import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Repository
 public class InMemoryDiscountPolicyRepository implements iDiscountPolicyRepository {
@@ -47,5 +49,12 @@ public class InMemoryDiscountPolicyRepository implements iDiscountPolicyReposito
     @Override
     public void deleteAll() {
         allPolicies.clear();
+    }
+    @Override
+    public List<DiscountPolicy> findByEventAndCompany(String eventId, String companyName) {
+        return allPolicies.values().stream()
+                .filter(p -> (p.getTargetType() == DiscountTargetType.EVENT && p.getTargetId().equals(eventId)) ||
+                        (p.getTargetType() == DiscountTargetType.COMPANY && p.getTargetId().equals(companyName)))
+                .collect(Collectors.toList());
     }
 }

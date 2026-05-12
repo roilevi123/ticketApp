@@ -11,4 +11,8 @@ public class AgeLimitCondition implements PurchaseComponent {
     public boolean isSatisfied(PurchaseValidationData data) {
         return data.getUserAge() >= minAge;
     }
+    @Override
+    public String getDescription() {
+        return "Minimum age: " + minAge;
+    }
 }

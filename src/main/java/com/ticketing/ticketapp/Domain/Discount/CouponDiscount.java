@@ -22,4 +22,14 @@ public class CouponDiscount implements DiscountComponent {
         }
         return 0;
     }
+    public double gePercentage() {
+        return percentage;
+    }
+    public String getCode() {
+        return code;
+    }
+    @Override
+    public String getDescription() {
+        return String.format("%.1f%% discount with coupon code: %s", percentage, code);
+    }
 }
