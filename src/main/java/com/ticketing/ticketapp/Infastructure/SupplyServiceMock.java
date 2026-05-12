@@ -13,8 +13,5 @@ public class SupplyServiceMock implements ISupplyService {
         return true;
     }
 
-    @Override
-    public boolean isAvailable() {
-        return true;
-    }
+
 }

@@ -11,6 +11,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @DisplayName("User Action Acceptance Tests")
 public class UserActionInfoTest {
@@ -156,5 +158,15 @@ public class UserActionInfoTest {
         userService.logout(token);
         String result = userService.login(gt(), "roi", "new");
         assertNotNull(result);
+    }
+    @Test
+     void testRegisterInvalidToken(){
+
+            assertNotEquals( userService.register("", "eventId","",1),"success");
+
+    }
+    @Test
+     void testLoginInvalidToken(){
+        assertNotEquals( userService.login("", "eventId",""),"success");
     }
 }

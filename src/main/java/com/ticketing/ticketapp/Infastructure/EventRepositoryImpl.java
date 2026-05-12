@@ -56,10 +56,7 @@ public class EventRepositoryImpl implements iEventRepository {
         return null;
     }
 
-    @Override
-    public List<Event> getAllEvents() {
-        return new ArrayList<>(events.values());
-    }
+
 
     @Override
     public List<Event> getEventsByCompany(String company) {
@@ -72,38 +69,9 @@ public class EventRepositoryImpl implements iEventRepository {
         return companyEvents;
     }
 
-    @Override
-    public List<Event> getEventsByDateRange(Date from, Date to) {
-        List<Event> dateRangeEvents = new ArrayList<>();
-        for (Event event : events.values()) {
-            if (!event.getDate().before(from) && !event.getDate().after(to)) {
-                dateRangeEvents.add(event);
-            }
-        }
-        return dateRangeEvents;
-    }
-    
-    @Override
-    public List<Event> getEventsByType(EventType eventType) {
-        List<Event> typeEvents = new ArrayList<>();
-        for (Event event : events.values()) {
-            if (event.getType() == eventType) {
-                typeEvents.add(event);
-            }
-        }
-        return typeEvents;
-    }
 
-    @Override
-    public List<Event> getEventsByName(String name) {
-        List<Event> nameEvents = new ArrayList<>();
-        for (Event event : events.values()) {
-            if (event.getName().equals(name)) {
-                nameEvents.add(event);
-            }
-        }
-        return nameEvents;
-    }
+    
+
 
     @Override
     public MapArea[][] getMapArea(String company, String eventName) {
@@ -113,38 +81,8 @@ public class EventRepositoryImpl implements iEventRepository {
         return events.get(eventName+company).getMap();
     }
 
-    @Override
-    public List<Event> getEventsByLocation(String location) {
-        List<Event> locationEvents = new ArrayList<>();
-        for (Event event : events.values()) {
-            if (event.getLocation().equals(location)) {
-                locationEvents.add(event);
-            }
-        }
-        return locationEvents;
-    }
     
-    @Override
-    public List<Event> getEventsByArtist(String artistName) {
-        List<Event> artistEvents = new ArrayList<>();
-        for (Event event : events.values()) {
-            if (event.getArtistName().equals(artistName)) {
-                artistEvents.add(event);
-            }
-        }
-        return artistEvents;
-    }
-    
-    @Override
-    public List<Event> getEventsByPriceRange(double minPrice, double maxPrice) {
-        List<Event> priceRangeEvents = new ArrayList<>();
-        for (Event event : events.values()) {
-            if (event.getPrice() >= minPrice && event.getPrice() <= maxPrice) {
-                priceRangeEvents.add(event);
-            }
-        }
-        return priceRangeEvents;
-    }
+
 
     @Override
     public void deleteEvent(String eventId, String company) {

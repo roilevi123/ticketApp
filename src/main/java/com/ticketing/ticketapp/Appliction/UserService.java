@@ -131,28 +131,6 @@ public class UserService implements IAuth {
         }
     }
 
-    public String updateUserName(String token, String newUsername) {
-        try {
-            logger.info("Updating user name");
-            if (!tokenService.validateToken(token)) {
-                logger.error("Invalid token provided for updating username");
-                throw new RuntimeException("Invalid token");
-            }
-            String currentUserId = tokenService.extractUserId(token);
-            User user = userRepository.getUserByID(currentUserId);
-            if (user == null) {
-                logger.error("User {} not found while updating username", currentUserId);
-                throw new RuntimeException("User not found");
-            }
-            String oldUsername = userRepository.getUsernameByID(currentUserId);
-            user.setName(newUsername);
-            userRepository.save(user);
-            logger.info("Username updated successfully from {} to {}", oldUsername, newUsername);
-            return "success";
-        } catch (Exception e) {
-            logger.error("Failed to update username", e);
-            return e.getMessage();
-        }
-    }
+
 
 }

@@ -54,9 +54,6 @@ public class Company {
     public String getFounderID() {
         return founderID;
     }
-    public void setFounderID(String founderID) {
-        this.founderID = founderID;
-    }
     public boolean getActive() {
         return active;
     }
@@ -68,12 +65,6 @@ public class Company {
     }
     public void setVersion(int version) {
         this.version = version;
-    }
-    public double getRating() {
-        return rating;
-    }
-    public void setRating(double rating) {
-        this.rating = rating;
     }
 
 @Override

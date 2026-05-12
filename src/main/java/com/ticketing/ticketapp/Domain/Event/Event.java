@@ -74,14 +74,12 @@ public class Event {
 
     // setters
     public void setName(String name) { this.name = name; }
-    public void setDescription(String description) { this.description = description; }
     public void setType(EventType type) { this.type = type; }
     public void setLocation(String location) { this.location = location; }
     public void setArtistName(String artistName) { this.artistName = artistName; }
     public void setMap(MapArea[][] map) { this.map = map; }
     public void setPrice(double price) { this.price = price; }
     public void setDate(Date date) { this.date = date; }
-    public void setAvailableTickets(int availableTickets) { this.availableTickets = availableTickets; }
     public void setVersion(int version) { this.version = version; }
     public void setRating(double rating) { this.rating = rating; }
     public void setCompany(String companyName) { this.companyName = companyName; }

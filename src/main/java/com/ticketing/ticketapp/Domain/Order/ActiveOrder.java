@@ -30,9 +30,6 @@ public class ActiveOrder {
         this.expirationTime = order.getExpirationTime();
     }
 
-    public void addTicket(String ticketId) {
-        this.ticketIds.add(ticketId);
-    }
 //    public boolean isExpired() {
 //        return LocalDateTime.now().isAfter(expirationTime);
 //    }

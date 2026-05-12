@@ -233,4 +233,11 @@ public class WaitingQueueTests {
         long correctPositionCount = results.stream().filter(r -> r.equals("WAITING_POSITION_25")).count();
         assertEquals(threadCount, correctPositionCount);
     }
+
+    @Test
+    public void testCheckStatusInvalidToken(){
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            queueService.checkStatus("", "eventId");
+        });
+    }
 }
