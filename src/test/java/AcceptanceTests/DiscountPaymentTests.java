@@ -11,6 +11,7 @@ import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchaseTargetType;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -329,5 +331,36 @@ public class DiscountPaymentTests {
 
         assertEquals("E10", discounts.get(0).targetId());
         assertEquals("EVENT", discounts.get(0).type());
+    }
+    void createQuantityDiscountInValidToken() {
+        String a=discountService.createQuantityDiscount("a", "C1",DiscountTargetType.EVENT,1,10,"");
+        assertEquals(null,a);
+
+    }
+    @Test
+    void createAndPolicyInValidToken() {
+        String a=discountService.createTimeLimitedDiscount("a", "C1",DiscountTargetType.EVENT,1,null,null);
+        assertEquals(null,a);
+
+    }
+    @Test
+    void createOrPolicyInValidToken() {
+        String a=discountService.createCouponDiscount("a", "C1",null,null,1,null);
+        assertEquals(null,a);
+
+    }
+    @Test
+    void createAndPolicyInValidToken2() {
+        String ownerToken = setupEventAndGetToken("o10", "C10", "E10", 100.0);
+
+        String a=discountService.createMaxDiscountPolicy(ownerToken, "C1",null,null,null);
+        assertEquals(null,a);
+    }
+    @Test
+    void getDiscountsForEventAndCompanyInValidToken3() {
+        String ownerToken = setupEventAndGetToken("o10", "C10", "E10", 100.0);
+
+        List<DiscountPolicyDTO> a=discountService.getDiscountsForEventAndCompany(ownerToken,"1","1");
+        assertEquals(new ArrayList<>(),a);
     }
 }

@@ -18,9 +18,5 @@ public class PaymentServiceMock implements IPaymentService {
         return true; // for simplicity, we assume all refunds are successful
     }
 
-    @Override
-    public boolean isAvailable() {
-        // Simulate that the payment service is always available
-        return true; 
-    }
+
 }

@@ -73,25 +73,25 @@ public class TokenService {
         bannedUserIds.remove(userId);
     }
 
-    public boolean isUserBanned(String userId) {
-        return bannedUserIds.contains(userId);
-    }
-
-    public void cleanExpiredBlacklistTokens() {
-        Iterator<String> iterator = blacklist.iterator();
-        while (iterator.hasNext()) {
-            String token = iterator.next();
-            try {
-                Jwts.parserBuilder()
-                        .setSigningKey(key)
-                        .build()
-                        .parseClaimsJws(token);
-            } catch (ExpiredJwtException e) {
-                iterator.remove();
-            } catch (Exception e) {
-            }
-        }
-    }
+//    public boolean isUserBanned(String userId) {
+//        return bannedUserIds.contains(userId);
+//    }
+//
+//    public void cleanExpiredBlacklistTokens() {
+//        Iterator<String> iterator = blacklist.iterator();
+//        while (iterator.hasNext()) {
+//            String token = iterator.next();
+//            try {
+//                Jwts.parserBuilder()
+//                        .setSigningKey(key)
+//                        .build()
+//                        .parseClaimsJws(token);
+//            } catch (ExpiredJwtException e) {
+//                iterator.remove();
+//            } catch (Exception e) {
+//            }
+//        }
+//    }
 
     public String extractUserId(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -101,13 +101,13 @@ public class TokenService {
         return extractClaim(token, claims -> claims.get("username", String.class));
     }
 
-    public String extractRole(String token) {
-        return extractClaim(token, claims -> claims.get("role", String.class));
-    }
-
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
+//    public String extractRole(String token) {
+//        return extractClaim(token, claims -> claims.get("role", String.class));
+//    }
+//
+//    public Date extractExpiration(String token) {
+//        return extractClaim(token, Claims::getExpiration);
+//    }
 
     private <T> T extractClaim(String token, Function<Claims, T> resolver) {
         final Claims claims = extractAllClaims(token);

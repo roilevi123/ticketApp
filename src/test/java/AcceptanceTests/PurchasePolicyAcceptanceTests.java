@@ -313,4 +313,22 @@ public class PurchasePolicyAcceptanceTests {
         assertEquals(2, eventCount);
         assertEquals(1, companyCount);
     }
+    @Test
+    void CreatecreateQuantityLimitPolicyInValidToken() {
+        String a=policyService.createQuantityLimitPolicy("a", "C1", PurchaseTargetType.EVENT, 18,100);
+        assertEquals(null,a);
+
+    }
+    @Test
+    void createAndPolicyInValidToken() {
+        String a=policyService.createAndPolicy("a", "C1", PurchaseTargetType.EVENT,new ArrayList<>());
+        assertEquals(null,a);
+
+    }
+    @Test
+    void createOrPolicyInValidToken() {
+        String a=policyService.createOrPolicy("a", "C1", PurchaseTargetType.EVENT,new ArrayList<>());
+        assertEquals(null,a);
+
+    }
 }
