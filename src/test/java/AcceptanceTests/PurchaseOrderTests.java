@@ -478,4 +478,17 @@ public class PurchaseOrderTests {
         log("2", "2");
         assertNotEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2","none"));
     }
+    @Test
+    void INValidTokenForSeeCompanyTransNotAuthorizred(){
+        reg("1", "1");
+        String tO = log("1", "1");
+        List<PurchaseOrderDTO> t=purchasedService.getCompanyTransaction("q",tO);
+        assertEquals(null,t);
+    }
+    @Test
+    void INValidTokenForSeeCompanyTrans(){
+        List<PurchaseOrderDTO> t=purchasedService.getCompanyTransaction("q","tO");
+        assertEquals(null,t);
+    }
+
 }

@@ -359,4 +359,20 @@ public class EventManagementTest {
         String result = eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0);
         assertNotEquals("success", result);
     }
+    @Test
+    void CreateEventInvalidToken() {
+        String result=eventService.createEvent("null", "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
+        assertNotEquals("success", result);
+    }
+    @Test
+    void deleteEventInvalidToken() {
+        String result=eventService.deleteEvent("null", "1","");
+        assertNotEquals("success", result);
+    }
+    @Test
+    void UpdateEventInvalidToken() {
+        String result=eventService.UpdateEvent("null","1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(),1);
+        assertNotEquals("success", result);
+    }
+
 }

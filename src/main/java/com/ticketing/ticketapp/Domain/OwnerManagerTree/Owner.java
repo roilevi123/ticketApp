@@ -54,12 +54,7 @@ public class Owner {
         }
         this.isAccepted = true;
     }
-    public void rejectAppointment() {
-        if(!isAccepted) {
-            throw  new RuntimeException("You are already rejected");
-        }
-        this.isAccepted = false;
-    }
+
 
     public boolean isAccepted() {
         return isAccepted;

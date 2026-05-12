@@ -17,8 +17,6 @@ public class QueueEntry {
     public String getUserID() { return userID; }
     public Long getGrantedAccessTime() { return grantedAccessTime; }
     public void setGrantedAccessTime(Long time) { this.grantedAccessTime = time; }
-    public boolean isExpired() { return isExpired; }
-    public void setExpired(boolean expired) { isExpired = expired; }
-    public long getEntryTime() { return entryTime; }
+
 
 }

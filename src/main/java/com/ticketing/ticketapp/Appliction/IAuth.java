@@ -12,6 +12,5 @@ public interface IAuth {
 
     String updateUserPassword(String token, String newPassword);
 
-    String updateUserName(String token, String newUsername);
 
 }

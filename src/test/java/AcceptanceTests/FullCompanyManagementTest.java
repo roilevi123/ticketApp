@@ -533,4 +533,62 @@ public class FullCompanyManagementTest {
                 "  |-- 2 (Manager)\n";
         assertEquals(expectedTree, companyService.GetRoleTreeString(token, "1"));
     }
+    @Test
+    void AppointAManagerInvalidToken() {
+        String result=companyService.AppointAManager("2", "1", new HashSet<>(), null);
+        assertNotEquals("success",result);
+    }
+    @Test
+    void ApproveAppointmentForManagerInvalidToken() {
+        String result=companyService.ApproveAppointmentForManager("null", null);
+        assertNotEquals("success",result);
+    }
+    @Test
+    void RejectAppointmentForManagerInvalidToken() {
+        String result=companyService.RejectAppointmentForManager("null", null);
+        assertNotEquals("success",result);
+    }
+    @Test
+    void AppointOwnerInvalidToken() {
+        String result=companyService.AppointOwner("null", null,null);
+        assertNotEquals("success",result);
+    }
+    @Test
+    void ApproveAppointmentForOwnerInvalidToken() {
+        String result=companyService.ApproveAppointmentForOwner("null", null);
+        assertNotEquals("success",result);
+    }
+    @Test
+    void FireOwnerInvalidToken() {
+        String result=companyService.FireOwner("null", null,null);
+        assertNotEquals("success",result);
+    }
+    @Test
+    void FireManagerInvalidToken() {
+        String result=companyService.FireManager("null", null,null);
+        assertNotEquals("success",result);
+    }
+    @Test
+    void ChangeManagerPermissionsInvalidToken() {
+        String result=companyService.ChangeManagerPermissions("null", null,null,null);
+        assertNotEquals("success",result);
+    }
+    @Test
+    void ChangeManagerPermissionNotManager() {
+        reg("1", "1");
+        String token=log("1", "1");
+        String result=companyService.ChangeManagerPermissions(token, null,null,null);
+        assertNotEquals("success",result);
+    }
+    @Test
+    void freezeCompanyInvalidToken() {
+        String result=companyService.freezeCompany("null", null);
+        assertNotEquals("success",result);
+    }
+    @Test
+    void GetManagerPermissionsInvalidToken() {
+        Set<Permission> result=companyService.GetManagerPermissions("null", null,null);
+        assertEquals(null,result);
+    }
+
 }

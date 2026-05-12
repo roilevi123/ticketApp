@@ -73,17 +73,7 @@ public class TicketRepositoryImpl implements iTicketRepository {
         return newMapAreas;
     }
 
-    @Override
-    public boolean ticketExists(String id) {
-        for (List<Ticket> ticketList : tickets.values()) {
-            for (Ticket ticket : ticketList) {
-                if (ticket.getId().equals(id)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+
 
    @Override
     public synchronized void save(Ticket ticketToUpdate) {
@@ -110,12 +100,7 @@ public class TicketRepositoryImpl implements iTicketRepository {
         eventTickets.set(index, updatedTicket);
     }
 
-    @Override
-    public void deleteTicket(String id) {
-        for (List<Ticket> ticketList : tickets.values()) {
-            ticketList.removeIf(ticket -> ticket.getId().equals(id));
-        }
-    }
+
 
     @Override
     public List<Ticket> getAllTicketsByEventAndCompany(String event, String company) {
@@ -138,20 +123,7 @@ public class TicketRepositoryImpl implements iTicketRepository {
     }
 
 
-    @Override
-    public List<Ticket> getPurchasedTicketsByEventAndCompany(String event, String company) {
-        List<Ticket> allTickets = tickets.get(event + company);
-        if (allTickets == null) {
-            return null;
-        }
-        List<Ticket> purchasedTickets = new ArrayList<>();
-        for (Ticket ticket : allTickets) {
-            if (ticket.isPurchased()) {
-                purchasedTickets.add(ticket);
-            }
-        }
-        return purchasedTickets;
-    }
+
 
     @Override
     public List<Ticket> getAllTicketsByCompany(String company) {
@@ -164,61 +136,12 @@ public class TicketRepositoryImpl implements iTicketRepository {
         return companyTickets;
     }
 
-    @Override
-    public List<Ticket> getAllTicketsByEvent(String event) {
-        List<Ticket> eventTickets = new ArrayList<>();
-        for (Map.Entry<String, List<Ticket>> entry : tickets.entrySet()) {
-            if (entry.getKey().startsWith(event)) {
-                eventTickets.addAll(entry.getValue());
-            }
-        }
-        return eventTickets;
-    }
 
-    @Override
-    public List<Ticket> getTicketsByDateRange(Date from, Date to, String company) {
-        List<Ticket> companyTickets = getAllTicketsByCompany(company);
-        if (companyTickets == null) {
-            return null;
-        }
-        List<Ticket> ticketsInRange = new ArrayList<>();
-        for (Ticket ticket : companyTickets) {
-            if (ticket.getDate().after(from) && ticket.getDate().before(to)) {
-                ticketsInRange.add(ticket);
-            }
-        }
-        return ticketsInRange;
 
-    }
 
-    @Override
-    public Ticket getTicketBySeat(String event, String company, int row, int col) {
-        List<Ticket> eventTickets = tickets.get(event + company);
-        if (eventTickets == null) {
-            return null;
-        }
-        for (Ticket ticket : eventTickets) {
-            if (ticket.getRow() == row && ticket.getCol() == col) {
-                return ticket;
-            }
-        }
-        return null;
-    }
 
-    @Override
-    public List<Ticket> getTicketsByPriceRange(String event, String company, double minPrice, double maxPrice) {
-        List<Ticket> eventTickets = tickets.get(event + company);
-        if (eventTickets == null) {
-            return null;
-        }
-        List<Ticket> ticketsInPriceRange = new ArrayList<>();
-        for (Ticket ticket : eventTickets) {
-            if (ticket.getPrice() >= minPrice && ticket.getPrice() <= maxPrice) {
-                ticketsInPriceRange.add(ticket);
-            }
-        }
-        return ticketsInPriceRange;
-    }
+
+
 
     @Override
     public void makeMapToTicket(String company, String event, MapArea[][] mapAreas, Date date, double price) {

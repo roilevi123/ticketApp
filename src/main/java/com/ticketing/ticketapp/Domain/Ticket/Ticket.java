@@ -40,17 +40,11 @@ public class Ticket {
         return row;
     }
 
-    public void setRow(int row) {
-        this.row = row;
-    }
 
     public int getCol() {
         return col;
     }
 
-    public void setCol(int col) {
-        this.col = col;
-    }
 
     public boolean isPurchased() {
         return isPurchased;
@@ -60,9 +54,6 @@ public class Ticket {
         this.isPurchased = true;
     }
 
-    public void cancelPurchase() {
-        this.isPurchased = false;
-    }
 
     public String getEvent() {
         return event;

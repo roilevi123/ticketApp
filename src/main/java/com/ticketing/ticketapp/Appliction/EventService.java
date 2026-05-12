@@ -49,16 +49,18 @@ public class EventService {
     }
 
     public String createEvent(String token,String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] map) {
+        try {
+
+            if(!tokenService.validateToken(token)) {
+            throw new RuntimeException("Invalid token");
+        }
         String username = tokenService.extractUsername(token);
         if (username == null || !isAuthorized(company, username)) {
             logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, company);
             return "Unauthorized";
         }
-        if(!tokenService.validateToken(token)) {
-            throw new RuntimeException("Invalid token");
-        }
 
-        try {
+
             Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, company,map);
             ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, event.getDate(), event.getPrice());
             iQueueRepository.initQueue(eventName+company);
@@ -71,6 +73,10 @@ public class EventService {
     }
 
     public String deleteEvent(String eventId, String companyName, String token) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                throw  new RuntimeException("Invalid token");
+            }
         String username = tokenService.extractUsername(token);
 
         if (username == null || !isAuthorized(companyName, username)) {
@@ -78,10 +84,8 @@ public class EventService {
             return "Unauthorized";
         }
 
-        try {
-            if (!tokenService.validateToken(token)) {
-                return "Invalid token";
-            }
+
+
 
             Event event = eventRepository.getEventById(eventId, companyName);
             if (event == null) {
