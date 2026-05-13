@@ -22,4 +22,8 @@ public class Response<T> {
     public T getData() {
         return data;
     }
+
+    public boolean isError() {
+        return !success;
+    }
 }
