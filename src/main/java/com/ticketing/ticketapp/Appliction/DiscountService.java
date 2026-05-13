@@ -23,53 +23,53 @@ public class DiscountService {
         this.purchasedService = purchasedService;
     }
 
-    public String createSimpleDiscount(String token, String targetId, DiscountTargetType type, double percentage, String companyName) {
+    public Response<String> createSimpleDiscount(String token, String targetId, DiscountTargetType type, double percentage, String companyName) {
         try {
             validateAuthority(token, companyName);
-            DiscountComponent simple = new ConditionalDiscount(percentage, null,"no conditions");
-            return savePolicy(targetId, type, simple);
+            DiscountComponent simple = new ConditionalDiscount(percentage, null, "no conditions");
+            return Response.success(savePolicy(targetId, type, simple));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
-    public String createQuantityDiscount(String token, String targetId, DiscountTargetType type, double percentage, int minQuantity, String companyName) {
+    public Response<String> createQuantityDiscount(String token, String targetId, DiscountTargetType type, double percentage, int minQuantity, String companyName) {
         try {
             validateAuthority(token, companyName);
             String conditionDesc = "quantity >= " + minQuantity;
             DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getQuantity() >= minQuantity, conditionDesc);
-            return savePolicy(targetId, type, discount);
+            return Response.success(savePolicy(targetId, type, discount));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
-    public String createTimeLimitedDiscount(String token, String targetId, DiscountTargetType type, double percentage, Date deadline, String companyName) {
+    public Response<String> createTimeLimitedDiscount(String token, String targetId, DiscountTargetType type, double percentage, Date deadline, String companyName) {
         try {
             validateAuthority(token, companyName);
             String conditionDesc = "purchase date before " + deadline.toString();
             DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getPurchaseDate().before(deadline), conditionDesc);
-            return savePolicy(targetId, type, discount);
+            return Response.success(savePolicy(targetId, type, discount));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
-    public String createCouponDiscount(String token, String targetId, DiscountTargetType type, String code, double percentage, String companyName) {
+    public Response<String> createCouponDiscount(String token, String targetId, DiscountTargetType type, String code, double percentage, String companyName) {
         try {
             validateAuthority(token, companyName);
             DiscountComponent coupon = new CouponDiscount(code, percentage);
-            return savePolicy(targetId, type, coupon);
+            return Response.success(savePolicy(targetId, type, coupon));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
-    public String createSumDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
+    public Response<String> createSumDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
         try {
             validateAuthority(token, companyName);
             SumDiscountComposite sumComposite = new SumDiscountComposite();
@@ -84,14 +84,14 @@ public class DiscountService {
                 }
             }
 
-            return savePolicy(targetId, type, sumComposite);
+            return Response.success(savePolicy(targetId, type, sumComposite));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
-    public String createMaxDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
+    public Response<String> createMaxDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
         try {
             validateAuthority(token, companyName);
             MaxDiscountComposite maxComposite = new MaxDiscountComposite();
@@ -106,10 +106,10 @@ public class DiscountService {
                 }
             }
 
-            return savePolicy(targetId, type, maxComposite);
+            return Response.success(savePolicy(targetId, type, maxComposite));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
@@ -125,11 +125,12 @@ public class DiscountService {
         discountRepo.save(policy);
         return policyId;
     }
-    public List<DiscountPolicyDTO> getDiscountsForEventAndCompany(String token,String eventId, String companyName) {
+
+    public Response<List<DiscountPolicyDTO>> getDiscountsForEventAndCompany(String token, String eventId, String companyName) {
         try {
             validateAuthority(token, companyName);
             List<DiscountPolicy> policies = discountRepo.findByEventAndCompany(eventId, companyName);
-            return policies.stream()
+            List<DiscountPolicyDTO> dtos = policies.stream()
                     .map(p -> new DiscountPolicyDTO(
                             p.getPolicyId(),
                             p.getTargetId(),
@@ -138,15 +139,17 @@ public class DiscountService {
                             0.0
                     ))
                     .collect(Collectors.toList());
+            return Response.success(dtos);
         } catch (Exception e) {
             logger.error("Error retrieving discounts: " + e.getMessage());
-            return List.of();
+            return Response.error(e.getMessage());
         }
     }
-    public double calculatePriceAfterDiscounts(String token, String eventId, String companyName, double originalPrice, int quantity, String coupon) {
+
+    public Response<Double> calculatePriceAfterDiscounts(String token, String eventId, String companyName, double originalPrice, int quantity, String coupon) {
         try {
             if (!tokenService.validateToken(token)) {
-                return originalPrice;
+                return Response.error("Invalid token");
             }
 
             PurchaseContext context = new PurchaseContext(quantity, coupon, new Date());
@@ -164,13 +167,11 @@ public class DiscountService {
             }
 
             double discountAmount = combinedRoot.calculateDiscount(originalPrice, context);
-            return originalPrice - discountAmount;
+            return Response.success(originalPrice - discountAmount);
 
         } catch (Exception e) {
             logger.error("Error calculating discount: " + e.getMessage());
-            return originalPrice;
+            return Response.error(e.getMessage());
         }
     }
-
-
 }

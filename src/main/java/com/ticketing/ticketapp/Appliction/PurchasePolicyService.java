@@ -21,29 +21,29 @@ public class PurchasePolicyService {
         this.tokenService = tokenService;
     }
 
-    public String createAgeLimitPolicy(String token, String targetId, PurchaseTargetType type, int minAge) {
+    public Response<String> createAgeLimitPolicy(String token, String targetId, PurchaseTargetType type, int minAge) {
         try {
             validateToken(token);
             PurchaseComponent condition = new AgeLimitCondition(minAge);
-            return saveToRepo(targetId, type, condition);
+            return Response.success(saveToRepo(targetId, type, condition));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
-    public String createQuantityLimitPolicy(String token, String targetId, PurchaseTargetType type, int min, int max) {
+    public Response<String> createQuantityLimitPolicy(String token, String targetId, PurchaseTargetType type, int min, int max) {
         try {
             validateToken(token);
             PurchaseComponent condition = new QuantityLimitCondition(min, max);
-            return saveToRepo(targetId, type, condition);
+            return Response.success(saveToRepo(targetId, type, condition));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
-    public String createAndPolicy(String token, String targetId, PurchaseTargetType type, List<String> componentIds) {
+    public Response<String> createAndPolicy(String token, String targetId, PurchaseTargetType type, List<String> componentIds) {
         try {
             validateToken(token);
             AndPurchaseComposite andComposite = new AndPurchaseComposite();
@@ -55,14 +55,14 @@ public class PurchasePolicyService {
                     purchaseRepo.delete(id);
                 }
             }
-            return saveToRepo(targetId, type, andComposite);
+            return Response.success(saveToRepo(targetId, type, andComposite));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
-    public String createOrPolicy(String token, String targetId, PurchaseTargetType type, List<String> componentIds) {
+    public Response<String> createOrPolicy(String token, String targetId, PurchaseTargetType type, List<String> componentIds) {
         try {
             validateToken(token);
             OrPurchaseComposite orComposite = new OrPurchaseComposite();
@@ -74,10 +74,10 @@ public class PurchasePolicyService {
                     purchaseRepo.delete(id);
                 }
             }
-            return saveToRepo(targetId, type, orComposite);
+            return Response.success(saveToRepo(targetId, type, orComposite));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
@@ -93,24 +93,24 @@ public class PurchasePolicyService {
             throw new Exception("Invalid session token");
         }
     }
-    public List<PurchasePolicyDTO> getPoliciesForEventAndCompany(String token,String eventId, String companyName) {
+
+    public Response<List<PurchasePolicyDTO>> getPoliciesForEventAndCompany(String token, String eventId, String companyName) {
         try {
             validateToken(token);
 
             List<PurchasePolicy> policies = purchaseRepo.findByEventAndCompany(eventId, companyName);
-            return policies.stream()
+            List<PurchasePolicyDTO> dtos = policies.stream()
                     .map(p -> new PurchasePolicyDTO(
                             p.getPolicyId(),
                             p.getTargetId(),
                             p.getTargetType().toString(),
-                            p.getRoot().getDescription() // שימוש במימוש הפנימי
+                            p.getRoot().getDescription()
                     ))
                     .collect(Collectors.toList());
+            return Response.success(dtos);
         } catch (Exception e) {
             logger.error("Error retrieving purchase policies: " + e.getMessage());
-            return List.of();
+            return Response.error(e.getMessage());
         }
     }
-
-
 }

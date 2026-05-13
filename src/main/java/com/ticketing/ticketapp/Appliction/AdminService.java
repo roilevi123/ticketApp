@@ -52,7 +52,7 @@ public class AdminService {
         this.eventRepository = eventRepository;
         this.tokenService = tokenService;
     }
-    public String CloseCompany(String companyName,String adminID) {
+    public Response<String> CloseCompany(String companyName,String adminID) {
         try {
             logger.info("Deleting company " + companyName);
             if(!adminRepository.isAdmin(adminID)) {
@@ -62,14 +62,14 @@ public class AdminService {
             eventRepository.deleteCompanyEvent(companyName);
             treeOfRoleRepository.deleteCompanyMangersAndOwners(companyName);
             logger.info("Deleted company " + companyName);
-            return "success";
+            return Response.success("success");
         }catch (Exception e) {
             logger.error(e.getMessage());
-            return e.getMessage();
+            return Response.error(e.getMessage());
         }
 
     }
-    public String removeUser(String UserID,String adminID) {
+    public Response<String> removeUser(String UserID,String adminID) {
         try {
             logger.info("Deleting user " + UserID);
             if(!adminRepository.isAdmin(adminID)) {
@@ -78,13 +78,13 @@ public class AdminService {
             userRepository.deleteUser(UserID);
             treeOfRoleRepository.deleteUserRoles(UserID);
             logger.info("Deleted user " + UserID);
-            return "success";
+            return Response.success("success");
         }catch (Exception e) {
             logger.error(e.getMessage());
-            return e.getMessage();
+            return Response.error(e.getMessage());
         }
     }
-    public List<PurchaseOrderDTO> GetAllPurchasedOrders(String adminID) {
+    public Response<List<PurchaseOrderDTO>> GetAllPurchasedOrders(String adminID) {
         try {
             logger.info("Getting all purchased orders");
             if(!adminRepository.isAdmin(adminID)) {
@@ -109,14 +109,14 @@ public class AdminService {
 
             }
 
-            return orderDTOS;
+            return Response.success(orderDTOS);
         }catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
 
     }
-    public String banUser(String targetUserId, String adminId) {
+    public Response<String> banUser(String targetUserId, String adminId) {
         try {
             logger.info("Banning user " + targetUserId);
             if (!adminRepository.isAdmin(adminId)) {
@@ -127,14 +127,14 @@ public class AdminService {
             }
             tokenService.banUser(targetUserId);
             logger.info("Banned user " + targetUserId);
-            return "success";
+            return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return e.getMessage();
+            return Response.error(e.getMessage());
         }
     }
 
-    public String unbanUser(String targetUserId, String adminId) {
+    public Response<String> unbanUser(String targetUserId, String adminId) {
         try {
             logger.info("Unbanning user " + targetUserId);
             if (!adminRepository.isAdmin(adminId)) {
@@ -142,10 +142,10 @@ public class AdminService {
             }
             tokenService.unbanUser(targetUserId);
             logger.info("Unbanned user " + targetUserId);
-            return "success";
+            return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return e.getMessage();
+            return Response.error(e.getMessage());
         }
     }
 }

@@ -84,8 +84,8 @@ public class WaitingQueueTests {
     }
 
     private void createEventHelper(String creator, String eventName) {
-        userService.register(gt(), creator, creator,10);
-        String token = userService.login(gt(), creator, creator);
+        userService.register(gt(), creator, creator, 10);
+        String token = userService.login(gt(), creator, creator).getData();
         companyService.CreateCompany(creator, token);
         eventService.createEvent(token, eventName, "Artist", EventType.CONFERENCE, 100.0, new Date(), "City", creator, getMapArea());
     }
@@ -98,8 +98,8 @@ public class WaitingQueueTests {
 
         String user1Token = gt();
         String user2Token = gt();
-        String status1 = queueService.checkStatus(user1Token, eventId);
-        String status2 = queueService.checkStatus(user2Token, eventId);
+        String status1 = queueService.checkStatus(user1Token, eventId).getData();
+        String status2 = queueService.checkStatus(user2Token, eventId).getData();
 
         assertEquals("AUTHORIZED", status1);
         assertEquals("AUTHORIZED", status2);
@@ -115,8 +115,8 @@ public class WaitingQueueTests {
             queueService.checkStatus(gt(), eventId);
         }
 
-        String status101 = queueService.checkStatus(gt(), eventId);
-        String status102 = queueService.checkStatus(gt(), eventId);
+        String status101 = queueService.checkStatus(gt(), eventId).getData();
+        String status102 = queueService.checkStatus(gt(), eventId).getData();
 
         assertEquals("WAITING_POSITION_1", status101);
         assertEquals("WAITING_POSITION_2", status102);
@@ -143,7 +143,7 @@ public class WaitingQueueTests {
             service.submit(() -> {
                 try {
                     latch.await();
-                    results.add(queueService.checkStatus(tok, eventId));
+                    results.add(queueService.checkStatus(tok, eventId).getData());
                 } catch (Exception ignored) {}
             });
         }
@@ -152,7 +152,7 @@ public class WaitingQueueTests {
         service.shutdown();
         assertTrue(service.awaitTermination(10, TimeUnit.SECONDS));
 
-        long authorizedCount = results.stream().filter(r -> r.equals("AUTHORIZED")).count();
+        long authorizedCount = results.stream().filter(r -> "AUTHORIZED".equals(r)).count();
         assertEquals(threadCount, authorizedCount);
     }
 
@@ -177,7 +177,7 @@ public class WaitingQueueTests {
             service.submit(() -> {
                 try {
                     latch.await();
-                    results.add(queueService.checkStatus(tok, eventId));
+                    results.add(queueService.checkStatus(tok, eventId).getData());
                 } catch (Exception ignored) {}
             });
         }
@@ -186,8 +186,8 @@ public class WaitingQueueTests {
         service.shutdown();
         assertTrue(service.awaitTermination(15, TimeUnit.SECONDS));
 
-        long authorizedCount = results.stream().filter(r -> r.equals("AUTHORIZED")).count();
-        long waitingCount = results.stream().filter(r -> r.startsWith("WAITING_POSITION_")).count();
+        long authorizedCount = results.stream().filter(r -> "AUTHORIZED".equals(r)).count();
+        long waitingCount = results.stream().filter(r -> r != null && r.startsWith("WAITING_POSITION_")).count();
 
         assertEquals(100, authorizedCount);
         assertEquals(50, waitingCount);
@@ -221,7 +221,7 @@ public class WaitingQueueTests {
             service.submit(() -> {
                 try {
                     latch.await();
-                    results.add(queueService.checkStatus(waitingUser25Token, eventId));
+                    results.add(queueService.checkStatus(waitingUser25Token, eventId).getData());
                 } catch (Exception ignored) {}
             });
         }
@@ -230,14 +230,13 @@ public class WaitingQueueTests {
         service.shutdown();
         assertTrue(service.awaitTermination(15, TimeUnit.SECONDS));
 
-        long correctPositionCount = results.stream().filter(r -> r.equals("WAITING_POSITION_25")).count();
+        long correctPositionCount = results.stream().filter(r -> "WAITING_POSITION_25".equals(r)).count();
         assertEquals(threadCount, correctPositionCount);
     }
 
     @Test
-    public void testCheckStatusInvalidToken(){
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            queueService.checkStatus("", "eventId");
-        });
+    public void testCheckStatusInvalidToken() {
+        Response<String> result = queueService.checkStatus("", "eventId");
+        assertTrue(result.isError());
     }
 }
