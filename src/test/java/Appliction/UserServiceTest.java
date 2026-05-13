@@ -107,34 +107,41 @@ class UserServiceTest {
     }
 
     @Test
-    void getUserInfo_ShouldReturnUserInfoString() {
+    void getUserProfile_ShouldReturnUserDTO() {
         User mockUser = new User(USERNAME, ENCODED_PASSWORD,10);
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
 
-        String result = userService.getUserInfo(TOKEN);
+        var result = userService.getUserProfile(TOKEN);
 
-        assertEquals("name=" + USERNAME, result);
+        assertTrue(result.isSuccess());
+        assertEquals("User profile retrieved", result.getMessage());
+        assertEquals(USERNAME, result.getData().getName());
+        assertEquals(10, result.getData().getAge());
     }
 
     @Test
-    void getUserInfo_InvalidToken_ShouldReturnErrorMessage() {
+    void getUserProfile_InvalidToken_ShouldReturnErrorMessage() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
-        String result = userService.getUserInfo(TOKEN);
+        var result = userService.getUserProfile(TOKEN);
 
-        assertEquals("Invalid token", result);
+        assertFalse(result.isSuccess());
+        assertEquals("Invalid token", result.getMessage());
+        assertNull(result.getData());
     }
 
     @Test
-    void getUserInfo_UserNotFound_ShouldReturnErrorMessage() {
+    void getUserProfile_UserNotFound_ShouldReturnErrorMessage() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(userRepository.getUserByID(USERNAME)).thenReturn(null);
 
-        String result = userService.getUserInfo(TOKEN);
+        var result = userService.getUserProfile(TOKEN);
 
-        assertEquals("User not found", result);
+        assertFalse(result.isSuccess());
+        assertEquals("User not found", result.getMessage());
+        assertNull(result.getData());
     }
 
 
