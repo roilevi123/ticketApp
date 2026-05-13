@@ -130,9 +130,9 @@ public class AdminJUnitTests {
         companyService.CreateCompany("C1", token);
         eventService.createEvent(token, "E1", "C1", EventType.PLAY, 100, new Date(), "Loc", "C1", getMapArea());
 
-        String result = adminService.CloseCompany("C1", "admin");
+        var response = adminService.CloseCompany("C1", "admin");
 
-        assertEquals("success", result);
+        assertTrue(response.isSuccess());
         assertNull(eventService.getCompanyInfo(token, "C1"));
         assertNull(eventService.getCompanyEvents(token, "C1"));
         assertNull(companyService.GetRoleTreeString(token, "C1"));
@@ -145,8 +145,8 @@ public class AdminJUnitTests {
         String token = log("owner1", "password");
         companyService.CreateCompany("C1", token);
 
-        String result = adminService.CloseCompany("C1", "not_admin");
-        assertNotEquals("success", result);
+        var response = adminService.CloseCompany("C1", "not_admin");
+        assertFalse(response.isSuccess());
     }
 
     @Test
@@ -154,8 +154,8 @@ public class AdminJUnitTests {
     void removeUserSuccess3() {
         reg("userToRemove", "123");
         String userID = (userRepository.getUserByUsername("userToRemove")).getID();
-        String result = adminService.removeUser(userID, "admin");
-        assertEquals("success", result);
+        var response = adminService.removeUser(userID, "admin");
+        assertTrue(response.isSuccess());
 
         assertNull(userService.login(gt(), "userToRemove", "123"));
     }
@@ -164,8 +164,8 @@ public class AdminJUnitTests {
     @DisplayName("4. Remove User Failed - Not Admin")
     void removeUserFailedNotAdmin4() {
         reg("user1", "123");
-        String result = adminService.removeUser("user1", "not_admin");
-        assertNotEquals("success", result);
+        var response = adminService.removeUser("user1", "not_admin");
+        assertFalse(response.isSuccess());
     }
 
     @Test
@@ -181,7 +181,9 @@ public class AdminJUnitTests {
         String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}));
         purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer","none");
 
-        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
+        var response = adminService.GetAllPurchasedOrders("admin");
+        assertTrue(response.isSuccess());
+        List<PurchaseOrderDTO> result = response.getData();
         boolean isCompanyExist = false;
         boolean isEventExist = false;
         boolean isPurchased = false;
@@ -223,7 +225,9 @@ public class AdminJUnitTests {
         String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1}));
         purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2","none");
 
-        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
+        var response = adminService.GetAllPurchasedOrders("admin");
+        assertTrue(response.isSuccess());
+        List<PurchaseOrderDTO> result = response.getData();
         boolean isCompanyExist = false;
         boolean isEventExist = false;
         boolean isPurchased = false;
@@ -251,8 +255,9 @@ public class AdminJUnitTests {
     @Test
     @DisplayName("7. Get All Purchased Orders Failed - Not Admin")
     void getAllPurchasedOrdersFailedNotAdmin7() {
-        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("not_an_admin");
-        assertNull(result);
+        var response = adminService.GetAllPurchasedOrders("not_an_admin");
+        assertFalse(response.isSuccess());
+        assertNull(response.getData());
     }
 
     @Test
@@ -277,7 +282,9 @@ public class AdminJUnitTests {
         String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1}));
         purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8","none");
 
-        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
+        var response = adminService.GetAllPurchasedOrders("admin");
+        assertTrue(response.isSuccess());
+        List<PurchaseOrderDTO> result = response.getData();
         assertNotNull(result);
         assertEquals(2, result.size());
 
