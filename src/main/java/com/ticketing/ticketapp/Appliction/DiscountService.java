@@ -143,6 +143,34 @@ public class DiscountService {
             return List.of();
         }
     }
+    public double calculatePriceAfterDiscounts(String token, String eventId, String companyName, double originalPrice, int quantity, String coupon) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                return originalPrice;
+            }
+
+            PurchaseContext context = new PurchaseContext(quantity, coupon, new Date());
+
+            DiscountPolicy eventPolicy = discountRepo.findByEvent(eventId);
+            DiscountPolicy companyPolicy = discountRepo.findByCompany(companyName);
+
+            MaxDiscountComposite combinedRoot = new MaxDiscountComposite();
+
+            if (eventPolicy != null) {
+                combinedRoot.add(eventPolicy.getRoot());
+            }
+            if (companyPolicy != null) {
+                combinedRoot.add(companyPolicy.getRoot());
+            }
+
+            double discountAmount = combinedRoot.calculateDiscount(originalPrice, context);
+            return originalPrice - discountAmount;
+
+        } catch (Exception e) {
+            logger.error("Error calculating discount: " + e.getMessage());
+            return originalPrice;
+        }
+    }
 
 
 }
