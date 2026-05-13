@@ -105,11 +105,11 @@ public class AdminJUnitTests {
     }
 
     private void reg(String username, String password) {
-        userService.register(gt(), username, password,10);
+        userService.register(gt(), username, password, 10);
     }
 
     private String log(String username, String password) {
-        return userService.login(gt(), username, password);
+        return userService.login(gt(), username, password).getData();
     }
 
     private MapArea[][] getMapArea() {
@@ -133,9 +133,9 @@ public class AdminJUnitTests {
         var response = adminService.CloseCompany("C1", "admin");
 
         assertTrue(response.isSuccess());
-        assertNull(eventService.getCompanyInfo(token, "C1"));
-        assertNull(eventService.getCompanyEvents(token, "C1"));
-        assertNull(companyService.GetRoleTreeString(token, "C1"));
+        assertTrue(eventService.getCompanyInfo(token, "C1").isError());
+        assertTrue(eventService.getCompanyEvents(token, "C1").isError());
+        assertTrue(companyService.GetRoleTreeString(token, "C1").isError());
     }
 
     @Test
@@ -157,7 +157,7 @@ public class AdminJUnitTests {
         var response = adminService.removeUser(userID, "admin");
         assertTrue(response.isSuccess());
 
-        assertNull(userService.login(gt(), "userToRemove", "123"));
+        assertTrue(userService.login(gt(), "userToRemove", "123").isError());
     }
 
     @Test
@@ -178,8 +178,8 @@ public class AdminJUnitTests {
 
         reg("buyer", "p");
         String tB = log("buyer", "p");
-        String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer","none");
+        String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1})).getData();
+        purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer", "none");
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());
@@ -190,15 +190,9 @@ public class AdminJUnitTests {
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
             for (TicketDTO ticket : ticketsList) {
-                if(ticket.isPurchased()){
-                    isPurchased = true;
-                }
-                if(ticket.company().equals("C1")){
-                    isCompanyExist = true;
-                }
-                if(ticket.event().equals("E1")){
-                    isEventExist = true;
-                }
+                if(ticket.isPurchased()){ isPurchased = true; }
+                if(ticket.company().equals("C1")){ isCompanyExist = true; }
+                if(ticket.event().equals("E1")){ isEventExist = true; }
             }
         }
         assertNotNull(result);
@@ -217,13 +211,13 @@ public class AdminJUnitTests {
 
         reg("b1", "p");
         String tB1 = log("b1", "p");
-        String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1","none");
+        String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", List.of(new int[]{0, 0, 1})).getData();
+        purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1", "none");
 
         reg("b2", "p");
         String tB2 = log("b2", "p");
-        String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1}));
-        purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2","none");
+        String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1})).getData();
+        purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2", "none");
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());
@@ -235,15 +229,9 @@ public class AdminJUnitTests {
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
             for (TicketDTO ticket : ticketsList) {
-                if(ticket.isPurchased()){
-                    isPurchased = true;
-                }
-                if(ticket.company().equals("C1")){
-                    isCompanyExist = true;
-                }
-                if(ticket.event().equals("E1")){
-                    isEventExist = true;
-                }
+                if(ticket.isPurchased()){ isPurchased = true; }
+                if(ticket.company().equals("C1")){ isCompanyExist = true; }
+                if(ticket.event().equals("E1")){ isEventExist = true; }
             }
         }
         assertNotNull(result);
@@ -276,11 +264,11 @@ public class AdminJUnitTests {
         reg("buyer8", "p");
         String tB = log("buyer8", "p");
 
-        String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8","none");
+        String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", List.of(new int[]{0, 0, 1})).getData();
+        purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8", "none");
 
-        String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8","none");
+        String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1})).getData();
+        purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8", "none");
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());

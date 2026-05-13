@@ -1,4 +1,5 @@
 package com.ticketing.ticketapp.Appliction;
+
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
 
@@ -6,9 +7,9 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 @Service
 public class UserService implements IAuth {
-
 
     private final IPasswordEncoder passwordEncoder;
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
@@ -17,33 +18,31 @@ public class UserService implements IAuth {
 
     public UserService(IPasswordEncoder passwordEncoder,
                        IUserRepository userRepository,
-                       TokenService tokenService
-                       ) {
+                       TokenService tokenService) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
     }
 
     @Override
-    public String register(String token, String username, String password, int age) {
-        try{
+    public Response<String> register(String token, String username, String password, int age) {
+        try {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            logger.info("Registering user " + username );
+            logger.info("Registering user " + username);
             String encodedPassword = passwordEncoder.encode(password);
-            userRepository.Store(username, encodedPassword,age);
-            logger.info("Registered user " + username + "successfully");
-            return "success";
-        }catch (Exception e){
-            logger.error("Registering user " + username + " failed",e.getMessage());
-            return e.getMessage();
+            userRepository.Store(username, encodedPassword, age);
+            logger.info("Registered user " + username + " successfully");
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error("Registering user " + username + " failed", e.getMessage());
+            return Response.error(e.getMessage());
         }
-
     }
 
     @Override
-    public String login(String token, String username, String password) {
+    public Response<String> login(String token, String username, String password) {
         try {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
@@ -51,7 +50,7 @@ public class UserService implements IAuth {
             logger.info("User {} is trying to login", username);
             boolean user = userRepository.usernameExists(username);
             if (!user) {
-                throw new RuntimeException( "User not found");
+                throw new RuntimeException("User not found");
             }
             String passwordHash = userRepository.getUserPassword(username);
             if (!passwordEncoder.matches(password, passwordHash)) {
@@ -61,35 +60,35 @@ public class UserService implements IAuth {
             User userObj = userRepository.getUserByUsername(username);
             String memberToken = tokenService.generateMemberToken(userObj.getID(), userObj.getName());
             logger.info("User {} logged in successfully", username);
-            return memberToken;
-
+            return Response.success(memberToken);
         } catch (Exception e) {
             logger.error("Login failed for user {}", username, e);
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
     @Override
-    public String logout(String token) {
+    public Response<String> logout(String token) {
         try {
             logger.info("Logout requested");
-            if (tokenService.validateToken(token)){
+            if (tokenService.validateToken(token)) {
                 tokenService.addBlacklistToken(token);
-            logger.info("Logout completed successfully");
-            return "success";
+                logger.info("Logout completed successfully");
+                return Response.success("success");
             }
-        logger.error("Logout failed for token {}", token);
-        throw new RuntimeException("Invalid token");
+            logger.error("Logout failed for token {}", token);
+            throw new RuntimeException("Invalid token");
         } catch (Exception e) {
             logger.error("Logout failed", e);
-            return e.getMessage();
+            return Response.error(e.getMessage());
         }
     }
 
-    public String getUserInfo(String token) {
+    @Override
+    public Response<String> getUserInfo(String token) {
         try {
             logger.info("Getting user info");
-            if (tokenService.validateToken(token)){
+            if (tokenService.validateToken(token)) {
                 String userId = tokenService.extractUserId(token);
                 User user = userRepository.getUserByID(userId);
                 if (user == null) {
@@ -97,17 +96,18 @@ public class UserService implements IAuth {
                     throw new RuntimeException("User not found");
                 }
                 logger.info("User info retrieved successfully for user {}", userId);
-                return user.getUserInfo();
+                return Response.success(user.getUserInfo());
             }
             logger.error("Invalid token provided for getting user info");
             throw new RuntimeException("Invalid token");
         } catch (Exception e) {
             logger.error("Failed to get user info", e);
-            return e.getMessage();
+            return Response.error(e.getMessage());
         }
     }
 
-    public String updateUserPassword(String token, String newPassword) {
+    @Override
+    public Response<String> updateUserPassword(String token, String newPassword) {
         try {
             logger.info("Updating user password");
             if (!tokenService.validateToken(token)) {
@@ -124,13 +124,10 @@ public class UserService implements IAuth {
             user.setPassword(encodedPassword);
             userRepository.save(user);
             logger.info("Password updated successfully for user {}", userId);
-            return "success";
+            return Response.success("success");
         } catch (Exception e) {
             logger.error("Failed to update password", e);
-            return e.getMessage();
+            return Response.error(e.getMessage());
         }
     }
-
-
-
 }

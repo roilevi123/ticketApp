@@ -1,6 +1,7 @@
 package AcceptanceTests;
 
 import com.ticketing.ticketapp.Appliction.UserService;
+import com.ticketing.ticketapp.Appliction.Response;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.PasswordEncoderImpl;
 import com.ticketing.ticketapp.Infastructure.TokenService;
@@ -11,8 +12,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 @DisplayName("User Action Acceptance Tests")
 public class UserActionInfoTest {
@@ -40,133 +39,141 @@ public class UserActionInfoTest {
     @Test
     @DisplayName("1. Register Success")
     void registerSuccess1() {
-        String result = userService.register(gt(), "roi", "roilevi",10);
-        assertEquals("success", result);
+        Response<String> result = userService.register(gt(), "roi", "roilevi", 10);
+        assertTrue(result.isSuccess());
+        assertEquals("success", result.getData());
     }
 
     @Test
     @DisplayName("2. Register Fail - Invalid Password")
     void registerFailInvalidPassword2() {
-        String result = userService.register(gt(), "roi", null,10);
-        assertNotEquals("success", result);
+        Response<String> result = userService.register(gt(), "roi", null, 10);
+        assertTrue(result.isError());
     }
 
     @Test
     @DisplayName("3. Register Fail - Already User In This UserName")
     void registerFailAlreadyUserInThisUserName3() {
-        userService.register(gt(), "roi", "roilevi",10);
-        String result = userService.register(gt(), "roi", "roilevi",10);
-        assertNotEquals("success", result);
+        userService.register(gt(), "roi", "roilevi", 10);
+        Response<String> result = userService.register(gt(), "roi", "roilevi", 10);
+        assertTrue(result.isError());
     }
 
     @Test
     @DisplayName("4. Login Success")
     void loginSuccess4() {
-        userService.register(gt(), "roi", "roilevi",10);
-        String result = userService.login(gt(), "roi", "roilevi");
-        assertNotNull(result);
+        userService.register(gt(), "roi", "roilevi", 10);
+        Response<String> result = userService.login(gt(), "roi", "roilevi");
+        assertTrue(result.isSuccess());
+        assertNotNull(result.getData());
     }
 
     @Test
     @DisplayName("5. Login Fail - Wrong Password")
     void loginFailWrongPassword5() {
-        userService.register(gt(), "roi", "roilevi",10);
-        String result = userService.login(gt(), "roi", "wrong_pass");
-        assertNull(result);
+        userService.register(gt(), "roi", "roilevi", 10);
+        Response<String> result = userService.login(gt(), "roi", "wrong_pass");
+        assertTrue(result.isError());
     }
 
     @Test
     @DisplayName("6. Login Fail - InValid Password")
     void loginFailInValidPassword6() {
-        userService.register(gt(), "roi", "roilevi",10);
-        String result = userService.login(gt(), "roi", null);
-        assertNull(result);
+        userService.register(gt(), "roi", "roilevi", 10);
+        Response<String> result = userService.login(gt(), "roi", null);
+        assertTrue(result.isError());
     }
 
     @Test
     @DisplayName("7. Login Fail - User Not Found")
     void loginFailUserNotFound7() {
-        String result = userService.login(gt(), "roi", "roilevi");
-        assertNull(result);
+        Response<String> result = userService.login(gt(), "roi", "roilevi");
+        assertTrue(result.isError());
     }
 
     @Test
     @DisplayName("8. Logout Success")
     void logoutSuccess8() {
-        userService.register(gt(), "roi", "roilevi",10);
-        String token = userService.login(gt(), "roi", "roilevi");
-        String result = userService.logout(token);
-        assertEquals("success", result);
+        userService.register(gt(), "roi", "roilevi", 10);
+        String token = userService.login(gt(), "roi", "roilevi").getData();
+        Response<String> result = userService.logout(token);
+        assertTrue(result.isSuccess());
+        assertEquals("success", result.getData());
     }
 
     @Test
     @DisplayName("9. Logout Failed")
     void logoutFailed9() {
-        userService.register(gt(), "roi", "roilevi",10);
-        String result = userService.logout("token");
-        assertNotEquals("success", result);
+        userService.register(gt(), "roi", "roilevi", 10);
+        Response<String> result = userService.logout("token");
+        assertTrue(result.isError());
     }
 
     @Test
     @DisplayName("10. Login After Logout Success")
     void loginAfterLogoutSuccess10() {
-        userService.register(gt(), "roi", "roilevi",10);
-        String token = userService.login(gt(), "roi", "roilevi");
+        userService.register(gt(), "roi", "roilevi", 10);
+        String token = userService.login(gt(), "roi", "roilevi").getData();
         userService.logout(token);
-        String result = userService.login(gt(), "roi", "roilevi");
-        assertNotNull(result);
+        Response<String> result = userService.login(gt(), "roi", "roilevi");
+        assertTrue(result.isSuccess());
+        assertNotNull(result.getData());
     }
 
     @Test
     @DisplayName("11. Get User Info Success")
     void getUserInfoSuccess11() {
-        userService.register(gt(), "roi", "roilevi",10);
-        String token = userService.login(gt(), "roi", "roilevi");
-        String result = userService.getUserInfo(token);
-        assertEquals("name=roi", result);
+        userService.register(gt(), "roi", "roilevi", 10);
+        String token = userService.login(gt(), "roi", "roilevi").getData();
+        Response<String> result = userService.getUserInfo(token);
+        assertTrue(result.isSuccess());
+        assertEquals("name=roi", result.getData());
     }
 
     @Test
     @DisplayName("12. Get User Info Not Exist")
     void getUserInfoNotExist12() {
-        String result = userService.getUserInfo("Non Exist User");
-        assertEquals("Invalid token", result);
+        Response<String> result = userService.getUserInfo("Non Exist User");
+        assertTrue(result.isError());
+        assertEquals("Invalid token", result.getMessage());
     }
 
     @Test
     @DisplayName("13. Update User Info Success")
     void updateUserInfoSuccess13() {
-        userService.register(gt(), "roi", "roilevi",10);
-        String token = userService.login(gt(), "roi", "roilevi");
-        String result = userService.updateUserPassword(token, "new");
-        assertEquals("success", result);
+        userService.register(gt(), "roi", "roilevi", 10);
+        String token = userService.login(gt(), "roi", "roilevi").getData();
+        Response<String> result = userService.updateUserPassword(token, "new");
+        assertTrue(result.isSuccess());
+        assertEquals("success", result.getData());
     }
 
     @Test
     @DisplayName("14. Update User Info Not Exist")
     void updateUserInfoNotExist14() {
-        String result = userService.updateUserPassword("token", "wrong");
-        assertNotEquals("success", result);
+        Response<String> result = userService.updateUserPassword("token", "wrong");
+        assertTrue(result.isError());
     }
 
     @Test
     @DisplayName("15. Update User Info And Then Login Success")
     void updateUserInfoAndThenLoginSuccess15() {
-        userService.register(gt(), "roi", "roilevi",10);
-        String token = userService.login(gt(), "roi", "roilevi");
+        userService.register(gt(), "roi", "roilevi", 10);
+        String token = userService.login(gt(), "roi", "roilevi").getData();
         userService.updateUserPassword(token, "new");
         userService.logout(token);
-        String result = userService.login(gt(), "roi", "new");
-        assertNotNull(result);
+        Response<String> result = userService.login(gt(), "roi", "new");
+        assertTrue(result.isSuccess());
+        assertNotNull(result.getData());
     }
+
     @Test
-     void testRegisterInvalidToken(){
-
-            assertNotEquals( userService.register("", "eventId","",1),"success");
-
+    void testRegisterInvalidToken() {
+        assertTrue(userService.register("", "eventId", "", 1).isError());
     }
+
     @Test
-     void testLoginInvalidToken(){
-        assertNotEquals( userService.login("", "eventId",""),"success");
+    void testLoginInvalidToken() {
+        assertTrue(userService.login("", "eventId", "").isError());
     }
 }
