@@ -118,19 +118,21 @@ public class UserActionInfoTest {
     }
 
     @Test
-    @DisplayName("11. Get User Info Success")
-    void getUserInfoSuccess11() {
+    @DisplayName("11. Get User Profile Success")
+    void getUserProfileSuccess11() {
         userService.register(gt(), "roi", "roilevi",10);
         String token = userService.login(gt(), "roi", "roilevi");
-        String result = userService.getUserInfo(token);
-        assertEquals("name=roi", result);
+        var result = userService.getUserProfile(token);
+        assertTrue(result.isSuccess());
+        assertEquals("roi", result.getData().getName());
     }
 
     @Test
-    @DisplayName("12. Get User Info Not Exist")
-    void getUserInfoNotExist12() {
-        String result = userService.getUserInfo("Non Exist User");
-        assertEquals("Invalid token", result);
+    @DisplayName("12. Get User Profile Not Exist / Invalid Token")
+    void getUserProfileNotExist12() {
+        var result = userService.getUserProfile("Non Exist Token");
+        assertFalse(result.isSuccess());
+        assertEquals("Invalid token", result.getMessage());
     }
 
     @Test
