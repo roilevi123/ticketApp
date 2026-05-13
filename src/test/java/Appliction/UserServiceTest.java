@@ -109,36 +109,40 @@ class UserServiceTest {
     }
 
     @Test
-    void getUserInfo_ShouldReturnUserInfoString() {
-        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 10);
+    void getUserProfile_ShouldReturnUserDTO() {
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD,10);
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
 
-        Response<String> result = userService.getUserInfo(TOKEN);
+        var result = userService.getUserProfile(TOKEN);
 
         assertTrue(result.isSuccess());
-        assertEquals("name=" + USERNAME, result.getData());
+        assertEquals(USERNAME, result.getData().getName());
+        assertEquals(10, result.getData().getAge());
     }
 
     @Test
-    void getUserInfo_InvalidToken_ShouldReturnErrorMessage() {
+    void getUserProfile_InvalidToken_ShouldReturnErrorMessage() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
-        Response<String> result = userService.getUserInfo(TOKEN);
+        var result = userService.getUserProfile(TOKEN);
 
-        assertTrue(result.isError());
+        assertFalse(result.isSuccess());
         assertEquals("Invalid token", result.getMessage());
+        assertNull(result.getData());
     }
 
     @Test
-    void getUserInfo_UserNotFound_ShouldReturnErrorMessage() {
+    void getUserProfile_UserNotFound_ShouldReturnErrorMessage() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(userRepository.getUserByID(USERNAME)).thenReturn(null);
 
-        Response<String> result = userService.getUserInfo(TOKEN);
+        var result = userService.getUserProfile(TOKEN);
 
-        assertTrue(result.isError());
+        assertFalse(result.isSuccess());
+        assertEquals("User not found", result.getMessage());
+        assertNull(result.getData());
     }
 
     @Test

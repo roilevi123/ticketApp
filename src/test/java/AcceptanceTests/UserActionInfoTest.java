@@ -3,6 +3,7 @@ package AcceptanceTests;
 import com.ticketing.ticketapp.Appliction.UserService;
 import com.ticketing.ticketapp.Appliction.Response;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.UserDTO;
 import com.ticketing.ticketapp.Infastructure.PasswordEncoderImpl;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import com.ticketing.ticketapp.Infastructure.UserRepositoryImpl;
@@ -121,25 +122,25 @@ public class UserActionInfoTest {
     }
 
     @Test
-    @DisplayName("11. Get User Info Success")
+    @DisplayName("11. Get User Profile Success")
     void getUserInfoSuccess11() {
         userService.register(gt(), "roi", "roilevi", 10);
         String token = userService.login(gt(), "roi", "roilevi").getData();
-        Response<String> result = userService.getUserInfo(token);
+        Response<UserDTO> result = userService.getUserProfile(token);
         assertTrue(result.isSuccess());
-        assertEquals("name=roi", result.getData());
+        assertEquals("roi", result.getData().getName());
     }
 
     @Test
-    @DisplayName("12. Get User Info Not Exist")
+    @DisplayName("12. Get User Profile Invalid Token")
     void getUserInfoNotExist12() {
-        Response<String> result = userService.getUserInfo("Non Exist User");
+        Response<UserDTO> result = userService.getUserProfile("Non Exist User");
         assertTrue(result.isError());
         assertEquals("Invalid token", result.getMessage());
     }
 
     @Test
-    @DisplayName("13. Update User Info Success")
+    @DisplayName("13. Update User Profile Success")
     void updateUserInfoSuccess13() {
         userService.register(gt(), "roi", "roilevi", 10);
         String token = userService.login(gt(), "roi", "roilevi").getData();
@@ -149,14 +150,14 @@ public class UserActionInfoTest {
     }
 
     @Test
-    @DisplayName("14. Update User Info Not Exist")
+    @DisplayName("14. Update User Profile Not Exist")
     void updateUserInfoNotExist14() {
         Response<String> result = userService.updateUserPassword("token", "wrong");
         assertTrue(result.isError());
     }
 
     @Test
-    @DisplayName("15. Update User Info And Then Login Success")
+    @DisplayName("15. Update User Profile And Then Login Success")
     void updateUserInfoAndThenLoginSuccess15() {
         userService.register(gt(), "roi", "roilevi", 10);
         String token = userService.login(gt(), "roi", "roilevi").getData();

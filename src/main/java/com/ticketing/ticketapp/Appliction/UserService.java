@@ -2,6 +2,7 @@ package com.ticketing.ticketapp.Appliction;
 
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
+import com.ticketing.ticketapp.Domain.User.UserDTO;
 
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.springframework.stereotype.Service;
@@ -85,7 +86,7 @@ public class UserService implements IAuth {
     }
 
     @Override
-    public Response<String> getUserInfo(String token) {
+    public Response<UserDTO> getUserProfile(String token) {
         try {
             logger.info("Getting user info");
             if (tokenService.validateToken(token)) {
@@ -93,13 +94,13 @@ public class UserService implements IAuth {
                 User user = userRepository.getUserByID(userId);
                 if (user == null) {
                     logger.error("User {} not found while getting user info", userId);
-                    throw new RuntimeException("User not found");
+                    return Response.error("User not found");
                 }
-                logger.info("User info retrieved successfully for user {}", userId);
-                return Response.success(user.getUserInfo());
+                logger.info("User profile retrieved successfully for user {}", userId);
+                return Response.success(UserDTO.fromEntity(user));
             }
             logger.error("Invalid token provided for getting user info");
-            throw new RuntimeException("Invalid token");
+            return Response.error("Invalid token");
         } catch (Exception e) {
             logger.error("Failed to get user info", e);
             return Response.error(e.getMessage());
