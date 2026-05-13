@@ -14,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 public class DiscountServiceTest {
 
@@ -36,9 +37,9 @@ public class DiscountServiceTest {
 
     @Test
     void test1_CreateSimpleDiscount_Success() {
-        String result = discountService.createSimpleDiscount("token", "e1", DiscountTargetType.EVENT, 10.0, "Comp");
-        assertNotNull(result);
-        assertNotEquals("Unauthorized", result);
+        Response<String> result = discountService.createSimpleDiscount("token", "e1", DiscountTargetType.EVENT, 10.0, "Comp");
+        assertTrue(result.isSuccess());
+        assertNotNull(result.getData());
         verify(discountRepo, times(1)).save(any(DiscountPolicy.class));
     }
 
@@ -113,8 +114,8 @@ public class DiscountServiceTest {
     @Test
     void test8_MaxDiscountPolicy_Success() {
         String p1Id = "p1", p2Id = "p2";
-        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null,""));
-        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(30.0, null,""));
+        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, ""));
+        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(30.0, null, ""));
 
         when(discountRepo.getPolicy(p1Id)).thenReturn(p1);
         when(discountRepo.getPolicy(p2Id)).thenReturn(p2);
@@ -133,8 +134,8 @@ public class DiscountServiceTest {
     @Test
     void test9_SumDiscountPolicy_Success() {
         String p1Id = "p1", p2Id = "p2";
-        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null,""));
-        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(5.0, null,""));
+        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, ""));
+        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(5.0, null, ""));
 
         when(discountRepo.getPolicy(p1Id)).thenReturn(p1);
         when(discountRepo.getPolicy(p2Id)).thenReturn(p2);
@@ -153,10 +154,11 @@ public class DiscountServiceTest {
     @Test
     void test10_Unauthorized_Failure() {
         when(purchasedService.isAuthorized(anyString(), anyString())).thenReturn(false);
-        String result = discountService.createSimpleDiscount("token", "e1", DiscountTargetType.EVENT, 10.0, "Comp");
-        assertNull(result);
+        Response<String> result = discountService.createSimpleDiscount("token", "e1", DiscountTargetType.EVENT, 10.0, "Comp");
+        assertTrue(result.isError());
         verify(discountRepo, never()).save(any());
     }
+
     @Test
     void test11_GetDiscountsForEventAndCompany_Success() {
         String eventId = "e1", company = "Comp";
@@ -164,11 +166,12 @@ public class DiscountServiceTest {
 
         when(discountRepo.findByEventAndCompany(eventId, company)).thenReturn(Arrays.asList(p1));
 
-        var results = discountService.getDiscountsForEventAndCompany("token", eventId, company);
+        Response<List<DiscountPolicyDTO>> results = discountService.getDiscountsForEventAndCompany("token", eventId, company);
 
-        assertEquals(1, results.size());
-        assertEquals("p1", results.get(0).id());
-        assertEquals("10.0% discount (condition: desc1)", results.get(0).description());
+        assertTrue(results.isSuccess());
+        assertEquals(1, results.getData().size());
+        assertEquals("p1", results.getData().get(0).id());
+        assertEquals("10.0% discount (condition: desc1)", results.getData().get(0).description());
     }
 
     @Test
@@ -177,15 +180,14 @@ public class DiscountServiceTest {
         when(discountRepo.getPolicy(existingId)).thenReturn(new DiscountPolicy(existingId, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, "")));
         when(discountRepo.getPolicy(missingId)).thenReturn(null);
 
-        String result = discountService.createSumDiscountPolicy("token", "e1", DiscountTargetType.EVENT, Arrays.asList(existingId, missingId), "Comp");
+        Response<String> result = discountService.createSumDiscountPolicy("token", "e1", DiscountTargetType.EVENT, Arrays.asList(existingId, missingId), "Comp");
 
-        assertNull(result);
-        verify(discountRepo, never()).save(any()); // Save shouldn't happen if one policy is missing
+        assertTrue(result.isError());
+        verify(discountRepo, never()).save(any());
     }
 
     @Test
     void test13_RecursiveCompositeDescription() {
-        // Test that a Max policy containing a Sum policy generates the correct combined description
         SumDiscountComposite sum = new SumDiscountComposite();
         sum.add(new ConditionalDiscount(10.0, null, "cond1"));
         sum.add(new CouponDiscount("C1", 5.0));
@@ -208,7 +210,6 @@ public class DiscountServiceTest {
         discountService.createCouponDiscount("token", "e1", DiscountTargetType.EVENT, "promo123", 10.0, "Comp");
         verify(discountRepo).save(captor.capture());
 
-        // Check that the logic handles uppercase/lowercase correctly
         PurchaseContext ctx = new PurchaseContext(1, "PROMO123", new Date());
         assertEquals(10.0, captor.getValue().getRoot().calculateDiscount(100.0, ctx));
     }
@@ -217,9 +218,9 @@ public class DiscountServiceTest {
     void test15_InvalidToken_Failure() {
         when(tokenService.validateToken("bad_token")).thenReturn(false);
 
-        String result = discountService.createSimpleDiscount("bad_token", "e1", DiscountTargetType.EVENT, 10.0, "Comp");
+        Response<String> result = discountService.createSimpleDiscount("bad_token", "e1", DiscountTargetType.EVENT, 10.0, "Comp");
 
-        assertNull(result);
+        assertTrue(result.isError());
         verify(discountRepo, never()).save(any());
         verify(purchasedService, never()).isAuthorized(any(), any());
     }
