@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class EventService {
 
-
     private iCompanyRepository companyRepository;
     private iEventRepository eventRepository;
     private TokenService tokenService;
@@ -31,7 +30,6 @@ public class EventService {
     private iTicketRepository ticketRepository;
     private iQueueRepository iQueueRepository;
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
-
 
     public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository, TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository, iTicketRepository ticketRepository, iQueueRepository iQueueRepository) {
         this.companyRepository = companyRepository;
@@ -42,70 +40,65 @@ public class EventService {
         this.iQueueRepository = iQueueRepository;
     }
 
-    public boolean isAuthorized(String company,String username) {
-        boolean o=treeOfRoleRepository.exitsOwner(username,company);
-        boolean m=treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(username,company);
+    public boolean isAuthorized(String company, String username) {
+        boolean o = treeOfRoleRepository.exitsOwner(username, company);
+        boolean m = treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(username, company);
         return m || (o);
     }
 
-    public String createEvent(String token,String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] map) {
+    public Response<String> createEvent(String token, String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] map) {
         try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
+            String username = tokenService.extractUsername(token);
+            if (username == null || !isAuthorized(company, username)) {
+                logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, company);
+                return Response.error("Unauthorized");
+            }
 
-            if(!tokenService.validateToken(token)) {
-            throw new RuntimeException("Invalid token");
-        }
-        String username = tokenService.extractUsername(token);
-        if (username == null || !isAuthorized(company, username)) {
-            logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, company);
-            return "Unauthorized";
-        }
-
-
-            Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, company,map);
+            Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, company, map);
             ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, event.getDate(), event.getPrice());
-            iQueueRepository.initQueue(eventName+company);
+            iQueueRepository.initQueue(eventName + company);
             logger.info("Event '{}' created successfully for company '{}'", eventName, company);
-            return "success";
+            return Response.success("success");
         } catch (Exception e) {
             logger.error("Failed to create event '{}' for company '{}': {}", eventName, company, e.getMessage());
-            return "Failed to create event: " + e.getMessage();
+            return Response.error("Failed to create event: " + e.getMessage());
         }
     }
 
-    public String deleteEvent(String eventId, String companyName, String token) {
+    public Response<String> deleteEvent(String eventId, String companyName, String token) {
         try {
             if (!tokenService.validateToken(token)) {
-                throw  new RuntimeException("Invalid token");
+                throw new RuntimeException("Invalid token");
             }
-        String username = tokenService.extractUsername(token);
+            String username = tokenService.extractUsername(token);
 
-        if (username == null || !isAuthorized(companyName, username)) {
-            logger.info("Unauthorized attempt to delete event '{}' for company '{}'", eventId, companyName);
-            return "Unauthorized";
-        }
-
-
-
+            if (username == null || !isAuthorized(companyName, username)) {
+                logger.info("Unauthorized attempt to delete event '{}' for company '{}'", eventId, companyName);
+                return Response.error("Unauthorized");
+            }
 
             Event event = eventRepository.getEventById(eventId, companyName);
             if (event == null) {
                 logger.info("Attempt to delete non-existent event '{}' for company '{}'", eventId, companyName);
-                return "Event not found";
+                return Response.error("Event not found");
             }
 
             eventRepository.deleteEvent(eventId, companyName);
             logger.info("Event '{}' deleted successfully for company '{}'", eventId, companyName);
-            return "success";
+            return Response.success("success");
 
         } catch (Exception e) {
             logger.error("Failed to delete event '{}' for company '{}': {}", eventId, companyName, e.getMessage());
-            return "Failed to delete event: " + e.getMessage();
+            return Response.error("Failed to delete event: " + e.getMessage());
         }
     }
 
-    public String UpdateEvent(String token, String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] map, double rating) {
+    public Response<String> UpdateEvent(String token, String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] map, double rating) {
         try {
-            logger.info("trying update  event: " + eventName);
+            logger.info("trying update event: " + eventName);
             String username = tokenService.extractUsername(token);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
@@ -127,79 +120,75 @@ public class EventService {
             event.setMap(map);
             event.setRating(rating);
             eventRepository.save(event);
-            logger.info("Successfully update  event: " + eventName);
-            return "success";
+            logger.info("Successfully update event: " + eventName);
+            return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return e.getMessage();
+            return Response.error(e.getMessage());
         }
     }
 
-
-    public String getCompanyInfo(String token, String company) {
+    public Response<String> getCompanyInfo(String token, String company) {
         try {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
             logger.info("trying Getting company info: " + company);
-            boolean c=companyRepository.isCompanyActive(company);
-            if(!c){
+            boolean c = companyRepository.isCompanyActive(company);
+            if (!c) {
                 throw new RuntimeException("the company is not active");
             }
             logger.info("Successfully Getting company info: " + company);
-            return companyRepository.getCompanyDescription(company);
-        }catch (Exception e) {
+            return Response.success(companyRepository.getCompanyDescription(company));
+        } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
-    public List<EventDTO> getCompanyEvents(String token, String company) {
+    public Response<List<EventDTO>> getCompanyEvents(String token, String company) {
         try {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
             logger.info("trying Getting company events: " + company);
-            boolean c=companyRepository.isCompanyActive(company);
-            if(!c){
+            boolean c = companyRepository.isCompanyActive(company);
+            if (!c) {
                 throw new RuntimeException("the company is not active");
             }
             List<Event> events = eventRepository.getEventsByCompany(company);
-            List<String> eventsString = new ArrayList<>();
             List<EventDTO> eventDTOs = new ArrayList<>();
             for (Event event : events) {
-                eventsString.add(event.toString());
                 eventDTOs.add(EventDTO.fromEntity(event));
             }
             logger.info("Successfully Getting company events: " + company);
-            return eventDTOs;
-        }
-        catch (Exception e) {
+            return Response.success(eventDTOs);
+        } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
-    public MapArea[][] getMapArea(String token, String company, String eventName) {
+    public Response<MapArea[][]> getMapArea(String token, String company, String eventName) {
         try {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
             logger.info("trying Getting map area: " + eventName);
-            MapArea[][] map=eventRepository.getMapArea(company,eventName);
-            MapArea[][] mapArea=ticketRepository.getMapAreas(company,eventName,map);
+            MapArea[][] map = eventRepository.getMapArea(company, eventName);
+            MapArea[][] mapArea = ticketRepository.getMapAreas(company, eventName, map);
             logger.info("Successfully Getting map area: " + eventName);
-            return mapArea;
-        }catch (Exception e) {
+            return Response.success(mapArea);
+        } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 
-    public List<EventDTO> searchEvents(String token, String query, String company, EventType type,
-                                     Double minPrice, Double maxPrice,
-                                     Date startDate, Date endDate,
-                                     String location, Double minRating) {
+    public Response<List<EventDTO>> searchEvents(String token, String query, String company, EventType type,
+                                                  Double minPrice, Double maxPrice,
+                                                  Date startDate, Date endDate,
+                                                  String location, Double minRating) {
         try {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
@@ -209,10 +198,10 @@ public class EventService {
                     query, company, type, minPrice, maxPrice, startDate, endDate, location, minRating
             );
             logger.info("Search completed successfully. Found {} events", results.size());
-            return results;
+            return Response.success(results);
         } catch (Exception e) {
             logger.error("Error occurred during event search: {}", e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
 }

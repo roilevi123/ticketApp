@@ -16,16 +16,16 @@ public class QueueService {
         this.tokenService = tokenService;
     }
 
-    public String checkStatus(String token, String eventId) {
-        if (!tokenService.validateToken(token)) {
-            throw new RuntimeException("Invalid token");
+    public Response<String> checkStatus(String token, String eventId) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                return Response.error("Invalid token");
+            }
+            String userID = tokenService.extractUserId(token);
+            String status = queueRepository.checkStatusAtomic(eventId, userID, MAX_ACTIVE_USERS, ACCESS_DURATION);
+            return Response.success(status);
+        } catch (Exception e) {
+            return Response.error(e.getMessage());
         }
-        String userID = tokenService.extractUserId(token);
-        return queueRepository.checkStatusAtomic(
-                eventId,
-                userID,
-                MAX_ACTIVE_USERS,
-                ACCESS_DURATION
-        );
     }
 }

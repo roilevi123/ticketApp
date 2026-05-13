@@ -20,7 +20,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.when;
 
 class OrderServiceTest {
 
@@ -28,7 +27,6 @@ class OrderServiceTest {
     private TicketRepositoryImpl ticketRepository;
     private OrderRepositoryImpl orderRepository;
     private InMemoryPurchasePolicyRepository purchasePolicyRepository;
-
 
     @Mock
     private TokenService tokenService;
@@ -45,35 +43,32 @@ class OrderServiceTest {
         MockitoAnnotations.openMocks(this);
         ticketRepository = spy(new TicketRepositoryImpl());
         orderRepository = spy(new OrderRepositoryImpl());
-        userRepository=spy(new UserRepositoryImpl());
+        userRepository = spy(new UserRepositoryImpl());
         purchasePolicyRepository = spy(new InMemoryPurchasePolicyRepository());
 
-        reserveTicketService = new OrderService(orderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository);
+        reserveTicketService = new OrderService(orderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository);
     }
 
     @Test
     void reserveTickets_Success_UpdatesRepositories() {
-
-        ticketRepository.storeTicket(0, 0, EVENT,COMPANY,100);
-        ticketRepository.storeTicket(1, 1, EVENT,COMPANY,100);
-
-//        when(ticketRepository.getAvailableTicketsByEventAndCompany(COMPANY, EVENT))
-//                .thenReturn(List.of(t1, t2));
+        ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
+        ticketRepository.storeTicket(1, 1, EVENT, COMPANY, 100);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
-
         when(orderRepository.store(any(), any(), any(), any(), any())).thenReturn("1");
 
         List<int[]> requests = new ArrayList<>();
         requests.add(new int[]{0, 0});
         requests.add(new int[]{1, 1});
 
-        String orderId = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
 
-        assertEquals("1", orderId);
+        assertTrue(response.isSuccess());
+        assertEquals("1", response.getData());
         verify(orderRepository, times(1)).store(eq(COMPANY), eq(EVENT), anyList(), eq(USERNAME), any(Date.class));
     }
+
     public boolean isNumeric(String str) {
         if (str == null) return false;
         try {
@@ -83,6 +78,7 @@ class OrderServiceTest {
             return false;
         }
     }
+
     @Test
     void reserveTickets_Failure_UserAlreadyHasActiveOrder() {
         Ticket t1 = new Ticket(0, 0, EVENT, COMPANY, "T1", 100.0);
@@ -96,31 +92,28 @@ class OrderServiceTest {
 
         List<int[]> requests = List.of(new int[]{0, 0});
 
-        String string = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
 
-        assertEquals(isNumeric(string),false);
+        assertFalse(response.isSuccess());
     }
 
     @Test
     void reserveTickets_ReplaceExpiredOrder_Success() {
-
-        ticketRepository.storeTicket(0, 0, EVENT,COMPANY,100);
-        ticketRepository.storeTicket(1, 1, EVENT,COMPANY,100);
-//        when(ticketRepository.getAvailableTicketsByEventAndCompany(COMPANY, EVENT)).thenReturn(List.of(t1));
+        ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
+        ticketRepository.storeTicket(1, 1, EVENT, COMPANY, 100);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
-
-//        when(orderRepository.store(any(), any(), any(), any(), any())).thenReturn("1");
         when(orderRepository.getTicketsId(USERNAME)).thenReturn(List.of("T_NEW"));
 
         List<int[]> requests = List.of(new int[]{0, 0});
         Date pastDate = new Date(System.currentTimeMillis() - 100000);
         orderRepository.store(COMPANY, EVENT, List.of("T_OLD"), USERNAME, pastDate);
 
-        String orderId = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
 
-        assertTrue(isNumeric(orderId));
-        assertNotNull(orderRepository.findById(orderId));
+        assertTrue(response.isSuccess());
+        assertTrue(isNumeric(response.getData()));
+        assertNotNull(orderRepository.findById(response.getData()));
     }
 }
