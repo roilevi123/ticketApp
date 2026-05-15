@@ -3,7 +3,7 @@ package Appliction;
 import com.ticketing.ticketapp.Appliction.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -60,7 +60,6 @@ class CompanyServiceTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    // CreateCompany uses extractUserId → getUserByID → getName
     @Test
     void createCompany_Success() {
         User mockUser = mock(User.class);
@@ -69,8 +68,9 @@ class CompanyServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
 
-        String status = companyService.CreateCompany(COMPANY, TOKEN);
-        assertEquals(status, "success");
+        Response<String> status = companyService.CreateCompany(COMPANY, TOKEN);
+        assertTrue(status.isSuccess());
+        assertEquals("success", status.getData());
 
         verify(companyRepository).store(COMPANY, USERNAME);
         verify(treeOfRoleRepository).storeOwner(USERNAME, COMPANY, "SYSTEM_FOUNDER");
@@ -80,8 +80,8 @@ class CompanyServiceTest {
     void createCompany_InvalidToken() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
 
-        String status = companyService.CreateCompany(COMPANY, TOKEN);
-        assertNotEquals(status, "success");
+        Response<String> status = companyService.CreateCompany(COMPANY, TOKEN);
+        assertFalse(status.isSuccess());
 
         verifyNoInteractions(companyRepository);
         verifyNoInteractions(treeOfRoleRepository);
@@ -93,14 +93,13 @@ class CompanyServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(userRepository.getUserByID(USERNAME)).thenReturn(null);
 
-        String status = companyService.CreateCompany(COMPANY, TOKEN);
-        assertNotEquals(status, "success");
+        Response<String> status = companyService.CreateCompany(COMPANY, TOKEN);
+        assertFalse(status.isSuccess());
 
         verify(companyRepository, never()).store(anyString(), anyString());
         verify(treeOfRoleRepository, never()).storeOwner(anyString(), anyString(), anyString());
     }
 
-    // All methods below use extractUsername
     @Test
     void appointAManager_Success() {
         String managerName = "new_manager";
@@ -112,8 +111,9 @@ class CompanyServiceTest {
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
         when(userRepository.usernameExists(managerName)).thenReturn(true);
 
-        String result = companyService.AppointAManager(managerName, COMPANY, permissions, TOKEN);
-        assertEquals(result, "success");
+        Response<String> result = companyService.AppointAManager(managerName, COMPANY, permissions, TOKEN);
+        assertTrue(result.isSuccess());
+        assertEquals("success", result.getData());
         verify(treeOfRoleRepository).storeManager(eq(managerName), eq(COMPANY), eq(permissions), eq(USERNAME));
     }
 
@@ -125,8 +125,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
 
-        String result = companyService.AppointAManager(managerName, COMPANY, new HashSet<>(), TOKEN);
-        assertNotEquals(result, "success");
+        Response<String> result = companyService.AppointAManager(managerName, COMPANY, new HashSet<>(), TOKEN);
+        assertFalse(result.isSuccess());
         verify(treeOfRoleRepository, never()).storeManager(anyString(), anyString(), anySet(), anyString());
     }
 
@@ -140,8 +140,9 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getManager(USERNAME, COMPANY)).thenReturn(mockManager);
 
-        String result = companyService.ApproveAppointmentForManager(TOKEN, COMPANY);
-        assertEquals(result, "success");
+        Response<String> result = companyService.ApproveAppointmentForManager(TOKEN, COMPANY);
+        assertTrue(result.isSuccess());
+        assertEquals("success", result.getData());
         verify(mockManager).acceptAppointment();
         verify(treeOfRoleRepository).save(mockManager);
         assertEquals(true, mockManager.isAccepted());
@@ -154,8 +155,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getManager(USERNAME, COMPANY)).thenReturn(null);
 
-        String result = companyService.ApproveAppointmentForManager(TOKEN, COMPANY);
-        assertNotEquals(result, "success");
+        Response<String> result = companyService.ApproveAppointmentForManager(TOKEN, COMPANY);
+        assertFalse(result.isSuccess());
         verify(treeOfRoleRepository, never()).save(any(Manager.class));
     }
 
@@ -169,8 +170,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getManager(USERNAME, COMPANY)).thenReturn(mockManager);
 
-        String result = companyService.ApproveAppointmentForManager(TOKEN, COMPANY);
-        assertNotEquals(result, "success");
+        Response<String> result = companyService.ApproveAppointmentForManager(TOKEN, COMPANY);
+        assertFalse(result.isSuccess());
         verify(treeOfRoleRepository, never()).save(any(Manager.class));
         assertEquals(true, mockManager.isAccepted());
         assertTrue(treeOfRoleRepository.getManager(USERNAME, COMPANY).isAccepted());
@@ -182,8 +183,9 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.isManager(USERNAME, COMPANY)).thenReturn(true);
 
-        String result = companyService.RejectAppointmentForManager(TOKEN, COMPANY);
-        assertEquals("success", result);
+        Response<String> result = companyService.RejectAppointmentForManager(TOKEN, COMPANY);
+        assertTrue(result.isSuccess());
+        assertEquals("success", result.getData());
         verify(treeOfRoleRepository).deleteManager(USERNAME, COMPANY);
     }
 
@@ -192,8 +194,8 @@ class CompanyServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
 
-        String result = companyService.RejectAppointmentForManager(TOKEN, COMPANY);
-        assertNotEquals(result, "success");
+        Response<String> result = companyService.RejectAppointmentForManager(TOKEN, COMPANY);
+        assertFalse(result.isSuccess());
         verify(treeOfRoleRepository, never()).deleteManager(anyString(), anyString());
     }
 
@@ -203,8 +205,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.isManager(USERNAME, COMPANY)).thenReturn(false);
 
-        String result = companyService.RejectAppointmentForManager(TOKEN, COMPANY);
-        assertNotEquals(result, "success");
+        Response<String> result = companyService.RejectAppointmentForManager(TOKEN, COMPANY);
+        assertFalse(result.isSuccess());
     }
 
     @Test
@@ -216,8 +218,9 @@ class CompanyServiceTest {
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
         when(userRepository.usernameExists(newOwnerName)).thenReturn(true);
 
-        String result1 = companyService.AppointOwner(newOwnerName, COMPANY, TOKEN);
-        assertEquals(result1, "success");
+        Response<String> result = companyService.AppointOwner(newOwnerName, COMPANY, TOKEN);
+        assertTrue(result.isSuccess());
+        assertEquals("success", result.getData());
         verify(treeOfRoleRepository).storeOwner(newOwnerName, COMPANY, USERNAME);
     }
 
@@ -229,8 +232,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
 
-        String result = companyService.AppointOwner(newOwnerName, COMPANY, TOKEN);
-        assertNotEquals(result, "success");
+        Response<String> result = companyService.AppointOwner(newOwnerName, COMPANY, TOKEN);
+        assertFalse(result.isSuccess());
         verify(treeOfRoleRepository, never()).storeOwner(anyString(), anyString(), anyString());
     }
 
@@ -242,8 +245,9 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getOwner(USERNAME, COMPANY)).thenReturn(mockOwner);
 
-        String result = companyService.ApproveAppointmentForOwner(TOKEN, COMPANY);
-        assertEquals(result, "success");
+        Response<String> result = companyService.ApproveAppointmentForOwner(TOKEN, COMPANY);
+        assertTrue(result.isSuccess());
+        assertEquals("success", result.getData());
         verify(mockOwner).acceptAppointment();
         verify(treeOfRoleRepository).save(mockOwner);
         assertTrue(mockOwner.isAccepted());
@@ -256,8 +260,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getOwner(USERNAME, COMPANY)).thenReturn(null);
 
-        String result = companyService.ApproveAppointmentForOwner(TOKEN, COMPANY);
-        assertNotEquals(result, "success");
+        Response<String> result = companyService.ApproveAppointmentForOwner(TOKEN, COMPANY);
+        assertFalse(result.isSuccess());
         verify(treeOfRoleRepository, never()).save(any(Owner.class));
     }
 
@@ -270,8 +274,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getOwner(USERNAME, COMPANY)).thenReturn(mockOwner);
 
-        String result = companyService.ApproveAppointmentForOwner(TOKEN, COMPANY);
-        assertNotEquals(result, "success");
+        Response<String> result = companyService.ApproveAppointmentForOwner(TOKEN, COMPANY);
+        assertFalse(result.isSuccess());
         verify(treeOfRoleRepository, never()).save(any(Owner.class));
         assertTrue(mockOwner.isAccepted());
         assertTrue(treeOfRoleRepository.getOwner(USERNAME, COMPANY).isAccepted());
@@ -284,8 +288,9 @@ class CompanyServiceTest {
         when(treeOfRoleRepository.isOwner(USERNAME, COMPANY)).thenReturn(true);
         when(companyRepository.getCompanyFounder(COMPANY)).thenReturn("different_user");
 
-        String result = companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
-        assertEquals(result, "success");
+        Response<String> result = companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
+        assertTrue(result.isSuccess());
+        assertEquals("success", result.getData());
         verify(treeOfRoleRepository).deleteOwner(USERNAME, COMPANY);
         assertNull(treeOfRoleRepository.getOwner(USERNAME, COMPANY));
     }
@@ -297,8 +302,8 @@ class CompanyServiceTest {
         when(treeOfRoleRepository.isOwner(USERNAME, COMPANY)).thenReturn(true);
         when(companyRepository.getCompanyFounder(COMPANY)).thenReturn(USERNAME);
 
-        String result = companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
-        assertNotEquals(result, "success");
+        Response<String> result = companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
+        assertFalse(result.isSuccess());
         verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
     }
 
@@ -306,8 +311,8 @@ class CompanyServiceTest {
     void rejectAppointmentForOwner_Failure_InvalidToken() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
 
-        String result = companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
-        assertNotEquals(result, "success");
+        Response<String> result = companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
+        assertFalse(result.isSuccess());
         verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
     }
 
@@ -319,8 +324,9 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.isAppointerOwner(ownerToFire, COMPANY, USERNAME)).thenReturn(true);
 
-        String res = companyService.FireOwner(TOKEN, COMPANY, ownerToFire);
-        assertEquals(res, "success");
+        Response<String> res = companyService.FireOwner(TOKEN, COMPANY, ownerToFire);
+        assertTrue(res.isSuccess());
+        assertEquals("success", res.getData());
         verify(treeOfRoleRepository).deleteOwner(ownerToFire, COMPANY);
         assertNull(treeOfRoleRepository.getOwner(ownerToFire, COMPANY));
     }
@@ -333,8 +339,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.isAppointerOwner(ownerToFire, COMPANY, USERNAME)).thenReturn(false);
 
-        String res = companyService.FireOwner(TOKEN, COMPANY, ownerToFire);
-        assertNotEquals(res, "success");
+        Response<String> res = companyService.FireOwner(TOKEN, COMPANY, ownerToFire);
+        assertFalse(res.isSuccess());
         verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
     }
 
@@ -346,8 +352,9 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.isAppointerManager(managerToFire, COMPANY, USERNAME)).thenReturn(true);
 
-        String res = companyService.FireManager(TOKEN, COMPANY, managerToFire);
-        assertEquals(res, "success");
+        Response<String> res = companyService.FireManager(TOKEN, COMPANY, managerToFire);
+        assertTrue(res.isSuccess());
+        assertEquals("success", res.getData());
         verify(treeOfRoleRepository).deleteManager(managerToFire, COMPANY);
     }
 
@@ -359,8 +366,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.isAppointerManager(managerToFire, COMPANY, USERNAME)).thenReturn(false);
 
-        String res = companyService.FireManager(TOKEN, COMPANY, managerToFire);
-        assertNotEquals(res, "success");
+        Response<String> res = companyService.FireManager(TOKEN, COMPANY, managerToFire);
+        assertFalse(res.isSuccess());
         verify(treeOfRoleRepository, never()).deleteManager(anyString(), anyString());
     }
 
@@ -375,8 +382,9 @@ class CompanyServiceTest {
         when(treeOfRoleRepository.getManager(managerName, COMPANY)).thenReturn(mockManager);
         when(treeOfRoleRepository.isAppointerManager(managerName, COMPANY, USERNAME)).thenReturn(true);
 
-        String res = companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerName, newPermissions);
-        assertEquals(res, "success");
+        Response<String> res = companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerName, newPermissions);
+        assertTrue(res.isSuccess());
+        assertEquals("success", res.getData());
         verify(mockManager).setPermissions(newPermissions);
         verify(treeOfRoleRepository).save(mockManager);
         assertEquals(newPermissions, treeOfRoleRepository.getManager(managerName, COMPANY).getPermissions());
@@ -393,8 +401,8 @@ class CompanyServiceTest {
         when(treeOfRoleRepository.getManager(managerName, COMPANY)).thenReturn(mockManager);
         when(treeOfRoleRepository.isAppointerManager(managerName, COMPANY, USERNAME)).thenReturn(false);
 
-        String res = companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerName, Set.of(Permission.MANAGE_INVENTORY));
-        assertNotEquals(res, "success");
+        Response<String> res = companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerName, Set.of(Permission.MANAGE_INVENTORY));
+        assertFalse(res.isSuccess());
         verify(treeOfRoleRepository, never()).save(any(Manager.class));
         assertEquals(new HashSet<>(), treeOfRoleRepository.getManager(managerName, COMPANY).getPermissions());
     }
@@ -406,8 +414,9 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(companyRepository.getCompany(COMPANY)).thenReturn(mockCompany);
 
-        String res = companyService.freezeCompany(COMPANY, TOKEN);
-        assertEquals(res, "success");
+        Response<String> res = companyService.freezeCompany(COMPANY, TOKEN);
+        assertTrue(res.isSuccess());
+        assertEquals("success", res.getData());
         verify(mockCompany).freezeCompany(USERNAME);
         verify(companyRepository).save(mockCompany);
         assertEquals(false, mockCompany.getActive());
@@ -421,8 +430,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(otherUser);
         when(companyRepository.getCompany(COMPANY)).thenReturn(mockCompany);
 
-        String res = companyService.freezeCompany(COMPANY, TOKEN);
-        assertNotEquals(res, "success");
+        Response<String> res = companyService.freezeCompany(COMPANY, TOKEN);
+        assertFalse(res.isSuccess());
         verify(companyRepository, never()).save(any(Company.class));
         assertEquals(true, mockCompany.getActive());
     }
@@ -433,8 +442,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(companyRepository.getCompany(COMPANY)).thenReturn(null);
 
-        String res = companyService.freezeCompany(COMPANY, TOKEN);
-        assertNotEquals(res, "success");
+        Response<String> res = companyService.freezeCompany(COMPANY, TOKEN);
+        assertFalse(res.isSuccess());
         verify(companyRepository, never()).save(any(Company.class));
     }
 
@@ -447,8 +456,9 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(companyRepository.getCompany(COMPANY)).thenReturn(mockCompany);
 
-        String res = companyService.unfreezeCompany(COMPANY, TOKEN);
-        assertEquals(res, "success");
+        Response<String> res = companyService.unfreezeCompany(COMPANY, TOKEN);
+        assertTrue(res.isSuccess());
+        assertEquals("success", res.getData());
         verify(mockCompany).unfreezeCompany(USERNAME);
         verify(companyRepository).save(mockCompany);
         assertEquals(true, mockCompany.getActive());
@@ -464,8 +474,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(otherUser);
         when(companyRepository.getCompany(COMPANY)).thenReturn(mockCompany);
 
-        String res = companyService.unfreezeCompany(COMPANY, TOKEN);
-        assertNotEquals(res, "success");
+        Response<String> res = companyService.unfreezeCompany(COMPANY, TOKEN);
+        assertFalse(res.isSuccess());
         verify(companyRepository, never()).save(any(Company.class));
         assertEquals(false, mockCompany.getActive());
     }
@@ -474,8 +484,8 @@ class CompanyServiceTest {
     void unfreezeCompany_Failure_InvalidToken() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
 
-        String res = companyService.unfreezeCompany(COMPANY, TOKEN);
-        assertNotEquals(res, "success");
+        Response<String> res = companyService.unfreezeCompany(COMPANY, TOKEN);
+        assertFalse(res.isSuccess());
         verifyNoInteractions(companyRepository);
     }
 
@@ -489,10 +499,11 @@ class CompanyServiceTest {
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
         when(treeOfRoleRepository.getManagerPermissions(managerName, COMPANY)).thenReturn(expectedPermissions);
 
-        Set<Permission> result = companyService.GetManagerPermissions(TOKEN, COMPANY, managerName);
-        assertNotNull(result);
-        assertEquals(expectedPermissions, result);
-        assertEquals(2, result.size());
+        Response<Set<Permission>> result = companyService.GetManagerPermissions(TOKEN, COMPANY, managerName);
+        assertTrue(result.isSuccess());
+        assertNotNull(result.getData());
+        assertEquals(expectedPermissions, result.getData());
+        assertEquals(2, result.getData().size());
     }
 
     @Test
@@ -503,8 +514,8 @@ class CompanyServiceTest {
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
 
-        Set<Permission> result = companyService.GetManagerPermissions(TOKEN, COMPANY, managerName);
-        assertNull(result);
+        Response<Set<Permission>> result = companyService.GetManagerPermissions(TOKEN, COMPANY, managerName);
+        assertTrue(result.isError());
         verify(treeOfRoleRepository, never()).getManager(anyString(), anyString());
     }
 }

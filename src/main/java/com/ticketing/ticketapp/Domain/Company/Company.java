@@ -22,6 +22,7 @@ public class Company {
 
         this.active=other.getActive();
         this.version=other.getVersion();
+        this.rating=other.getRating();
     }
 
     public void freezeCompany(String userID) {
@@ -66,14 +67,20 @@ public class Company {
     public void setVersion(int version) {
         this.version = version;
     }
+    public double getRating() {
+        return rating;
+    }
+    public void setRating(double rating) {
+        this.rating = rating;
+    }
 
-@Override
-public String toString() {
-    return "Company Summary:" +
-            "\nName: " + companyName +
-            "\nFounder/Owner ID: " + founderID +
-            "\nStatus: " + (active ? "Active" : "Frozen") +
-            "\nRating: " + rating;
-}
+    @Override
+    public String toString() {
+        return "Company Summary:" +
+                "\nName: " + companyName +
+                "\nFounder/Owner ID: " + founderID +
+                "\nStatus: " + (active ? "Active" : "Frozen") +
+                "\nRating: " + rating;
+    }
 
 }

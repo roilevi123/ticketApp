@@ -52,8 +52,9 @@ class AdminServiceTest {
     void CloseCompany_Success() {
         String company = "Company1";
 
-        adminService.CloseCompany(company, ADMIN_NAME);
+        var response = adminService.CloseCompany(company, ADMIN_NAME);
 
+        assertTrue(response.isSuccess());
         verify(companyRepository).deleteCompany(company);
         verify(treeOfRoleRepository).deleteCompanyMangersAndOwners(company);
     }
@@ -62,8 +63,9 @@ class AdminServiceTest {
     void CloseCompany_Fail_NotAdmin() {
         String company = "Company1";
 
-        adminService.CloseCompany(company, NOT_ADMIN);
+        var response = adminService.CloseCompany(company, NOT_ADMIN);
 
+        assertFalse(response.isSuccess());
         verify(companyRepository, never()).deleteCompany(anyString());
     }
 
@@ -71,8 +73,9 @@ class AdminServiceTest {
     void removeUser_Success() {
         String user = "user1";
 
-        adminService.removeUser(user, ADMIN_NAME);
+        var response = adminService.removeUser(user, ADMIN_NAME);
 
+        assertTrue(response.isSuccess());
         verify(userRepository).deleteUser(user);
         verify(treeOfRoleRepository).deleteUserRoles(user);
     }
@@ -81,8 +84,9 @@ class AdminServiceTest {
     void removeUser_Fail_NotAdmin() {
         String user = "user1";
 
-        adminService.removeUser(user, NOT_ADMIN);
+        var response = adminService.removeUser(user, NOT_ADMIN);
 
+        assertFalse(response.isSuccess());
         verify(userRepository, never()).deleteUser(anyString());
         verify(treeOfRoleRepository, never()).deleteUserRoles(anyString());
     }
@@ -98,7 +102,9 @@ class AdminServiceTest {
         ticketList.add(ticket1);
         when(ticketRepository.getTickets(tickets)).thenReturn(ticketList);
 
-        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
+        var response = adminService.GetAllPurchasedOrders("admin");
+        assertTrue(response.isSuccess());
+        List<PurchaseOrderDTO> result = response.getData();
         boolean isCompanyExist = false;
         boolean isEventExist = false;
         boolean isPurchased = false;
@@ -131,8 +137,9 @@ class AdminServiceTest {
 
     @Test
     void GetAllPurchasedOrders_Fail_NotAdmin() {
-        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders(NOT_ADMIN);
-        assertNull(result);
+        var response = adminService.GetAllPurchasedOrders(NOT_ADMIN);
+        assertFalse(response.isSuccess());
+        assertNull(response.getData());
 
 
 }}

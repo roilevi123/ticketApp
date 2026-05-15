@@ -11,7 +11,6 @@ import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
-import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchaseTargetType;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
@@ -22,7 +21,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -54,7 +52,7 @@ public class DiscountPaymentTests {
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.discountRepo = new InMemoryDiscountPolicyRepository();
-        iPurchasePolicyRepository purchasePolicyRepository=new InMemoryPurchasePolicyRepository();
+        iPurchasePolicyRepository purchasePolicyRepository = new InMemoryPurchasePolicyRepository();
 
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
@@ -65,7 +63,7 @@ public class DiscountPaymentTests {
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository);
 
         this.purchasedService = new PurchasedService(
                 activeOrderRepository, ticketRepository, purchasedOrderRepository,
@@ -83,8 +81,8 @@ public class DiscountPaymentTests {
 
     private String setupEventAndGetToken(String owner, String company, String event, double price) {
         String guestToken = tokenService.generateGuestToken();
-        userService.register(guestToken, owner, "password",10);
-        String token = userService.login(guestToken, owner, "password");
+        userService.register(guestToken, owner, "password", 10);
+        String token = userService.login(guestToken, owner, "password").getData();
         companyService.CreateCompany(company, token);
         eventService.createEvent(token, event, company, EventType.PLAY, price, new Date(), "Location", company, getLargeMap());
         return token;
@@ -92,8 +90,8 @@ public class DiscountPaymentTests {
 
     private String registerAndLoginBuyer(String name) {
         String guestToken = tokenService.generateGuestToken();
-        userService.register(guestToken, name, "password",10);
-        return userService.login(guestToken, name, "password");
+        userService.register(guestToken, name, "password", 10);
+        return userService.login(guestToken, name, "password").getData();
     }
 
     private MapArea[][] getLargeMap() {
@@ -113,7 +111,7 @@ public class DiscountPaymentTests {
         discountService.createSimpleDiscount(ownerToken, "E1", DiscountTargetType.EVENT, 10.0, "C1");
 
         String buyerToken = registerAndLoginBuyer("b1");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C1", "E1", List.of(new int[]{0, 0, 1}));
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C1", "E1", List.of(new int[]{0, 0, 1})).getData();
 
         purchasedService.PurchaseTicket("b1@g.com", orderId, "b1", "none");
 
@@ -127,7 +125,7 @@ public class DiscountPaymentTests {
         discountService.createCouponDiscount(ownerToken, "E2", DiscountTargetType.EVENT, "PROMO50", 50.0, "C2");
 
         String buyerToken = registerAndLoginBuyer("b2");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C2", "E2", List.of(new int[]{0, 0, 1}));
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C2", "E2", List.of(new int[]{0, 0, 1})).getData();
 
         purchasedService.PurchaseTicket("b2@g.com", orderId, "b2", "PROMO50");
 
@@ -142,7 +140,7 @@ public class DiscountPaymentTests {
 
         String buyerToken = registerAndLoginBuyer("b3");
         List<int[]> seats = List.of(new int[]{0, 0, 1}, new int[]{0, 1, 1});
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C3", "E3", seats);
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C3", "E3", seats).getData();
 
         purchasedService.PurchaseTicket("b3@g.com", orderId, "b3", "none");
 
@@ -154,13 +152,13 @@ public class DiscountPaymentTests {
     void testSummedDiscounts() {
         String ownerToken = setupEventAndGetToken("o4", "C4", "E4", 100.0);
 
-        String d1 = discountService.createSimpleDiscount(ownerToken, "E4", DiscountTargetType.EVENT, 10.0, "C4");
-        String d2 = discountService.createCouponDiscount(ownerToken, "E4", DiscountTargetType.EVENT, "PLUS5", 5.0, "C4");
+        String d1 = discountService.createSimpleDiscount(ownerToken, "E4", DiscountTargetType.EVENT, 10.0, "C4").getData();
+        String d2 = discountService.createCouponDiscount(ownerToken, "E4", DiscountTargetType.EVENT, "PLUS5", 5.0, "C4").getData();
 
         discountService.createSumDiscountPolicy(ownerToken, "E4", DiscountTargetType.EVENT, List.of(d1, d2), "C4");
 
         String buyerToken = registerAndLoginBuyer("b4");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C4", "E4", List.of(new int[]{0, 0, 1}));
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C4", "E4", List.of(new int[]{0, 0, 1})).getData();
 
         purchasedService.PurchaseTicket("b4@g.com", orderId, "b4", "PLUS5");
 
@@ -172,13 +170,13 @@ public class DiscountPaymentTests {
     void testMaxDiscountSelection() {
         String ownerToken = setupEventAndGetToken("o5", "C5", "E5", 100.0);
 
-        String d1 = discountService.createSimpleDiscount(ownerToken, "E5", DiscountTargetType.EVENT, 15.0, "C5");
-        String d2 = discountService.createSimpleDiscount(ownerToken, "E5", DiscountTargetType.EVENT, 30.0, "C5");
+        String d1 = discountService.createSimpleDiscount(ownerToken, "E5", DiscountTargetType.EVENT, 15.0, "C5").getData();
+        String d2 = discountService.createSimpleDiscount(ownerToken, "E5", DiscountTargetType.EVENT, 30.0, "C5").getData();
 
         discountService.createMaxDiscountPolicy(ownerToken, "E5", DiscountTargetType.EVENT, List.of(d1, d2), "C5");
 
         String buyerToken = registerAndLoginBuyer("b5");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C5", "E5", List.of(new int[]{0, 0, 1}));
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C5", "E5", List.of(new int[]{0, 0, 1})).getData();
 
         purchasedService.PurchaseTicket("b5@g.com", orderId, "b5", "none");
 
@@ -195,7 +193,7 @@ public class DiscountPaymentTests {
         discountService.createTimeLimitedDiscount(ownerToken, "E6", DiscountTargetType.EVENT, 50.0, cal.getTime(), "C6");
 
         String buyerToken = registerAndLoginBuyer("b6");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C6", "E6", List.of(new int[]{0, 0, 1}));
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C6", "E6", List.of(new int[]{0, 0, 1})).getData();
 
         purchasedService.PurchaseTicket("b6@g.com", orderId, "b6", "none");
 
@@ -209,21 +207,22 @@ public class DiscountPaymentTests {
         discountService.createCouponDiscount(ownerToken, "E7", DiscountTargetType.EVENT, "REAL_CODE", 20.0, "C7");
 
         String buyerToken = registerAndLoginBuyer("b7");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C7", "E7", List.of(new int[]{0, 0, 1}));
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C7", "E7", List.of(new int[]{0, 0, 1})).getData();
 
         purchasedService.PurchaseTicket("b7@g.com", orderId, "b7", "FAKE_CODE");
 
         verify(paymentServiceSpy, times(1)).processPayment("b7@g.com", 100.0);
     }
+
     @Test
     @DisplayName("1. Verify Simple Discount Creation and Persistence")
     void testSimpleDiscountStorage() {
         String ownerToken = setupEventAndGetToken("o1", "C1", "E1", 100.0);
-        String id = discountService.createSimpleDiscount(ownerToken, "E1", DiscountTargetType.EVENT, 10.0, "C1");
+        String id = discountService.createSimpleDiscount(ownerToken, "E1", DiscountTargetType.EVENT, 10.0, "C1").getData();
 
         assertNotNull(id);
         assertNotNull(discountRepo.getPolicy(id));
-        assertEquals(10.0, ((ConditionalDiscount)discountRepo.getPolicy(id).getRoot()).getPercentage());
+        assertEquals(10.0, ((ConditionalDiscount) discountRepo.getPolicy(id).getRoot()).getPercentage());
     }
 
     @Test
@@ -232,7 +231,7 @@ public class DiscountPaymentTests {
         String ownerToken = setupEventAndGetToken("o2", "C2", "E2", 100.0);
         discountService.createCouponDiscount(ownerToken, "E2", DiscountTargetType.EVENT, "SAVE50", 50.0, "C2");
 
-        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E2", "C2");
+        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E2", "C2").getData();
 
         assertTrue(discounts.get(0).description().contains("SAVE50"));
     }
@@ -243,7 +242,7 @@ public class DiscountPaymentTests {
         String ownerToken = setupEventAndGetToken("o3", "C3", "E3", 100.0);
         discountService.createQuantityDiscount(ownerToken, "E3", DiscountTargetType.EVENT, 20.0, 5, "C3");
 
-        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E3", "C3");
+        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E3", "C3").getData();
 
         assertTrue(discounts.get(0).description().contains("quantity >= 5"));
     }
@@ -252,8 +251,8 @@ public class DiscountPaymentTests {
     @DisplayName("4. Verify Composite Sum Discount Deletes Originals")
     void testSumDiscountCleanup() {
         String ownerToken = setupEventAndGetToken("o4", "C4", "E4", 100.0);
-        String d1 = discountService.createSimpleDiscount(ownerToken, "E4", DiscountTargetType.EVENT, 10.0, "C4");
-        String d2 = discountService.createSimpleDiscount(ownerToken, "E4", DiscountTargetType.EVENT, 5.0, "C4");
+        String d1 = discountService.createSimpleDiscount(ownerToken, "E4", DiscountTargetType.EVENT, 10.0, "C4").getData();
+        String d2 = discountService.createSimpleDiscount(ownerToken, "E4", DiscountTargetType.EVENT, 5.0, "C4").getData();
 
         discountService.createSumDiscountPolicy(ownerToken, "E4", DiscountTargetType.EVENT, List.of(d1, d2), "C4");
 
@@ -265,24 +264,24 @@ public class DiscountPaymentTests {
     @DisplayName("5. Verify Max Discount Description Recursion")
     void testMaxDiscountDescriptionRecursion() {
         String ownerToken = setupEventAndGetToken("o5", "C5", "E5", 100.0);
-        String d1 = discountService.createSimpleDiscount(ownerToken, "E5", DiscountTargetType.EVENT, 15.0, "C5");
+        String d1 = discountService.createSimpleDiscount(ownerToken, "E5", DiscountTargetType.EVENT, 15.0, "C5").getData();
         discountService.createMaxDiscountPolicy(ownerToken, "E5", DiscountTargetType.EVENT, List.of(d1), "C5");
 
-        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E5", "C5");
+        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E5", "C5").getData();
 
         assertTrue(discounts.get(0).description().contains("Best of"));
         assertTrue(discounts.get(0).description().contains("15.0%"));
     }
 
     @Test
-    @DisplayName("6. Unauthorized User Creation Returns Null")
+    @DisplayName("6. Unauthorized User Creation Returns Error")
     void testUnauthorizedCreationReturnsNull() {
         String ownerToken = setupEventAndGetToken("o6", "C6", "E6", 100.0);
-        String guestToken = tokenService.generateGuestToken(); // Not authorized for C6
+        String guestToken = tokenService.generateGuestToken();
 
-        String id = discountService.createSimpleDiscount(guestToken, "E6", DiscountTargetType.EVENT, 10.0, "C6");
+        Response<String> id = discountService.createSimpleDiscount(guestToken, "E6", DiscountTargetType.EVENT, 10.0, "C6");
 
-        assertNull(id);
+        assertTrue(id.isError());
     }
 
     @Test
@@ -292,7 +291,7 @@ public class DiscountPaymentTests {
         Date deadline = new Date();
         discountService.createTimeLimitedDiscount(ownerToken, "E7", DiscountTargetType.EVENT, 30.0, deadline, "C7");
 
-        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E7", "C7");
+        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E7", "C7").getData();
 
         assertTrue(discounts.get(0).description().contains("purchase date before"));
     }
@@ -304,7 +303,7 @@ public class DiscountPaymentTests {
         discountService.createSimpleDiscount(ownerToken, "E8", DiscountTargetType.EVENT, 10.0, "C8");
         discountService.createSimpleDiscount(ownerToken, "E8", DiscountTargetType.EVENT, 20.0, "C8");
 
-        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E8", "C8");
+        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E8", "C8").getData();
 
         assertEquals(2, discounts.size());
     }
@@ -313,10 +312,10 @@ public class DiscountPaymentTests {
     @DisplayName("9. Ensure Composite Sum Description Formatting")
     void testSumDescriptionFormatting() {
         String ownerToken = setupEventAndGetToken("o9", "C9", "E9", 100.0);
-        String d1 = discountService.createSimpleDiscount(ownerToken, "E9", DiscountTargetType.EVENT, 10.0, "C9");
+        String d1 = discountService.createSimpleDiscount(ownerToken, "E9", DiscountTargetType.EVENT, 10.0, "C9").getData();
         discountService.createSumDiscountPolicy(ownerToken, "E9", DiscountTargetType.EVENT, List.of(d1), "C9");
 
-        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E9", "C9");
+        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E9", "C9").getData();
 
         assertTrue(discounts.get(0).description().startsWith("Combined:"));
     }
@@ -327,40 +326,40 @@ public class DiscountPaymentTests {
         String ownerToken = setupEventAndGetToken("o10", "C10", "E10", 100.0);
         discountService.createSimpleDiscount(ownerToken, "E10", DiscountTargetType.EVENT, 10.0, "C10");
 
-        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E10", "C10");
+        List<DiscountPolicyDTO> discounts = discountService.getDiscountsForEventAndCompany(ownerToken, "E10", "C10").getData();
 
         assertEquals("E10", discounts.get(0).targetId());
         assertEquals("EVENT", discounts.get(0).type());
     }
-    void createQuantityDiscountInValidToken() {
-        String a=discountService.createQuantityDiscount("a", "C1",DiscountTargetType.EVENT,1,10,"");
-        assertEquals(null,a);
 
+    void createQuantityDiscountInValidToken() {
+        Response<String> a = discountService.createQuantityDiscount("a", "C1", DiscountTargetType.EVENT, 1, 10, "");
+        assertTrue(a.isError());
     }
+
     @Test
     void createAndPolicyInValidToken() {
-        String a=discountService.createTimeLimitedDiscount("a", "C1",DiscountTargetType.EVENT,1,null,null);
-        assertEquals(null,a);
-
+        Response<String> a = discountService.createTimeLimitedDiscount("a", "C1", DiscountTargetType.EVENT, 1, null, null);
+        assertTrue(a.isError());
     }
+
     @Test
     void createOrPolicyInValidToken() {
-        String a=discountService.createCouponDiscount("a", "C1",null,null,1,null);
-        assertEquals(null,a);
-
+        Response<String> a = discountService.createCouponDiscount("a", "C1", null, null, 1, null);
+        assertTrue(a.isError());
     }
+
     @Test
     void createAndPolicyInValidToken2() {
         String ownerToken = setupEventAndGetToken("o10", "C10", "E10", 100.0);
-
-        String a=discountService.createMaxDiscountPolicy(ownerToken, "C1",null,null,null);
-        assertEquals(null,a);
+        Response<String> a = discountService.createMaxDiscountPolicy(ownerToken, "C1", null, null, null);
+        assertTrue(a.isError());
     }
+
     @Test
     void getDiscountsForEventAndCompanyInValidToken3() {
         String ownerToken = setupEventAndGetToken("o10", "C10", "E10", 100.0);
-
-        List<DiscountPolicyDTO> a=discountService.getDiscountsForEventAndCompany(ownerToken,"1","1");
-        assertEquals(new ArrayList<>(),a);
+        Response<List<DiscountPolicyDTO>> a = discountService.getDiscountsForEventAndCompany(ownerToken, "1", "1");
+        assertTrue(a.isError());
     }
 }

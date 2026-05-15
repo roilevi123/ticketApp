@@ -38,20 +38,20 @@ class UserServiceTest {
     private final String ENCODED_PASSWORD = "encoded_password123";
     private final String TOKEN = "mock-jwt-token";
 
-
     @Test
     void register_ShouldEncodePasswordAndStoreInRepo() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
 
-        userService.register(TOKEN, USERNAME, RAW_PASSWORD,10);
+        Response<String> result = userService.register(TOKEN, USERNAME, RAW_PASSWORD, 10);
 
-        verify(userRepository, times(1)).Store(USERNAME, ENCODED_PASSWORD,10);
+        assertTrue(result.isSuccess());
+        verify(userRepository, times(1)).Store(USERNAME, ENCODED_PASSWORD, 10);
     }
 
     @Test
     void login_Success_ShouldReturnToken() {
-        User mockUser = new User(USERNAME, ENCODED_PASSWORD,10);
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 10);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(userRepository.usernameExists(USERNAME)).thenReturn(true);
@@ -60,9 +60,10 @@ class UserServiceTest {
         when(userRepository.getUserByUsername(USERNAME)).thenReturn(mockUser);
         when(tokenService.generateMemberToken(mockUser.getID(), USERNAME)).thenReturn(TOKEN);
 
-        String result = userService.login(TOKEN, USERNAME, RAW_PASSWORD);
+        Response<String> result = userService.login(TOKEN, USERNAME, RAW_PASSWORD);
 
-        assertEquals(TOKEN, result);
+        assertTrue(result.isSuccess());
+        assertEquals(TOKEN, result.getData());
         verify(tokenService, times(1)).generateMemberToken(mockUser.getID(), USERNAME);
     }
 
@@ -73,9 +74,9 @@ class UserServiceTest {
         when(userRepository.getUserPassword(USERNAME)).thenReturn(ENCODED_PASSWORD);
         when(passwordEncoder.matches("wrong_pass", ENCODED_PASSWORD)).thenReturn(false);
 
-        String result = userService.login(TOKEN, USERNAME, "wrong_pass");
+        Response<String> result = userService.login(TOKEN, USERNAME, "wrong_pass");
 
-        assertNull(result);
+        assertTrue(result.isError());
         verify(tokenService, never()).generateMemberToken(anyString(), anyString());
     }
 
@@ -84,63 +85,69 @@ class UserServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(userRepository.usernameExists("unknown_user")).thenReturn(false);
 
-        String result = userService.login(TOKEN, "unknown_user", RAW_PASSWORD);
+        Response<String> result = userService.login(TOKEN, "unknown_user", RAW_PASSWORD);
 
-        assertNull(result);
+        assertTrue(result.isError());
         verify(tokenService, never()).generateMemberToken(anyString(), anyString());
     }
 
     @Test
     void logout_ValidToken_shouldPutUserInBlacklist() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        String result = userService.logout(TOKEN);
-        assertEquals("success", result);
+        Response<String> result = userService.logout(TOKEN);
+        assertTrue(result.isSuccess());
+        assertEquals("success", result.getData());
         verify(tokenService, times(1)).addBlacklistToken(TOKEN);
     }
 
     @Test
     void logout_InvalidToken_shouldReturnErrorMessage() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
-        String result = userService.logout(TOKEN);
-        assertNotEquals("success", result);
+        Response<String> result = userService.logout(TOKEN);
+        assertTrue(result.isError());
         verify(tokenService, never()).addBlacklistToken(anyString());
     }
 
     @Test
-    void getUserInfo_ShouldReturnUserInfoString() {
+    void getUserProfile_ShouldReturnUserDTO() {
         User mockUser = new User(USERNAME, ENCODED_PASSWORD,10);
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
 
-        String result = userService.getUserInfo(TOKEN);
+        var result = userService.getUserProfile(TOKEN);
 
-        assertEquals("name=" + USERNAME, result);
+        assertTrue(result.isSuccess());
+        assertEquals(USERNAME, result.getData().getName());
+        assertEquals(10, result.getData().getAge());
     }
 
     @Test
-    void getUserInfo_InvalidToken_ShouldReturnErrorMessage() {
+    void getUserProfile_InvalidToken_ShouldReturnErrorMessage() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
-        String result = userService.getUserInfo(TOKEN);
+        var result = userService.getUserProfile(TOKEN);
 
-        assertEquals("Invalid token", result);
+        assertFalse(result.isSuccess());
+        assertEquals("Invalid token", result.getMessage());
+        assertNull(result.getData());
     }
 
     @Test
-    void getUserInfo_UserNotFound_ShouldReturnErrorMessage() {
+    void getUserProfile_UserNotFound_ShouldReturnErrorMessage() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(userRepository.getUserByID(USERNAME)).thenReturn(null);
 
-        String result = userService.getUserInfo(TOKEN);
+        var result = userService.getUserProfile(TOKEN);
 
-        assertEquals("User not found", result);
+        assertFalse(result.isSuccess());
+        assertEquals("User not found", result.getMessage());
+        assertNull(result.getData());
     }
-
 
     @Test
     void updateUserPassword_Success_ShouldUpdatePassword() {
-        User mockUser = new User(USERNAME, ENCODED_PASSWORD,10);
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 10);
         mockUser.setVersion(0);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
@@ -148,9 +155,10 @@ class UserServiceTest {
         when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
         when(passwordEncoder.encode("new_password")).thenReturn("encoded_new_password");
 
-        String result = userService.updateUserPassword(TOKEN, "new_password");
+        Response<String> result = userService.updateUserPassword(TOKEN, "new_password");
 
-        assertEquals("success", result);
+        assertTrue(result.isSuccess());
+        assertEquals("success", result.getData());
         verify(userRepository, times(1)).save(any(User.class));
     }
 
@@ -158,9 +166,9 @@ class UserServiceTest {
     void updateUserPassword_InvalidToken_ShouldReturnErrorMessage() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
 
-        String result = userService.updateUserPassword(TOKEN, "new_password");
+        Response<String> result = userService.updateUserPassword(TOKEN, "new_password");
 
-        assertNotEquals("success", result);
+        assertTrue(result.isError());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -170,15 +178,15 @@ class UserServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(userRepository.getUserByID(USERNAME)).thenReturn(null);
 
-        String result = userService.updateUserPassword(TOKEN, "new_password");
+        Response<String> result = userService.updateUserPassword(TOKEN, "new_password");
 
-        assertNotEquals("success", result);
+        assertTrue(result.isError());
         verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
     void updateUserPassword_OptimisticLockFailure_ShouldReturnErrorMessage() {
-        User mockUser = new User(USERNAME, ENCODED_PASSWORD,10);
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 10);
         mockUser.setVersion(0);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
@@ -187,9 +195,9 @@ class UserServiceTest {
         when(passwordEncoder.encode("new_password")).thenReturn("encoded_new_password");
         doThrow(new RuntimeException("Optimistic Lock Failure")).when(userRepository).save(any(User.class));
 
-        String result = userService.updateUserPassword(TOKEN, "new_password");
+        Response<String> result = userService.updateUserPassword(TOKEN, "new_password");
 
-        assertNotEquals("success", result);
+        assertTrue(result.isError());
         verify(userRepository, times(1)).save(any(User.class));
     }
 }

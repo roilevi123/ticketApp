@@ -62,11 +62,11 @@ public class EventManagementTest {
     }
 
     private void reg(String username, String password) {
-        userService.register(gt(), username, password,10);
+        userService.register(gt(), username, password, 10);
     }
 
     private String log(String username, String password) {
-        return userService.login(gt(), username, password);
+        return userService.login(gt(), username, password).getData();
     }
 
     private MapArea[][] getMapArea() {
@@ -87,8 +87,7 @@ public class EventManagementTest {
         reg("1", "1");
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
-        String result = eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        assertTrue(result.equals("success"));
+        assertTrue(eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea()).isSuccess());
     }
 
     @Test
@@ -103,8 +102,7 @@ public class EventManagementTest {
         permissions.add(Permission.MANAGE_INVENTORY);
         companyService.AppointAManager("2", "1", permissions, token);
         companyService.ApproveAppointmentForManager(token2, "1");
-        String result = eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        assertTrue(result.equals("success"));
+        assertTrue(eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea()).isSuccess());
     }
 
     @Test
@@ -117,8 +115,7 @@ public class EventManagementTest {
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
         companyService.ApproveAppointmentForOwner(token2, "1");
-        String result = eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        assertTrue(result.equals("success"));
+        assertTrue(eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea()).isSuccess());
     }
 
     @Test
@@ -129,8 +126,7 @@ public class EventManagementTest {
         reg("2", "2");
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
-        String result = eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        assertFalse(result.equals("success"));
+        assertTrue(eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea()).isError());
     }
 
     @Test
@@ -142,8 +138,7 @@ public class EventManagementTest {
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
-        String result = eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        assertFalse(result.equals("success"));
+        assertTrue(eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea()).isError());
     }
 
     @Test
@@ -158,8 +153,7 @@ public class EventManagementTest {
         permissions.add(Permission.CHANGE_POLICIES);
         companyService.AppointAManager("2", "1", permissions, token);
         companyService.ApproveAppointmentForManager(token2, "1");
-        String result = eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        assertFalse(result.equals("success"));
+        assertTrue(eventService.createEvent(token2, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea()).isError());
     }
 
     // --- Delete Event Tests ---
@@ -171,8 +165,7 @@ public class EventManagementTest {
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.deleteEvent("1", "1", token);
-        assertEquals(true, result.equals("success"));
+        assertTrue(eventService.deleteEvent("1", "1", token).isSuccess());
     }
 
     @Test
@@ -188,8 +181,7 @@ public class EventManagementTest {
         companyService.AppointAManager("2", "1", permissions, token);
         companyService.ApproveAppointmentForManager(token2, "1");
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.deleteEvent("1", "1", token2);
-        assertEquals(true, result.equals("success"));
+        assertTrue(eventService.deleteEvent("1", "1", token2).isSuccess());
     }
 
     @Test
@@ -203,8 +195,7 @@ public class EventManagementTest {
         companyService.AppointOwner("2", "1", token);
         companyService.ApproveAppointmentForOwner(token2, "1");
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.deleteEvent("1", "1", token2);
-        assertEquals(true, result.equals("success"));
+        assertTrue(eventService.deleteEvent("1", "1", token2).isSuccess());
     }
 
     @Test
@@ -213,8 +204,7 @@ public class EventManagementTest {
         reg("1", "1");
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
-        String result = eventService.deleteEvent("1", "1", token);
-        assertEquals(false, result.equals("success"));
+        assertTrue(eventService.deleteEvent("1", "1", token).isError());
     }
 
     @Test
@@ -226,8 +216,7 @@ public class EventManagementTest {
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.deleteEvent("1", "1", token2);
-        assertEquals(false, result.equals("success"));
+        assertTrue(eventService.deleteEvent("1", "1", token2).isError());
     }
 
     @Test
@@ -240,8 +229,7 @@ public class EventManagementTest {
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.deleteEvent("1", "1", token2);
-        assertEquals(false, result.equals("success"));
+        assertTrue(eventService.deleteEvent("1", "1", token2).isError());
     }
 
     @Test
@@ -257,8 +245,7 @@ public class EventManagementTest {
         companyService.AppointAManager("2", "1", permissions, token);
         companyService.ApproveAppointmentForManager(token2, "1");
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.deleteEvent("1", "1", token2);
-        assertEquals(false, result.equals("success"));
+        assertTrue(eventService.deleteEvent("1", "1", token2).isError());
     }
 
     // --- Update Event Tests ---
@@ -270,8 +257,7 @@ public class EventManagementTest {
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.UpdateEvent(token, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0);
-        assertEquals("success", result);
+        assertTrue(eventService.UpdateEvent(token, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0).isSuccess());
     }
 
     @Test
@@ -287,8 +273,7 @@ public class EventManagementTest {
         companyService.AppointAManager("2", "1", permissions, token);
         companyService.ApproveAppointmentForManager(token2, "1");
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0);
-        assertEquals("success", result);
+        assertTrue(eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0).isSuccess());
     }
 
     @Test
@@ -302,8 +287,7 @@ public class EventManagementTest {
         companyService.AppointOwner("2", "1", token);
         companyService.ApproveAppointmentForOwner(token2, "1");
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0);
-        assertEquals("success", result);
+        assertTrue(eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0).isSuccess());
     }
 
     @Test
@@ -312,8 +296,7 @@ public class EventManagementTest {
         reg("1", "1");
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
-        String result = eventService.UpdateEvent(token, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0);
-        assertNotEquals("success", result);
+        assertTrue(eventService.UpdateEvent(token, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0).isError());
     }
 
     @Test
@@ -325,8 +308,7 @@ public class EventManagementTest {
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0);
-        assertNotEquals("success", result);
+        assertTrue(eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0).isError());
     }
 
     @Test
@@ -339,8 +321,7 @@ public class EventManagementTest {
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0);
-        assertNotEquals("success", result);
+        assertTrue(eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0).isError());
     }
 
     @Test
@@ -356,23 +337,21 @@ public class EventManagementTest {
         companyService.AppointAManager("2", "1", permissions, token);
         companyService.ApproveAppointmentForManager(token2, "1");
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        String result = eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0);
-        assertNotEquals("success", result);
-    }
-    @Test
-    void CreateEventInvalidToken() {
-        String result=eventService.createEvent("null", "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        assertNotEquals("success", result);
-    }
-    @Test
-    void deleteEventInvalidToken() {
-        String result=eventService.deleteEvent("null", "1","");
-        assertNotEquals("success", result);
-    }
-    @Test
-    void UpdateEventInvalidToken() {
-        String result=eventService.UpdateEvent("null","1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(),1);
-        assertNotEquals("success", result);
+        assertTrue(eventService.UpdateEvent(token2, "1", "2", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 0).isError());
     }
 
+    @Test
+    void CreateEventInvalidToken() {
+        assertTrue(eventService.createEvent("null", "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea()).isError());
+    }
+
+    @Test
+    void deleteEventInvalidToken() {
+        assertTrue(eventService.deleteEvent("null", "1", "").isError());
+    }
+
+    @Test
+    void UpdateEventInvalidToken() {
+        assertTrue(eventService.UpdateEvent("null", "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea(), 1).isError());
+    }
 }
