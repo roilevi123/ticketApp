@@ -105,11 +105,11 @@ public class AdminJUnitTests {
     }
 
     private void reg(String username, String password) {
-        userService.register(gt(), username, password,10);
+        userService.register(gt(), username, password, 10);
     }
 
     private String log(String username, String password) {
-        return userService.login(gt(), username, password);
+        return userService.login(gt(), username, password).getData();
     }
 
     private MapArea[][] getMapArea() {
@@ -130,12 +130,12 @@ public class AdminJUnitTests {
         companyService.CreateCompany("C1", token);
         eventService.createEvent(token, "E1", "C1", EventType.PLAY, 100, new Date(), "Loc", "C1", getMapArea());
 
-        String result = adminService.CloseCompany("C1", "admin");
+        var response = adminService.CloseCompany("C1", "admin");
 
-        assertEquals("success", result);
-        assertNull(eventService.getCompanyInfo(token, "C1"));
-        assertNull(eventService.getCompanyEvents(token, "C1"));
-        assertNull(companyService.GetRoleTreeString(token, "C1"));
+        assertTrue(response.isSuccess());
+        assertTrue(eventService.getCompanyInfo(token, "C1").isError());
+        assertTrue(eventService.getCompanyEvents(token, "C1").isError());
+        assertTrue(companyService.GetRoleTreeString(token, "C1").isError());
     }
 
     @Test
@@ -145,8 +145,8 @@ public class AdminJUnitTests {
         String token = log("owner1", "password");
         companyService.CreateCompany("C1", token);
 
-        String result = adminService.CloseCompany("C1", "not_admin");
-        assertNotEquals("success", result);
+        var response = adminService.CloseCompany("C1", "not_admin");
+        assertFalse(response.isSuccess());
     }
 
     @Test
@@ -154,18 +154,18 @@ public class AdminJUnitTests {
     void removeUserSuccess3() {
         reg("userToRemove", "123");
         String userID = (userRepository.getUserByUsername("userToRemove")).getID();
-        String result = adminService.removeUser(userID, "admin");
-        assertEquals("success", result);
+        var response = adminService.removeUser(userID, "admin");
+        assertTrue(response.isSuccess());
 
-        assertNull(userService.login(gt(), "userToRemove", "123"));
+        assertTrue(userService.login(gt(), "userToRemove", "123").isError());
     }
 
     @Test
     @DisplayName("4. Remove User Failed - Not Admin")
     void removeUserFailedNotAdmin4() {
         reg("user1", "123");
-        String result = adminService.removeUser("user1", "not_admin");
-        assertNotEquals("success", result);
+        var response = adminService.removeUser("user1", "not_admin");
+        assertFalse(response.isSuccess());
     }
 
     @Test
@@ -178,25 +178,21 @@ public class AdminJUnitTests {
 
         reg("buyer", "p");
         String tB = log("buyer", "p");
-        String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer","none");
+        String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1})).getData();
+        purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer", "none");
 
-        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
+        var response = adminService.GetAllPurchasedOrders("admin");
+        assertTrue(response.isSuccess());
+        List<PurchaseOrderDTO> result = response.getData();
         boolean isCompanyExist = false;
         boolean isEventExist = false;
         boolean isPurchased = false;
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
             for (TicketDTO ticket : ticketsList) {
-                if(ticket.isPurchased()){
-                    isPurchased = true;
-                }
-                if(ticket.company().equals("C1")){
-                    isCompanyExist = true;
-                }
-                if(ticket.event().equals("E1")){
-                    isEventExist = true;
-                }
+                if(ticket.isPurchased()){ isPurchased = true; }
+                if(ticket.company().equals("C1")){ isCompanyExist = true; }
+                if(ticket.event().equals("E1")){ isEventExist = true; }
             }
         }
         assertNotNull(result);
@@ -215,15 +211,17 @@ public class AdminJUnitTests {
 
         reg("b1", "p");
         String tB1 = log("b1", "p");
-        String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1","none");
+        String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", List.of(new int[]{0, 0, 1})).getData();
+        purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1", "none");
 
         reg("b2", "p");
         String tB2 = log("b2", "p");
-        String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1}));
-        purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2","none");
+        String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1})).getData();
+        purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2", "none");
 
-        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
+        var response = adminService.GetAllPurchasedOrders("admin");
+        assertTrue(response.isSuccess());
+        List<PurchaseOrderDTO> result = response.getData();
         boolean isCompanyExist = false;
         boolean isEventExist = false;
         boolean isPurchased = false;
@@ -231,15 +229,9 @@ public class AdminJUnitTests {
         for (PurchaseOrderDTO po : result) {
             List<TicketDTO> ticketsList = po.tickets();
             for (TicketDTO ticket : ticketsList) {
-                if(ticket.isPurchased()){
-                    isPurchased = true;
-                }
-                if(ticket.company().equals("C1")){
-                    isCompanyExist = true;
-                }
-                if(ticket.event().equals("E1")){
-                    isEventExist = true;
-                }
+                if(ticket.isPurchased()){ isPurchased = true; }
+                if(ticket.company().equals("C1")){ isCompanyExist = true; }
+                if(ticket.event().equals("E1")){ isEventExist = true; }
             }
         }
         assertNotNull(result);
@@ -251,8 +243,9 @@ public class AdminJUnitTests {
     @Test
     @DisplayName("7. Get All Purchased Orders Failed - Not Admin")
     void getAllPurchasedOrdersFailedNotAdmin7() {
-        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("not_an_admin");
-        assertNull(result);
+        var response = adminService.GetAllPurchasedOrders("not_an_admin");
+        assertFalse(response.isSuccess());
+        assertNull(response.getData());
     }
 
     @Test
@@ -271,13 +264,15 @@ public class AdminJUnitTests {
         reg("buyer8", "p");
         String tB = log("buyer8", "p");
 
-        String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8","none");
+        String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", List.of(new int[]{0, 0, 1})).getData();
+        purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8", "none");
 
-        String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1}));
-        purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8","none");
+        String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1})).getData();
+        purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8", "none");
 
-        List<PurchaseOrderDTO> result = adminService.GetAllPurchasedOrders("admin");
+        var response = adminService.GetAllPurchasedOrders("admin");
+        assertTrue(response.isSuccess());
+        List<PurchaseOrderDTO> result = response.getData();
         assertNotNull(result);
         assertEquals(2, result.size());
 

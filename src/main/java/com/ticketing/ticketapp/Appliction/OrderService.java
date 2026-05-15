@@ -20,7 +20,7 @@ import java.util.List;
 
 @Service
 public class OrderService {
-    
+
     private IActiveOrderRepository activeOrderRepository;
     private iTicketRepository ticketRepository;
     private TokenService tokenService;
@@ -28,16 +28,15 @@ public class OrderService {
     private iPurchasePolicyRepository purchasePolicyRepo;
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
-public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService, iTicketRepository ticketRepository,IUserRepository userRepository,iPurchasePolicyRepository purchasePolicyRepo) {
+    public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService, iTicketRepository ticketRepository, IUserRepository userRepository, iPurchasePolicyRepository purchasePolicyRepo) {
         this.activeOrderRepository = activeOrderRepository;
         this.tokenService = tokenService;
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.purchasePolicyRepo = purchasePolicyRepo;
-
     }
 
-    public String reserveTickets(String token, String company, String event, List<int[]> requests) {
+    public Response<String> reserveTickets(String token, String company, String event, List<int[]> requests) {
         List<String> reservedTicketIds = new ArrayList<>();
 
         try {
@@ -66,11 +65,7 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
                 int numRequested = (request.length > 2) ? request[2] : 1;
                 int securedForThisSpot = 0;
 
-
-
                 for (Ticket ticketInDb : availableAtSpot) {
-
-
                     try {
                         Ticket updatedTicket = new Ticket(ticketInDb);
                         updatedTicket.setDate(expiryDate);
@@ -87,36 +82,31 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
                 }
             }
 
-
-
             String id = activeOrderRepository.store(company, event, reservedTicketIds, userID, expiryDate);
             logger.info("Successfully reserved " + reservedTicketIds.size() + " tickets");
-            return id;
+            return Response.success(id);
 
         } catch (Exception e) {
             logger.error("Reservation failed: " + e.getMessage());
-
-
-            return e.getMessage();
+            return Response.error(e.getMessage());
         }
     }
-    public List<TicketDTO> getActiveOrderTickets(String token, String orderId) {
+
+    public Response<List<TicketDTO>> getActiveOrderTickets(String token, String orderId) {
         try {
             logger.info("get information about active order ticket reservation for token: " + token);
             List<String> ticketsId;
 
             if (orderId == null) {
-                // No order ID: recover by user identity from token (e.g. after re-login)
                 if (!tokenService.validateToken(token)) {
                     throw new RuntimeException("Invalid token");
                 }
                 String userID = tokenService.extractUserId(token);
                 ticketsId = activeOrderRepository.getTicketsId(userID);
             } else {
-                // Order ID provided: look up that specific order only
                 ActiveOrder activeOrder = activeOrderRepository.findById(orderId);
                 if (activeOrder == null) {
-                    return null;
+                    return Response.error("Order not found");
                 }
                 ticketsId = activeOrder.getTicketIds();
             }
@@ -127,12 +117,13 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
                 ticketDTOS.add(TicketDTO.fromEntity(ticket));
             }
             logger.info("get active order tickets: {} tickets found", ticketDTOS.size());
-            return ticketDTOS;
+            return Response.success(ticketDTOS);
         } catch (Exception e) {
             logger.error("Error retrieving active order: {}", e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
+
     private void validatePurchasePolicies(String eventId, String companyName, String userId, int totalRequested) throws Exception {
         User user = userRepository.getUserByID(userId);
         int age = (user != null) ? user.getAge() : 10000;
@@ -149,6 +140,4 @@ public OrderService(IActiveOrderRepository activeOrderRepository, TokenService t
             throw new Exception("Doesn't stand in Company Purchase Policy");
         }
     }
-
-
 }

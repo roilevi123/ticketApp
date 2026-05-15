@@ -65,7 +65,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Success_WithSpyAndStateCheck() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -81,18 +81,16 @@ class PurchasedServiceTest {
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
 
-        ticketRepoSpy.storeTicket(0, 0, EVENT,COMPANY,100);
+        ticketRepoSpy.storeTicket(0, 0, EVENT, COMPANY, 100);
         Ticket originalTicket = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0);
         String ticketId = originalTicket.getId();
 
-        String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
-//        String generatedOrderId = orderRepoSpy.getOrder(USERNAME).getOrderId();
+        String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
-//        when(eventRepository.getEventPrice(EVENT, COMPANY)).thenReturn(100.0);
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
-        when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenReturn("new byte[]{1, 2, 3}");
+        when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenReturn("new byte[]{1, 2, 3}");
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME,"none");
+        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none");
 
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
 
@@ -113,11 +111,12 @@ class PurchasedServiceTest {
 
         verify(orderRepoSpy).delete(orderId);
     }
+
     @Test
     void purchaseTicket_Failure_PaymentDeclined() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -132,13 +131,13 @@ class PurchasedServiceTest {
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
-        ticketRepoSpy.storeTicket(0, 0, EVENT,COMPANY,100);
+        ticketRepoSpy.storeTicket(0, 0, EVENT, COMPANY, 100);
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
-        String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
+        String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(false);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME,"none");
+        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none");
 
         verify(paymentService).processPayment(EMAIL, 100.0);
         verify(supplyService, never()).supplyToEmail(anyString(), anyString());
@@ -153,7 +152,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Failure_OrderExpired() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -168,21 +167,22 @@ class PurchasedServiceTest {
         );
 
         Date pastDate = new Date(System.currentTimeMillis() - 1000000);
-        ticketRepoSpy.storeTicket(0, 0, EVENT,COMPANY,100);
+        ticketRepoSpy.storeTicket(0, 0, EVENT, COMPANY, 100);
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
-        String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
+        String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME,"none");
+        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none");
 
         verify(paymentService, never()).processPayment(anyString(), anyDouble());
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
         verify(orderRepoSpy, never()).delete(anyString());
     }
+
     @Test
     void purchaseTicket_Failure_OrderNotExist() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -197,22 +197,22 @@ class PurchasedServiceTest {
         );
 
         Date pastDate = new Date(System.currentTimeMillis() - 1000000);
-        ticketRepoSpy.storeTicket(0, 0, EVENT,COMPANY,100);
+        ticketRepoSpy.storeTicket(0, 0, EVENT, COMPANY, 100);
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
-        String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
+        String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, "orderId",USERNAME,"none");
+        purchasedService.PurchaseTicket(EMAIL, "orderId", USERNAME, "none");
 
         verify(paymentService, never()).processPayment(anyString(), anyDouble());
         assertNotNull(orderRepoSpy.findById(orderId));
         verify(orderRepoSpy, never()).delete(anyString());
     }
-//
+
     @Test
     void purchaseTicket_RefundOnSupplyFailure() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -227,24 +227,25 @@ class PurchasedServiceTest {
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
-        ticketRepoSpy.storeTicket(0, 0, EVENT,COMPANY,100);
+        ticketRepoSpy.storeTicket(0, 0, EVENT, COMPANY, 100);
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
-        String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
+        String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
-        when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenThrow(new RuntimeException("Generator Error"));
+        when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenThrow(new RuntimeException("Generator Error"));
 
-        purchasedService.PurchaseTicket(EMAIL, orderId,USERNAME,"none");
+        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none");
 
         verify(paymentService).refund(EMAIL, 100.0);
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
         verify(orderRepoSpy, never()).delete(USERNAME);
     }
+
     @Test
     void purchaseTicket_Success_WithSpyAndStateCheckAsLogoutUser() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository= spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -256,24 +257,21 @@ class PurchasedServiceTest {
                 tokenService,
                 treeOfRoleRepository,
                 discountPolicyRepository
-
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
 
-        ticketRepoSpy.storeTicket(0, 0, EVENT,COMPANY,100);
+        ticketRepoSpy.storeTicket(0, 0, EVENT, COMPANY, 100);
         Ticket originalTicket = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0);
         String ticketId = originalTicket.getId();
 
-        String orderId=orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
-//        String generatedOrderId = orderRepoSpy.getOrder(USERNAME).getOrderId();
+        String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
-//        when(eventRepository.getEventPrice(EVENT, COMPANY)).thenReturn(100.0);
         when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
-        when(barcodeGenerator.generateBarcode(anyString(),anyString())).thenReturn("new byte[]{1, 2, 3}");
+        when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenReturn("new byte[]{1, 2, 3}");
         when(tokenService.validateToken(anyString())).thenReturn(true);
         when(tokenService.extractUserId(anyString())).thenReturn(USERNAME);
-        purchasedService.PurchaseTicket(EMAIL, "",USERNAME,"none");
+        purchasedService.PurchaseTicket(EMAIL, "", USERNAME, "none");
 
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
 
@@ -322,11 +320,12 @@ class PurchasedServiceTest {
         when(purchasedOrderRepository.getPurchasedOrdersForCompany(COMPANY)).thenReturn(List.of(po));
         when(ticketRepository.getTicketsDescription(anyList())).thenReturn("Ticket Info");
 
-        List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction(COMPANY, token);
+        Response<List<PurchaseOrderDTO>> result = purchasedService.getCompanyTransaction(COMPANY, token);
 
-        assertTrue(result.get(0).buyer().equals(USERNAME));
+        assertTrue(result.isSuccess());
+        assertTrue(result.getData().get(0).buyer().equals(USERNAME));
     }
-//
+
     @Test
     void getCompanyTransaction_Failure_NotAuthorized() {
         String token = "valid_token";
@@ -337,9 +336,9 @@ class PurchasedServiceTest {
         when(treeOfRoleRepository.exitsOwner(user, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitToSeeTransactions(user, COMPANY)).thenReturn(false);
 
-        List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction(COMPANY, token);
+        Response<List<PurchaseOrderDTO>> result = purchasedService.getCompanyTransaction(COMPANY, token);
 
-        assertEquals(null, result);
+        assertTrue(result.isError());
         verify(purchasedOrderRepository, never()).getPurchasedOrdersForCompany(anyString());
     }
 
@@ -354,9 +353,10 @@ class PurchasedServiceTest {
         when(purchasedOrderRepository.getPurchasedOrdersForUser(buyer)).thenReturn(List.of(po));
         when(ticketRepository.getTicketsDescription(anyList())).thenReturn("Seat 10");
 
-        List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(token);
+        Response<List<PurchaseOrderDTO>> result = purchasedService.getUserTransaction(token);
 
-        assertTrue(result.get(0).buyer().equals(buyer));
+        assertTrue(result.isSuccess());
+        assertTrue(result.getData().get(0).buyer().equals(buyer));
     }
 
     @Test
@@ -364,9 +364,9 @@ class PurchasedServiceTest {
         String token = "invalid_token";
         when(tokenService.validateToken(token)).thenReturn(false);
 
-        List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(token);
+        Response<List<PurchaseOrderDTO>> result = purchasedService.getUserTransaction(token);
 
-        assertEquals(null, result);
+        assertTrue(result.isError());
         verify(purchasedOrderRepository, never()).getPurchasedOrdersForUser(anyString());
     }
 }

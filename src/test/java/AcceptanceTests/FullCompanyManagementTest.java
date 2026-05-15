@@ -2,6 +2,7 @@ package AcceptanceTests;
 
 import com.ticketing.ticketapp.Appliction.CompanyService;
 import com.ticketing.ticketapp.Appliction.IPasswordEncoder;
+import com.ticketing.ticketapp.Appliction.Response;
 import com.ticketing.ticketapp.Appliction.UserService;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
@@ -61,11 +62,11 @@ public class FullCompanyManagementTest {
     }
 
     private void reg(String username, String password) {
-        userService.register(gt(), username, password,10);
+        userService.register(gt(), username, password, 10);
     }
 
     private String log(String username, String password) {
-        return userService.login(gt(), username, password);
+        return userService.login(gt(), username, password).getData();
     }
 
     // --- Company Creation ---
@@ -74,12 +75,12 @@ public class FullCompanyManagementTest {
     void createCompanySuccess1() {
         reg("1", "1");
         String token = log("1", "1");
-        assertEquals("success", companyService.CreateCompany("1", token));
+        assertTrue(companyService.CreateCompany("1", token).isSuccess());
     }
 
     @Test @DisplayName("2. Create Company - Fail (User Not Found)")
     void createCompanyFailedUserNotFound2() {
-        assertNotEquals("success", companyService.CreateCompany("1", "invalid_token"));
+        assertTrue(companyService.CreateCompany("1", "invalid_token").isError());
     }
 
     // --- Manager Appointment ---
@@ -92,7 +93,7 @@ public class FullCompanyManagementTest {
         companyService.CreateCompany("1", token);
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
-        assertEquals("success", companyService.AppointAManager("2", "1", permissions, token));
+        assertTrue(companyService.AppointAManager("2", "1", permissions, token).isSuccess());
     }
 
     @Test @DisplayName("4. Appoint Manager - Fail (Target User Not Found)")
@@ -100,7 +101,7 @@ public class FullCompanyManagementTest {
         reg("1", "1");
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
-        assertNotEquals("success", companyService.AppointAManager("non_existent", "1", new HashSet<>(), token));
+        assertTrue(companyService.AppointAManager("non_existent", "1", new HashSet<>(), token).isError());
     }
 
     @Test @DisplayName("5. Appoint Manager - Fail (Not Owner)")
@@ -111,7 +112,7 @@ public class FullCompanyManagementTest {
         reg("3", "3");
         String token3 = log("3", "3");
         companyService.CreateCompany("1", token1);
-        assertNotEquals("success", companyService.AppointAManager("2", "1", new HashSet<>(), token3));
+        assertTrue(companyService.AppointAManager("2", "1", new HashSet<>(), token3).isError());
     }
 
     @Test @DisplayName("6. Approve Manager Request - Success")
@@ -122,7 +123,7 @@ public class FullCompanyManagementTest {
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointAManager("2", "1", new HashSet<>(), token);
-        assertEquals("success", companyService.ApproveAppointmentForManager(token2, "1"));
+        assertTrue(companyService.ApproveAppointmentForManager(token2, "1").isSuccess());
     }
 
     @Test @DisplayName("7. Approve Manager Request - Fail (Company Not Exists)")
@@ -133,7 +134,7 @@ public class FullCompanyManagementTest {
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointAManager("2", "1", new HashSet<>(), token);
-        assertNotEquals("success", companyService.ApproveAppointmentForManager(token2, "non_existent"));
+        assertTrue(companyService.ApproveAppointmentForManager(token2, "non_existent").isError());
     }
 
     @Test @DisplayName("8. Reject Manager Request - Success")
@@ -144,7 +145,7 @@ public class FullCompanyManagementTest {
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointAManager("2", "1", new HashSet<>(), token);
-        assertEquals("success", companyService.RejectAppointmentForManager(token2, "1"));
+        assertTrue(companyService.RejectAppointmentForManager(token2, "1").isSuccess());
     }
 
     @Test @DisplayName("9. Reject Manager Request - Fail (No Offer)")
@@ -154,7 +155,7 @@ public class FullCompanyManagementTest {
         reg("2", "2");
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
-        assertNotEquals("success", companyService.RejectAppointmentForManager(token2, "1"));
+        assertTrue(companyService.RejectAppointmentForManager(token2, "1").isError());
     }
 
     // --- Owner Appointment ---
@@ -165,7 +166,7 @@ public class FullCompanyManagementTest {
         String token = log("1", "1");
         reg("2", "2");
         companyService.CreateCompany("1", token);
-        assertEquals("success", companyService.AppointOwner("2", "1", token));
+        assertTrue(companyService.AppointOwner("2", "1", token).isSuccess());
     }
 
     @Test @DisplayName("11. Appoint Owner - Fail (Target User Not Found)")
@@ -173,7 +174,7 @@ public class FullCompanyManagementTest {
         reg("1", "1");
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
-        assertNotEquals("success", companyService.AppointOwner("non_existent", "1", token));
+        assertTrue(companyService.AppointOwner("non_existent", "1", token).isError());
     }
 
     @Test @DisplayName("12. Appoint Owner - Fail (Not Owner)")
@@ -184,7 +185,7 @@ public class FullCompanyManagementTest {
         reg("3", "3");
         String token3 = log("3", "3");
         companyService.CreateCompany("1", token);
-        assertNotEquals("success", companyService.AppointOwner("2", "1", token3));
+        assertTrue(companyService.AppointOwner("2", "1", token3).isError());
     }
 
     @Test @DisplayName("13. Approve Owner Request - Success")
@@ -195,7 +196,7 @@ public class FullCompanyManagementTest {
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
-        assertEquals("success", companyService.ApproveAppointmentForOwner(token2, "1"));
+        assertTrue(companyService.ApproveAppointmentForOwner(token2, "1").isSuccess());
     }
 
     @Test @DisplayName("14. Approve Owner Request - Fail (Company Not Exists)")
@@ -206,7 +207,7 @@ public class FullCompanyManagementTest {
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
-        assertNotEquals("success", companyService.ApproveAppointmentForOwner(token2, "non_existent"));
+        assertTrue(companyService.ApproveAppointmentForOwner(token2, "non_existent").isError());
     }
 
     @Test @DisplayName("15. Reject Owner Request - Success")
@@ -217,7 +218,7 @@ public class FullCompanyManagementTest {
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
-        assertEquals("success", companyService.RejectAppointmentForOwner(token2, "1"));
+        assertTrue(companyService.RejectAppointmentForOwner(token2, "1").isSuccess());
     }
 
     @Test @DisplayName("16. Reject Owner Request - Fail (No Offer)")
@@ -227,7 +228,7 @@ public class FullCompanyManagementTest {
         reg("2", "2");
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
-        assertNotEquals("success", companyService.RejectAppointmentForOwner(token2, "1"));
+        assertTrue(companyService.RejectAppointmentForOwner(token2, "1").isError());
     }
 
     // --- Firing ---
@@ -241,7 +242,7 @@ public class FullCompanyManagementTest {
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
         companyService.ApproveAppointmentForOwner(token2, "1");
-        assertEquals("success", companyService.FireOwner(token, "1", "2"));
+        assertTrue(companyService.FireOwner(token, "1", "2").isSuccess());
     }
 
     @Test @DisplayName("18. Fire Owner - Fail (Not Appointer)")
@@ -257,7 +258,7 @@ public class FullCompanyManagementTest {
         companyService.ApproveAppointmentForOwner(token2, "1");
         companyService.AppointOwner("3", "1", token1);
         companyService.ApproveAppointmentForOwner(token3, "1");
-        assertNotEquals("success", companyService.FireOwner(token2, "1", "3"));
+        assertTrue(companyService.FireOwner(token2, "1", "3").isError());
     }
 
     @Test @DisplayName("19. Fire Owner - Fail (Fire Founder)")
@@ -269,7 +270,7 @@ public class FullCompanyManagementTest {
         companyService.CreateCompany("1", token1);
         companyService.AppointOwner("2", "1", token1);
         companyService.ApproveAppointmentForOwner(token2, "1");
-        assertNotEquals("success", companyService.FireOwner(token2, "1", "1"));
+        assertTrue(companyService.FireOwner(token2, "1", "1").isError());
     }
 
     @Test @DisplayName("20. Fire Owner - Fail (Owner Approval Pending)")
@@ -279,7 +280,7 @@ public class FullCompanyManagementTest {
         reg("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
-        assertNotEquals("success", companyService.FireOwner(token, "1", "2"));
+        assertTrue(companyService.FireOwner(token, "1", "2").isError());
     }
 
     @Test @DisplayName("21. Fire Manager - Success")
@@ -291,7 +292,7 @@ public class FullCompanyManagementTest {
         companyService.CreateCompany("1", token);
         companyService.AppointAManager("2", "1", new HashSet<>(), token);
         companyService.ApproveAppointmentForManager(token2, "1");
-        assertEquals("success", companyService.FireManager(token, "1", "2"));
+        assertTrue(companyService.FireManager(token, "1", "2").isSuccess());
     }
 
     @Test @DisplayName("22. Fire Manager - Fail (Not Appointer)")
@@ -307,7 +308,7 @@ public class FullCompanyManagementTest {
         companyService.ApproveAppointmentForOwner(token2, "1");
         companyService.AppointAManager("3", "1", new HashSet<>(), token1);
         companyService.ApproveAppointmentForManager(token3, "1");
-        assertNotEquals("success", companyService.FireManager(token2, "1", "3"));
+        assertTrue(companyService.FireManager(token2, "1", "3").isError());
     }
 
     @Test @DisplayName("23. Fire Manager - Fail (Not Approved Yet)")
@@ -317,7 +318,7 @@ public class FullCompanyManagementTest {
         reg("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointAManager("2", "1", new HashSet<>(), token);
-        assertNotEquals("success", companyService.FireManager(token, "1", "2"));
+        assertTrue(companyService.FireManager(token, "1", "2").isError());
     }
 
     // --- Permissions ---
@@ -333,7 +334,7 @@ public class FullCompanyManagementTest {
         companyService.ApproveAppointmentForManager(token2, "1");
         Set<Permission> newPerms = new HashSet<>();
         newPerms.add(Permission.CHANGE_POLICIES);
-        assertEquals("success", companyService.ChangeManagerPermissions(token, "1", "2", newPerms));
+        assertTrue(companyService.ChangeManagerPermissions(token, "1", "2", newPerms).isSuccess());
     }
 
     @Test @DisplayName("25. Change Permissions - Fail (Not Appointer)")
@@ -349,7 +350,7 @@ public class FullCompanyManagementTest {
         companyService.ApproveAppointmentForOwner(token2, "1");
         companyService.AppointAManager("3", "1", new HashSet<>(), token1);
         companyService.ApproveAppointmentForManager(token3, "1");
-        assertNotEquals("success", companyService.ChangeManagerPermissions(token2, "1", "3", new HashSet<>()));
+        assertTrue(companyService.ChangeManagerPermissions(token2, "1", "3", new HashSet<>()).isError());
     }
 
     @Test @DisplayName("26. Change Permissions - Fail (Not Manager)")
@@ -359,7 +360,7 @@ public class FullCompanyManagementTest {
         reg("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointAManager("2", "1", new HashSet<>(), token);
-        assertNotEquals("success", companyService.ChangeManagerPermissions(token, "1", "2", new HashSet<>()));
+        assertTrue(companyService.ChangeManagerPermissions(token, "1", "2", new HashSet<>()).isError());
     }
 
     // --- Freeze / Unfreeze ---
@@ -369,7 +370,7 @@ public class FullCompanyManagementTest {
         reg("1", "1");
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
-        assertEquals("success", companyService.freezeCompany("1", token));
+        assertTrue(companyService.freezeCompany("1", token).isSuccess());
     }
 
     @Test @DisplayName("28. Freeze Company - Fail (Not Founder)")
@@ -381,7 +382,7 @@ public class FullCompanyManagementTest {
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
         companyService.ApproveAppointmentForOwner(token2, "1");
-        assertNotEquals("success", companyService.freezeCompany("1", token2));
+        assertTrue(companyService.freezeCompany("1", token2).isError());
     }
 
     @Test @DisplayName("29. Freeze Company - Fail (Already Frozen)")
@@ -390,7 +391,7 @@ public class FullCompanyManagementTest {
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
         companyService.freezeCompany("1", token);
-        assertNotEquals("success", companyService.freezeCompany("1", token));
+        assertTrue(companyService.freezeCompany("1", token).isError());
     }
 
     @Test @DisplayName("30. Unfreeze Company - Success")
@@ -399,7 +400,7 @@ public class FullCompanyManagementTest {
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
         companyService.freezeCompany("1", token);
-        assertEquals("success", companyService.unfreezeCompany("1", token));
+        assertTrue(companyService.unfreezeCompany("1", token).isSuccess());
     }
 
     @Test @DisplayName("31. Unfreeze Company - Fail (Not Founder)")
@@ -412,7 +413,7 @@ public class FullCompanyManagementTest {
         companyService.AppointOwner("2", "1", token);
         companyService.ApproveAppointmentForOwner(token2, "1");
         companyService.freezeCompany("1", token);
-        assertNotEquals("success", companyService.unfreezeCompany("1", token2));
+        assertTrue(companyService.unfreezeCompany("1", token2).isError());
     }
 
     @Test @DisplayName("32. Unfreeze Company - Fail (Already Active)")
@@ -420,7 +421,7 @@ public class FullCompanyManagementTest {
         reg("1", "1");
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
-        assertNotEquals("success", companyService.unfreezeCompany("1", token));
+        assertTrue(companyService.unfreezeCompany("1", token).isError());
     }
 
     // --- Permissions Query ---
@@ -434,9 +435,10 @@ public class FullCompanyManagementTest {
         Set<Permission> perms = new HashSet<>();
         perms.add(Permission.MANAGE_INVENTORY);
         companyService.AppointAManager("2", "1", perms, token);
-        Set<Permission> fetched = companyService.GetManagerPermissions(token, "1", "2");
-        assertNotNull(fetched);
-        assertTrue(fetched.contains(Permission.MANAGE_INVENTORY));
+        Response<Set<Permission>> fetched = companyService.GetManagerPermissions(token, "1", "2");
+        assertTrue(fetched.isSuccess());
+        assertNotNull(fetched.getData());
+        assertTrue(fetched.getData().contains(Permission.MANAGE_INVENTORY));
     }
 
     @Test @DisplayName("34. Get Manager Permissions - Fail (Not Owner)")
@@ -448,7 +450,7 @@ public class FullCompanyManagementTest {
         String token3 = log("3", "3");
         companyService.CreateCompany("1", token);
         companyService.AppointAManager("2", "1", new HashSet<>(), token);
-        assertNull(companyService.GetManagerPermissions(token3, "1", "2"));
+        assertTrue(companyService.GetManagerPermissions(token3, "1", "2").isError());
     }
 
     // --- Role Tree ---
@@ -468,7 +470,7 @@ public class FullCompanyManagementTest {
         companyService.ApproveAppointmentForOwner(token3, "1");
 
         String expectedTree = "|-- 1 (Owner)\n  |-- 3 (Owner)\n  |-- 2 (Manager)\n";
-        assertEquals(expectedTree, companyService.GetRoleTreeString(token, "1"));
+        assertEquals(expectedTree, companyService.GetRoleTreeString(token, "1").getData());
     }
 
     @Test @DisplayName("36. Get Role Tree - Nested")
@@ -499,7 +501,7 @@ public class FullCompanyManagementTest {
                 "    |-- 5 (Owner)\n" +
                 "    |-- 4 (Manager)\n" +
                 "  |-- 2 (Manager)\n";
-        assertEquals(expectedTree, companyService.GetRoleTreeString(token, "1"));
+        assertEquals(expectedTree, companyService.GetRoleTreeString(token, "1").getData());
     }
 
     @Test @DisplayName("37. Get Role Tree - After Firing")
@@ -531,64 +533,63 @@ public class FullCompanyManagementTest {
                 "  |-- 3 (Owner)\n" +
                 "    |-- 5 (Owner)\n" +
                 "  |-- 2 (Manager)\n";
-        assertEquals(expectedTree, companyService.GetRoleTreeString(token, "1"));
+        assertEquals(expectedTree, companyService.GetRoleTreeString(token, "1").getData());
     }
+
     @Test
     void AppointAManagerInvalidToken() {
-        String result=companyService.AppointAManager("2", "1", new HashSet<>(), null);
-        assertNotEquals("success",result);
+        assertTrue(companyService.AppointAManager("2", "1", new HashSet<>(), null).isError());
     }
+
     @Test
     void ApproveAppointmentForManagerInvalidToken() {
-        String result=companyService.ApproveAppointmentForManager("null", null);
-        assertNotEquals("success",result);
+        assertTrue(companyService.ApproveAppointmentForManager("null", null).isError());
     }
+
     @Test
     void RejectAppointmentForManagerInvalidToken() {
-        String result=companyService.RejectAppointmentForManager("null", null);
-        assertNotEquals("success",result);
+        assertTrue(companyService.RejectAppointmentForManager("null", null).isError());
     }
+
     @Test
     void AppointOwnerInvalidToken() {
-        String result=companyService.AppointOwner("null", null,null);
-        assertNotEquals("success",result);
+        assertTrue(companyService.AppointOwner("null", null, null).isError());
     }
+
     @Test
     void ApproveAppointmentForOwnerInvalidToken() {
-        String result=companyService.ApproveAppointmentForOwner("null", null);
-        assertNotEquals("success",result);
+        assertTrue(companyService.ApproveAppointmentForOwner("null", null).isError());
     }
+
     @Test
     void FireOwnerInvalidToken() {
-        String result=companyService.FireOwner("null", null,null);
-        assertNotEquals("success",result);
+        assertTrue(companyService.FireOwner("null", null, null).isError());
     }
+
     @Test
     void FireManagerInvalidToken() {
-        String result=companyService.FireManager("null", null,null);
-        assertNotEquals("success",result);
+        assertTrue(companyService.FireManager("null", null, null).isError());
     }
+
     @Test
     void ChangeManagerPermissionsInvalidToken() {
-        String result=companyService.ChangeManagerPermissions("null", null,null,null);
-        assertNotEquals("success",result);
+        assertTrue(companyService.ChangeManagerPermissions("null", null, null, null).isError());
     }
+
     @Test
     void ChangeManagerPermissionNotManager() {
         reg("1", "1");
-        String token=log("1", "1");
-        String result=companyService.ChangeManagerPermissions(token, null,null,null);
-        assertNotEquals("success",result);
-    }
-    @Test
-    void freezeCompanyInvalidToken() {
-        String result=companyService.freezeCompany("null", null);
-        assertNotEquals("success",result);
-    }
-    @Test
-    void GetManagerPermissionsInvalidToken() {
-        Set<Permission> result=companyService.GetManagerPermissions("null", null,null);
-        assertEquals(null,result);
+        String token = log("1", "1");
+        assertTrue(companyService.ChangeManagerPermissions(token, null, null, null).isError());
     }
 
+    @Test
+    void freezeCompanyInvalidToken() {
+        assertTrue(companyService.freezeCompany("null", null).isError());
+    }
+
+    @Test
+    void GetManagerPermissionsInvalidToken() {
+        assertTrue(companyService.GetManagerPermissions("null", null, null).isError());
+    }
 }

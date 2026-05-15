@@ -37,7 +37,6 @@ public class PurchasedService {
     private TokenService tokenService;
     private iDiscountPolicyRepository discountRepo;
 
-
     public PurchasedService(
             IActiveOrderRepository repository,
             iTicketRepository ticketRepository,
@@ -48,8 +47,7 @@ public class PurchasedService {
             TokenService tokenService,
             iTreeOfRoleRepository treeOfRoleRepository,
             iDiscountPolicyRepository discountRepo
-            ) {
-
+    ) {
         this.repository = repository;
         this.supplyService = supplyService;
         this.paymentService = paymentService;
@@ -60,24 +58,22 @@ public class PurchasedService {
         this.treeOfRoleRepository = treeOfRoleRepository;
         this.discountRepo = discountRepo;
     }
-    public boolean isAuthorized(String company,String userID) {
-        boolean o=treeOfRoleRepository.exitsOwner(userID,company);
-        boolean m=treeOfRoleRepository.ManagerPermitToSeeTransactions(userID,company);
-        return m || (o );
+
+    public boolean isAuthorized(String company, String userID) {
+        boolean o = treeOfRoleRepository.exitsOwner(userID, company);
+        boolean m = treeOfRoleRepository.ManagerPermitToSeeTransactions(userID, company);
+        return m || (o);
     }
 
-    public String PurchaseTicket(String email, String orderId,String token,String userCoupon) {
+    public Response<String> PurchaseTicket(String email, String orderId, String token, String userCoupon) {
         try {
             ActiveOrder order = repository.findById(orderId);
-            if(tokenService.validateToken(token)){
-                String userID=tokenService.extractUserId(token);
-                order=repository.getOrder(userID);
+            if (tokenService.validateToken(token)) {
+                String userID = tokenService.extractUserId(token);
+                order = repository.getOrder(userID);
             }
-            if (order == null  || order.getExpirationTime().before(new Date())) {
-
-
-                        throw new Exception("Order expired or not found");
-
+            if (order == null || order.getExpirationTime().before(new Date())) {
+                throw new Exception("Order expired or not found");
             }
 
             PurchaseContext context = new PurchaseContext(
@@ -106,6 +102,7 @@ public class PurchasedService {
                             t.getPrice(),
                             finalContext))
                     .sum();
+
             if (!paymentService.processPayment(email, totalPriceAfterDiscounts)) {
                 throw new Exception("Payment failed");
             }
@@ -116,12 +113,11 @@ public class PurchasedService {
                 }
 
                 for (Ticket t : purchasedTickets) {
-                    String barcode = barcodeGenerator.generateBarcode(t.getEvent(),t.getId());
+                    String barcode = barcodeGenerator.generateBarcode(t.getEvent(), t.getId());
                     supplyService.supplyToEmail(email, barcode);
                 }
 
                 purchasedOrderRepository.StorePurchasedOrder(order.getCompanyId(), order.getEventId(), order.getTicketIds(), order.getUserId(), order.getOrderId());
-//                purchasedTickets.forEach(ticket -> {ticketRepository.save(ticket);});
 
                 repository.delete(order.getOrderId());
 
@@ -129,78 +125,77 @@ public class PurchasedService {
                 paymentService.refund(email, totalPriceAfterDiscounts);
                 throw e;
             }
-            return "success";
+            return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return e.getMessage();
+            return Response.error(e.getMessage());
         }
     }
-    public List<PurchaseOrderDTO> getCompanyTransaction(String company,String token) {
+
+    public Response<List<PurchaseOrderDTO>> getCompanyTransaction(String company, String token) {
         try {
             logger.info("getCompanyTransaction");
-            if(!tokenService.validateToken(token)) {
+            if (!tokenService.validateToken(token)) {
                 throw new Exception("Invalid token");
             }
             String username = tokenService.extractUsername(token);
             if (username == null || !isAuthorized(company, username)) {
                 throw new Exception("User not authorized");
             }
-            List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForCompany(company);
+            List<PurchaseOrder> purchaseOrders = purchasedOrderRepository.getPurchasedOrdersForCompany(company);
             StringBuilder orders = new StringBuilder();
-            List<PurchaseOrderDTO> orderDTOS=new ArrayList<>();
+            List<PurchaseOrderDTO> orderDTOS = new ArrayList<>();
 
-            for(PurchaseOrder purchasedOrder : purchaseOrders) {
-                orders.append(purchasedOrder.toString()+"\n");
+            for (PurchaseOrder purchasedOrder : purchaseOrders) {
+                orders.append(purchasedOrder.toString() + "\n");
                 List<String> ticketsId = purchasedOrder.getTicketsId();
-                String tickets=ticketRepository.getTicketsDescription(ticketsId);
-                List<Ticket> ticketList=ticketRepository.getTickets(ticketsId);
-                List<TicketDTO> ticketDTOS=new ArrayList<>();
-                for(Ticket ticket : ticketList) {
+                String tickets = ticketRepository.getTicketsDescription(ticketsId);
+                List<Ticket> ticketList = ticketRepository.getTickets(ticketsId);
+                List<TicketDTO> ticketDTOS = new ArrayList<>();
+                for (Ticket ticket : ticketList) {
                     ticketDTOS.add(TicketDTO.fromEntity(ticket));
                 }
-                orderDTOS.add(PurchaseOrderDTO.create(purchasedOrder,ticketDTOS));
-                orders.append(tickets+"\n");
-
+                orderDTOS.add(PurchaseOrderDTO.create(purchasedOrder, ticketDTOS));
+                orders.append(tickets + "\n");
             }
-            return orderDTOS;
-        }
-        catch (Exception e) {
+            return Response.success(orderDTOS);
+        } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
-    public List<PurchaseOrderDTO> getUserTransaction(String token) {
+
+    public Response<List<PurchaseOrderDTO>> getUserTransaction(String token) {
         try {
             logger.info("getUserTransaction");
-            if(!tokenService.validateToken(token)) {
+            if (!tokenService.validateToken(token)) {
                 throw new Exception("Invalid token");
             }
-            String userID=tokenService.extractUserId(token);
+            String userID = tokenService.extractUserId(token);
 
-            List<PurchaseOrder> purchaseOrders=purchasedOrderRepository.getPurchasedOrdersForUser(userID);
+            List<PurchaseOrder> purchaseOrders = purchasedOrderRepository.getPurchasedOrdersForUser(userID);
             StringBuilder orders = new StringBuilder();
-            List<PurchaseOrderDTO> orderDTOS=new ArrayList<>();
+            List<PurchaseOrderDTO> orderDTOS = new ArrayList<>();
 
-            for(PurchaseOrder purchasedOrder : purchaseOrders) {
-                orders.append(purchasedOrder.toString()+"\n");
+            for (PurchaseOrder purchasedOrder : purchaseOrders) {
+                orders.append(purchasedOrder.toString() + "\n");
                 List<String> ticketsId = purchasedOrder.getTicketsId();
-                String tickets=ticketRepository.getTicketsDescription(ticketsId);
-                List<Ticket> ticketList=ticketRepository.getTickets(ticketsId);
-                List<TicketDTO> ticketDTOS=new ArrayList<>();
-                for(Ticket ticket : ticketList) {
+                String tickets = ticketRepository.getTicketsDescription(ticketsId);
+                List<Ticket> ticketList = ticketRepository.getTickets(ticketsId);
+                List<TicketDTO> ticketDTOS = new ArrayList<>();
+                for (Ticket ticket : ticketList) {
                     ticketDTOS.add(TicketDTO.fromEntity(ticket));
                 }
-                orderDTOS.add(PurchaseOrderDTO.create(purchasedOrder,ticketDTOS));
-                orders.append(tickets+"\n");
-
+                orderDTOS.add(PurchaseOrderDTO.create(purchasedOrder, ticketDTOS));
+                orders.append(tickets + "\n");
             }
-            return orderDTOS;
-        }
-        catch (Exception e) {
+            return Response.success(orderDTOS);
+        } catch (Exception e) {
             logger.error(e.getMessage());
-            return null;
+            return Response.error(e.getMessage());
         }
     }
+
     public double getPriceAfterDiscounts(String eventId, String companyName, double originalPrice, PurchaseContext context) {
         DiscountPolicy eventPolicy = discountRepo.findByEvent(eventId);
         DiscountPolicy companyPolicy = discountRepo.findByCompany(companyName);
