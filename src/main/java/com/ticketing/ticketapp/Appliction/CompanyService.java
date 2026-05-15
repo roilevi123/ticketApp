@@ -1,6 +1,7 @@
 package com.ticketing.ticketapp.Appliction;
 
 import com.ticketing.ticketapp.Domain.Company.Company;
+import com.ticketing.ticketapp.Domain.Company.CompanyDTO;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.*;
 
@@ -276,6 +277,23 @@ public class CompanyService {
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<List<CompanyDTO>> getActiveCompanies(String token) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
+            List<CompanyDTO> companies = companyRepository.getActiveCompanies()
+                    .stream()
+                    .map(CompanyDTO::fromEntity)
+                    .toList();
+            logger.info("Retrieved {} active companies", companies.size());
+            return Response.success(companies);
+        } catch (Exception e) {
+            logger.error("Failed to retrieve active companies: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
     }
