@@ -1,13 +1,10 @@
 package com.ticketing.ticketapp.Infastructure;
-
-
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import com.ticketing.ticketapp.Domain.Company.Company;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 
 @Repository
 public class CompanyRepositoryImpl implements iCompanyRepository {
@@ -68,5 +65,12 @@ public class CompanyRepositoryImpl implements iCompanyRepository {
     @Override
     public boolean isCompanyActive(String company) {
         return companies.get(company).getActive();
+    }
+
+    @Override
+    public List<Company> getActiveCompanies() {
+        return companies.values().stream()
+                .filter(Company::getActive)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

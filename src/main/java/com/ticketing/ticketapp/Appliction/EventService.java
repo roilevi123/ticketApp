@@ -130,7 +130,8 @@ public class EventService {
 
     public Response<String> getCompanyInfo(String token, String company) {
         try {
-            if (!tokenService.validateToken(token)) {
+            boolean isGuest = token != null && token.contains("guest-temporary-token");
+            if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
             logger.info("trying Getting company info: " + company);
@@ -148,7 +149,8 @@ public class EventService {
 
     public Response<List<EventDTO>> getCompanyEvents(String token, String company) {
         try {
-            if (!tokenService.validateToken(token)) {
+            boolean isGuest = token != null && token.contains("guest-temporary-token");
+            if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
             logger.info("trying Getting company events: " + company);
@@ -171,7 +173,8 @@ public class EventService {
 
     public Response<MapArea[][]> getMapArea(String token, String company, String eventName) {
         try {
-            if (!tokenService.validateToken(token)) {
+            boolean isGuest = token != null && token.contains("guest-temporary-token");
+            if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
             logger.info("trying Getting map area: " + eventName);
@@ -185,12 +188,31 @@ public class EventService {
         }
     }
 
+    public Response<EventDTO> getEvent(String token, String company, String eventName) {
+        try {
+            boolean isGuest = token != null && token.contains("guest-temporary-token");
+            if (!isGuest && !tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
+            Event event = eventRepository.getEvent(eventName, company);
+            if (event == null) {
+                return Response.error("Event not found");
+            }
+            logger.info("Retrieved event '{}' for company '{}'", eventName, company);
+            return Response.success(EventDTO.fromEntity(event));
+        } catch (Exception e) {
+            logger.error("Failed to retrieve event '{}': {}", eventName, e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
     public Response<List<EventDTO>> searchEvents(String token, String query, String company, EventType type,
                                                   Double minPrice, Double maxPrice,
                                                   Date startDate, Date endDate,
                                                   String location, Double minRating) {
         try {
-            if (!tokenService.validateToken(token)) {
+            boolean isGuest = token != null && token.contains("guest-temporary-token");
+            if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
             logger.info("Initiating search with parameters - Query: {}, Company: {}", query, company);
