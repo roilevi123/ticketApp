@@ -1,0 +1,316 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const API_URL = 'http://localhost:8080/api/discovery/events/search';
+const AUTH_HEADER = 'Bearer guest-temporary-token';
+
+const TYPE_CONFIG = {
+  LIVE_PERFORMANCE: { gradient: 'from-blue-950 via-indigo-900 to-blue-800',    icon: 'music_note' },
+  PLAY:             { gradient: 'from-purple-950 via-violet-900 to-purple-800', icon: 'theater_comedy' },
+  FESTIVAL:         { gradient: 'from-rose-950 via-pink-900 to-rose-800',       icon: 'celebration' },
+  CONFERENCE:       { gradient: 'from-slate-900 via-zinc-800 to-slate-700',     icon: 'groups' },
+};
+const DEFAULT_TYPE = { gradient: 'from-slate-900 via-slate-800 to-slate-700', icon: 'event' };
+
+function formatDate(dateStr) {
+  if (!dateStr) return 'TBD';
+  try {
+    return new Date(dateStr)
+      .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      .toUpperCase();
+  } catch {
+    return String(dateStr).toUpperCase();
+  }
+}
+
+function formatPrice(price) {
+  if (price == null || price === 0) return 'Free';
+  return `From $${price}`;
+}
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function EventCardSkeleton() {
+  return (
+    <div className="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden animate-pulse">
+      <div className="aspect-video bg-surface-container-high" />
+      <div className="p-5 space-y-3">
+        <div className="h-3 w-16 bg-surface-container-high rounded" />
+        <div className="h-5 w-3/4 bg-surface-container-high rounded" />
+        <div className="h-4 w-1/2 bg-surface-container-high rounded" />
+        <div className="flex items-center gap-2">
+          <div className="h-4 w-4 bg-surface-container-high rounded-full" />
+          <div className="h-4 w-1/3 bg-surface-container-high rounded" />
+        </div>
+        <div className="flex justify-between pt-2">
+          <div className="h-6 w-20 bg-surface-container-high rounded" />
+          <div className="h-8 w-24 bg-surface-container-high rounded" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EventCard({ event }) {
+  const { gradient, icon } = TYPE_CONFIG[event.type?.toUpperCase()] || DEFAULT_TYPE;
+  const navigate = useNavigate();
+  return (
+    <div className="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden group hover:border-secondary transition-all duration-300 flex flex-col">
+      <div className={`aspect-video relative overflow-hidden bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+        <span className="material-symbols-outlined text-white/10" style={{ fontSize: '72px' }}>{icon}</span>
+        <div className="absolute top-2 left-2 px-2 py-1 bg-surface-dim/80 backdrop-blur-sm rounded text-label-sm text-tertiary">
+          {formatDate(event.date)}
+        </div>
+      </div>
+      <div className="p-5 flex flex-col flex-1">
+        <p className="text-label-sm text-on-tertiary-container/80 mb-1 tracking-wider">
+          {event.type?.toUpperCase() || 'EVENT'}
+        </p>
+        <h3 className="text-headline-sm text-on-surface mb-1 line-clamp-2">{event.name}</h3>
+        <p className="text-body-md text-on-surface-variant mb-4">{event.artistName}</p>
+        <div className="flex items-center gap-2 text-on-surface-variant mb-6">
+          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>location_on</span>
+          <span className="text-label-md truncate">{event.location}</span>
+        </div>
+        <div className="flex items-center justify-between mt-auto">
+          <span className="text-headline-sm text-secondary">{formatPrice(event.price)}</span>
+          <div className="flex items-center gap-2">
+            {event.companyName && (
+              <button
+                onClick={() => navigate(`/company/${encodeURIComponent(event.companyName)}`)}
+                className="text-label-md text-on-surface-variant hover:text-secondary transition-colors px-2 py-2 rounded active:scale-95"
+                title={`View ${event.companyName}`}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>store</span>
+              </button>
+            )}
+            <button className="bg-secondary text-on-secondary px-4 py-2 text-label-md font-bold rounded hover:brightness-110 active:scale-95 transition-all">
+              Buy Tickets
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroCard({ event }) {
+  const { gradient } = TYPE_CONFIG[event?.type?.toUpperCase()] || DEFAULT_TYPE;
+  return (
+    <div className={`md:col-span-8 relative rounded-xl overflow-hidden min-h-[280px] bg-gradient-to-br ${gradient} border border-outline-variant`}>
+      <div className="absolute inset-0 bg-gradient-to-t from-surface-dim via-surface-dim/30 to-transparent" />
+      <div className="absolute bottom-0 left-0 p-8 w-full">
+        <span className="inline-block px-3 py-1 bg-secondary/20 text-secondary text-label-sm rounded-full mb-4 tracking-wider">
+          {event?.type?.toUpperCase() || 'FEATURED'}
+        </span>
+        <h3 className="text-display-lg-mobile md:text-display-lg text-on-surface mb-2">
+          {event?.name || 'Upcoming Events'}
+        </h3>
+        <p className="text-body-lg text-on-surface-variant mb-6">
+          {event ? `Featuring ${event.artistName}` : "Explore what's happening on campus"}
+        </p>
+        <div className="flex items-center gap-4">
+          <button className="bg-secondary text-on-secondary px-8 py-3 text-label-md font-bold rounded-lg hover:brightness-110 transition-all active:scale-95">
+            Buy Tickets
+          </button>
+          <button className="border border-on-surface text-on-surface px-8 py-3 text-label-md font-bold rounded-lg hover:bg-on-surface/10 transition-all active:scale-95">
+            View Details
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SideCard({ event }) {
+  const { gradient } = TYPE_CONFIG[event?.type?.toUpperCase()] || DEFAULT_TYPE;
+  return (
+    <div className={`flex-1 relative rounded-xl overflow-hidden min-h-[150px] bg-gradient-to-br ${gradient} border border-outline-variant`}>
+      <div className="absolute inset-0 bg-gradient-to-t from-surface-dim/80 to-transparent" />
+      <div className="absolute bottom-0 left-0 p-6">
+        <h4 className="text-headline-sm text-on-surface">
+          {event?.name || <span className="opacity-30">Coming Soon</span>}
+        </h4>
+        <p className="text-label-md text-secondary">
+          {event ? `${formatPrice(event.price)} · ${formatDate(event.date)}` : ' '}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function MoreComingCard() {
+  return (
+    <div className="bg-surface-container-low border border-outline-variant border-dashed rounded-xl flex flex-col items-center justify-center p-8 opacity-60">
+      <span className="material-symbols-outlined text-on-surface-variant mb-4" style={{ fontSize: '48px' }}>add_circle</span>
+      <p className="text-label-md text-on-surface-variant text-center">Stay tuned for more upcoming campus events</p>
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function EventCatalog() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+
+    const controller = new AbortController();
+    // Debounce search input; fetch immediately on mount
+    const timer = setTimeout(() => {
+      const url = new URL(API_URL);
+      if (searchQuery) url.searchParams.set('query', searchQuery);
+
+      fetch(url.toString(), {
+        headers: { Authorization: AUTH_HEADER, 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(`Server returned ${res.status}`);
+          return res.json();
+        })
+        .then((data) => { setEvents(data); setLoading(false); })
+        .catch((err) => {
+          if (err.name !== 'AbortError') { setError(err.message); setLoading(false); }
+        });
+    }, searchQuery ? 350 : 0);
+
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [searchQuery]);
+
+  const [hero, side1, side2] = events;
+  const isSearching = searchQuery.length > 0;
+
+  return (
+    <div className="bg-background text-on-background min-h-screen flex flex-col">
+
+      {/* ── Top Nav ── */}
+      <header className="w-full sticky top-0 bg-surface-dim border-b border-outline-variant z-50">
+        <div className="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-container-max-width mx-auto">
+          <div className="flex items-center gap-8">
+            <span className="text-headline-md font-bold text-secondary">UNI-TICKETS</span>
+            <nav className="hidden md:flex items-center gap-6">
+              <a className="text-secondary border-b-2 border-secondary pb-1 font-bold text-body-md" href="#">Events</a>
+              <a className="text-on-surface-variant hover:text-on-surface transition-colors text-body-md" href="#">My Tickets</a>
+              <a className="text-on-surface-variant hover:text-on-surface transition-colors text-body-md" href="#">Help</a>
+            </nav>
+          </div>
+          <div className="flex items-center gap-4 flex-1 justify-end">
+            <div className="relative max-w-md w-full hidden sm:block">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style={{ fontSize: '20px' }}>search</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search events, artists, venues..."
+                className="w-full bg-surface-container-lowest border border-outline text-on-surface py-2 pl-10 pr-4 rounded-xl focus:border-secondary outline-none text-body-md placeholder:text-on-surface-variant"
+              />
+            </div>
+            <button className="hover:bg-surface-container-highest transition-all p-2 rounded-full active:scale-95 duration-150 flex items-center">
+              <span className="material-symbols-outlined text-secondary">account_circle</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-grow">
+
+        {/* ── Featured Bento Grid (hidden while searching) ── */}
+        {!isSearching && (
+          <section className="max-w-container-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12">
+            <h2 className="text-headline-md mb-8 text-on-surface">Featured Events</h2>
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter h-auto md:h-[500px]">
+                <div className="md:col-span-8 rounded-xl bg-surface-container-high animate-pulse min-h-[280px]" />
+                <div className="md:col-span-4 flex flex-col gap-gutter">
+                  <div className="flex-1 rounded-xl bg-surface-container-high animate-pulse min-h-[150px]" />
+                  <div className="flex-1 rounded-xl bg-surface-container-high animate-pulse min-h-[150px]" />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter h-auto md:h-[500px]">
+                <HeroCard event={hero} />
+                <div className="md:col-span-4 flex flex-col gap-gutter">
+                  <SideCard event={side1} />
+                  <SideCard event={side2} />
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ── All Events Grid ── */}
+        <section className="max-w-container-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12">
+          <div className="flex justify-between items-end mb-8 border-b border-outline-variant pb-4">
+            <h2 className="text-headline-md text-on-surface">
+              {isSearching ? `Results for "${searchQuery}"` : 'All Events'}
+            </h2>
+            {!isSearching && (
+              <div className="flex gap-4">
+                <button className="text-label-md text-on-surface-variant hover:text-secondary px-2 transition-colors">Music</button>
+                <button className="text-label-md text-on-surface-variant hover:text-secondary px-2 transition-colors">Theater</button>
+                <button className="text-label-md text-on-surface-variant hover:text-secondary px-2 transition-colors">Academic</button>
+              </div>
+            )}
+          </div>
+
+          {error ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <span className="material-symbols-outlined text-error mb-4" style={{ fontSize: '48px' }}>error_outline</span>
+              <p className="text-headline-sm text-on-surface mb-2">Unable to load events</p>
+              <p className="text-body-md text-on-surface-variant">{error}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+              {loading ? (
+                Array.from({ length: 8 }, (_, i) => <EventCardSkeleton key={i} />)
+              ) : events.length === 0 ? (
+                <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+                  <span className="material-symbols-outlined text-on-surface-variant mb-4" style={{ fontSize: '48px' }}>
+                    {isSearching ? 'search_off' : 'event_busy'}
+                  </span>
+                  <p className="text-headline-sm text-on-surface mb-2">
+                    {isSearching ? 'No results found' : 'No events yet'}
+                  </p>
+                  <p className="text-body-md text-on-surface-variant">
+                    {isSearching ? 'Try adjusting your search terms' : 'Check back soon for upcoming campus events'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {events.map((event, i) => (
+                    <EventCard key={event.id ?? i} event={event} />
+                  ))}
+                  {!isSearching && <MoreComingCard />}
+                </>
+              )}
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* ── Footer ── */}
+      <footer className="w-full mt-auto bg-surface-dim border-t border-outline-variant">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter px-margin-mobile md:px-margin-desktop py-8 max-w-container-max-width mx-auto">
+          <div className="flex flex-col gap-4">
+            <span className="text-headline-sm font-bold text-secondary">UNI-TICKETS</span>
+            <p className="text-label-md text-on-surface-variant">© 2024 University Ticketing Services. All rights reserved.</p>
+          </div>
+          <div className="flex flex-wrap gap-x-8 gap-y-4 md:justify-end items-center">
+            {['Contact Us', 'Privacy Policy', 'Terms of Service', 'Campus Map'].map((link) => (
+              <a key={link} className="text-label-md text-on-surface-variant hover:text-primary transition-colors opacity-80 hover:opacity-100" href="#">
+                {link}
+              </a>
+            ))}
+          </div>
+        </div>
+      </footer>
+
+    </div>
+  );
+}
