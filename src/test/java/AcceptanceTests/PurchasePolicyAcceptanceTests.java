@@ -18,6 +18,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.mockito.Mockito.mock;
+import com.ticketing.ticketapp.Appliction.INotifier;
+
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,7 +52,8 @@ public class PurchasePolicyAcceptanceTests {
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        this.reserveService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository);
+        INotifier notifierMock = mock(INotifier.class);
+        this.reserveService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
         this.policyService = new PurchasePolicyService(purchasePolicyRepository, tokenService);
 
         userRepository.deleteAll();

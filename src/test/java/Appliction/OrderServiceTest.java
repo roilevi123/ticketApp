@@ -46,7 +46,8 @@ class OrderServiceTest {
         userRepository = spy(new UserRepositoryImpl());
         purchasePolicyRepository = spy(new InMemoryPurchasePolicyRepository());
 
-        reserveTicketService = new OrderService(orderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository);
+        INotifier notifierMock = mock(INotifier.class);
+        reserveTicketService = new OrderService(orderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
     }
 
     @Test

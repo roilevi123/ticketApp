@@ -21,6 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.mockito.Mockito.mock;
+
 import java.util.Date;
 import java.util.List;
 
@@ -69,7 +71,8 @@ public class AdminJUnitTests {
         this.eventService = new EventService(companyRepository, eventRepository, tokenService,
                 treeOfRoleRepository, ticketRepository, queueRepository);
 
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository);
+        INotifier notifierMock = mock(INotifier.class);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository, notifierMock);
 
 
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository,
