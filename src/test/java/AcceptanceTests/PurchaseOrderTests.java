@@ -20,6 +20,8 @@ import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.mock;
+import com.ticketing.ticketapp.Appliction.INotifier;
 
 import java.util.*;
 
@@ -47,6 +49,7 @@ public class PurchaseOrderTests {
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         iDiscountPolicyRepository discountPolicyRepository = new InMemoryDiscountPolicyRepository();
         iPurchasePolicyRepository purchasePolicyRepository = new InMemoryPurchasePolicyRepository();
+        INotifier notifierMock = mock(INotifier.class);
 
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
@@ -58,7 +61,7 @@ public class PurchaseOrderTests {
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentService, barcodeGenerator, tokenService, treeOfRoleRepository, discountPolicyRepository);
 
         activeOrderRepository.deleteAllActiveOrders();

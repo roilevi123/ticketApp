@@ -14,6 +14,8 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -26,14 +28,18 @@ public class OrderService {
     private TokenService tokenService;
     private IUserRepository userRepository;
     private iPurchasePolicyRepository purchasePolicyRepo;
+    private INotifier notifier;
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
-    public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService, iTicketRepository ticketRepository, IUserRepository userRepository, iPurchasePolicyRepository purchasePolicyRepo) {
+    public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService,
+            iTicketRepository ticketRepository, IUserRepository userRepository,
+            iPurchasePolicyRepository purchasePolicyRepo, INotifier notifier) {
         this.activeOrderRepository = activeOrderRepository;
         this.tokenService = tokenService;
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.purchasePolicyRepo = purchasePolicyRepo;
+        this.notifier = notifier;
     }
 
     public Response<String> reserveTickets(String token, String company, String event, List<int[]> requests) {
@@ -84,6 +90,13 @@ public class OrderService {
 
             String id = activeOrderRepository.store(company, event, reservedTicketIds, userID, expiryDate);
             logger.info("Successfully reserved " + reservedTicketIds.size() + " tickets");
+            if (userID != null) {
+                SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
+                String formattedTime = timeFormatter.format(expiryDate);
+                notifier.notifyUser(userID,
+                        "Reservation Successful",
+                        "Your reservation for event " + event + " was successful. Please complete the payment by " + formattedTime);
+            }
             return Response.success(id);
 
         } catch (Exception e) {
@@ -124,7 +137,8 @@ public class OrderService {
         }
     }
 
-    private void validatePurchasePolicies(String eventId, String companyName, String userId, int totalRequested) throws Exception {
+    private void validatePurchasePolicies(String eventId, String companyName, String userId, int totalRequested)
+            throws Exception {
         User user = userRepository.getUserByID(userId);
         int age = (user != null) ? user.getAge() : 10000;
 
