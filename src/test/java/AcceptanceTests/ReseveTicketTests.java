@@ -18,6 +18,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.mockito.Mockito.mock;
+import com.ticketing.ticketapp.Appliction.INotifier;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -49,7 +51,8 @@ public class ReseveTicketTests {
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository);
+        INotifier notifierMock = mock(INotifier.class);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
