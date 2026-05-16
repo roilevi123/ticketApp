@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const API_URL = 'http://localhost:8080/api/discovery/events/search';
 const AUTH_HEADER = 'Bearer guest-temporary-token';
@@ -11,6 +11,10 @@ const TYPE_CONFIG = {
   CONFERENCE:       { gradient: 'from-slate-900 via-zinc-800 to-slate-700',     icon: 'groups' },
 };
 const DEFAULT_TYPE = { gradient: 'from-slate-900 via-slate-800 to-slate-700', icon: 'event' };
+
+function toEventPath(event) {
+  return `/event/${encodeURIComponent(event.companyName)}/${encodeURIComponent(event.name)}`;
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return 'TBD';
@@ -54,8 +58,13 @@ function EventCardSkeleton() {
 function EventCard({ event }) {
   const { gradient, icon } = TYPE_CONFIG[event.type?.toUpperCase()] || DEFAULT_TYPE;
   const navigate = useNavigate();
+  const path = toEventPath(event);
+
   return (
-    <div className="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden group hover:border-secondary transition-all duration-300 flex flex-col">
+    <div
+      onClick={() => navigate(path)}
+      className="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden group hover:border-secondary transition-all duration-300 flex flex-col cursor-pointer"
+    >
       <div className={`aspect-video relative overflow-hidden bg-gradient-to-br ${gradient} flex items-center justify-center`}>
         <span className="material-symbols-outlined text-white/10" style={{ fontSize: '72px' }}>{icon}</span>
         <div className="absolute top-2 left-2 px-2 py-1 bg-surface-dim/80 backdrop-blur-sm rounded text-label-sm text-tertiary">
@@ -76,15 +85,18 @@ function EventCard({ event }) {
           <span className="text-headline-sm text-secondary">{formatPrice(event.price)}</span>
           <div className="flex items-center gap-2">
             {event.companyName && (
-              <button
-                onClick={() => navigate(`/company/${encodeURIComponent(event.companyName)}`)}
-                className="text-label-md text-on-surface-variant hover:text-secondary transition-colors px-2 py-2 rounded active:scale-95"
-                title={`View ${event.companyName}`}
+              <Link
+                to={`/company/${encodeURIComponent(event.companyName)}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-label-sm text-on-surface-variant hover:text-secondary transition-colors px-2 py-1 rounded border border-outline-variant hover:border-secondary"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>store</span>
-              </button>
+                {event.companyName}
+              </Link>
             )}
-            <button className="bg-secondary text-on-secondary px-4 py-2 text-label-md font-bold rounded hover:brightness-110 active:scale-95 transition-all">
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate(path); }}
+              className="bg-secondary text-on-secondary px-4 py-2 text-label-md font-bold rounded hover:brightness-110 active:scale-95 transition-all"
+            >
               Buy Tickets
             </button>
           </div>
@@ -96,8 +108,14 @@ function EventCard({ event }) {
 
 function HeroCard({ event }) {
   const { gradient } = TYPE_CONFIG[event?.type?.toUpperCase()] || DEFAULT_TYPE;
+  const navigate = useNavigate();
+  const path = event ? toEventPath(event) : null;
+
   return (
-    <div className={`md:col-span-8 relative rounded-xl overflow-hidden min-h-[280px] bg-gradient-to-br ${gradient} border border-outline-variant`}>
+    <div
+      onClick={() => path && navigate(path)}
+      className={`md:col-span-8 relative rounded-xl overflow-hidden min-h-[280px] bg-gradient-to-br ${gradient} border border-outline-variant ${path ? 'cursor-pointer' : ''}`}
+    >
       <div className="absolute inset-0 bg-gradient-to-t from-surface-dim via-surface-dim/30 to-transparent" />
       <div className="absolute bottom-0 left-0 p-8 w-full">
         <span className="inline-block px-3 py-1 bg-secondary/20 text-secondary text-label-sm rounded-full mb-4 tracking-wider">
@@ -109,14 +127,22 @@ function HeroCard({ event }) {
         <p className="text-body-lg text-on-surface-variant mb-6">
           {event ? `Featuring ${event.artistName}` : "Explore what's happening on campus"}
         </p>
-        <div className="flex items-center gap-4">
-          <button className="bg-secondary text-on-secondary px-8 py-3 text-label-md font-bold rounded-lg hover:brightness-110 transition-all active:scale-95">
-            Buy Tickets
-          </button>
-          <button className="border border-on-surface text-on-surface px-8 py-3 text-label-md font-bold rounded-lg hover:bg-on-surface/10 transition-all active:scale-95">
-            View Details
-          </button>
-        </div>
+        {path && (
+          <div className="flex items-center gap-4">
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate(path); }}
+              className="bg-secondary text-on-secondary px-8 py-3 text-label-md font-bold rounded-lg hover:brightness-110 transition-all active:scale-95"
+            >
+              Buy Tickets
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate(path); }}
+              className="border border-on-surface text-on-surface px-8 py-3 text-label-md font-bold rounded-lg hover:bg-on-surface/10 transition-all active:scale-95"
+            >
+              View Details
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -124,8 +150,9 @@ function HeroCard({ event }) {
 
 function SideCard({ event }) {
   const { gradient } = TYPE_CONFIG[event?.type?.toUpperCase()] || DEFAULT_TYPE;
-  return (
-    <div className={`flex-1 relative rounded-xl overflow-hidden min-h-[150px] bg-gradient-to-br ${gradient} border border-outline-variant`}>
+  const sharedClass = `flex-1 relative rounded-xl overflow-hidden min-h-[150px] bg-gradient-to-br ${gradient} border border-outline-variant`;
+  const content = (
+    <>
       <div className="absolute inset-0 bg-gradient-to-t from-surface-dim/80 to-transparent" />
       <div className="absolute bottom-0 left-0 p-6">
         <h4 className="text-headline-sm text-on-surface">
@@ -135,7 +162,13 @@ function SideCard({ event }) {
           {event ? `${formatPrice(event.price)} · ${formatDate(event.date)}` : ' '}
         </p>
       </div>
-    </div>
+    </>
+  );
+  if (!event) return <div className={sharedClass}>{content}</div>;
+  return (
+    <Link to={toEventPath(event)} className={`${sharedClass} hover:border-secondary transition-all duration-300`}>
+      {content}
+    </Link>
   );
 }
 
