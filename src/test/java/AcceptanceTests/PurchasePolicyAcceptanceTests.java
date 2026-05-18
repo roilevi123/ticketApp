@@ -78,7 +78,7 @@ public class PurchasePolicyAcceptanceTests {
     private boolean isNumeric(String str) { return str != null && str.matches("-?\\d+"); }
 
     private String regAndSetup(String adminName, String compName, String eventName, int minAge) {
-        userService.register(gt(), adminName, "p", 30);
+        userService.register(gt(), adminName, "p", 30, adminName + "@test.com");
         String token = userService.login(gt(), adminName, "p").getData();
         companyService.CreateCompany(compName, token);
 
@@ -91,7 +91,7 @@ public class PurchasePolicyAcceptanceTests {
     }
 
     private String quickReg(String name, int age) {
-        userService.register(gt(), name, "p", age);
+        userService.register(gt(), name, "p", age, name + "@test.com");
         return userService.login(gt(), name, "p").getData();
     }
 

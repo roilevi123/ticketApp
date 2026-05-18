@@ -43,15 +43,15 @@ class UserServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn(ENCODED_PASSWORD);
 
-        Response<String> result = userService.register(TOKEN, USERNAME, RAW_PASSWORD, 10);
+        Response<String> result = userService.register(TOKEN, USERNAME, RAW_PASSWORD, 10, "roy_user@test.com");
 
         assertTrue(result.isSuccess());
-        verify(userRepository, times(1)).Store(USERNAME, ENCODED_PASSWORD, 10);
+        verify(userRepository, times(1)).Store(USERNAME, ENCODED_PASSWORD, 10, "roy_user@test.com");
     }
 
     @Test
     void login_Success_ShouldReturnToken() {
-        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 10);
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 10, "roy_user@test.com");
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(userRepository.usernameExists(USERNAME)).thenReturn(true);
@@ -147,7 +147,7 @@ class UserServiceTest {
 
     @Test
     void updateUserPassword_Success_ShouldUpdatePassword() {
-        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 10);
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 10, "roy_user@test.com");
         mockUser.setVersion(0);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
@@ -186,7 +186,7 @@ class UserServiceTest {
 
     @Test
     void updateUserPassword_OptimisticLockFailure_ShouldReturnErrorMessage() {
-        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 10);
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 10, "roy_user@test.com");
         mockUser.setVersion(0);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
