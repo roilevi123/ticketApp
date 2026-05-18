@@ -18,7 +18,9 @@ public class UserDTO {
         if (user == null) {
             return null;
         }
-        return new UserDTO(user.getName(), user.getID(), user.getAge());
+        UserDTO dto = new UserDTO(user.getName(), user.getID(), user.getAge());
+        dto.setEmail(user.getEmail());
+        return dto;
     }
 
     public String getName()          { return name; }

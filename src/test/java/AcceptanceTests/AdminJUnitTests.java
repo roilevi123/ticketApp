@@ -108,7 +108,7 @@ public class AdminJUnitTests {
     }
 
     private void reg(String username, String password) {
-        userService.register(gt(), username, password, 10);
+        userService.register(gt(), username, password, 10, username + "@test.com");
     }
 
     private String log(String username, String password) {

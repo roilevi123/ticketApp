@@ -26,14 +26,14 @@ public class UserService implements IAuth {
     }
 
     @Override
-    public Response<String> register(String token, String username, String password, int age) {
+    public Response<String> register(String token, String username, String password, int age, String email) {
         try {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
             logger.info("Registering user " + username);
             String encodedPassword = passwordEncoder.encode(password);
-            userRepository.Store(username, encodedPassword, age);
+            userRepository.Store(username, encodedPassword, age, email);
             logger.info("Registered user " + username + " successfully");
             return Response.success("success");
         } catch (Exception e) {

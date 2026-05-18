@@ -1,7 +1,7 @@
 package com.ticketing.ticketapp.Domain.User;
 
 public interface IUserRepository {
-    public User Store(String username, String password,int age);
+    public User Store(String username, String password, int age, String email);
     public String getUserPassword(String username);
     public User getUserByUsername(String username);
     public User getUserByID(String ID);
