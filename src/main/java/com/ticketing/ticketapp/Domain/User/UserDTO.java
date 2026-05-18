@@ -3,12 +3,15 @@ package com.ticketing.ticketapp.Domain.User;
 public class UserDTO {
     private String name;
     private String ID;
-    private int age;
+    private int    age;
+    private String email;
+
+    public UserDTO() {}
 
     public UserDTO(String name, String ID, int age) {
         this.name = name;
-        this.ID = ID;
-        this.age = age;
+        this.ID   = ID;
+        this.age  = age;
     }
 
     public static UserDTO fromEntity(User user) {
@@ -18,27 +21,15 @@ public class UserDTO {
         return new UserDTO(user.getName(), user.getID(), user.getAge());
     }
 
-    public String getName() {
-        return name;
-    }
+    public String getName()          { return name; }
+    public void   setName(String v)  { name = v; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getID()            { return ID; }
+    public void   setID(String v)    { ID = v; }
 
-    public String getID() {
-        return ID;
-    }
+    public int    getAge()           { return age; }
+    public void   setAge(int v)      { age = v; }
 
-    public void setID(String ID) {
-        this.ID = ID;
-    }
-
-    public int getAge() {
-        return age;
-    }
-
-    public void setAge(int age) {
-        this.age = age;
-    }
+    public String getEmail()         { return email; }
+    public void   setEmail(String v) { email = v; }
 }
