@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
-const API_BASE    = 'http://localhost:8080';
-const AUTH_HEADER = 'Bearer guest-temporary-token';
+const API_BASE = "";
 
 // ─── Toast notification ───────────────────────────────────────────────────────
 
 function Toast({ toast }) {
   if (!toast) return null;
-  const isSuccess = toast.type === 'success';
+  const isSuccess = toast.type === "success";
   return (
     <div
       className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-lg shadow-xl border text-label-md font-bold animate-fadeIn ${
         isSuccess
-          ? 'bg-surface-container border-secondary text-secondary'
-          : 'bg-surface-container border-error text-error'
+          ? "bg-surface-container border-secondary text-secondary"
+          : "bg-surface-container border-error text-error"
       }`}
     >
-      <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-        {isSuccess ? 'check_circle' : 'error'}
+      <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
+        {isSuccess ? "check_circle" : "error"}
       </span>
       {toast.message}
     </div>
@@ -28,33 +28,37 @@ function Toast({ toast }) {
 // ─── Skeleton input ───────────────────────────────────────────────────────────
 
 function SkeletonInput() {
-  return <div className="w-full h-12 bg-surface-container-high rounded animate-pulse" />;
+  return (
+    <div className="w-full h-12 bg-surface-container-high rounded animate-pulse" />
+  );
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function MemberProfile() {
   // Profile state
-  const [firstName,  setFirstName]  = useState('');
-  const [lastName,   setLastName]   = useState('');
-  const [email,      setEmail]      = useState('');
-  const [studentId,  setStudentId]  = useState('');
-  const [isEditing,  setIsEditing]  = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   // Loading flags
   const [profileLoading, setProfileLoading] = useState(true);
-  const [saveLoading,    setSaveLoading]    = useState(false);
-  const [submitLoading,  setSubmitLoading]  = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   // Support form state
-  const [supportType, setSupportType] = useState('admin');
-  const [subject,     setSubject]     = useState('');
-  const [message,     setMessage]     = useState('');
+  const [supportType, setSupportType] = useState("admin");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
 
   // Toast: { type: 'success' | 'error', message: string } | null
   const [toast, setToast] = useState(null);
 
   const navigate = useNavigate();
+  const { token, role, logout } = useAuth();
+  const AUTH_HEADER = `Bearer ${token || "guest-temporary-token"}`;
 
   function showToast(type, msg) {
     setToast({ type, message: msg });
@@ -67,18 +71,25 @@ export default function MemberProfile() {
       headers: { Authorization: AUTH_HEADER },
     })
       .then((res) => {
+        if (res.status === 401) {
+          logout();
+          navigate("/login");
+          throw new Error("Session expired. Please log in again.");
+        }
         if (!res.ok) throw new Error(`Server error ${res.status}`);
         return res.json();
       })
       .then((data) => {
         // Backend stores one combined name field; split it for the two inputs
-        const parts = (data.name ?? '').trim().split(/\s+/);
-        setFirstName(parts[0] ?? '');
-        setLastName(parts.slice(1).join(' '));
-        setEmail(data.email ?? '');
-        setStudentId(data.ID ?? '');
+        const parts = (data.name ?? "").trim().split(/\s+/);
+        setFirstName(parts[0] ?? "");
+        setLastName(parts.slice(1).join(" "));
+        setEmail(data.email ?? "");
+        setStudentId(data.ID ?? "");
       })
-      .catch((err) => showToast('error', `Could not load profile: ${err.message}`))
+      .catch((err) =>
+        showToast("error", `Could not load profile: ${err.message}`),
+      )
       .finally(() => setProfileLoading(false));
   }, []);
 
@@ -87,23 +98,23 @@ export default function MemberProfile() {
     setSaveLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/users/profile`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
           Authorization: AUTH_HEADER,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         // Backend uses combined name + ID (studentId) + email
-      body: JSON.stringify({
-        name: `${firstName} ${lastName}`.trim(),
-        ID: studentId,
-        email,
-      }),
+        body: JSON.stringify({
+          name: `${firstName} ${lastName}`.trim(),
+          ID: studentId,
+          email,
+        }),
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       setIsEditing(false);
-      showToast('success', 'Profile saved successfully.');
+      showToast("success", "Profile saved successfully.");
     } catch (err) {
-      showToast('error', `Could not save profile: ${err.message}`);
+      showToast("error", `Could not save profile: ${err.message}`);
     } finally {
       setSaveLoading(false);
     }
@@ -115,31 +126,33 @@ export default function MemberProfile() {
     setSubmitLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/support/ticket`, {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: AUTH_HEADER,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ supportType, subject, message }),
       });
       if (!res.ok) throw new Error(`Server error ${res.status}`);
-      setSubject('');
-      setMessage('');
-      setSupportType('admin');
-      showToast('success', "Ticket submitted — we'll respond within 2–4 business hours.");
+      setSubject("");
+      setMessage("");
+      setSupportType("admin");
+      showToast(
+        "success",
+        "Ticket submitted — we'll respond within 2–4 business hours.",
+      );
     } catch (err) {
-      showToast('error', `Could not submit ticket: ${err.message}`);
+      showToast("error", `Could not submit ticket: ${err.message}`);
     } finally {
       setSubmitLoading(false);
     }
   }
 
   const inputBase =
-    'w-full bg-background border border-outline-variant text-body-md px-4 py-3 rounded focus:outline-none focus:border-secondary transition-all';
+    "w-full bg-background border border-outline-variant text-body-md px-4 py-3 rounded focus:outline-none focus:border-secondary transition-all";
 
   return (
     <div className="bg-background text-on-surface min-h-screen flex flex-col">
-
       <Toast toast={toast} />
 
       {/* Decorative background blobs */}
@@ -151,7 +164,6 @@ export default function MemberProfile() {
       {/* ── Header ── */}
       <header className="w-full sticky top-0 bg-surface-dim border-b border-outline-variant z-50">
         <div className="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-container-max-width mx-auto">
-
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
@@ -159,18 +171,42 @@ export default function MemberProfile() {
             >
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
-            <span className="text-headline-md font-bold text-secondary">My Profile &amp; Support</span>
+            <span className="text-headline-md font-bold text-secondary">
+              My Profile &amp; Support
+            </span>
           </div>
 
           <nav className="hidden md:flex items-center gap-8">
-            <Link to="/" className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200">Events</Link>
-            <a href="#" className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200">My Tickets</a>
-            <a href="#" className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200">Alumni</a>
-            <a href="#" className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200">Schedule</a>
+            <Link
+              to="/"
+              className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200"
+            >
+              Events
+            </Link>
+            <a
+              href="#"
+              className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200"
+            >
+              My Tickets
+            </a>
+            <a
+              href="#"
+              className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200"
+            >
+              Alumni
+            </a>
+            <a
+              href="#"
+              className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200"
+            >
+              Schedule
+            </a>
           </nav>
 
           <div className="flex items-center gap-4">
-            <span className="hidden md:block text-label-md text-on-surface-variant cursor-pointer hover:text-secondary">Support</span>
+            <span className="hidden md:block text-label-md text-on-surface-variant cursor-pointer hover:text-secondary">
+              Support
+            </span>
             <button className="flex items-center text-on-surface-variant hover:text-secondary transition-colors">
               <span className="material-symbols-outlined">notifications</span>
             </button>
@@ -187,69 +223,87 @@ export default function MemberProfile() {
       {/* ── Main ── */}
       <main className="flex-grow pt-8 pb-12 px-margin-mobile md:px-margin-desktop max-w-container-max-width mx-auto w-full">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter">
-
           {/* ── Left Column: Personal Details ── */}
           <section className="md:col-span-5 flex flex-col gap-6">
-
             <div className="bg-surface-container p-8 rounded-lg border border-outline-variant shadow-lg">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-headline-sm text-on-surface">Personal Details</h2>
-                {profileLoading
-                  ? <div className="h-6 w-6 rounded-full bg-surface-container-high animate-pulse" />
-                  : <span className="material-symbols-outlined text-secondary">badge</span>
-                }
+                <h2 className="text-headline-sm text-on-surface">
+                  Personal Details
+                </h2>
+                {profileLoading ? (
+                  <div className="h-6 w-6 rounded-full bg-surface-container-high animate-pulse" />
+                ) : (
+                  <span className="material-symbols-outlined text-secondary">
+                    badge
+                  </span>
+                )}
               </div>
 
               <div className="space-y-6">
-
                 <div className="space-y-2">
-                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">First Name</label>
-                  {profileLoading ? <SkeletonInput /> : (
+                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">
+                    First Name
+                  </label>
+                  {profileLoading ? (
+                    <SkeletonInput />
+                  ) : (
                     <input
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       readOnly={!isEditing}
-                      className={`${inputBase} ${isEditing ? 'text-on-surface cursor-text' : 'text-on-surface-variant cursor-not-allowed'}`}
+                      className={`${inputBase} ${isEditing ? "text-on-surface cursor-text" : "text-on-surface-variant cursor-not-allowed"}`}
                     />
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">Last Name</label>
-                  {profileLoading ? <SkeletonInput /> : (
+                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">
+                    Last Name
+                  </label>
+                  {profileLoading ? (
+                    <SkeletonInput />
+                  ) : (
                     <input
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       readOnly={!isEditing}
-                      className={`${inputBase} ${isEditing ? 'text-on-surface cursor-text' : 'text-on-surface-variant cursor-not-allowed'}`}
+                      className={`${inputBase} ${isEditing ? "text-on-surface cursor-text" : "text-on-surface-variant cursor-not-allowed"}`}
                     />
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">Email Address</label>
-                  {profileLoading ? <SkeletonInput /> : (
+                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">
+                    Email Address
+                  </label>
+                  {profileLoading ? (
+                    <SkeletonInput />
+                  ) : (
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       readOnly={!isEditing}
-                      className={`${inputBase} ${isEditing ? 'text-on-surface cursor-text' : 'text-on-surface-variant cursor-not-allowed'}`}
+                      className={`${inputBase} ${isEditing ? "text-on-surface cursor-text" : "text-on-surface-variant cursor-not-allowed"}`}
                     />
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">University Student ID</label>
-                  {profileLoading ? <SkeletonInput /> : (
+                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">
+                    University Student ID
+                  </label>
+                  {profileLoading ? (
+                    <SkeletonInput />
+                  ) : (
                     <input
                       type="text"
                       value={studentId}
                       onChange={(e) => setStudentId(e.target.value)}
                       readOnly={!isEditing}
-                      className={`${inputBase} ${isEditing ? 'text-on-surface cursor-text' : 'text-on-surface-variant cursor-not-allowed'}`}
+                      className={`${inputBase} ${isEditing ? "text-on-surface cursor-text" : "text-on-surface-variant cursor-not-allowed"}`}
                     />
                   )}
                 </div>
@@ -278,43 +332,63 @@ export default function MemberProfile() {
                     className="flex-1 bg-secondary text-on-secondary text-label-md py-3 px-6 rounded hover:opacity-90 transition-opacity uppercase font-bold disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {saveLoading && (
-                      <span className="material-symbols-outlined animate-spin" style={{ fontSize: '16px' }}>progress_activity</span>
+                      <span
+                        className="material-symbols-outlined animate-spin"
+                        style={{ fontSize: "16px" }}
+                      >
+                        progress_activity
+                      </span>
                     )}
                     Save Changes
                   </button>
                 </div>
-
               </div>
             </div>
 
             {/* Account Status card */}
             <div className="bg-primary-container p-6 rounded-lg border border-outline-variant relative overflow-hidden">
               <div className="relative z-10">
-                <h3 className="text-on-primary-container text-label-md font-bold mb-2 uppercase">Account Status</h3>
+                <h3 className="text-on-primary-container text-label-md font-bold mb-2 uppercase">
+                  Account Status
+                </h3>
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-2 w-2 rounded-full bg-secondary" />
-                  <p className="text-on-surface text-body-md">Verified Alumni Member</p>
+                  <p className="text-on-surface text-body-md">
+                    Verified Alumni Member
+                  </p>
                 </div>
               </div>
               <div className="absolute top-[-20%] right-[-10%] opacity-10 pointer-events-none">
-                <span className="material-symbols-outlined text-on-surface" style={{ fontSize: '120px' }}>school</span>
+                <span
+                  className="material-symbols-outlined text-on-surface"
+                  style={{ fontSize: "120px" }}
+                >
+                  school
+                </span>
               </div>
             </div>
-
           </section>
 
           {/* ── Right Column: Contact Support ── */}
           <section className="md:col-span-7">
             <div className="bg-surface-container p-8 rounded-lg border border-outline-variant shadow-lg h-full flex flex-col">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-headline-sm text-on-surface">Contact Support</h2>
-                <span className="material-symbols-outlined text-secondary">contact_support</span>
+                <h2 className="text-headline-sm text-on-surface">
+                  Contact Support
+                </h2>
+                <span className="material-symbols-outlined text-secondary">
+                  contact_support
+                </span>
               </div>
 
-              <form onSubmit={handleSupportSubmit} className="space-y-6 flex-grow flex flex-col">
-
+              <form
+                onSubmit={handleSupportSubmit}
+                className="space-y-6 flex-grow flex flex-col"
+              >
                 <div className="space-y-2">
-                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">Send message to:</label>
+                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">
+                    Send message to:
+                  </label>
                   <div className="relative">
                     <select
                       value={supportType}
@@ -325,13 +399,17 @@ export default function MemberProfile() {
                       <option value="producer">Event Producer</option>
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
+                      <span className="material-symbols-outlined text-on-surface-variant">
+                        expand_more
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">Subject</label>
+                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">
+                    Subject
+                  </label>
                   <input
                     type="text"
                     value={subject}
@@ -343,7 +421,9 @@ export default function MemberProfile() {
                 </div>
 
                 <div className="space-y-2 flex-grow flex flex-col">
-                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">Message</label>
+                  <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">
+                    Message
+                  </label>
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
@@ -360,21 +440,29 @@ export default function MemberProfile() {
                     className="w-full bg-secondary text-on-secondary text-label-md py-4 px-8 rounded hover:opacity-90 transition-opacity uppercase font-bold flex items-center justify-center gap-3 disabled:opacity-50"
                   >
                     {submitLoading ? (
-                      <span className="material-symbols-outlined animate-spin" style={{ fontSize: '20px' }}>progress_activity</span>
+                      <span
+                        className="material-symbols-outlined animate-spin"
+                        style={{ fontSize: "20px" }}
+                      >
+                        progress_activity
+                      </span>
                     ) : (
-                      <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>verified_user</span>
+                      <span
+                        className="material-symbols-outlined"
+                        style={{ fontSize: "20px" }}
+                      >
+                        verified_user
+                      </span>
                     )}
-                    {submitLoading ? 'Submitting…' : 'Submit Securely'}
+                    {submitLoading ? "Submitting…" : "Submit Securely"}
                   </button>
                   <p className="text-center text-label-sm text-on-surface-variant mt-4">
                     Average response time: 2–4 business hours
                   </p>
                 </div>
-
               </form>
             </div>
           </section>
-
         </div>
       </main>
 
@@ -382,19 +470,32 @@ export default function MemberProfile() {
       <footer className="w-full py-8 mt-auto bg-surface-container-lowest border-t border-outline-variant">
         <div className="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop max-w-container-max-width mx-auto gap-gutter">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <span className="text-headline-sm text-secondary font-bold">UNI-TIX</span>
-            <p className="text-label-sm text-on-surface-variant">© 2024 University Ticketing Systems. All rights reserved.</p>
+            <span className="text-headline-sm text-secondary font-bold">
+              UNI-TIX
+            </span>
+            <p className="text-label-sm text-on-surface-variant">
+              © 2024 University Ticketing Systems. All rights reserved.
+            </p>
           </div>
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
-            {['Campus Map', 'Privacy Policy', 'Terms of Service', 'Accessibility', 'Contact Faculty'].map((link) => (
-              <a key={link} href="#" className="text-label-sm text-on-surface-variant hover:text-primary transition-colors">
+            {[
+              "Campus Map",
+              "Privacy Policy",
+              "Terms of Service",
+              "Accessibility",
+              "Contact Faculty",
+            ].map((link) => (
+              <a
+                key={link}
+                href="#"
+                className="text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+              >
                 {link}
               </a>
             ))}
           </div>
         </div>
       </footer>
-
     </div>
   );
 }
