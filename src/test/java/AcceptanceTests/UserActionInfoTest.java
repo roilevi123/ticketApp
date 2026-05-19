@@ -40,7 +40,7 @@ public class UserActionInfoTest {
     @Test
     @DisplayName("1. Register Success")
     void registerSuccess1() {
-        Response<String> result = userService.register(gt(), "roi", "roilevi", 10);
+        Response<String> result = userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         assertTrue(result.isSuccess());
         assertEquals("success", result.getData());
     }
@@ -48,22 +48,22 @@ public class UserActionInfoTest {
     @Test
     @DisplayName("2. Register Fail - Invalid Password")
     void registerFailInvalidPassword2() {
-        Response<String> result = userService.register(gt(), "roi", null, 10);
+        Response<String> result = userService.register(gt(), "roi", null, 10, "roi@test.com");
         assertTrue(result.isError());
     }
 
     @Test
     @DisplayName("3. Register Fail - Already User In This UserName")
     void registerFailAlreadyUserInThisUserName3() {
-        userService.register(gt(), "roi", "roilevi", 10);
-        Response<String> result = userService.register(gt(), "roi", "roilevi", 10);
+        userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
+        Response<String> result = userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         assertTrue(result.isError());
     }
 
     @Test
     @DisplayName("4. Login Success")
     void loginSuccess4() {
-        userService.register(gt(), "roi", "roilevi", 10);
+        userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         Response<String> result = userService.login(gt(), "roi", "roilevi");
         assertTrue(result.isSuccess());
         assertNotNull(result.getData());
@@ -72,7 +72,7 @@ public class UserActionInfoTest {
     @Test
     @DisplayName("5. Login Fail - Wrong Password")
     void loginFailWrongPassword5() {
-        userService.register(gt(), "roi", "roilevi", 10);
+        userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         Response<String> result = userService.login(gt(), "roi", "wrong_pass");
         assertTrue(result.isError());
     }
@@ -80,7 +80,7 @@ public class UserActionInfoTest {
     @Test
     @DisplayName("6. Login Fail - InValid Password")
     void loginFailInValidPassword6() {
-        userService.register(gt(), "roi", "roilevi", 10);
+        userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         Response<String> result = userService.login(gt(), "roi", null);
         assertTrue(result.isError());
     }
@@ -95,7 +95,7 @@ public class UserActionInfoTest {
     @Test
     @DisplayName("8. Logout Success")
     void logoutSuccess8() {
-        userService.register(gt(), "roi", "roilevi", 10);
+        userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         String token = userService.login(gt(), "roi", "roilevi").getData();
         Response<String> result = userService.logout(token);
         assertTrue(result.isSuccess());
@@ -105,7 +105,7 @@ public class UserActionInfoTest {
     @Test
     @DisplayName("9. Logout Failed")
     void logoutFailed9() {
-        userService.register(gt(), "roi", "roilevi", 10);
+        userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         Response<String> result = userService.logout("token");
         assertTrue(result.isError());
     }
@@ -113,7 +113,7 @@ public class UserActionInfoTest {
     @Test
     @DisplayName("10. Login After Logout Success")
     void loginAfterLogoutSuccess10() {
-        userService.register(gt(), "roi", "roilevi", 10);
+        userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         String token = userService.login(gt(), "roi", "roilevi").getData();
         userService.logout(token);
         Response<String> result = userService.login(gt(), "roi", "roilevi");
@@ -124,7 +124,7 @@ public class UserActionInfoTest {
     @Test
     @DisplayName("11. Get User Profile Success")
     void getUserInfoSuccess11() {
-        userService.register(gt(), "roi", "roilevi", 10);
+        userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         String token = userService.login(gt(), "roi", "roilevi").getData();
         Response<UserDTO> result = userService.getUserProfile(token);
         assertTrue(result.isSuccess());
@@ -142,7 +142,7 @@ public class UserActionInfoTest {
     @Test
     @DisplayName("13. Update User Profile Success")
     void updateUserInfoSuccess13() {
-        userService.register(gt(), "roi", "roilevi", 10);
+        userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         String token = userService.login(gt(), "roi", "roilevi").getData();
         Response<String> result = userService.updateUserPassword(token, "new");
         assertTrue(result.isSuccess());
@@ -159,7 +159,7 @@ public class UserActionInfoTest {
     @Test
     @DisplayName("15. Update User Profile And Then Login Success")
     void updateUserInfoAndThenLoginSuccess15() {
-        userService.register(gt(), "roi", "roilevi", 10);
+        userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         String token = userService.login(gt(), "roi", "roilevi").getData();
         userService.updateUserPassword(token, "new");
         userService.logout(token);
@@ -170,7 +170,7 @@ public class UserActionInfoTest {
 
     @Test
     void testRegisterInvalidToken() {
-        assertTrue(userService.register("", "eventId", "", 1).isError());
+        assertTrue(userService.register("", "eventId", "", 1, "eventId@test.com").isError());
     }
 
     @Test

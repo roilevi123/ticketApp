@@ -244,9 +244,13 @@ export default function EventCatalog() {
                 className="w-full bg-surface-container-lowest border border-outline text-on-surface py-2 pl-10 pr-4 rounded-xl focus:border-secondary outline-none text-body-md placeholder:text-on-surface-variant"
               />
             </div>
-            <button className="hover:bg-surface-container-highest transition-all p-2 rounded-full active:scale-95 duration-150 flex items-center">
+            <Link
+              to="/profile"
+              className="hover:bg-surface-container-highest transition-all p-2 rounded-full active:scale-95 duration-150 flex items-center"
+              title="My Profile"
+            >
               <span className="material-symbols-outlined text-secondary">account_circle</span>
-            </button>
+            </Link>
           </div>
         </div>
       </header>
