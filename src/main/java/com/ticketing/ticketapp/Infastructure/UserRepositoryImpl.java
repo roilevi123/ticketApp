@@ -15,11 +15,11 @@ public class UserRepositoryImpl implements IUserRepository {
 
 
     @Override
-    public User Store(String username, String password,int age) {
-        if(usernameExists(username)) {
+    public User Store(String username, String password, int age, String email) {
+        if (usernameExists(username)) {
             throw new RuntimeException("User already exists");
         }
-        User u=new User(username, password,age);
+        User u = new User(username, password, age, email);
         usersByID.put(u.getID(), u);
         usernameToId.put(username, u.getID());
         return u;

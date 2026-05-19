@@ -70,7 +70,7 @@ public class ReseveTicketTests {
     }
 
     private void reg(String username, String password) {
-        userService.register(gt(), username, password, 10);
+        userService.register(gt(), username, password, 10, username + "@test.com");
     }
 
     private String log(String username, String password) {
@@ -190,7 +190,7 @@ public class ReseveTicketTests {
             final int id = i + 2;
             service.submit(() -> {
                 try {
-                    userService.register(gt(), "u" + id, "p", 10);
+                    userService.register(gt(), "u" + id, "p", 10, "u" + id + "@test.com");
                     String ut = userService.login(gt(), "u" + id, "p").getData();
                     latch.await();
                     String oid = reserveTicketService.reserveTickets(ut, "1", "1", List.of(new int[]{0, 0, 1})).getData();

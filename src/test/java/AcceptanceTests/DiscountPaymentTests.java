@@ -82,7 +82,7 @@ public class DiscountPaymentTests {
 
     private String setupEventAndGetToken(String owner, String company, String event, double price) {
         String guestToken = tokenService.generateGuestToken();
-        userService.register(guestToken, owner, "password", 10);
+        userService.register(guestToken, owner, "password", 10, owner + "@test.com");
         String token = userService.login(guestToken, owner, "password").getData();
         companyService.CreateCompany(company, token);
         eventService.createEvent(token, event, company, EventType.PLAY, price, new Date(), "Location", company, getLargeMap());
@@ -91,7 +91,7 @@ public class DiscountPaymentTests {
 
     private String registerAndLoginBuyer(String name) {
         String guestToken = tokenService.generateGuestToken();
-        userService.register(guestToken, name, "password", 10);
+        userService.register(guestToken, name, "password", 10, name + "@test.com");
         return userService.login(guestToken, name, "password").getData();
     }
 
