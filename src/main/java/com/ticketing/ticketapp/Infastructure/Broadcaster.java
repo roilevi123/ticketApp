@@ -1,9 +1,13 @@
 package com.ticketing.ticketapp.Infastructure;
 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.ticketing.ticketapp.Appliction.IPendingNotificationRepository;
+
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -14,10 +18,22 @@ public class Broadcaster {
     private static final Logger logger = LoggerFactory.getLogger(Broadcaster.class);
     private final Map<String, Consumer<String>> activeConnections = new ConcurrentHashMap<>();
     private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private final IPendingNotificationRepository pendingRepo;
+
+    public Broadcaster(IPendingNotificationRepository pendingRepo) {
+        this.pendingRepo = pendingRepo;
+    }
 
     public void register(String userId, Consumer<String> connectionListener) {
         activeConnections.put(userId, connectionListener);
         logger.info("User {} registered to Broadcaster.", userId);
+        List<String> pendingMessages = pendingRepo.retrieveAndDelete(userId);
+        if (!pendingMessages.isEmpty()) {
+            logger.info("Sending {} pending messages to user {}", pendingMessages.size(), userId);
+            for (String msg : pendingMessages) {
+                broadcast(userId, msg); 
+            }
+        }
     }
     public void unregister(String userId) {
         activeConnections.remove(userId);
@@ -39,7 +55,8 @@ public class Broadcaster {
             });
         }
         else {
-            logger.warn("User {} is not currently connected. Message dropped.", userId);
+            logger.info("User {} is offline. Saving message to pending repository.", userId);
+            pendingRepo.save(userId, message);
         }
     }
     // broadcast a message to all connected users
