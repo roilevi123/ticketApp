@@ -3,6 +3,8 @@ package com.ticketing.ticketapp.Appliction;
 import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.Manager;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.Owner;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
@@ -13,6 +15,7 @@ import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +34,7 @@ public class AdminService {
     private iTicketRepository ticketRepository;
     private iEventRepository eventRepository;
     private TokenService tokenService;
+    private INotifier notifier;
     private static final Logger logger = LoggerFactory.getLogger(AdminService.class);
 
     public AdminService(
@@ -42,6 +46,7 @@ public class AdminService {
             , iTicketRepository ticketRepository
             , iEventRepository eventRepository
             , TokenService tokenService
+            , INotifier notifier
     ) {
         this.treeOfRoleRepository = treeOfRoleRepository;
         this.companyRepository = companyRepository;
@@ -51,6 +56,7 @@ public class AdminService {
         this.ticketRepository = ticketRepository;
         this.eventRepository = eventRepository;
         this.tokenService = tokenService;
+        this.notifier = notifier;
     }
     public Response<String> CloseCompany(String companyName,String adminID) {
         try {
@@ -58,16 +64,44 @@ public class AdminService {
             if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
+            List<Owner> owners = treeOfRoleRepository.getAllOwnersByCompany(companyName);
+            List<Manager> managers = treeOfRoleRepository.getAllManagersByCompany(companyName);
             companyRepository.deleteCompany(companyName);
             eventRepository.deleteCompanyEvent(companyName);
             treeOfRoleRepository.deleteCompanyMangersAndOwners(companyName);
             logger.info("Deleted company " + companyName);
+            String title = "Company Closed";
+            String message = "Company '" + companyName + "' has been permanently closed by an administrator.";
+            owners.forEach(o -> notifyMember(o.getUserID(), title, message));
+            managers.forEach(m -> notifyMember(m.getUserID(), title, message));
             return Response.success("success");
         }catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
 
+    }
+
+    public Response<String> sendMessageToUser(String adminId, String targetUserId, String message) {
+        try {
+            if (!adminRepository.isAdmin(adminId)) {
+                throw new Exception("Admin does not exist");
+            }
+            notifier.notifyUser(targetUserId, "Message from Admin", message);
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    private void notifyMember(String username, String title, String message) {
+        try {
+            User u = userRepository.getUserByUsername(username);
+            if (u != null) notifier.notifyUser(u.getID(), title, message);
+        } catch (Exception e) {
+            logger.warn("Failed to notify user {}: {}", username, e.getMessage());
+        }
     }
     public Response<String> removeUser(String UserID,String adminID) {
         try {

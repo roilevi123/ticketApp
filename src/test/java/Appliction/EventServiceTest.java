@@ -7,6 +7,7 @@ import com.ticketing.ticketapp.Domain.OwnerManagerTree.Permission;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.Company.Company;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
@@ -32,6 +33,8 @@ public class EventServiceTest {
     @Mock private TokenService tokenService;
     @Mock private iTicketRepository ticketRepository;
     @Mock private iQueueRepository queueRepository;
+    @Mock private iPurchasedOrderRepository purchasedOrderRepository;
+    @Mock private INotifier notifier;
 
     private final String TOKEN = "valid_token";
     private final String USERNAME = "test_user";
@@ -49,7 +52,7 @@ public class EventServiceTest {
         }
         eventRepository = new EventRepositoryImpl();
         ticketRepository = spy(new TicketRepositoryImpl());
-        eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
+        eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifier);
     }
 
     @Test
