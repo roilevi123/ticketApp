@@ -9,6 +9,8 @@ import com.ticketing.ticketapp.Domain.Order.ActiveOrder;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 
@@ -33,6 +35,8 @@ public class PurchasedService {
     private iTicketRepository ticketRepository;
     private iPurchasedOrderRepository purchasedOrderRepository;
     private iTreeOfRoleRepository treeOfRoleRepository;
+    private IUserRepository userRepository;
+    private INotifier notifier;
     private static final Logger logger = LoggerFactory.getLogger(PurchasedService.class);
     private TokenService tokenService;
     private iDiscountPolicyRepository discountRepo;
@@ -46,7 +50,9 @@ public class PurchasedService {
             IBarcodeGenerator barcodeGenerator,
             TokenService tokenService,
             iTreeOfRoleRepository treeOfRoleRepository,
-            iDiscountPolicyRepository discountRepo
+            iDiscountPolicyRepository discountRepo,
+            IUserRepository userRepository,
+            INotifier notifier
     ) {
         this.repository = repository;
         this.supplyService = supplyService;
@@ -57,6 +63,8 @@ public class PurchasedService {
         this.tokenService = tokenService;
         this.treeOfRoleRepository = treeOfRoleRepository;
         this.discountRepo = discountRepo;
+        this.userRepository = userRepository;
+        this.notifier = notifier;
     }
 
     public boolean isAuthorized(String company, String userID) {
@@ -125,6 +133,25 @@ public class PurchasedService {
                 paymentService.refund(email, totalPriceAfterDiscounts);
                 throw e;
             }
+
+            if (order.getUserId() != null) {
+                notifier.notifyUser(order.getUserId(), "Purchase Successful",
+                        "Your purchase for event '" + order.getEventId() + "' is confirmed. " + purchasedTickets.size() + " ticket(s) sent to " + email + ".");
+            }
+
+            boolean soldOut = ticketRepository.getAvailableTicketsByEventAndCompany(order.getCompanyId(), order.getEventId()).isEmpty();
+            if (soldOut) {
+                String soldOutMsg = "Your event '" + order.getEventId() + "' is now sold out!";
+                treeOfRoleRepository.getAllOwnersByCompany(order.getCompanyId()).forEach(o -> {
+                    User u = userRepository.getUserByUsername(o.getUserID());
+                    if (u != null) notifier.notifyUser(u.getID(), "Event Sold Out", soldOutMsg);
+                });
+                treeOfRoleRepository.getAllManagersByCompany(order.getCompanyId()).forEach(m -> {
+                    User u = userRepository.getUserByUsername(m.getUserID());
+                    if (u != null) notifier.notifyUser(u.getID(), "Event Sold Out", soldOutMsg);
+                });
+            }
+
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());

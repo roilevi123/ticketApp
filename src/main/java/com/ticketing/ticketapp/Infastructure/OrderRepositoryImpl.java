@@ -90,4 +90,9 @@ public class OrderRepositoryImpl  implements IActiveOrderRepository {
         return null;
     }
 
+    @Override
+    public List<ActiveOrder> getAllActiveOrders() {
+        return new ArrayList<>(orders.values());
+    }
+
 }

@@ -4,6 +4,8 @@ import com.ticketing.ticketapp.Appliction.*;
 
 import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.Manager;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.Owner;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
@@ -12,6 +14,7 @@ import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +24,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -35,6 +39,7 @@ class AdminServiceTest {
     @Mock private iTicketRepository ticketRepository;
     @Mock private com.ticketing.ticketapp.Domain.Event.iEventRepository eventRepository;
     @Mock private TokenService tokenService;
+    @Mock private INotifier notifier;
     @InjectMocks
     private AdminService adminService;
 
@@ -140,6 +145,26 @@ class AdminServiceTest {
         var response = adminService.GetAllPurchasedOrders(NOT_ADMIN);
         assertFalse(response.isSuccess());
         assertNull(response.getData());
+    }
 
+    @Test
+    void CloseCompany_NotifiesOwnersAndManagers() {
+        String company = "Company1";
+        Owner owner = new Owner("ownerUsername", company, "SYSTEM_FOUNDER");
+        Manager manager = new Manager("managerUsername", company, Set.of(), "ownerUsername");
 
-}}
+        User ownerUser = mock(User.class);
+        User managerUser = mock(User.class);
+        when(ownerUser.getID()).thenReturn("owner-uuid");
+        when(managerUser.getID()).thenReturn("manager-uuid");
+        when(treeOfRoleRepository.getAllOwnersByCompany(company)).thenReturn(List.of(owner));
+        when(treeOfRoleRepository.getAllManagersByCompany(company)).thenReturn(List.of(manager));
+        when(userRepository.getUserByUsername("ownerUsername")).thenReturn(ownerUser);
+        when(userRepository.getUserByUsername("managerUsername")).thenReturn(managerUser);
+
+        adminService.CloseCompany(company, ADMIN_NAME);
+
+        verify(notifier).notifyUser(eq("owner-uuid"), anyString(), anyString());
+        verify(notifier).notifyUser(eq("manager-uuid"), anyString(), anyString());
+    }
+}

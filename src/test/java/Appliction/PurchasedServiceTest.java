@@ -47,6 +47,10 @@ class PurchasedServiceTest {
     private TokenService tokenService;
     @Mock
     private iTreeOfRoleRepository treeOfRoleRepository;
+    @Mock
+    private com.ticketing.ticketapp.Domain.User.IUserRepository userRepository;
+    @Mock
+    private INotifier notifier;
     @InjectMocks
     private PurchasedService purchasedService;
 
@@ -76,7 +80,9 @@ class PurchasedServiceTest {
                 barcodeGenerator,
                 tokenService,
                 treeOfRoleRepository,
-                discountPolicyRepository
+                discountPolicyRepository,
+                userRepository,
+                notifier
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -127,7 +133,9 @@ class PurchasedServiceTest {
                 barcodeGenerator,
                 tokenService,
                 treeOfRoleRepository,
-                discountPolicyRepository
+                discountPolicyRepository,
+                userRepository,
+                notifier
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -163,7 +171,9 @@ class PurchasedServiceTest {
                 barcodeGenerator,
                 tokenService,
                 treeOfRoleRepository,
-                discountPolicyRepository
+                discountPolicyRepository,
+                userRepository,
+                notifier
         );
 
         Date pastDate = new Date(System.currentTimeMillis() - 1000000);
@@ -193,7 +203,9 @@ class PurchasedServiceTest {
                 barcodeGenerator,
                 tokenService,
                 treeOfRoleRepository,
-                discountPolicyRepository
+                discountPolicyRepository,
+                userRepository,
+                notifier
         );
 
         Date pastDate = new Date(System.currentTimeMillis() - 1000000);
@@ -223,7 +235,9 @@ class PurchasedServiceTest {
                 barcodeGenerator,
                 tokenService,
                 treeOfRoleRepository,
-                discountPolicyRepository
+                discountPolicyRepository,
+                userRepository,
+                notifier
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -256,7 +270,9 @@ class PurchasedServiceTest {
                 barcodeGenerator,
                 tokenService,
                 treeOfRoleRepository,
-                discountPolicyRepository
+                discountPolicyRepository,
+                userRepository,
+                notifier
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
