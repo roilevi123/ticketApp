@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axiosClient from '../api/axiosClient';
 
-const API_URL = 'http://localhost:8080/api/discovery/events/search';
-const AUTH_HEADER = 'Bearer guest-temporary-token';
+//const API_URL = 'http://localhost:8080/api/discovery/events/search';
+//const AUTH_HEADER = 'Bearer guest-temporary-token';
 
 const TYPE_CONFIG = {
-  LIVE_PERFORMANCE: { gradient: 'from-blue-950 via-indigo-900 to-blue-800',    icon: 'music_note' },
-  PLAY:             { gradient: 'from-purple-950 via-violet-900 to-purple-800', icon: 'theater_comedy' },
-  FESTIVAL:         { gradient: 'from-rose-950 via-pink-900 to-rose-800',       icon: 'celebration' },
-  CONFERENCE:       { gradient: 'from-slate-900 via-zinc-800 to-slate-700',     icon: 'groups' },
+  LIVE_PERFORMANCE: { gradient: 'from-blue-950 via-indigo-900 to-blue-800', icon: 'music_note' },
+  PLAY: { gradient: 'from-purple-950 via-violet-900 to-purple-800', icon: 'theater_comedy' },
+  FESTIVAL: { gradient: 'from-rose-950 via-pink-900 to-rose-800', icon: 'celebration' },
+  CONFERENCE: { gradient: 'from-slate-900 via-zinc-800 to-slate-700', icon: 'groups' },
 };
 const DEFAULT_TYPE = { gradient: 'from-slate-900 via-slate-800 to-slate-700', icon: 'event' };
 
@@ -196,20 +197,21 @@ export default function EventCatalog() {
     const controller = new AbortController();
     // Debounce search input; fetch immediately on mount
     const timer = setTimeout(() => {
-      const url = new URL(API_URL);
-      if (searchQuery) url.searchParams.set('query', searchQuery);
+      // Use relative path since axiosClient has baseURL is /api
+      const endpoint = searchQuery ? `/discovery/events/search?query=${searchQuery}` : '/discovery/events/search';
 
-      fetch(url.toString(), {
-        headers: { Authorization: AUTH_HEADER, 'Content-Type': 'application/json' },
+      axiosClient.get(endpoint, {
         signal: controller.signal,
       })
-        .then((res) => {
-          if (!res.ok) throw new Error(`Server returned ${res.status}`);
-          return res.json();
+        .then((response) => {
+          setEvents(response.data); // Axios automatically parses JSON into response.data
+          setLoading(false);
         })
-        .then((data) => { setEvents(data); setLoading(false); })
         .catch((err) => {
-          if (err.name !== 'AbortError') { setError(err.message); setLoading(false); }
+          if (err.name !== 'CanceledError') {
+            setError(err.message);
+            setLoading(false);
+          }
         });
     }, searchQuery ? 350 : 0);
 
