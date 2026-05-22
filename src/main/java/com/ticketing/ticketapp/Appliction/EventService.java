@@ -14,8 +14,10 @@ import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.springframework.stereotype.Service;
 
@@ -29,15 +31,21 @@ public class EventService {
     private iTreeOfRoleRepository treeOfRoleRepository;
     private iTicketRepository ticketRepository;
     private iQueueRepository iQueueRepository;
+    private iPurchasedOrderRepository purchasedOrderRepository;
+    private IUserRepository userRepository;
+    private INotifier notifier;
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
-    public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository, TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository, iTicketRepository ticketRepository, iQueueRepository iQueueRepository) {
+    public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository, TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository, iTicketRepository ticketRepository, iQueueRepository iQueueRepository, iPurchasedOrderRepository purchasedOrderRepository, IUserRepository userRepository, INotifier notifier) {
         this.companyRepository = companyRepository;
         this.eventRepository = eventRepository;
         this.tokenService = tokenService;
         this.treeOfRoleRepository = treeOfRoleRepository;
         this.ticketRepository = ticketRepository;
         this.iQueueRepository = iQueueRepository;
+        this.purchasedOrderRepository = purchasedOrderRepository;
+        this.userRepository = userRepository;
+        this.notifier = notifier;
     }
 
     public boolean isAuthorized(String company, String username) {
@@ -86,6 +94,11 @@ public class EventService {
                 return Response.error("Event not found");
             }
 
+            purchasedOrderRepository.getPurchasedOrdersForCompany(companyName).stream()
+                    .filter(o -> o.getEvent().equals(event.getName()))
+                    .forEach(o -> notifier.notifyUser(o.getBuyerID(), "Event Cancelled",
+                            "The event '" + event.getName() + "' by " + companyName + " has been cancelled. Your tickets are no longer valid."));
+
             eventRepository.deleteEvent(eventId, companyName);
             logger.info("Event '{}' deleted successfully for company '{}'", eventId, companyName);
             return Response.success("success");
@@ -110,6 +123,7 @@ public class EventService {
             if (event == null) {
                 throw new RuntimeException("Event not found: " + eventName);
             }
+            Date oldDate = event.getDate();
             event.setName(eventName);
             event.setArtistName(artistName);
             event.setType(eventType);
@@ -120,6 +134,12 @@ public class EventService {
             event.setMap(map);
             event.setRating(rating);
             eventRepository.save(event);
+            if (oldDate != null && !oldDate.equals(date)) {
+                purchasedOrderRepository.getPurchasedOrdersForCompany(company).stream()
+                        .filter(o -> o.getEvent().equals(eventName))
+                        .forEach(o -> notifier.notifyUser(o.getBuyerID(), "Event Rescheduled",
+                                "The event '" + eventName + "' has been rescheduled to " + date + "."));
+            }
             logger.info("Successfully update event: " + eventName);
             return Response.success("success");
         } catch (Exception e) {

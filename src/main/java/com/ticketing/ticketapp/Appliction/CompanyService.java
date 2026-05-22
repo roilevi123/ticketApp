@@ -21,13 +21,15 @@ public class CompanyService {
     private IUserRepository userRepository;
     private iTreeOfRoleRepository treeOfRoleRepository;
     private TokenService tokenService;
+    private INotifier notifier;
     private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
 
-    public CompanyService(iCompanyRepository companyRepository, IUserRepository userRepository, iTreeOfRoleRepository iTreeOfRoleRepository, TokenService tokenService) {
+    public CompanyService(iCompanyRepository companyRepository, IUserRepository userRepository, iTreeOfRoleRepository iTreeOfRoleRepository, TokenService tokenService, INotifier notifier) {
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.treeOfRoleRepository = iTreeOfRoleRepository;
+        this.notifier = notifier;
     }
 
     public Response<String> CreateCompany(String company, String token) {
@@ -69,6 +71,8 @@ public class CompanyService {
             }
             treeOfRoleRepository.storeManager(managerID, company, permissions, username);
             logger.info("successfully appointAManager", managerID, company);
+            notifyMember(managerID, "Manager Appointment",
+                    "You have been appointed as a manager of '" + company + "'. Please approve or reject the appointment.");
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -131,6 +135,8 @@ public class CompanyService {
             }
             treeOfRoleRepository.storeOwner(ownerID, company, username);
             logger.info("successfully appointOwner", ownerID, company);
+            notifyMember(ownerID, "Owner Appointment",
+                    "You have been appointed as an owner of '" + company + "'. Please approve or reject the appointment.");
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -256,6 +262,10 @@ public class CompanyService {
             companyObj.freezeCompany(username);
             companyRepository.save(companyObj);
             logger.info("successfully freeze company", username, company);
+            String title = "Company Suspended";
+            String message = "Company '" + company + "' has been suspended by its founder.";
+            treeOfRoleRepository.getAllOwnersByCompany(company).forEach(o -> notifyMember(o.getUserID(), title, message));
+            treeOfRoleRepository.getAllManagersByCompany(company).forEach(m -> notifyMember(m.getUserID(), title, message));
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -357,5 +367,29 @@ public class CompanyService {
                     String mIndent = "  ".repeat(depth + 1);
                     sb.append(mIndent).append("|-- ").append(m.getUserID()).append(" (Manager)\n");
                 });
+    }
+
+    public Response<String> sendMessageToUser(String token, String companyName, String targetUserId, String message) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String username = tokenService.extractUsername(token);
+            boolean isOwner = treeOfRoleRepository.exitsOwner(username, companyName);
+            boolean isManager = treeOfRoleRepository.isManager(username, companyName);
+            if (!isOwner && !isManager) throw new RuntimeException("Not authorized to send messages for this company");
+            notifier.notifyUser(targetUserId, "Message from " + companyName, message);
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    private void notifyMember(String username, String title, String message) {
+        try {
+            User u = userRepository.getUserByUsername(username);
+            if (u != null) notifier.notifyUser(u.getID(), title, message);
+        } catch (Exception e) {
+            logger.warn("Failed to notify user {}: {}", username, e.getMessage());
+        }
     }
 }
