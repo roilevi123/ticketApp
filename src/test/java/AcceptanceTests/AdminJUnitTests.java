@@ -66,19 +66,19 @@ public class AdminJUnitTests {
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
 
         this.userService = new UserService(passwordEncoder, userRepository, tokenService);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
+        INotifier notifierMock = mock(INotifier.class);
+
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
 
         this.eventService = new EventService(companyRepository, eventRepository, tokenService,
-                treeOfRoleRepository, ticketRepository, queueRepository);
+                treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
 
-        INotifier notifierMock = mock(INotifier.class);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,userRepository,purchasePolicyRepository, notifierMock);
-
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
 
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository,
                 purchasedOrderRepository, supplyService,
                 paymentService, barcodeGenerator,
-                tokenService, treeOfRoleRepository, discountPolicyRepository);
+                tokenService, treeOfRoleRepository, discountPolicyRepository, userRepository, notifierMock);
 
         this.adminService = new AdminService(
                 treeOfRoleRepository,
@@ -88,7 +88,8 @@ public class AdminJUnitTests {
                 purchasedOrderRepository,
                 ticketRepository,
                 eventRepository,
-                tokenService
+                tokenService,
+                notifierMock
         );
 
         userRepository.deleteAll();
