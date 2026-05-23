@@ -16,13 +16,16 @@ public class UserService implements IAuth {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final IUserRepository userRepository;
     private final TokenService tokenService;
+    private final IPendingNotificationRepository notificationRepository;    
 
     public UserService(IPasswordEncoder passwordEncoder,
                        IUserRepository userRepository,
-                       TokenService tokenService) {
+                       TokenService tokenService,
+                       IPendingNotificationRepository notificationRepository) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
+        this.notificationRepository = notificationRepository;
     }
 
     @Override
@@ -128,6 +131,27 @@ public class UserService implements IAuth {
             return Response.success("success");
         } catch (Exception e) {
             logger.error("Failed to update password", e);
+            return Response.error(e.getMessage());
+        }
+    }
+
+
+    public Response<String> submitUserComplaint(String token, String targetRole, String messageContent) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
+            
+            String username = tokenService.extractUsername(token);
+            logger.info("User {} is submitting a complaint to {}", username, targetRole);
+            String formattedMessage = String.format("Complaint from %s: %s", username, messageContent);
+            String targetId = targetRole.equalsIgnoreCase("Admin") ? "SYSTEM_ADMIN" : targetRole;
+            notificationRepository.save(targetId, formattedMessage);
+            logger.info("Successfully submitted complaint from {}", username);
+            return Response.success("Complaint sent successfully");
+            
+        } catch (Exception e) {
+            logger.error("Failed to submit complaint: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
     }
