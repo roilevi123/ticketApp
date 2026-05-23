@@ -17,7 +17,7 @@ public class UserController {
 
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(
-            @RequestHeader("Authorization") String token) {
+            @RequestAttribute("cleanToken") String token) {
 
         UserDTO profile = new UserDTO();
         profile.setName(name);
@@ -28,7 +28,7 @@ public class UserController {
 
     @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(
-            @RequestHeader("Authorization") String token,
+            @RequestAttribute("cleanToken") String token,
             @RequestBody UserDTO request) {
 
         this.name  = request.getName();

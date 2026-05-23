@@ -38,7 +38,7 @@ public class CompanyController {
 
     @PostMapping("/open")
     public ResponseEntity<?> openCompany(
-            @RequestHeader("Authorization") String token,
+            @RequestAttribute("cleanToken") String token,
             @RequestBody CompanyRequestDTO companyRequest) {
 
         String companyName = companyRequest.getCompanyName();
@@ -54,7 +54,7 @@ public class CompanyController {
 
     @PostMapping("/events")
     public ResponseEntity<?> configureEventsAndSeating(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody EventRequestDTO request) {
 
         Response<String> response;
@@ -97,7 +97,7 @@ public class CompanyController {
 
 @PostMapping("/policies/purchase/age-limit")
     public ResponseEntity<?> createAgeLimitPolicy(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody AgeLimitRequestDTO request) {
 
         token = extractCleanToken(token);
@@ -116,7 +116,7 @@ public class CompanyController {
 
     @PostMapping("/policies/purchase/quantity-limit")
     public ResponseEntity<?> createQuantityLimitPolicy(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody QuantityLimitRequestDTO request) {
 
         token = extractCleanToken(token);
@@ -136,7 +136,7 @@ public class CompanyController {
 
     @PostMapping("/policies/purchase/combine-and")
     public ResponseEntity<?> createAndPolicy(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody CombinePoliciesRequestDTO request) {
 
         token = extractCleanToken(token);
@@ -155,7 +155,7 @@ public class CompanyController {
 
     @PostMapping("/policies/purchase/combine-or")
     public ResponseEntity<?> createOrPolicy(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody CombinePoliciesRequestDTO request) {
 
         token = extractCleanToken(token);
@@ -174,7 +174,7 @@ public class CompanyController {
 
     @PostMapping("/policies/discount/simple")
     public ResponseEntity<?> createSimpleDiscount(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody SimpleDiscountRequestDTO request) {
 
         token = extractCleanToken(token);
@@ -191,7 +191,7 @@ public class CompanyController {
 
     @PostMapping("/policies/discount/quantity")
     public ResponseEntity<?> createQuantityDiscount(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody QuantityDiscountRequestDTO request) {
 
         token = extractCleanToken(token);
@@ -208,7 +208,7 @@ public class CompanyController {
 
     @PostMapping("/policies/discount/time-limited")
     public ResponseEntity<?> createTimeLimitedDiscount(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody TimeLimitedDiscountRequestDTO request) {
 
         token = extractCleanToken(token);
@@ -225,7 +225,7 @@ public class CompanyController {
 
     @PostMapping("/policies/discount/coupon")
     public ResponseEntity<?> createCouponDiscount(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody CouponDiscountRequestDTO request) {
 
         token = extractCleanToken(token);
@@ -242,7 +242,7 @@ public class CompanyController {
 
     @PostMapping("/policies/discount/combine-sum")
     public ResponseEntity<?> createSumDiscountPolicy(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody CombineDiscountsRequestDTO request) {
 
         token = extractCleanToken(token);
@@ -259,7 +259,7 @@ public class CompanyController {
 
     @PostMapping("/policies/discount/combine-max")
     public ResponseEntity<?> createMaxDiscountPolicy(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody CombineDiscountsRequestDTO request) {
         
         token = extractCleanToken(token);
@@ -276,7 +276,7 @@ public class CompanyController {
 
     @PostMapping("/assign-role")
     public ResponseEntity<?> assignRole(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody AssignRoleRequestDTO request) {
 
         token = extractCleanToken(token);
@@ -309,7 +309,7 @@ public class CompanyController {
 
     @PostMapping("/reply-message")
     public ResponseEntity<?> replyToBuyerMessage(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody ReplyMessageRequestDTO request) {
         
         token = extractCleanToken(token);
@@ -330,7 +330,7 @@ public class CompanyController {
 
     @GetMapping("/{companyName}/purchase-history")
     public ResponseEntity<?> getPurchaseHistory(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @PathVariable("companyName") String companyName) {
 
         token = extractCleanToken(token);
@@ -345,7 +345,7 @@ public class CompanyController {
 
     @DeleteMapping("/owner")
     public ResponseEntity<?> removeOwner(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestParam("ownerId") String ownerId,
             @RequestParam("companyName") String companyName) {
 
@@ -361,7 +361,7 @@ public class CompanyController {
 
     @DeleteMapping("/owner/relinquish")
     public ResponseEntity<?> relinquishOwnership(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestParam("companyName") String companyName) {
 
         token = extractCleanToken(token);
@@ -374,7 +374,7 @@ public class CompanyController {
 
     @DeleteMapping("/manager")
     public ResponseEntity<?> removeManager(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestParam("managerId") String managerId,
             @RequestParam("companyName") String companyName) {
         
@@ -391,7 +391,7 @@ public class CompanyController {
 
     @GetMapping("/{companyName}/sales-report")
     public ResponseEntity<?> getSubTreeSalesReport(
-            @RequestHeader("Authorization") String token,
+            @RequestAttribute("cleanToken") String token,
             @PathVariable("companyName") String companyName) {
 
         token = extractCleanToken(token);
@@ -404,7 +404,7 @@ public class CompanyController {
 
     @PutMapping("/manager/permissions")
     public ResponseEntity<?> changeManagerPermissions(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @RequestBody ChangePermissionsRequestDTO request) {
 
         token = extractCleanToken(token);
@@ -424,7 +424,7 @@ public class CompanyController {
 
     @PutMapping("/{companyName}/suspend")
     public ResponseEntity<?> suspendCompany(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @PathVariable("companyName") String companyName) {
 
         token = extractCleanToken(token);
@@ -439,7 +439,7 @@ public class CompanyController {
 
     @PutMapping("/{companyName}/reopen")
     public ResponseEntity<?> reopenCompany(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @PathVariable("companyName") String companyName) {
 
         token = extractCleanToken(token);
@@ -454,7 +454,7 @@ public class CompanyController {
 
     @GetMapping("/{companyName}/hierarchy")
     public ResponseEntity<?> getRoleHierarchyTree(
-            @RequestHeader("Authorization") String token, 
+            @RequestAttribute("cleanToken") String token, 
             @PathVariable("companyName") String companyName) {
 
         token = extractCleanToken(token);
