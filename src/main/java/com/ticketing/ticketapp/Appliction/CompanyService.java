@@ -20,6 +20,7 @@ public class CompanyService {
     private iCompanyRepository companyRepository;
     private IUserRepository userRepository;
     private iTreeOfRoleRepository treeOfRoleRepository;
+    private IPendingNotificationRepository notificationRepository;
     private TokenService tokenService;
     private INotifier notifier;
     private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
@@ -287,6 +288,32 @@ public class CompanyService {
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> replyToBuyer(String token, String companyName, String buyerId, String message) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
+            
+            String username = tokenService.extractUsername(token);
+            logger.info("User {} is attempting to reply to buyer {} for company {}", username, buyerId, companyName);
+            boolean isOwner = treeOfRoleRepository.exitsOwner(username, companyName);
+            boolean isManager = treeOfRoleRepository.isManager(username, companyName);
+            
+            if (!isOwner && !isManager) {
+                throw new RuntimeException("Unauthorized: Only owners or managers can reply to buyers");
+            }
+
+            String formattedMessage = String.format("Message from %s: %s", companyName, message);
+            notificationRepository.save(buyerId, formattedMessage);
+            logger.info("Successfully replied to buyer {}", buyerId);
+            return Response.success("success");
+
+        } catch (Exception e) {
+            logger.error("Failed to reply to buyer: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
     }
