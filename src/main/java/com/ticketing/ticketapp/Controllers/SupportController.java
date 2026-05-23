@@ -15,7 +15,7 @@ public class SupportController {
 
     @PostMapping("/ticket")
     public ResponseEntity<?> submitTicket(
-            @RequestHeader("Authorization") String token,
+            @RequestAttribute("cleanToken") String token,
             @RequestBody SupportTicketDTO request) {
 
         log.info("[SECURITY] Secure Support Ticket submitted to {}: {}",

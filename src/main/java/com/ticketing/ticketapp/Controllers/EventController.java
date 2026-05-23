@@ -24,16 +24,16 @@ public class EventController {
 
     @GetMapping("/events/search")
     public ResponseEntity<?> searchEvents(
-            @RequestHeader("Authorization") String token,
-            @RequestParam(required = false) String query,
-            @RequestParam(required = false) String company,
-            @RequestParam(required = false) EventType type,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate,
-            @RequestParam(required = false) String location,
-            @RequestParam(required = false) Double minRating) {
+            @RequestAttribute("cleanToken") String token,
+            @RequestParam(required = false, value = "query") String query,
+            @RequestParam(required = false, value = "company") String company,
+            @RequestParam(required = false, value = "type") EventType type,
+            @RequestParam(required = false, value = "minPrice") Double minPrice,
+            @RequestParam(required = false, value = "maxPrice") Double maxPrice,
+            @RequestParam(required = false, value = "startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam(required = false, value = "endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate,
+            @RequestParam(required = false, value = "location") String location,
+            @RequestParam(required = false, value = "minRating") Double minRating) {
 
         Response<?> response = eventService.searchEvents(
                 token, query, company, type, minPrice, maxPrice, startDate, endDate, location, minRating);
@@ -46,9 +46,9 @@ public class EventController {
 
     @GetMapping("/companies/{companyName}/events/{eventName}")
     public ResponseEntity<?> getEventDetails(
-            @RequestHeader("Authorization") String token,
-            @PathVariable String companyName,
-            @PathVariable String eventName) {
+            @RequestAttribute("cleanToken") String token,
+            @PathVariable(value = "companyName") String companyName,
+            @PathVariable(value = "eventName") String eventName) {
 
         Response<?> response = eventService.getEvent(token, companyName, eventName);
 
@@ -60,9 +60,9 @@ public class EventController {
 
     @GetMapping("/companies/{companyName}/events/{eventName}/map")
     public ResponseEntity<?> getEventMap(
-            @RequestHeader("Authorization") String token,
-            @PathVariable String companyName,
-            @PathVariable String eventName) {
+            @RequestAttribute("cleanToken") String token,
+            @PathVariable(value = "companyName") String companyName,
+            @PathVariable(value = "eventName") String eventName) {
 
         Response<?> response = eventService.getMapArea(token, companyName, eventName);
 
@@ -74,8 +74,8 @@ public class EventController {
 
     @GetMapping("/companies/{companyName}/events")
     public ResponseEntity<?> getCompanyEvents(
-            @RequestHeader("Authorization") String token,
-            @PathVariable String companyName) {
+            @RequestAttribute("cleanToken") String token,
+            @PathVariable(value = "companyName") String companyName) {
 
         Response<?> response = eventService.getCompanyEvents(token, companyName);
 
@@ -87,7 +87,7 @@ public class EventController {
 
     @GetMapping("/companies")
     public ResponseEntity<?> getActiveCompanies(
-            @RequestHeader("Authorization") String token) {
+            @RequestAttribute("cleanToken") String token) {
 
         Response<?> response = companyService.getActiveCompanies(token);
 
