@@ -21,7 +21,7 @@ public class OrderController {
 
     @PostMapping("/reserve")
     public ResponseEntity<?> reserveTickets( 
-            @RequestHeader("Authorization") String token,
+            @RequestAttribute("cleanToken") String token,
             @RequestBody ReserveRequestDTO request) {
         try {
             Response<String> result = orderService.reserveTickets(
@@ -43,8 +43,8 @@ public class OrderController {
 
     @GetMapping("/active")
     public ResponseEntity<?> getActiveOrderTickets( 
-        @RequestHeader("Authorization") String token,
-        @RequestParam(required = false) String orderId) {
+        @RequestAttribute("cleanToken") String token,
+        @RequestParam(required = false, value = "orderId") String orderId) {
         try {
             Response<List<TicketDTO>> result = orderService.getActiveOrderTickets(token, orderId);
             if (result.isSuccess()) {
