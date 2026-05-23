@@ -60,12 +60,12 @@ public class AdminJUnitTests {
         };
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-
+        IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
         ISupplyService supplyService = new SupplyServiceMock();
         IPaymentService paymentService = new PaymentServiceMock();
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
         INotifier notifierMock = mock(INotifier.class);
 
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);

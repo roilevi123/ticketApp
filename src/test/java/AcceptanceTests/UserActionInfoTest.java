@@ -2,9 +2,11 @@ package AcceptanceTests;
 
 import com.ticketing.ticketapp.Appliction.UserService;
 import com.ticketing.ticketapp.Appliction.Response;
+import com.ticketing.ticketapp.Appliction.IPendingNotificationRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.UserDTO;
 import com.ticketing.ticketapp.Infastructure.PasswordEncoderImpl;
+import com.ticketing.ticketapp.Infastructure.PendingNotificationRepositoryImpl;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import com.ticketing.ticketapp.Infastructure.UserRepositoryImpl;
 import com.ticketing.ticketapp.Appliction.IPasswordEncoder;
@@ -24,10 +26,11 @@ public class UserActionInfoTest {
 
     @BeforeEach
     void setUp() {
+        IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
         this.userRepository = new UserRepositoryImpl();
         this.passwordEncoder = new PasswordEncoderImpl();
         this.tokenService = new TokenService();
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
 
         userRepository.deleteAll();
         tokenService.clearAllData();
