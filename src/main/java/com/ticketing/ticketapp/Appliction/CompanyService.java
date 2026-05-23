@@ -419,4 +419,6 @@ public class CompanyService {
             logger.warn("Failed to notify user {}: {}", username, e.getMessage());
         }
     }
+
+
 }
