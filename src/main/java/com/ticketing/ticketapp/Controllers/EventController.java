@@ -24,7 +24,7 @@ public class EventController {
 
     @GetMapping("/events/search")
     public ResponseEntity<?> searchEvents(
-            @RequestAttribute("cleanToken") String token,
+            @RequestAttribute(value = "cleanToken", required = false) String token,
             @RequestParam(required = false, value = "query") String query,
             @RequestParam(required = false, value = "company") String company,
             @RequestParam(required = false, value = "type") EventType type,
@@ -46,7 +46,7 @@ public class EventController {
 
     @GetMapping("/companies/{companyName}/events/{eventName}")
     public ResponseEntity<?> getEventDetails(
-            @RequestAttribute("cleanToken") String token,
+            @RequestAttribute(value = "cleanToken", required = false) String token,
             @PathVariable(value = "companyName") String companyName,
             @PathVariable(value = "eventName") String eventName) {
 
@@ -60,7 +60,7 @@ public class EventController {
 
     @GetMapping("/companies/{companyName}/events/{eventName}/map")
     public ResponseEntity<?> getEventMap(
-            @RequestAttribute("cleanToken") String token,
+            @RequestAttribute(value = "cleanToken", required = false) String token,
             @PathVariable(value = "companyName") String companyName,
             @PathVariable(value = "eventName") String eventName) {
 
@@ -74,7 +74,7 @@ public class EventController {
 
     @GetMapping("/companies/{companyName}/events")
     public ResponseEntity<?> getCompanyEvents(
-            @RequestAttribute("cleanToken") String token,
+            @RequestAttribute(value = "cleanToken", required = false) String token,
             @PathVariable(value = "companyName") String companyName) {
 
         Response<?> response = eventService.getCompanyEvents(token, companyName);
@@ -87,7 +87,7 @@ public class EventController {
 
     @GetMapping("/companies")
     public ResponseEntity<?> getActiveCompanies(
-            @RequestAttribute("cleanToken") String token) {
+            @RequestAttribute(value = "cleanToken", required = false) String token) {
 
         Response<?> response = companyService.getActiveCompanies(token);
 

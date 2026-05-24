@@ -45,7 +45,7 @@ public class InformationEventsTests {
         IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
         INotifier notifierMock = mock(INotifier.class);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock, notificationRepository);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
 
         activeOrderRepository.deleteAllActiveOrders();
