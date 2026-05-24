@@ -38,7 +38,8 @@ public class DataInitializer implements ApplicationRunner {
         try {
             String guestToken = tokenService.generateGuestToken();
             userService.register(guestToken, "admin", "admin123", 30, "admin@bgu.ac.il");
-
+            String guestToken2 = tokenService.generateGuestToken();
+            userService.register(guestToken2, "koren_manager", "koren123", 25, "koren@bgu.ac.il");
             String loginToken = tokenService.generateGuestToken();
             String adminToken = userService.login(loginToken, "admin", "admin123").getData();
 

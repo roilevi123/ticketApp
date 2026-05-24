@@ -25,12 +25,13 @@ public class CompanyService {
     private INotifier notifier;
     private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
 
-    public CompanyService(iCompanyRepository companyRepository, IUserRepository userRepository, iTreeOfRoleRepository iTreeOfRoleRepository, TokenService tokenService, INotifier notifier) {
+    public CompanyService(iCompanyRepository companyRepository, IUserRepository userRepository, iTreeOfRoleRepository iTreeOfRoleRepository, TokenService tokenService, INotifier notifier, IPendingNotificationRepository notificationRepository) {
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.treeOfRoleRepository = iTreeOfRoleRepository;
         this.notifier = notifier;
+        this.notificationRepository = notificationRepository;
     }
 
     public Response<String> CreateCompany(String company, String token) {
