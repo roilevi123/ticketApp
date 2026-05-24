@@ -14,7 +14,7 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import com.ticketing.ticketapp.Domain.Discount.*;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.Permission;
 import com.ticketing.ticketapp.Appliction.PurchasedService;
-
+import com.ticketing.ticketapp.Appliction.IPendingNotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 
@@ -26,14 +26,16 @@ public class CompanyController {
     private final PurchasePolicyService purchasePolicyService;
     private final DiscountService discountService;
     private final PurchasedService purchasedService;
+    private final IPendingNotificationRepository notificationRepository;
     
 
-    public CompanyController(EventService eventService, CompanyService companyService, PurchasePolicyService purchasePolicyService, DiscountService discountService, PurchasedService purchasedService) {
+    public CompanyController(EventService eventService, CompanyService companyService, PurchasePolicyService purchasePolicyService, DiscountService discountService, PurchasedService purchasedService, IPendingNotificationRepository notificationRepository) {
         this.eventService = eventService;
         this.companyService = companyService;
         this.purchasePolicyService = purchasePolicyService;
         this.discountService = discountService;
         this.purchasedService = purchasedService;
+        this.notificationRepository = notificationRepository;
     }
 
     @PostMapping("/open")
@@ -95,7 +97,7 @@ public class CompanyController {
         return ResponseEntity.badRequest().body(response.getMessage());
     }
 
-@PostMapping("/policies/purchase/age-limit")
+    @PostMapping("/policies/purchase/age-limit")
     public ResponseEntity<?> createAgeLimitPolicy(
             @RequestAttribute("cleanToken") String token, 
             @RequestBody AgeLimitRequestDTO request) {
@@ -307,6 +309,18 @@ public class CompanyController {
         return ResponseEntity.badRequest().body(response.getMessage());
     }
 
+    @GetMapping("/messages")
+    public ResponseEntity<?> getInboxMessages(@RequestAttribute("cleanToken") String token) {
+        
+        List<String> messages = notificationRepository.retrieveAndDelete("BGU Events");
+        
+        if (messages == null) {
+            messages = new ArrayList<>();
+        }
+        
+        return ResponseEntity.ok(messages);
+    }
+
     @PostMapping("/reply-message")
     public ResponseEntity<?> replyToBuyerMessage(
             @RequestAttribute("cleanToken") String token, 
@@ -472,6 +486,65 @@ public class CompanyController {
             return authHeader.substring(7);
         }
         return authHeader; 
+    }
+
+    @PostMapping("/policies/purchase/bulk")
+    public ResponseEntity<?> createBulkPolicy(
+            @RequestAttribute("cleanToken") String token, 
+            @RequestBody BulkPolicyRequestDTO request) {
+
+        token = extractCleanToken(token);
+        List<String> createdPolicyIds = new ArrayList<>();
+
+        try {
+            PurchaseTargetType targetTypeEnum = PurchaseTargetType.valueOf(request.getType().toUpperCase());
+            for (ConditionDTO condition : request.getRuleset().getConditions()) {
+                Response<String> res = null;
+
+                if ("user.age".equals(condition.getField())) {
+                    int minAge = Integer.parseInt(condition.getValue().toString());
+                    res = purchasePolicyService.createAgeLimitPolicy(
+                        token, request.getTargetId(), targetTypeEnum, minAge);
+                } 
+                else if ("cart.ticket_count".equals(condition.getField())) {
+                    int maxTickets = Integer.parseInt(condition.getValue().toString());
+                    res = purchasePolicyService.createQuantityLimitPolicy(
+                        token, request.getTargetId(), targetTypeEnum, 1, maxTickets);
+                }
+
+                if (res != null && res.isSuccess()) {
+                    createdPolicyIds.add(res.getData());
+                } else if (res != null) {
+                    return ResponseEntity.badRequest().body("Failed creating sub-policy: " + res.getMessage());
+                }
+            }
+
+            if (createdPolicyIds.size() == 1) {
+                return ResponseEntity.ok(Map.of("message", "Single policy applied", "policyId", createdPolicyIds.get(0)));
+            }
+
+            Response<String> finalResponse;
+            String mainOperator = request.getRuleset().getOperator();
+
+            if ("OR".equalsIgnoreCase(mainOperator)) {
+                finalResponse = purchasePolicyService.createOrPolicy(
+                    token, request.getTargetId(), targetTypeEnum, createdPolicyIds);
+            } else {
+                finalResponse = purchasePolicyService.createAndPolicy(
+                    token, request.getTargetId(), targetTypeEnum, createdPolicyIds);
+            }
+
+            if (finalResponse.isSuccess()) {
+                return ResponseEntity.ok(Map.of("message", "Bulk policy compiled and applied", "policyId", finalResponse.getData()));
+            }
+
+            return ResponseEntity.badRequest().body(finalResponse.getMessage());
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid target type specified");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Invalid policy data format: " + e.getMessage());
+        }
     }
 
 }
@@ -706,4 +779,40 @@ class ChangePermissionsRequestDTO {
     public void setPermissions(Set<Permission> permissions) { 
         this.permissions = permissions; 
     }
+}
+
+class BulkPolicyRequestDTO {
+    private String targetId;      
+    private String type;
+    private RuleSetDTO ruleset;
+
+    public String getTargetId() { return targetId; }
+    public void setTargetId(String targetId) { this.targetId = targetId; }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+    public RuleSetDTO getRuleset() { return ruleset; }
+    public void setRuleset(RuleSetDTO ruleset) { this.ruleset = ruleset; }
+}
+
+class RuleSetDTO {
+    private String operator; 
+    private List<ConditionDTO> conditions;
+
+    public String getOperator() { return operator; }
+    public void setOperator(String operator) { this.operator = operator; }
+    public List<ConditionDTO> getConditions() { return conditions; }
+    public void setConditions(List<ConditionDTO> conditions) { this.conditions = conditions; }
+}
+
+class ConditionDTO {
+    private String field;
+    private String operator;
+    private Object value; 
+
+    public String getField() { return field; }
+    public void setField(String field) { this.field = field; }
+    public String getOperator() { return operator; }
+    public void setOperator(String operator) { this.operator = operator; }
+    public Object getValue() { return value; }
+    public void setValue(Object value) { this.value = value; }
 }

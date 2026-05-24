@@ -227,23 +227,27 @@ public class EventService {
     }
 
     public Response<List<EventDTO>> searchEvents(String token, String query, String company, EventType type,
-                                                  Double minPrice, Double maxPrice,
-                                                  Date startDate, Date endDate,
-                                                  String location, Double minRating) {
-        try {
-            boolean isGuest = token != null && token.contains("guest-temporary-token");
-            if (!isGuest && !tokenService.validateToken(token)) {
-                throw new RuntimeException("Invalid token");
+                                                    Double minPrice, Double maxPrice,
+                                                    Date startDate, Date endDate,
+                                                    String location, Double minRating) {
+            try {
+                // נבדוק את הטוקן רק אם הוא נשלח בבקשה. אם הוא null, נאפשר חיפוש חופשי ציבורי.
+                if (token != null && !token.trim().isEmpty()) {
+                    boolean isGuest = token.contains("guest-temporary-token");
+                    if (!isGuest && !tokenService.validateToken(token)) {
+                        throw new RuntimeException("Invalid token");
+                    }
+                }
+                
+                logger.info("Initiating search with parameters - Query: {}, Company: {}", query, company);
+                List<EventDTO> results = eventRepository.searchEvents(
+                        query, company, type, minPrice, maxPrice, startDate, endDate, location, minRating
+                );
+                logger.info("Search completed successfully. Found {} events", results.size());
+                return Response.success(results);
+            } catch (Exception e) {
+                logger.error("Error occurred during event search: {}", e.getMessage());
+                return Response.error(e.getMessage());
             }
-            logger.info("Initiating search with parameters - Query: {}, Company: {}", query, company);
-            List<EventDTO> results = eventRepository.searchEvents(
-                    query, company, type, minPrice, maxPrice, startDate, endDate, location, minRating
-            );
-            logger.info("Search completed successfully. Found {} events", results.size());
-            return Response.success(results);
-        } catch (Exception e) {
-            logger.error("Error occurred during event search: {}", e.getMessage());
-            return Response.error(e.getMessage());
-        }
     }
 }
