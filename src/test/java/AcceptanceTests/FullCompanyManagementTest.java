@@ -47,7 +47,7 @@ public class FullCompanyManagementTest {
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
         IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, mock(INotifier.class));
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, mock(INotifier.class), notificationRepository);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();

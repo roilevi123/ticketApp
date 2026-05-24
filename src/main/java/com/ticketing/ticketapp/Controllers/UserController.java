@@ -18,9 +18,9 @@ public class UserController {
     private PurchasedService purchasedService;
     private UserService userService;
     // In-memory mock profile (survives for the lifetime of the Spring context)
-    private String name  = "Alexander Hamilton";
-    private String id    = "U88102934";
-    private String email = "a.hamilton@university.edu";
+    //private String name  = "Alexander Hamilton";
+    //private String id    = "U88102934";
+    //private String email = "a.hamilton@university.edu";
 
     public UserController(QueueService queueService, PurchasedService purchasedService, UserService userService) {
         this.queueService = queueService;
@@ -32,25 +32,25 @@ public class UserController {
     public ResponseEntity<?> getProfile(
             @RequestAttribute("cleanToken") String token) {
 
-        UserDTO profile = new UserDTO();
-        profile.setName(name);
-        profile.setID(id);
-        profile.setEmail(email);
-        return ResponseEntity.ok(profile);
+        Response<UserDTO> response = userService.getUserProfile(token);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response.getData());
+        }
+        return ResponseEntity.status(400).body(Map.of("error", response.getMessage()));
     }
-
     @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(
             @RequestAttribute("cleanToken") String token,
             @RequestBody UserDTO request) {
 
-        this.name  = request.getName();
-        this.id    = request.getID();
-        this.email = request.getEmail();
+        Response<String> response = userService.updateUserProfile(token, request);
 
-        return ResponseEntity.ok(Map.of("message", "Profile updated successfully."));
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(Map.of("message", "Profile updated successfully."));
+        }
+        return ResponseEntity.status(400).body(Map.of("error", response.getMessage()));
     }
-
 
     @GetMapping("/history")
     public ResponseEntity<?> getPurchaseHistory(
@@ -78,6 +78,16 @@ public class UserController {
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(Map.of("message", response.getData()));
+        }
+        return ResponseEntity.status(400).body(Map.of("error", response.getMessage()));
+    }
+
+    @GetMapping("/notifications")
+    public ResponseEntity<?> getMyNotifications(@RequestAttribute("cleanToken") String token) {
+        Response<List<String>> response = userService.getUserNotifications(token);
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response.getData());
         }
         return ResponseEntity.status(400).body(Map.of("error", response.getMessage()));
     }
