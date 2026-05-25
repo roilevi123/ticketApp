@@ -431,6 +431,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String username = tokenService.extractUsername(token);
+            if(userRepository.isUserSuspendedNow(username))
+                throw new RuntimeException("User is suspended");
             boolean isOwner = treeOfRoleRepository.exitsOwner(username, companyName);
             boolean isManager = treeOfRoleRepository.isManager(username, companyName);
             if (!isOwner && !isManager) throw new RuntimeException("Not authorized to send messages for this company");
