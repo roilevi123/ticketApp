@@ -257,6 +257,8 @@ public class CompanyService {
             }
             String username = tokenService.extractUsername(token);
             logger.info("User {} is trying to change permissions for manager {} in company {}", username, managerID, company);
+            if(userRepository.isUserSuspendedNow(username))
+                throw new RuntimeException("User is suspended");
             Manager manager = treeOfRoleRepository.getManager(managerID, company);
             if (manager == null) {
                 throw new RuntimeException("Manager not found");
