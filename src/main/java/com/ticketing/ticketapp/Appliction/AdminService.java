@@ -200,7 +200,7 @@ public class AdminService {
             LocalDateTime startTime = LocalDateTime.now();
             LocalDateTime endTime = startTime.plusDays(durationInDays);
 
-            Suspension suspension = new Suspension(targetUserID, startTime,endTime);
+            Suspension suspension = new Suspension(targetUserID, startTime, endTime);
         }catch (Exception e){
 
         }
