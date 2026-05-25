@@ -126,6 +126,8 @@ public class UserRepositoryImpl implements IUserRepository {
     public boolean isUserSuspendedNow(String userID){
         if(currentSuspensions.containsKey(userID)){
             Suspension suspension = currentSuspensions.get(userID);
+            if(suspension.isPermanent()==true)
+                return true;
             if(!suspension.getEndTime().isBefore(LocalDateTime.now())){
                 return true;
             }
