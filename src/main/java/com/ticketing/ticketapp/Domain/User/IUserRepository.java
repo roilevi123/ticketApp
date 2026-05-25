@@ -14,5 +14,5 @@ public interface IUserRepository {
     public void deleteAll();
     public void deleteUser(String ID);
     public void addCurrentSuspension(String userID, Suspension suspension);
-
+    public void addHistorySuspension(Suspension suspension);
 }
