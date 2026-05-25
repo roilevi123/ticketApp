@@ -1,5 +1,7 @@
 package com.ticketing.ticketapp.Domain.User;
 
+import java.util.Map;
+
 public interface IUserRepository {
     public User Store(String username, String password, int age, String email);
     public String getUserPassword(String username);
@@ -10,5 +12,5 @@ public interface IUserRepository {
     public void save(User userToUpdate);
     public void deleteAll();
     public void deleteUser(String ID);
-
+    public Map<Integer, Suspension> currentSuspensions();
 }
