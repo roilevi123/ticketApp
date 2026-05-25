@@ -1,5 +1,6 @@
 package com.ticketing.ticketapp.Domain.User;
 
+import java.util.List;
 import java.util.Map;
 
 public interface IUserRepository {
@@ -13,4 +14,5 @@ public interface IUserRepository {
     public void deleteAll();
     public void deleteUser(String ID);
     public Map<Integer, Suspension> currentSuspensions();
+    public List<Suspension> suspensionsHistory();
 }
