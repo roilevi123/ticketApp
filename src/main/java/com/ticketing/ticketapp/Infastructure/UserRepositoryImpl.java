@@ -130,7 +130,7 @@ public class UserRepositoryImpl implements IUserRepository {
                 return true;
             }
             currentSuspensions.remove(userID);
-            suspensionHistory.add(suspension);
+            addHistorySuspension(suspension);
         }
         return false;
     }
