@@ -116,7 +116,17 @@ public class UserRepositoryImpl implements IUserRepository {
         currentSuspensions.put(userID, suspension);
     }
 
+    @Override
     public void addHistorySuspension(Suspension suspension){
         suspensionHistory.add(suspension);
     }
+
+    @Override
+    public boolean isUserSuspendedNow(String userID){
+        if(currentSuspensions.containsKey(userID)){
+            Suspension suspension = currentSuspensions.get(userID);
+
+        }
+    }
+
 }
