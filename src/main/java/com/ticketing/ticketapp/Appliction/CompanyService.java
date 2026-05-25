@@ -329,6 +329,8 @@ public class CompanyService {
             
             String username = tokenService.extractUsername(token);
             logger.info("User {} is attempting to reply to buyer {} for company {}", username, buyerId, companyName);
+            if(userRepository.isUserSuspendedNow(username))
+                throw new RuntimeException("User is suspended");
             boolean isOwner = treeOfRoleRepository.exitsOwner(username, companyName);
             boolean isManager = treeOfRoleRepository.isManager(username, companyName);
             
