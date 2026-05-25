@@ -187,6 +187,22 @@ public class AdminService {
     }
 
     public Response<String> suspendUser(String targetUserID, String adminID, int durationInDays){
-        return Response.error("not implemented yet");
+        try {
+            logger.info("Admin {} is suspending user {} for {} days", adminID, targetUserID, durationInDays);
+
+            if(!adminRepository.isAdmin(adminID))
+                throw new Exception("Admin does not exist");
+
+            User user = userRepository.getUserByID(targetUserID);
+            if(user==null)
+                throw new Exception("User not found");
+
+            LocalDateTime startTime = LocalDateTime.now();
+            LocalDateTime endTime = startTime.plusDays(durationInDays);
+
+            Suspension suspension = new Suspension(targetUserID, startTime,endTime);
+        }catch (Exception e){
+
+        }
     }
 }
