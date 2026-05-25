@@ -198,14 +198,23 @@ public class AdminService {
                 throw new Exception("User not found");
 
             LocalDateTime startTime = LocalDateTime.now();
-            LocalDateTime endTime = startTime.plusDays(durationInDays);
+            Suspension suspension;
+            LocalDateTime endTime;
 
-            Suspension suspension = new Suspension(targetUserID, startTime, endTime);
-            userRepository.addCurrentSuspension(targetUserID,suspension);
+            if(durationInDays==0){
+                suspension=new Suspension(targetUserID, startTime);
+                userRepository.addCurrentSuspension(targetUserID,suspension);
+                logger.info("User {} suspended permanently successfully", targetUserID);
+                notifier.notifyUser(targetUserID, "Account Suspended", "Your account has been suspended by an adminstrator for good");
 
-            logger.info("User {} suspended successfully until {}", targetUserID, endTime);
-
-            notifier.notifyUser(targetUserID, "Account Suspended", "Your account has been suspended by an adminstrator until "+endTime.toString());
+            }
+            else {
+                endTime = startTime.plusDays(durationInDays);
+                suspension = new Suspension(targetUserID, startTime, endTime);
+                userRepository.addCurrentSuspension(targetUserID,suspension);
+                logger.info("User {} suspended successfully until {}", targetUserID, endTime);
+                notifier.notifyUser(targetUserID, "Account Suspended", "Your account has been suspended by an adminstrator until "+endTime.toString());
+            }
 
             return Response.success("success");
 
