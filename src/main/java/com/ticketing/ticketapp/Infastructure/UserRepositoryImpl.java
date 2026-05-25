@@ -111,7 +111,12 @@ public class UserRepositoryImpl implements IUserRepository {
         }
     }
 
+    @Override
+    public void addCurrentSuspension(String userID, Suspension suspension){
+        currentSuspensions.put(userID, suspension);
+    }
 
-
-
+    public void addHistorySuspension(Suspension suspension){
+        suspensionHistory.add(suspension);
+    }
 }
