@@ -6,11 +6,19 @@ public class Suspension {
     String userID;
     LocalDateTime startTime;
     LocalDateTime endTime;
+    boolean isPermanent;
 
     public Suspension(String userID, LocalDateTime startTime, LocalDateTime endTime){
         this.userID=userID;
         this.startTime=startTime;
         this.endTime=endTime;
+        this.isPermanent=false;
+    }
+    public Suspension(String userID, LocalDateTime startTime){
+        this.userID=userID;
+        this.startTime=startTime;
+        this.endTime=null;
+        this.isPermanent=true;
     }
 
     public String getUserID(){
@@ -23,5 +31,9 @@ public class Suspension {
 
     public LocalDateTime getEndTime(){
         return endTime;
+    }
+
+    public boolean isPermanent(){
+        return isPermanent;
     }
 }
