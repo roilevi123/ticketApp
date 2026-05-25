@@ -182,4 +182,8 @@ public class AdminService {
             return Response.error(e.getMessage());
         }
     }
+
+    public Response<String> suspendUser(String targetUserID, String adminID, int durationInDays){
+        return Response.error("not implemented yet");
+    }
 }
