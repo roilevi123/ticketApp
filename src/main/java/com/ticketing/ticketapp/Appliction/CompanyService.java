@@ -48,7 +48,7 @@ public class CompanyService {
             logger.info("trying create company", username, company);
 
             if(userRepository.isUserSuspendedNow(username))
-                throw new Exception("User is suspended");
+                throw new RuntimeException("User is suspended");
 
             companyRepository.store(company, username);
             treeOfRoleRepository.storeOwner(username, company, iTreeOfRoleRepository.FOUNDER_APPOINTER);
@@ -77,7 +77,7 @@ public class CompanyService {
             }
 
             if(userRepository.isUserSuspendedNow(username))
-                throw new Exception("User is suspended");
+                throw new RuntimeException("User is suspended");
 
             treeOfRoleRepository.storeManager(managerID, company, permissions, username);
             logger.info("successfully appointAManager", managerID, company);
@@ -98,7 +98,7 @@ public class CompanyService {
                 throw new RuntimeException("Invalid token");
             }
             if(userRepository.isUserSuspendedNow(username))
-                throw new Exception("User is suspended");
+                throw new RuntimeException("User is suspended");
             Manager m = treeOfRoleRepository.getManager(username, company);
             m.acceptAppointment();
             treeOfRoleRepository.save(m);
@@ -117,6 +117,8 @@ public class CompanyService {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
+            if(userRepository.isUserSuspendedNow(username))
+                throw new RuntimeException("User is suspended");
             boolean m = treeOfRoleRepository.isManager(username, company);
             if (!m) {
                 throw new RuntimeException("User not found2");
