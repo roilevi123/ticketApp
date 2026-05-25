@@ -47,7 +47,7 @@ public class CompanyService {
             String username = userObj.getName();
             logger.info("trying create company", username, company);
 
-            if(userRepository.isUserSuspendedNow(userID))
+            if(userRepository.isUserSuspendedNow(username))
                 throw new Exception("User is suspended");
 
             companyRepository.store(company, username);
