@@ -210,7 +210,7 @@ public class AdminService {
             return Response.success("success");
 
         }catch (Exception e){
-            logger.info("Failed to suspend user: {}" e.getMessage());
+            logger.info("Failed to suspend user: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
     }
