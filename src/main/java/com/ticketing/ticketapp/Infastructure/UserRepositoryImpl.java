@@ -5,6 +5,7 @@ import com.ticketing.ticketapp.Domain.User.Suspension;
 import com.ticketing.ticketapp.Domain.User.User;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -125,8 +126,12 @@ public class UserRepositoryImpl implements IUserRepository {
     public boolean isUserSuspendedNow(String userID){
         if(currentSuspensions.containsKey(userID)){
             Suspension suspension = currentSuspensions.get(userID);
-
+            if(!suspension.getEndTime().isBefore(LocalDateTime.now())){
+                return true;
+            }
+            currentSuspensions.remove(userID);
         }
+        return false;
     }
 
 }
