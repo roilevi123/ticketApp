@@ -13,15 +13,15 @@ public class Suspension {
         this.endTime=endTime;
     }
 
-    String getUserID(){
+    public String getUserID(){
         return userID;
     }
 
-    LocalDateTime getStartTime(){
+    public LocalDateTime getStartTime(){
         return startTime;
     }
 
-    LocalDateTime getEndTime(){
+    public LocalDateTime getEndTime(){
         return endTime;
     }
 }
