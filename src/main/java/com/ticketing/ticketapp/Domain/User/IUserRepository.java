@@ -13,6 +13,6 @@ public interface IUserRepository {
     public void save(User userToUpdate);
     public void deleteAll();
     public void deleteUser(String ID);
-    public Map<Integer, Suspension> currentSuspensions();
+    public Map<String, Suspension> currentSuspensions();
     public List<Suspension> suspensionsHistory();
 }
