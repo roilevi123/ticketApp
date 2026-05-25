@@ -46,6 +46,10 @@ public class CompanyService {
             }
             String username = userObj.getName();
             logger.info("trying create company", username, company);
+
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new Exception("User is suspended");
+
             companyRepository.store(company, username);
             treeOfRoleRepository.storeOwner(username, company, iTreeOfRoleRepository.FOUNDER_APPOINTER);
             logger.info("successfully create company", username, company);
