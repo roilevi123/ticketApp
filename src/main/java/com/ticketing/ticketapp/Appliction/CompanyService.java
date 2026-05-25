@@ -284,6 +284,8 @@ public class CompanyService {
             }
             String username = tokenService.extractUsername(token);
             logger.info("trying freeze company", username, company);
+            if(userRepository.isUserSuspendedNow(username))
+                throw new RuntimeException("User is suspended");
             Company companyObj = companyRepository.getCompany(company);
             companyObj.freezeCompany(username);
             companyRepository.save(companyObj);
