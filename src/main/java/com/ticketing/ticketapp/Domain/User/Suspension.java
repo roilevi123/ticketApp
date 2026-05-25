@@ -7,6 +7,12 @@ public class Suspension {
     LocalDateTime startTime;
     LocalDateTime endTime;
 
+    Suspension(int userID, LocalDateTime startTime, LocalDateTime endTime){
+        this.userID=userID;
+        this.startTime=startTime;
+        this.endTime=endTime;
+    }
+
     int getUserID(){
         return userID;
     }
