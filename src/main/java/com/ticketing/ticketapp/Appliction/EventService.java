@@ -90,6 +90,9 @@ public class EventService {
                 return Response.error("Unauthorized");
             }
 
+            if(userRepository.isUserSuspendedNow(username))
+                throw new RuntimeException("User is suspended");
+
             Event event = eventRepository.getEventById(eventId, companyName);
             if (event == null) {
                 logger.info("Attempt to delete non-existent event '{}' for company '{}'", eventId, companyName);
