@@ -1,9 +1,12 @@
 package com.ticketing.ticketapp.Infastructure;
 
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.Suspension;
 import com.ticketing.ticketapp.Domain.User.User;
 import org.springframework.stereotype.Repository;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UserRepositoryImpl implements IUserRepository {
     private final Map<String, String> usernameToId = new ConcurrentHashMap<>();
     private final Map<String, User> usersByID = new ConcurrentHashMap<>();
+    private final Map<String, Suspension> currentSuspensions = new ConcurrentHashMap<>();
+    private final List<Suspension> suspensionHistory = new LinkedList<>();
     public UserRepositoryImpl() {}
 
 
