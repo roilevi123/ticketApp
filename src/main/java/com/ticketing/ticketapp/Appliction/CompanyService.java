@@ -75,6 +75,10 @@ public class CompanyService {
             if (!UserExists) {
                 throw new RuntimeException("User not found2");
             }
+
+            if(userRepository.isUserSuspendedNow(username))
+                throw new Exception("User is suspended");
+
             treeOfRoleRepository.storeManager(managerID, company, permissions, username);
             logger.info("successfully appointAManager", managerID, company);
             notifyMember(managerID, "Manager Appointment",
