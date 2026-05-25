@@ -64,6 +64,8 @@ public class EventService {
                 logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, company);
                 return Response.error("Unauthorized");
             }
+            if(userRepository.isUserSuspendedNow(username))
+                throw new RuntimeException("User is suspended");
 
             Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, company, map);
             ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, event.getDate(), event.getPrice());
