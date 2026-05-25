@@ -201,8 +201,17 @@ public class AdminService {
             LocalDateTime endTime = startTime.plusDays(durationInDays);
 
             Suspension suspension = new Suspension(targetUserID, startTime, endTime);
-        }catch (Exception e){
+            userRepository.addCurrentSuspension(targetUserID,suspension);
 
+            logger.info("User {} suspended successfully until {}", targetUserID, endTime);
+
+            notifier.notifyUser(targetUserID, "Account Suspended", "Your account has been suspended by an adminstrator until "+endTime.toString());
+
+            return Response.success("success");
+
+        }catch (Exception e){
+            logger.info("Failed to suspend user: {}" e.getMessage());
+            return Response.error(e.getMessage());
         }
     }
 }
