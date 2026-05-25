@@ -7,7 +7,7 @@ public class Suspension {
     LocalDateTime startTime;
     LocalDateTime endTime;
 
-    Suspension(String userID, LocalDateTime startTime, LocalDateTime endTime){
+    public Suspension(String userID, LocalDateTime startTime, LocalDateTime endTime){
         this.userID=userID;
         this.startTime=startTime;
         this.endTime=endTime;
