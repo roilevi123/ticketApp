@@ -224,7 +224,7 @@ public class EventServiceTest {
 
     @Test
     void updateEvent_Success_AsOwner() {
-        Event event = eventRepository.store(EVENT_NAME, "Old Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
+        eventRepository.store(EVENT_NAME, "Old Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
 
         String newArtist = "New Artist";
         double newPrice = 200.0;
@@ -247,7 +247,7 @@ public class EventServiceTest {
 
     @Test
     void updateEvent_Success_AsManagerWithPermissions() {
-        Event event = eventRepository.store(EVENT_NAME, "Old Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
+        eventRepository.store(EVENT_NAME, "Old Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
