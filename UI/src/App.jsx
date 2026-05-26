@@ -15,11 +15,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<EventCatalog />} />
-          <Route path="company/:id" element={<CompanyProfile />} />
-          <Route
-            path="event/:companyName/:eventName"
-            element={<EventDetails />}
-          />
+          <Route path="company/:companyName" element={<CompanyProfile />} />
+          <Route path="event/:companyName/:eventName" element={<EventDetails />} />
           <Route path="producer-dashboard" element={<ProducerDashboard />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />

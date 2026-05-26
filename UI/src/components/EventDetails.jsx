@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import axios from "axios";
 import axiosClient from "../api/axiosClient";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -216,32 +215,22 @@ export default function EventDetails() {
   useEffect(() => {
     const controller = new AbortController();
 
-    const loadEvent = async () => {
+    async function loadEvent() {
       try {
-        const detailsResponse = await axiosClient.get(
+        const res = await axiosClient.get(
           `/discovery/companies/${encodeURIComponent(companyName)}/events/${encodeURIComponent(eventName)}`,
           { signal: controller.signal },
         );
-
         // DEV: force isHighDemand true to test lottery UI — remove once backend sets this flag
-        setEvent({ ...detailsResponse.data, isHighDemand: true });
-        setLoading(false);
+        setEvent({ ...res.data, isHighDemand: true });
       } catch (err) {
-        if (
-          axios.isCancel?.(err) ||
-          err?.code === "ERR_CANCELED" ||
-          err?.name === "CanceledError" ||
-          err?.message === "canceled"
-        ) {
-          return;
-        }
-
-        if (err.name !== "AbortError") {
+        if (err.code !== "ERR_CANCELED") {
           setError(err.message);
-          setLoading(false);
         }
+      } finally {
+        setLoading(false);
       }
-    };
+    }
 
     loadEvent();
 
@@ -288,7 +277,7 @@ export default function EventDetails() {
             </p>
             <p className="text-body-md text-on-surface-variant">{error}</p>
           </div>
-        ) : (
+        ) : event ? (
           <>
             {/* ── Hero ── */}
             <section className="relative w-full h-[397px] overflow-hidden">
@@ -504,6 +493,15 @@ export default function EventDetails() {
               </>
             )}
           </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-center px-margin-mobile">
+            <p className="text-headline-sm text-on-surface mb-2">
+              Event not found
+            </p>
+            <p className="text-body-md text-on-surface-variant">
+              The event details could not be loaded.
+            </p>
+          </div>
         )}
       </main>
 
