@@ -108,6 +108,14 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>com/ticketing/ticketapp/Config/**</exclude>
+                                <exclude>com/ticketing/ticketapp/Controllers/**</exclude>
+                                <exclude>com/ticketing/ticketapp/TicketappApplication</exclude>
+                                <exclude>Main</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
