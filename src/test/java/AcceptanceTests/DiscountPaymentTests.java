@@ -278,7 +278,7 @@ public class DiscountPaymentTests {
     @Test
     @DisplayName("6. Unauthorized User Creation Returns Error")
     void testUnauthorizedCreationReturnsNull() {
-        String ownerToken = setupEventAndGetToken("o6", "C6", "E6", 100.0);
+        setupEventAndGetToken("o6", "C6", "E6", 100.0);
         String guestToken = tokenService.generateGuestToken();
 
         Response<String> id = discountService.createSimpleDiscount(guestToken, "E6", DiscountTargetType.EVENT, 10.0, "C6");
