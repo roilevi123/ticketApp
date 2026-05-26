@@ -21,7 +21,7 @@ public class PurchasePolicyServiceTest {
     void setUp() {
         policyRepo = mock(iPurchasePolicyRepository.class);
         tokenService = mock(TokenService.class);
-        //policyService = new PurchasePolicyService(policyRepo, tokenService);
+        policyService = new PurchasePolicyService(policyRepo, tokenService);
     }
 
     @Test
@@ -279,7 +279,7 @@ public class PurchasePolicyServiceTest {
         policyService.createOrPolicy(token, "E1", PurchaseTargetType.EVENT, List.of("id1"));
 
         verify(policyRepo).save(argThat(policy ->
-            policy.getRoot() instanceof OrPurchaseComposite && policy.getTargetId().equals("E1")
+                policy.getRoot() instanceof OrPurchaseComposite && policy.getTargetId().equals("E1")
         ));
     }
 }
