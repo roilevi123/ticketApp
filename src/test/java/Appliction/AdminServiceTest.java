@@ -186,4 +186,21 @@ class AdminServiceTest {
         verify(notifier).notifyUser(eq(targetUser), eq("Account Suspended"), contains("until"));
     }
 
+    @Test
+    void SuspendUser_Permanently_Success(){
+        String targetUser="user1";
+        int durationDays=0;
+        User mockUser=mock(User.class);
+
+        when(userRepository.getUserByID(targetUser)).thenReturn(mockUser);
+
+        var response = adminService.suspendUser(targetUser,ADMIN_NAME,durationDays);
+
+        assertTrue((response.isSuccess()));
+        assertEquals("success",response.getData());
+
+        verify(userRepository).addCurrentSuspension(eq(targetUser), any(Suspension.class));
+        verify(notifier).notifyUser(eq(targetUser), eq("Account Suspended"), contains("for good"));
+    }
+
 }
