@@ -224,4 +224,24 @@ public class DiscountServiceTest {
         verify(discountRepo, never()).save(any());
         verify(purchasedService, never()).isAuthorized(any(), any());
     }
+
+    @Test
+    void test16_CalculatePriceAfterDiscounts_NoDiscounts_ReturnsOriginalPrice() {
+        when(discountRepo.findByEvent("e1")).thenReturn(null);
+        when(discountRepo.findByCompany("Comp")).thenReturn(null);
+
+        Response<Double> result = discountService.calculatePriceAfterDiscounts("token", "e1", "Comp", 100.0, 1, null);
+
+        assertTrue(result.isSuccess());
+        assertEquals(100.0, result.getData(), 0.001);
+    }
+
+    @Test
+    void test17_CalculatePriceAfterDiscounts_InvalidToken_ReturnsError() {
+        when(tokenService.validateToken("bad_token")).thenReturn(false);
+
+        Response<Double> result = discountService.calculatePriceAfterDiscounts("bad_token", "e1", "Comp", 100.0, 1, null);
+
+        assertTrue(result.isError());
+    }
 }
