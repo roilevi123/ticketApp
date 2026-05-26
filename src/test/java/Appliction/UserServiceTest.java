@@ -2,6 +2,8 @@ package Appliction;
 
 import com.ticketing.ticketapp.Appliction.*;
 
+import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
+import com.ticketing.ticketapp.Domain.Notification.Notification;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
@@ -32,6 +34,9 @@ class UserServiceTest {
 
     @Mock
     private IPendingNotificationRepository notificationRepository;
+
+    @Mock
+    private INotificationRepository userNotificationRepository;
 
     @InjectMocks
     private UserService userService;
@@ -268,9 +273,12 @@ class UserServiceTest {
 
     @Test
     void getUserNotifications_Success_ShouldReturnMessages() {
+        String userId = "user-id-123";
+        Notification n1 = new Notification("id1", userId, "msg1");
+        Notification n2 = new Notification("id2", userId, "msg2");
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-        when(notificationRepository.retrieveAndDelete(USERNAME)).thenReturn(java.util.List.of("msg1", "msg2"));
+        when(tokenService.extractUserId(TOKEN)).thenReturn(userId);
+        when(userNotificationRepository.getAll(userId)).thenReturn(java.util.List.of(n1, n2));
 
         Response<java.util.List<String>> result = userService.getUserNotifications(TOKEN);
 
@@ -285,6 +293,6 @@ class UserServiceTest {
         Response<java.util.List<String>> result = userService.getUserNotifications(TOKEN);
 
         assertTrue(result.isError());
-        verify(notificationRepository, never()).retrieveAndDelete(any());
+        verify(userNotificationRepository, never()).getAll(any());
     }
 }

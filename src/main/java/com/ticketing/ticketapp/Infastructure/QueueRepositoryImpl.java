@@ -90,6 +90,14 @@ public class QueueRepositoryImpl implements iQueueRepository {
         eventQueues.putIfAbsent(eventId, new LinkedList<>());
     }
 
+    @Override
+    public void clearQueue(String eventId) {
+        eventQueues.computeIfPresent(eventId, (id, queue) -> {
+            queue.clear();
+            return queue;
+        });
+    }
+
 
 
     @Override
