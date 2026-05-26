@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
-
-const AUTH_HEADER = "Bearer guest-temporary-token";
+import React, { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import axiosClient from '../api/axiosClient';
 
 const TYPE_CONFIG = {
   LIVE_PERFORMANCE: {
@@ -128,48 +127,26 @@ export default function CompanyProfile() {
 
   useEffect(() => {
     const controller = new AbortController();
-    const headers = { Authorization: AUTH_HEADER };
 
     Promise.allSettled([
-      fetch(`http://localhost:8080/api/discovery/companies`, {
-        headers,
-        signal: controller.signal,
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error(`Company fetch: ${res.status}`);
-          return res.json();
-        })
-        .then(
-          (companies) =>
-            companies.find((c) => c.companyName === companyName) ?? null,
-        ),
+      axiosClient.get('/discovery/companies', { signal: controller.signal })
+        .then((res) => res.data.find((c) => c.companyName === companyName) ?? null),
 
-      fetch(
-        `http://localhost:8080/api/discovery/companies/${encodeURIComponent(companyName)}/events`,
-        {
-          headers,
-          signal: controller.signal,
-        },
-      ).then((res) => {
-        if (!res.ok) throw new Error(`Events fetch: ${res.status}`);
-        return res.json();
-      }),
+      axiosClient.get(`/discovery/companies/${encodeURIComponent(companyName)}/events`, { signal: controller.signal })
+        .then((res) => res.data),
     ])
       .then(([companyResult, eventsResult]) => {
         if (companyResult.status === "fulfilled")
           setCompany(companyResult.value);
         if (eventsResult.status === "fulfilled") {
           setEvents(eventsResult.value);
-        } else if (eventsResult.reason?.name !== "AbortError") {
-          setError(eventsResult.reason?.message ?? "Failed to load events");
+        } else if (eventsResult.reason?.code !== 'ERR_CANCELED') {
+          setError(eventsResult.reason?.message ?? 'Failed to load events');
         }
         setLoading(false);
       })
       .catch((err) => {
-        if (err.name !== "AbortError") {
-          setError(err.message);
-          setLoading(false);
-        }
+        if (err.code !== 'ERR_CANCELED') { setError(err.message); setLoading(false); }
       });
 
     return () => controller.abort();

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import axiosClient from "../api/axiosClient";
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axiosClient from '../api/axiosClient';
+import { useAuth } from '../contexts/AuthContext';
 
 // ─── Toast notification ───────────────────────────────────────────────────────
 
@@ -65,26 +65,15 @@ export default function MemberProfile() {
 
   // ── Fetch profile on mount ──────────────────────────────────────────────────
   useEffect(() => {
-    setProfileLoading(true);
-    axiosClient
-      .get("/users/profile")
-      .then((resp) => {
-        const data = resp.data;
-        const parts = (data.name ?? "").trim().split(/\s+/);
-        setFirstName(parts[0] ?? "");
-        setLastName(parts.slice(1).join(" "));
-        setEmail(data.email ?? "");
-        setStudentId(data.ID ?? "");
-      })
-      .catch((err) => {
-        const status = err.response?.status;
-        if (status === 401) {
-          logout();
-          navigate("/login");
-          showToast("error", "Session expired. Please log in again.");
-          return;
-        }
-        showToast("error", `Could not load profile: ${err.message}`);
+    axiosClient.get('/users/profile')
+      .then((res) => {
+        const data = res.data;
+        // Backend stores one combined name field; split it for the two inputs
+        const parts = (data.name ?? '').trim().split(/\s+/);
+        setFirstName(parts[0] ?? '');
+        setLastName(parts.slice(1).join(' '));
+        setEmail(data.email ?? '');
+        setStudentId(data.ID ?? '');
       })
       .finally(() => setProfileLoading(false));
   }, [token]);
@@ -93,7 +82,8 @@ export default function MemberProfile() {
   async function handleSave() {
     setSaveLoading(true);
     try {
-      await axiosClient.put("/users/profile", {
+      // Backend uses combined name + ID (studentId) + email
+      await axiosClient.put('/users/profile', {
         name: `${firstName} ${lastName}`.trim(),
         ID: studentId,
         email,
@@ -112,18 +102,11 @@ export default function MemberProfile() {
     e.preventDefault();
     setSubmitLoading(true);
     try {
-      await axiosClient.post("/support/ticket", {
-        supportType,
-        subject,
-        message,
-      });
-      setSubject("");
-      setMessage("");
-      setSupportType("admin");
-      showToast(
-        "success",
-        "Ticket submitted — we'll respond within 2–4 business hours.",
-      );
+      await axiosClient.post('/support/ticket', { supportType, subject, message });
+      setSubject('');
+      setMessage('');
+      setSupportType('admin');
+      showToast('success', "Ticket submitted — we'll respond within 2–4 business hours.");
     } catch (err) {
       showToast("error", `Could not submit ticket: ${err.message}`);
     } finally {
