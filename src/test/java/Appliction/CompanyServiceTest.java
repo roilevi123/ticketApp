@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -50,6 +51,8 @@ class CompanyServiceTest {
     private TokenService tokenService;
     @Mock
     private INotifier notifier;
+    @Mock
+    private IPendingNotificationRepository notificationRepository;
 
     @InjectMocks
     private CompanyService companyService;
@@ -545,5 +548,105 @@ class CompanyServiceTest {
 
         verify(notifier).notifyUser(eq("owner-uuid"), anyString(), anyString());
         verify(notifier).notifyUser(eq("manager-uuid"), anyString(), anyString());
+    }
+
+    @Test
+    void replyToBuyer_Success() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+
+        Response<String> result = companyService.replyToBuyer(TOKEN, COMPANY, "buyer1", "Hello buyer");
+
+        assertTrue(result.isSuccess());
+        verify(notificationRepository, times(1)).save(eq("buyer1"), anyString());
+    }
+
+    @Test
+    void replyToBuyer_Failure_NotAuthorized() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
+        when(treeOfRoleRepository.isManager(USERNAME, COMPANY)).thenReturn(false);
+
+        Response<String> result = companyService.replyToBuyer(TOKEN, COMPANY, "buyer1", "Hello");
+
+        assertTrue(result.isError());
+        verify(notificationRepository, never()).save(any(), any());
+    }
+
+    @Test
+    void getActiveCompanies_Success() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(companyRepository.getActiveCompanies()).thenReturn(List.of(new Company(COMPANY, USERNAME)));
+
+        Response<java.util.List<com.ticketing.ticketapp.Domain.Company.CompanyDTO>> result =
+                companyService.getActiveCompanies(TOKEN);
+
+        assertTrue(result.isSuccess());
+        assertEquals(1, result.getData().size());
+    }
+
+    @Test
+    void getActiveCompanies_InvalidToken_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(false);
+
+        Response<?> result = companyService.getActiveCompanies(TOKEN);
+
+        assertTrue(result.isError());
+    }
+
+    @Test
+    void getRoleTreeString_Success() {
+        Company mockCompany = new Company(COMPANY, USERNAME);
+        Owner owner = new Owner(USERNAME, COMPANY, "SYSTEM_FOUNDER");
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.getOwner(USERNAME, COMPANY)).thenReturn(owner);
+        when(treeOfRoleRepository.getAllOwnersByCompany(COMPANY)).thenReturn(List.of(owner));
+        when(treeOfRoleRepository.getAllManagersByCompany(COMPANY)).thenReturn(List.of());
+        when(companyRepository.getCompany(COMPANY)).thenReturn(mockCompany);
+
+        Response<String> result = companyService.GetRoleTreeString(TOKEN, COMPANY);
+
+        assertTrue(result.isSuccess());
+        assertTrue(result.getData().contains(USERNAME));
+    }
+
+    @Test
+    void getRoleTreeString_Failure_NotOwner() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.getOwner(USERNAME, COMPANY)).thenReturn(null);
+
+        Response<String> result = companyService.GetRoleTreeString(TOKEN, COMPANY);
+
+        assertTrue(result.isError());
+    }
+
+    @Test
+    void sendMessageToUser_Success() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+
+        Response<String> result = companyService.sendMessageToUser(TOKEN, COMPANY, "user42", "Hello");
+
+        assertTrue(result.isSuccess());
+        verify(notifier, times(1)).notifyUser(eq("user42"), anyString(), eq("Hello"));
+    }
+
+    @Test
+    void sendMessageToUser_Failure_NotAuthorized() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
+        when(treeOfRoleRepository.isManager(USERNAME, COMPANY)).thenReturn(false);
+
+        Response<String> result = companyService.sendMessageToUser(TOKEN, COMPANY, "user42", "Hello");
+
+        assertTrue(result.isError());
+        verify(notifier, never()).notifyUser(any(), any(), any());
     }
 }
