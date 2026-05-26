@@ -1,9 +1,13 @@
 package com.ticketing.ticketapp.Infastructure;
 
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.Suspension;
 import com.ticketing.ticketapp.Domain.User.User;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UserRepositoryImpl implements IUserRepository {
     private final Map<String, String> usernameToId = new ConcurrentHashMap<>();
     private final Map<String, User> usersByID = new ConcurrentHashMap<>();
+    private final Map<String, Suspension> currentSuspensions = new ConcurrentHashMap<>();
+    private final List<Suspension> suspensionHistory = new LinkedList<>();
     public UserRepositoryImpl() {}
 
 
@@ -106,7 +112,57 @@ public class UserRepositoryImpl implements IUserRepository {
         }
     }
 
+    @Override
+    public void addCurrentSuspension(String userID, Suspension suspension){
+        currentSuspensions.put(userID, suspension);
+    }
 
+    @Override
+    public void addHistorySuspension(Suspension suspension){
+        suspensionHistory.add(suspension);
+    }
 
+    @Override
+    public boolean isUserSuspendedNow(String userID){
+        if(currentSuspensions.containsKey(userID)){
+            Suspension suspension = currentSuspensions.get(userID);
+            if(suspension.isPermanent()==true)
+                return true;
+            if(!suspension.getEndTime().isBefore(LocalDateTime.now())){
+                return true;
+            }
+            currentSuspensions.remove(userID);
+            addHistorySuspension(suspension);
+        }
+        return false;
+    }
+
+    @Override
+    public void cancelSuspension(String userId){
+        if(!currentSuspensions.containsKey(userId))
+            throw new RuntimeException("User is not currently suspended");
+        Suspension suspension = currentSuspensions.get(userId);
+        suspension.setEndTime(LocalDateTime.now());
+        currentSuspensions.remove(userId);
+        suspensionHistory.add(suspension);
+    }
+
+    @Override
+    public List<Suspension> getAllSuspensions(){
+        List<Suspension> suspensions = new LinkedList<>();
+        for(Suspension suspension: currentSuspensions.values()){
+            suspensions.add(suspension);
+        }
+        for (Suspension suspension:suspensionHistory){
+            suspensions.add(suspension);
+        }
+        return suspensions;
+    }
+
+    @Override
+    public Suspension getCurrentSuspensionByUserID(String userID){
+        Suspension suspension = currentSuspensions.get(userID);
+        return suspension;
+    }
 
 }

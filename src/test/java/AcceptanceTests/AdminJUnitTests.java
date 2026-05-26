@@ -28,6 +28,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.LocalDateTime;
+
 @DisplayName("Admin Management Acceptance Tests")
 public class AdminJUnitTests {
 
@@ -290,5 +292,134 @@ public class AdminJUnitTests {
         }
         assertTrue(sawCompA);
         assertTrue(sawCompB);
+    }
+
+    @Test
+    @DisplayName("9. Suspend User Temporarily Success")
+    void suspendUserTemporarilySuccess9() {
+        reg("userToSuspend", "password123");
+        String targetUserId = userRepository.getUserByUsername("userToSuspend").getID();
+
+        var response = adminService.suspendUser(targetUserId, "admin", 7);
+
+        assertTrue(response.isSuccess());
+
+        Suspension suspension = userRepository.getCurrentSuspensionByUserID(targetUserId);
+        assertNotNull(suspension);
+        assertTrue(suspension.getEndTime().isAfter(LocalDateTime.now()));
+    }
+
+    @Test
+    @DisplayName("10. Suspend User Permanently Success")
+    void suspendUserPermanentlySuccess10() {
+        reg("userToSuspendForever", "password123");
+        String targetUserId = userRepository.getUserByUsername("userToSuspendForever").getID();
+
+        var response = adminService.suspendUser(targetUserId, "admin", 0);
+
+        assertTrue(response.isSuccess());
+
+        Suspension suspension =userRepository.getCurrentSuspensionByUserID(targetUserId);
+        assertNotNull(suspension);
+        assertNull(suspension.getEndTime());
+        assertTrue(suspension.isPermanent());
+    }
+
+    @Test
+    @DisplayName("11. Cancel Suspension Success")
+    void cancelSuspensionSuccess11() {
+        reg("suspendedUser", "password123");
+        String targetUserId = userRepository.getUserByUsername("suspendedUser").getID();
+        adminService.suspendUser(targetUserId, "admin", 5);
+
+        assertNotNull(userRepository.getCurrentSuspensionByUserID(targetUserId));
+
+        var response = adminService.cancelSuspension(targetUserId, "admin");
+
+        assertTrue(response.isSuccess());
+
+        assertNull(userRepository.getCurrentSuspensionByUserID(targetUserId));
+        assertFalse(userRepository.isUserSuspendedNow(targetUserId));
+    }
+
+    @Test
+    @DisplayName("12. Get All Suspensions Success")
+    void getAllSuspensionsSuccess12() {
+        reg("userA", "p");
+        reg("userB", "p");
+        String idA = userRepository.getUserByUsername("userA").getID();
+        String idB = userRepository.getUserByUsername("userB").getID();
+
+        adminService.suspendUser(idA, "admin", 3);
+        adminService.suspendUser(idB, "admin", 5);
+
+        var response = adminService.getAllSuspensions("admin");
+
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        assertTrue(response.getData().size() == 2);
+    }
+
+    @Test
+    @DisplayName("13. Suspend User Failed - Not Admin")
+    void suspendUserFailedNotAdmin13() {
+        reg("userToSuspend3", "password123");
+        String targetUserId = userRepository.getUserByUsername("userToSuspend3").getID();
+
+        var response = adminService.suspendUser(targetUserId, "not_admin", 5);
+
+        assertFalse(response.isSuccess());
+
+        assertNull(userRepository.getCurrentSuspensionByUserID(targetUserId));
+    }
+
+    @Test
+    @DisplayName("14. Suspend User Failed - User Not Found")
+    void suspendUserFailedUserNotFound14() {
+        var response = adminService.suspendUser("fake-user-id-123", "admin", 5);
+
+        assertFalse(response.isSuccess());
+        assertNull(userRepository.getCurrentSuspensionByUserID("fake-user-id-123"));
+    }
+
+    @Test
+    @DisplayName("15. Cancel Suspension Failed - Not Admin")
+    void cancelSuspensionFailedNotAdmin15() {
+        reg("suspendedUser3", "password123");
+        String targetUserId = userRepository.getUserByUsername("suspendedUser3").getID();
+        adminService.suspendUser(targetUserId, "admin", 5);
+
+        var response = adminService.cancelSuspension(targetUserId, "not_admin");
+
+        assertFalse(response.isSuccess());
+        assertNotNull(userRepository.getCurrentSuspensionByUserID(targetUserId));
+    }
+
+    @Test
+    @DisplayName("16. Get All Suspensions Failed - Not Admin")
+    void getAllSuspensionsFailedNotAdmin16() {
+        var response = adminService.getAllSuspensions("hacker_user");
+
+        assertFalse(response.isSuccess());
+        assertNull(response.getData());
+    }
+
+    @Test
+    @DisplayName("17. Cancel Suspension Failed - User Not Suspended")
+    void cancelSuspensionFailedNotSuspended17() {
+        reg("activeUser", "password123");
+        String targetUserId = userRepository.getUserByUsername("activeUser").getID();
+
+        var response = adminService.cancelSuspension(targetUserId, "admin");
+
+        assertFalse(response.isSuccess());
+    }
+
+    @Test
+    @DisplayName("18. Cancel Suspension Failed - User Not Found")
+    void cancelSuspensionFailedUserNotFound18() {
+        var response = adminService.cancelSuspension("fake-user-id-999", "admin");
+
+        assertFalse(response.isSuccess());
     }
 }

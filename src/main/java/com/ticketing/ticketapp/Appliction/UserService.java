@@ -173,6 +173,7 @@ public class UserService implements IAuth {
             }
             
             String username = tokenService.extractUsername(token);
+
             logger.info("User {} is submitting a complaint to {}", username, targetRole);
             String formattedMessage = String.format("Complaint from %s: %s", username, messageContent);
             String targetId = targetRole.equalsIgnoreCase("Admin") ? "SYSTEM_ADMIN" : targetRole;

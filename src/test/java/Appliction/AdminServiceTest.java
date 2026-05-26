@@ -14,6 +14,7 @@ import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.Suspension;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,8 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+
+import java.time.LocalDateTime;
 
 class AdminServiceTest {
 
@@ -169,6 +172,115 @@ class AdminServiceTest {
     }
 
     @Test
+    void SuspendUser_Temporary_Success(){
+        String targetUser="user1";
+        int durationDays=7;
+        User mockUser=mock(User.class);
+
+        when(userRepository.getUserByID(targetUser)).thenReturn(mockUser);
+
+        var response = adminService.suspendUser(targetUser,ADMIN_NAME,durationDays);
+
+        assertTrue((response.isSuccess()));
+        assertEquals("success",response.getData());
+
+        verify(userRepository).addCurrentSuspension(eq(targetUser), any(Suspension.class));
+        verify(notifier).notifyUser(eq(targetUser), eq("Account Suspended"), contains("until"));
+    }
+
+    @Test
+    void SuspendUser_Permanently_Success(){
+        String targetUser="user1";
+        int durationDays=0;
+        User mockUser=mock(User.class);
+
+        when(userRepository.getUserByID(targetUser)).thenReturn(mockUser);
+
+        var response = adminService.suspendUser(targetUser,ADMIN_NAME,durationDays);
+
+        assertTrue((response.isSuccess()));
+        assertEquals("success",response.getData());
+
+        verify(userRepository).addCurrentSuspension(eq(targetUser), any(Suspension.class));
+        verify(notifier).notifyUser(eq(targetUser), eq("Account Suspended"), contains("for good"));
+    }
+
+    @Test
+    void SuspendUser_Fail_NotAdmin(){
+        String targetUser = "user1";
+
+        var response = adminService.suspendUser(targetUser, NOT_ADMIN, 5);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Admin does not exist", response.getMessage());
+        verify(userRepository, never()).addCurrentSuspension(anyString(), any());
+    }
+
+    @Test
+    void suspendUser_Fail_UserNotFound() {
+        String targetUser = "missingUser";
+        when(userRepository.getUserByID(targetUser)).thenReturn(null);
+
+        var response = adminService.suspendUser(targetUser, ADMIN_NAME, 5);
+
+        assertFalse(response.isSuccess());
+        assertEquals("User not found", response.getMessage());
+        verify(userRepository, never()).addCurrentSuspension(anyString(), any());
+    }
+
+    @Test
+    void cancelSuspension_Success() {
+        String targetUser = "user1";
+        User mockUser = mock(User.class);
+
+        when(userRepository.getUserByID(targetUser)).thenReturn(mockUser);
+
+        var response = adminService.cancelSuspension(targetUser, ADMIN_NAME);
+
+        assertTrue(response.isSuccess());
+        assertEquals("success", response.getData());
+
+        verify(userRepository).cancelSuspension(targetUser);
+        verify(notifier).notifyUser(eq(targetUser), eq("Account is no longer suspended"), anyString());
+    }
+
+    @Test
+    void cancelSuspension_Fail_UserDoesNotExist() {
+        String targetUser = "missingUser";
+        when(userRepository.getUserByID(targetUser)).thenReturn(null);
+
+        var response = adminService.cancelSuspension(targetUser, ADMIN_NAME);
+
+        assertFalse(response.isSuccess());
+        assertEquals("User does not exist", response.getMessage());
+        verify(userRepository, never()).cancelSuspension(anyString());
+    }
+
+    @Test
+    void getAllSuspensions_Success() {
+        List<Suspension> mockList = List.of(
+                new Suspension("user1", LocalDateTime.now()),
+                new Suspension("user2", LocalDateTime.now())
+        );
+        when(userRepository.getAllSuspensions()).thenReturn(mockList);
+
+        var response = adminService.getAllSuspensions(ADMIN_NAME);
+
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        assertEquals(2, response.getData().size());
+        verify(userRepository).getAllSuspensions();
+    }
+
+    @Test
+    void getAllSuspensions_Fail_NotAdmin() {
+        var response = adminService.getAllSuspensions(NOT_ADMIN);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Admin does not exist", response.getMessage());
+        assertNull(response.getData());
+        verify(userRepository, never()).getAllSuspensions();
+    }
     void sendMessageToUser_Success() {
         var result = adminService.sendMessageToUser(ADMIN_NAME, "user42", "Hello");
 
