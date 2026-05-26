@@ -271,4 +271,14 @@ class AdminServiceTest {
         assertEquals(2, response.getData().size());
         verify(userRepository).getAllSuspensions();
     }
+
+    @Test
+    void getAllSuspensions_Fail_NotAdmin() {
+        var response = adminService.getAllSuspensions(NOT_ADMIN);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Admin does not exist", response.getMessage());
+        assertNull(response.getData());
+        verify(userRepository, never()).getAllSuspensions();
+    }
 }
