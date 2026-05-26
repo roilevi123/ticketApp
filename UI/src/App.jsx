@@ -8,6 +8,7 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MemberProfile from "./components/MemberProfile";
+import MyTickets from "./components/MyTickets";
 
 function App() {
   return (
@@ -32,6 +33,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["MEMBER", "ADMIN", "OWNER", "MANAGER", "FOUNDER"]}>
                 <MemberProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-tickets"
+            element={
+              <ProtectedRoute allowedRoles={["MEMBER", "ADMIN", "OWNER", "MANAGER", "FOUNDER"]}>
+                <MyTickets />
               </ProtectedRoute>
             }
           />

@@ -149,12 +149,12 @@ export default function MemberProfile() {
             >
               Events
             </Link>
-            <a
-              href="#"
+            <Link
+              to="/my-tickets"
               className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200"
             >
               My Tickets
-            </a>
+            </Link>
             <a
               href="#"
               className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200"

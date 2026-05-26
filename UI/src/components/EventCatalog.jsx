@@ -231,7 +231,7 @@ export default function EventCatalog() {
             <span className="text-headline-md font-bold text-secondary">UNI-TICKETS</span>
             <nav className="hidden md:flex items-center gap-6">
               <a className="text-secondary border-b-2 border-secondary pb-1 font-bold text-body-md" href="#">Events</a>
-              <a className="text-on-surface-variant hover:text-on-surface transition-colors text-body-md" href="#">My Tickets</a>
+              <Link className="text-on-surface-variant hover:text-on-surface transition-colors text-body-md" to="/my-tickets">My Tickets</Link>
               <a className="text-on-surface-variant hover:text-on-surface transition-colors text-body-md" href="#">Help</a>
             </nav>
           </div>
