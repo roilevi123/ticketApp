@@ -381,4 +381,17 @@ public class AdminJUnitTests {
         assertFalse(response.isSuccess());
         assertNull(userRepository.getCurrentSuspensionByUserID("fake-user-id-123"));
     }
+
+    @Test
+    @DisplayName("15. Cancel Suspension Failed - Not Admin")
+    void cancelSuspensionFailedNotAdmin15() {
+        reg("suspendedUser3", "password123");
+        String targetUserId = userRepository.getUserByUsername("suspendedUser3").getID();
+        adminService.suspendUser(targetUserId, "admin", 5);
+
+        var response = adminService.cancelSuspension(targetUserId, "not_admin");
+
+        assertFalse(response.isSuccess());
+        assertNotNull(userRepository.getCurrentSuspensionByUserID(targetUserId));
+    }
 }
