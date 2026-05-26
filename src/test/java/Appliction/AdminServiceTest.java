@@ -203,4 +203,15 @@ class AdminServiceTest {
         verify(notifier).notifyUser(eq(targetUser), eq("Account Suspended"), contains("for good"));
     }
 
+    @Test
+    void SuspendUser_Fail_NotAdmin(){
+        String targetUser = "user1";
+
+        var response = adminService.suspendUser(targetUser, NOT_ADMIN, 5);
+
+        assertFalse(response.isSuccess());
+        assertEquals("Admin does not exist", response.getMessage());
+        verify(userRepository, never()).addCurrentSuspension(anyString(), any());
+    }
+
 }
