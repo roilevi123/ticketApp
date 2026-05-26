@@ -183,7 +183,7 @@ class AdminServiceTest {
         assertEquals("success",response.getData());
 
         verify(userRepository).addCurrentSuspension(eq(targetUser), any(Suspension.class));
-        verify(notifier).notifyUser(eq(targetUser), eq("Account suspended"), contains("until"));
+        verify(notifier).notifyUser(eq(targetUser), eq("Account Suspended"), contains("until"));
     }
 
 }
