@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import axiosClient from '../api/axiosClient';
 
 export default function SalesAnalyticsTab() {
   const [transactions, setTransactions] = useState([]);
@@ -9,31 +10,21 @@ export default function SalesAnalyticsTab() {
     const fetchAnalytics = async () => {
       try {
         const companyName = encodeURIComponent("BGU Events"); // מקודד את הרווח ב-URL
-        const token = localStorage.getItem('token');
 
-        // משיכת דוח מכירות כללי
-        const reportRes = await fetch(`http://localhost:8080/api/company/${companyName}/sales-report`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        // משיכת היסטוריית רכישות
-        const historyRes = await fetch(`http://localhost:8080/api/company/${companyName}/purchase-history`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const [reportRes, historyRes] = await Promise.all([
+          axiosClient.get(`/company/${companyName}/sales-report`),
+          axiosClient.get(`/company/${companyName}/purchase-history`),
+        ]);
 
-        if (reportRes.ok && historyRes.ok) {
-          const reportData = await reportRes.json();
-          const historyData = await historyRes.json();
-          
-          // אם חזרו נתונים אמיתיים, נשתמש בהם. אחרת נטען נתוני דמה לתצוגה
-          if (historyData && historyData.length > 0) {
-            setTransactions(historyData);
-            setReport(reportData);
-          } else {
-            loadDummyData();
-          }
+        const reportData = reportRes.data;
+        const historyData = historyRes.data;
+
+        // אם חזרו נתונים אמיתיים, נשתמש בהם. אחרת נטען נתוני דמה לתצוגה
+        if (historyData && historyData.length > 0) {
+          setTransactions(historyData);
+          setReport(reportData);
         } else {
-          loadDummyData(); // במקרה של שגיאה (למשל אם ה-endpoint עדיין לא מוכן בשרת)
+          loadDummyData();
         }
       } catch (error) {
         console.error("Failed to fetch analytics", error);
