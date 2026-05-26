@@ -42,6 +42,7 @@ public class DataInitializer implements ApplicationRunner {
             userService.register(guestToken2, "koren_manager", "koren123", 25, "koren@bgu.ac.il");
             String loginToken = tokenService.generateGuestToken();
             String adminToken = userService.login(loginToken, "admin", "admin123").getData();
+            userService.register(guestToken2, "koren1", "koren1234", 25, "koren@bgu.ac.il");
 
             companyService.CreateCompany("BGU Events", adminToken);
 

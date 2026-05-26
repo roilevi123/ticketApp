@@ -1,19 +1,17 @@
 import { useState } from 'react';
 import axiosClient from '../api/axiosClient';
 
-export default function PolicyBuilderTab() {
+export default function PolicyBuilderTab({ companyName }) {
   // ניהול המצב של הטופס הנוכחי
   const [conditionType, setConditionType] = useState('min_age');
   const [conditionValue, setConditionValue] = useState('18');
   const [targetEvent, setTargetEvent] = useState(''); 
 
-  // ניהול המצב של רשימת החוקים (עץ ה-Composite שלנו)
   const [rules, setRules] = useState([
     { id: 1, type: 'min_age', field: 'user.age', operator: 'gte', value: 18, combinator: null },
     { id: 2, type: 'max_tickets', field: 'cart.ticket_count', operator: 'lte', value: 5, combinator: 'AND' }
   ]);
 
-  // פונקציית עזר להמרת סוג התנאי לשדות שהשרת מבין ב-JSON
   const getFieldMapping = (type) => {
     switch(type) {
       case 'min_age': return { field: 'user.age', operator: 'gte' };
@@ -24,7 +22,6 @@ export default function PolicyBuilderTab() {
     }
   };
 
-  // פונקציית עזר להצגת טקסט קריא בעץ החוקים
   const getDisplayText = (rule) => {
     switch(rule.type) {
       case 'min_age': return <>Min Age <strong className="text-secondary">&gt;= {rule.value}</strong></>;
@@ -34,13 +31,12 @@ export default function PolicyBuilderTab() {
     }
   };
 
-  // הוספת חוק חדש לעץ
   const handleAddRule = (combinator) => {
     if (!conditionValue) return;
     const mapping = getFieldMapping(conditionType);
     
     const newRule = {
-      id: Date.now(), // ID ייחודי לכל שורה
+      id: Date.now(), 
       type: conditionType,
       field: mapping.field,
       operator: mapping.operator,
@@ -51,10 +47,8 @@ export default function PolicyBuilderTab() {
     setRules([...rules, newRule]);
   };
 
-  // מחיקת חוק מהעץ
   const handleDeleteRule = (id) => {
     const newRules = rules.filter(r => r.id !== id);
-    // אם מחקנו את החוק הראשון, החוק הבא הופך לראשון ולכן ה-Combinator שלו מתאפס
     if (newRules.length > 0) newRules[0].combinator = null;
     setRules(newRules);
   };
@@ -71,7 +65,7 @@ export default function PolicyBuilderTab() {
     const mainOperator = rules.find(r => r.combinator)?.combinator || 'AND';
 
     return {
-        targetId: targetEvent, // <-- עכשיו זה דינאמי!
+        targetId: targetEvent, 
         type: "EVENT",           
         ruleset: {
             operator: mainOperator,
@@ -80,15 +74,14 @@ export default function PolicyBuilderTab() {
     };
   };
 
-  // הפונקציה שתשלח את העץ ל-Java
   const handleSavePolicy = async () => {
     if (!targetEvent) {
       alert("Please enter the Event Name before saving the policy.");
       return;
     }
     const payload = generateJSON();
+    payload.companyName = companyName;
     
-    // מוודאים שיש חוקים לפני ששולחים
     if (Object.keys(payload).length === 0) {
       alert("Please define at least one rule before saving.");
       return;
@@ -97,8 +90,7 @@ export default function PolicyBuilderTab() {
     try {
       const response = await axiosClient.post('/company/policies/purchase/bulk', payload);
       alert(`Policy saved successfully! \nID: ${response.data.policyId}`);
-      // אופציונלי: לנקות את העץ אחרי שמירה מוצלחת
-      // setRules([]);
+
     } catch (error) {
       const msg = error.response?.data || error.message || "Network error.";
       alert(`Failed to save policy: ${msg}`);

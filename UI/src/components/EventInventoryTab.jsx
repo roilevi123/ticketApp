@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axiosClient from '../api/axiosClient';
 
-export default function EventInventoryTab() {
+export default function EventInventoryTab({ companyName }) {
   const [eventData, setEventData] = useState({
     name: '',
     artist: '',      
@@ -19,6 +19,11 @@ export default function EventInventoryTab() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!companyName) {
+      alert("Error: No active company selected.");
+      return;
+    }
+
     // יצירת מפת המושבים (מערך דו-ממדי) בשביל ה-Java
     const numberOfTickets = parseInt(eventData.totalTickets) || 10;
     const dummyMap = [Array(numberOfTickets).fill("SEAT")];
@@ -31,7 +36,7 @@ export default function EventInventoryTab() {
       location: eventData.location,
       price: parseFloat(eventData.basePrice),
       artistName: eventData.artist || "TBD", 
-      companyName: "BGU Events", 
+      companyName: companyName, 
       map: dummyMap, 
       rating: 0 
     };

@@ -1,3 +1,417 @@
+package com.ticketing.ticketapp.Appliction;
+
+import com.ticketing.ticketapp.Domain.Company.Company;
+import com.ticketing.ticketapp.Domain.Company.CompanyDTO;
+import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.*;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.User;
+import com.ticketing.ticketapp.Infastructure.TokenService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Set;
+
+@Service
+public class CompanyService {
+    private iCompanyRepository companyRepository;
+    private IUserRepository userRepository;
+    private iTreeOfRoleRepository treeOfRoleRepository;
+    private IPendingNotificationRepository notificationRepository;
+    private TokenService tokenService;
+    private INotifier notifier;
+    private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
+
+    public CompanyService(iCompanyRepository companyRepository, IUserRepository userRepository,
+            iTreeOfRoleRepository iTreeOfRoleRepository, TokenService tokenService, INotifier notifier,
+            IPendingNotificationRepository notificationRepository) {
+        this.companyRepository = companyRepository;
+        this.userRepository = userRepository;
+        this.tokenService = tokenService;
+        this.treeOfRoleRepository = iTreeOfRoleRepository;
+        this.notifier = notifier;
+        this.notificationRepository = notificationRepository;
+    }
+
+    public Response<String> CreateCompany(String company, String token) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            
+            String userID = tokenService.extractUserId(token);
+            logger.info("User {} is creating company {}", userID, company);
+            
+            companyRepository.store(company, userID);
+            treeOfRoleRepository.storeOwner(userID, company, iTreeOfRoleRepository.FOUNDER_APPOINTER);
+            
+            logger.info("Successfully created company {}", company);
+            
+            User userObj = userRepository.getUserByID(userID);
+            String founderToken = tokenService.generateCompanyToken(userID, userObj.getName(), "FOUNDER", company);
+            
+            return Response.success(founderToken); 
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> AppointAManager(String managerID, String company, Set<Permission> permissions, String token) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            
+            String appointerID = tokenService.extractUserId(token);
+            if (!treeOfRoleRepository.exitsOwner(appointerID, company)) {
+                throw new RuntimeException("Only an owner can appoint a manager");
+            }
+            User targetUser = userRepository.getUserByUsername(managerID);
+            if (targetUser == null) throw new RuntimeException("Target user not found");
+            String targetUserID = targetUser.getID();
+            treeOfRoleRepository.storeManager(targetUserID, company, permissions, appointerID);
+            
+            notifyMember(targetUserID, "Manager Appointment",
+                    "You have been appointed as a manager of '" + company + "'. Please approve or reject the appointment.");
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> ApproveAppointmentForManager(String token, String company) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userID = tokenService.extractUserId(token);
+            
+            Manager m = treeOfRoleRepository.getManager(userID, company);
+            m.acceptAppointment();
+            treeOfRoleRepository.save(m);
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> RejectAppointmentForManager(String token, String company) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userID = tokenService.extractUserId(token);
+            
+            if (!treeOfRoleRepository.isManager(userID, company)) {
+                throw new RuntimeException("User is not a manager");
+            }
+            treeOfRoleRepository.deleteManager(userID, company);
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> AppointOwner(String ownerID, String company, String token) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String appointerID = tokenService.extractUserId(token);
+            
+            if (!treeOfRoleRepository.exitsOwner(appointerID, company)) {
+                throw new RuntimeException("Only an owner can appoint another owner");
+            }
+            
+            User targetUser = userRepository.getUserByUsername(ownerID);
+            if (targetUser == null) throw new RuntimeException("Target user not found");
+            String targetUserID = targetUser.getID();
+            
+            treeOfRoleRepository.storeOwner(targetUserID, company, appointerID);
+            
+            notifyMember(targetUserID, "Owner Appointment",
+                    "You have been appointed as an owner of '" + company + "'. Please approve or reject the appointment.");
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> ApproveAppointmentForOwner(String token, String company) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userID = tokenService.extractUserId(token);
+            
+            Owner o = treeOfRoleRepository.getOwner(userID, company);
+            o.acceptAppointment();
+            treeOfRoleRepository.save(o);
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> RejectAppointmentForOwner(String token, String company) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userID = tokenService.extractUserId(token);
+            
+            if (!treeOfRoleRepository.isOwner(userID, company)) {
+                throw new RuntimeException("User is not an owner");
+            }
+            
+            String founderID = companyRepository.getCompanyFounder(company);
+            if (userID.equals(founderID)) {
+                throw new RuntimeException("Founder cannot give up the appointment");
+            }
+            
+            treeOfRoleRepository.deleteOwner(userID, company);
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> FireOwner(String token, String company, String ownerID) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String appointerID = tokenService.extractUserId(token);
+            
+            User targetUser = userRepository.getUserByUsername(ownerID);
+            if (targetUser == null) throw new RuntimeException("Target user not found");
+            String targetUserID = targetUser.getID();
+            
+            if (!treeOfRoleRepository.isAppointerOwner(targetUserID, company, appointerID)) {
+                throw new RuntimeException("You are not allowed to fire this owner");
+            }
+            
+            treeOfRoleRepository.deleteOwner(targetUserID, company);
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> FireManager(String token, String company, String managerID) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String appointerID = tokenService.extractUserId(token);
+            
+            User targetUser = userRepository.getUserByUsername(managerID);
+            if (targetUser == null) throw new RuntimeException("Target user not found");
+            String targetUserID = targetUser.getID();
+            
+            if (!treeOfRoleRepository.isAppointerManager(targetUserID, company, appointerID)) {
+                throw new RuntimeException("You are not allowed to fire this manager");
+            }
+            
+            treeOfRoleRepository.deleteManager(targetUserID, company);
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> ChangeManagerPermissions(String token, String company, String managerID, Set<Permission> newPermissions) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String appointerID = tokenService.extractUserId(token);
+            
+            User targetUser = userRepository.getUserByUsername(managerID);
+            if (targetUser == null) throw new RuntimeException("Target user not found");
+            String targetUserID = targetUser.getID();
+            
+            Manager manager = treeOfRoleRepository.getManager(targetUserID, company);
+            if (manager == null) throw new RuntimeException("Manager not found");
+            
+            if (!treeOfRoleRepository.isAppointerManager(targetUserID, company, appointerID)) {
+                throw new RuntimeException("You are not authorized to change permissions for this manager");
+            }
+            
+            manager.setPermissions(newPermissions);
+            treeOfRoleRepository.save(manager);
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error("Failed to change permissions: " + e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> freezeCompany(String company, String token) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userID = tokenService.extractUserId(token);
+            
+            Company companyObj = companyRepository.getCompany(company);
+            companyObj.freezeCompany(userID);
+            companyRepository.save(companyObj);
+            
+            String title = "Company Suspended";
+            String message = "Company '" + company + "' has been suspended by its founder.";
+            
+            treeOfRoleRepository.getAllOwnersByCompany(company)
+                    .forEach(o -> notifyMember(o.getUserID(), title, message));
+            treeOfRoleRepository.getAllManagersByCompany(company)
+                    .forEach(m -> notifyMember(m.getUserID(), title, message));
+                    
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> unfreezeCompany(String company, String token) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userID = tokenService.extractUserId(token);
+            
+            Company companyObj = companyRepository.getCompany(company);
+            companyObj.unfreezeCompany(userID);
+            companyRepository.save(companyObj);
+            
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> replyToBuyer(String token, String companyName, String buyerId, String message) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userID = tokenService.extractUserId(token);
+            
+            boolean isOwner = treeOfRoleRepository.exitsOwner(userID, companyName);
+            boolean isManager = treeOfRoleRepository.isManager(userID, companyName);
+
+            if (!isOwner && !isManager) {
+                throw new RuntimeException("Unauthorized: Only owners or managers can reply to buyers");
+            }
+
+            String formattedMessage = String.format("Message from %s: %s", companyName, message);
+            notificationRepository.save(buyerId, formattedMessage);
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error("Failed to reply to buyer: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<List<CompanyDTO>> getActiveCompanies(String token) {
+        try {
+            boolean isGuest = token == null || token.trim().isEmpty() || token.contains("guest-temporary-token");
+            if (!isGuest && !tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
+            List<CompanyDTO> companies = companyRepository.getActiveCompanies()
+                    .stream()
+                    .map(CompanyDTO::fromEntity)
+                    .toList();
+            return Response.success(companies);
+        } catch (Exception e) {
+            logger.error("Failed to retrieve active companies: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<Set<Permission>> GetManagerPermissions(String token, String company, String managerID) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userID = tokenService.extractUserId(token);
+            
+            if (!treeOfRoleRepository.exitsOwner(userID, company)) {
+                throw new RuntimeException("Access denied: Only an owner can view manager permissions");
+            }
+            
+            User targetUser = userRepository.getUserByUsername(managerID);
+            if (targetUser == null) throw new RuntimeException("Target user not found");
+            String targetUserID = targetUser.getID();
+            
+            Set<Permission> permissions = treeOfRoleRepository.getManagerPermissions(targetUserID, company);
+            return Response.success(permissions);
+        } catch (Exception e) {
+            logger.error("Error retrieving manager permissions: " + e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> GetRoleTreeString(String token, String companyName) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userID = tokenService.extractUserId(token);
+
+            if (treeOfRoleRepository.getOwner(userID, companyName) == null) {
+                throw new RuntimeException("Only owners can view the role tree");
+            }
+
+            List<Owner> allOwners = treeOfRoleRepository.getAllOwnersByCompany(companyName);
+            List<Manager> allManagers = treeOfRoleRepository.getAllManagersByCompany(companyName);
+            Company company = companyRepository.getCompany(companyName);
+
+            StringBuilder treeString = new StringBuilder();
+            buildTreeString(company.getFounderID(), allOwners, allManagers, treeString, 0);
+
+            return Response.success(treeString.toString());
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    private void buildTreeString(String currentUserID, List<Owner> allOwners, List<Manager> allManagers, StringBuilder sb, int depth) {
+        String indent = "  ".repeat(depth);
+        String role = allOwners.stream().anyMatch(o -> o.getUserID().equals(currentUserID)) ? "Owner" : "Manager";
+
+        User u = userRepository.getUserByID(currentUserID);
+        String displayName = (u != null) ? u.getName() : currentUserID;
+
+        sb.append(indent).append("|-- ").append(displayName).append(" (").append(role).append(")\n");
+
+        allOwners.stream()
+                .filter(o -> currentUserID.equals(o.getAppointerID()))
+                .forEach(o -> buildTreeString(o.getUserID(), allOwners, allManagers, sb, depth + 1));
+
+        allManagers.stream()
+                .filter(m -> currentUserID.equals(m.getAppointerID()))
+                .forEach(m -> {
+                    String mIndent = "  ".repeat(depth + 1);
+                    User mUser = userRepository.getUserByID(m.getUserID());
+                    String mDisplayName = (mUser != null) ? mUser.getName() : m.getUserID();
+                    sb.append(mIndent).append("|-- ").append(mDisplayName).append(" (Manager)\n");
+                });
+    }
+
+    public Response<String> sendMessageToUser(String token, String companyName, String targetUserId, String message) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userID = tokenService.extractUserId(token);
+            
+            boolean isOwner = treeOfRoleRepository.exitsOwner(userID, companyName);
+            boolean isManager = treeOfRoleRepository.isManager(userID, companyName);
+            if (!isOwner && !isManager)
+                throw new RuntimeException("Not authorized to send messages for this company");
+            
+            notifier.notifyUser(targetUserId, "Message from " + companyName, message);
+            return Response.success("success");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    private void notifyMember(String userID, String title, String message) {
+        try {
+            notifier.notifyUser(userID, title, message);
+        } catch (Exception e) {
+            logger.warn("Failed to notify user {}: {}", userID, e.getMessage());
+        }
+    }
+}
+
+
+
 /*package com.ticketing.ticketapp.Appliction;
 
 import com.ticketing.ticketapp.Domain.Company.Company;
@@ -440,417 +854,3 @@ public class CompanyService {
 
 }
 */
-
-package com.ticketing.ticketapp.Appliction;
-
-import com.ticketing.ticketapp.Domain.Company.Company;
-import com.ticketing.ticketapp.Domain.Company.CompanyDTO;
-import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
-import com.ticketing.ticketapp.Domain.OwnerManagerTree.*;
-import com.ticketing.ticketapp.Domain.User.IUserRepository;
-import com.ticketing.ticketapp.Domain.User.User;
-import com.ticketing.ticketapp.Infastructure.TokenService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Set;
-
-@Service
-public class CompanyService {
-    private iCompanyRepository companyRepository;
-    private IUserRepository userRepository;
-    private iTreeOfRoleRepository treeOfRoleRepository;
-    private IPendingNotificationRepository notificationRepository;
-    private TokenService tokenService;
-    private INotifier notifier;
-    private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
-
-    public CompanyService(iCompanyRepository companyRepository, IUserRepository userRepository,
-            iTreeOfRoleRepository iTreeOfRoleRepository, TokenService tokenService, INotifier notifier,
-            IPendingNotificationRepository notificationRepository) {
-        this.companyRepository = companyRepository;
-        this.userRepository = userRepository;
-        this.tokenService = tokenService;
-        this.treeOfRoleRepository = iTreeOfRoleRepository;
-        this.notifier = notifier;
-        this.notificationRepository = notificationRepository;
-    }
-
-    public Response<String> CreateCompany(String company, String token) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            
-            String userID = tokenService.extractUserId(token);
-            logger.info("User {} is creating company {}", userID, company);
-            
-            // שומרים את ה-UUID כבעלים במקום את שם המשתמש
-            companyRepository.store(company, userID);
-            treeOfRoleRepository.storeOwner(userID, company, iTreeOfRoleRepository.FOUNDER_APPOINTER);
-            
-            logger.info("Successfully created company {}", company);
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> AppointAManager(String managerID, String company, Set<Permission> permissions, String token) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            
-            String appointerID = tokenService.extractUserId(token);
-            if (!treeOfRoleRepository.exitsOwner(appointerID, company)) {
-                throw new RuntimeException("Only an owner can appoint a manager");
-            }
-            
-            // ממירים את שם המשתמש שהגיע מה-UI ל-UUID האמיתי שלו
-            User targetUser = userRepository.getUserByUsername(managerID);
-            if (targetUser == null) throw new RuntimeException("Target user not found");
-            String targetUserID = targetUser.getID();
-            
-            treeOfRoleRepository.storeManager(targetUserID, company, permissions, appointerID);
-            
-            notifyMember(targetUserID, "Manager Appointment",
-                    "You have been appointed as a manager of '" + company + "'. Please approve or reject the appointment.");
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> ApproveAppointmentForManager(String token, String company) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String userID = tokenService.extractUserId(token);
-            
-            Manager m = treeOfRoleRepository.getManager(userID, company);
-            m.acceptAppointment();
-            treeOfRoleRepository.save(m);
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> RejectAppointmentForManager(String token, String company) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String userID = tokenService.extractUserId(token);
-            
-            if (!treeOfRoleRepository.isManager(userID, company)) {
-                throw new RuntimeException("User is not a manager");
-            }
-            treeOfRoleRepository.deleteManager(userID, company);
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> AppointOwner(String ownerID, String company, String token) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String appointerID = tokenService.extractUserId(token);
-            
-            if (!treeOfRoleRepository.exitsOwner(appointerID, company)) {
-                throw new RuntimeException("Only an owner can appoint another owner");
-            }
-            
-            User targetUser = userRepository.getUserByUsername(ownerID);
-            if (targetUser == null) throw new RuntimeException("Target user not found");
-            String targetUserID = targetUser.getID();
-            
-            treeOfRoleRepository.storeOwner(targetUserID, company, appointerID);
-            
-            notifyMember(targetUserID, "Owner Appointment",
-                    "You have been appointed as an owner of '" + company + "'. Please approve or reject the appointment.");
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> ApproveAppointmentForOwner(String token, String company) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String userID = tokenService.extractUserId(token);
-            
-            Owner o = treeOfRoleRepository.getOwner(userID, company);
-            o.acceptAppointment();
-            treeOfRoleRepository.save(o);
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> RejectAppointmentForOwner(String token, String company) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String userID = tokenService.extractUserId(token);
-            
-            if (!treeOfRoleRepository.isOwner(userID, company)) {
-                throw new RuntimeException("User is not an owner");
-            }
-            
-            String founderID = companyRepository.getCompanyFounder(company);
-            if (userID.equals(founderID)) {
-                throw new RuntimeException("Founder cannot give up the appointment");
-            }
-            
-            treeOfRoleRepository.deleteOwner(userID, company);
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> FireOwner(String token, String company, String ownerID) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String appointerID = tokenService.extractUserId(token);
-            
-            User targetUser = userRepository.getUserByUsername(ownerID);
-            if (targetUser == null) throw new RuntimeException("Target user not found");
-            String targetUserID = targetUser.getID();
-            
-            if (!treeOfRoleRepository.isAppointerOwner(targetUserID, company, appointerID)) {
-                throw new RuntimeException("You are not allowed to fire this owner");
-            }
-            
-            treeOfRoleRepository.deleteOwner(targetUserID, company);
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> FireManager(String token, String company, String managerID) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String appointerID = tokenService.extractUserId(token);
-            
-            User targetUser = userRepository.getUserByUsername(managerID);
-            if (targetUser == null) throw new RuntimeException("Target user not found");
-            String targetUserID = targetUser.getID();
-            
-            if (!treeOfRoleRepository.isAppointerManager(targetUserID, company, appointerID)) {
-                throw new RuntimeException("You are not allowed to fire this manager");
-            }
-            
-            treeOfRoleRepository.deleteManager(targetUserID, company);
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> ChangeManagerPermissions(String token, String company, String managerID, Set<Permission> newPermissions) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String appointerID = tokenService.extractUserId(token);
-            
-            User targetUser = userRepository.getUserByUsername(managerID);
-            if (targetUser == null) throw new RuntimeException("Target user not found");
-            String targetUserID = targetUser.getID();
-            
-            Manager manager = treeOfRoleRepository.getManager(targetUserID, company);
-            if (manager == null) throw new RuntimeException("Manager not found");
-            
-            if (!treeOfRoleRepository.isAppointerManager(targetUserID, company, appointerID)) {
-                throw new RuntimeException("You are not authorized to change permissions for this manager");
-            }
-            
-            manager.setPermissions(newPermissions);
-            treeOfRoleRepository.save(manager);
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error("Failed to change permissions: " + e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> freezeCompany(String company, String token) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String userID = tokenService.extractUserId(token);
-            
-            Company companyObj = companyRepository.getCompany(company);
-            companyObj.freezeCompany(userID);
-            companyRepository.save(companyObj);
-            
-            String title = "Company Suspended";
-            String message = "Company '" + company + "' has been suspended by its founder.";
-            
-            treeOfRoleRepository.getAllOwnersByCompany(company)
-                    .forEach(o -> notifyMember(o.getUserID(), title, message));
-            treeOfRoleRepository.getAllManagersByCompany(company)
-                    .forEach(m -> notifyMember(m.getUserID(), title, message));
-                    
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> unfreezeCompany(String company, String token) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String userID = tokenService.extractUserId(token);
-            
-            Company companyObj = companyRepository.getCompany(company);
-            companyObj.unfreezeCompany(userID);
-            companyRepository.save(companyObj);
-            
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> replyToBuyer(String token, String companyName, String buyerId, String message) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String userID = tokenService.extractUserId(token);
-            
-            boolean isOwner = treeOfRoleRepository.exitsOwner(userID, companyName);
-            boolean isManager = treeOfRoleRepository.isManager(userID, companyName);
-
-            if (!isOwner && !isManager) {
-                throw new RuntimeException("Unauthorized: Only owners or managers can reply to buyers");
-            }
-
-            String formattedMessage = String.format("Message from %s: %s", companyName, message);
-            notificationRepository.save(buyerId, formattedMessage);
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error("Failed to reply to buyer: {}", e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<List<CompanyDTO>> getActiveCompanies(String token) {
-        try {
-            boolean isGuest = token == null || token.trim().isEmpty() || token.contains("guest-temporary-token");
-            if (!isGuest && !tokenService.validateToken(token)) {
-                throw new RuntimeException("Invalid token");
-            }
-            List<CompanyDTO> companies = companyRepository.getActiveCompanies()
-                    .stream()
-                    .map(CompanyDTO::fromEntity)
-                    .toList();
-            return Response.success(companies);
-        } catch (Exception e) {
-            logger.error("Failed to retrieve active companies: {}", e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<Set<Permission>> GetManagerPermissions(String token, String company, String managerID) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String userID = tokenService.extractUserId(token);
-            
-            if (!treeOfRoleRepository.exitsOwner(userID, company)) {
-                throw new RuntimeException("Access denied: Only an owner can view manager permissions");
-            }
-            
-            User targetUser = userRepository.getUserByUsername(managerID);
-            if (targetUser == null) throw new RuntimeException("Target user not found");
-            String targetUserID = targetUser.getID();
-            
-            Set<Permission> permissions = treeOfRoleRepository.getManagerPermissions(targetUserID, company);
-            return Response.success(permissions);
-        } catch (Exception e) {
-            logger.error("Error retrieving manager permissions: " + e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    public Response<String> GetRoleTreeString(String token, String companyName) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String userID = tokenService.extractUserId(token);
-
-            if (treeOfRoleRepository.getOwner(userID, companyName) == null) {
-                throw new RuntimeException("Only owners can view the role tree");
-            }
-
-            List<Owner> allOwners = treeOfRoleRepository.getAllOwnersByCompany(companyName);
-            List<Manager> allManagers = treeOfRoleRepository.getAllManagersByCompany(companyName);
-            Company company = companyRepository.getCompany(companyName);
-
-            StringBuilder treeString = new StringBuilder();
-            buildTreeString(company.getFounderID(), allOwners, allManagers, treeString, 0);
-
-            return Response.success(treeString.toString());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    private void buildTreeString(String currentUserID, List<Owner> allOwners, List<Manager> allManagers, StringBuilder sb, int depth) {
-        String indent = "  ".repeat(depth);
-        String role = allOwners.stream().anyMatch(o -> o.getUserID().equals(currentUserID)) ? "Owner" : "Manager";
-
-        // תרגום ה-UUID בחזרה לשם המשתמש כדי שהעץ יוצג בצורה קריאה למשתמש הקצה
-        User u = userRepository.getUserByID(currentUserID);
-        String displayName = (u != null) ? u.getName() : currentUserID;
-
-        sb.append(indent).append("|-- ").append(displayName).append(" (").append(role).append(")\n");
-
-        allOwners.stream()
-                .filter(o -> currentUserID.equals(o.getAppointerID()))
-                .forEach(o -> buildTreeString(o.getUserID(), allOwners, allManagers, sb, depth + 1));
-
-        allManagers.stream()
-                .filter(m -> currentUserID.equals(m.getAppointerID()))
-                .forEach(m -> {
-                    String mIndent = "  ".repeat(depth + 1);
-                    User mUser = userRepository.getUserByID(m.getUserID());
-                    String mDisplayName = (mUser != null) ? mUser.getName() : m.getUserID();
-                    sb.append(mIndent).append("|-- ").append(mDisplayName).append(" (Manager)\n");
-                });
-    }
-
-    public Response<String> sendMessageToUser(String token, String companyName, String targetUserId, String message) {
-        try {
-            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
-            String userID = tokenService.extractUserId(token);
-            
-            boolean isOwner = treeOfRoleRepository.exitsOwner(userID, companyName);
-            boolean isManager = treeOfRoleRepository.isManager(userID, companyName);
-            if (!isOwner && !isManager)
-                throw new RuntimeException("Not authorized to send messages for this company");
-            
-            notifier.notifyUser(targetUserId, "Message from " + companyName, message);
-            return Response.success("success");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Response.error(e.getMessage());
-        }
-    }
-
-    // הפונקציה הזו כעת מקבלת UUID באופן ישיר
-    private void notifyMember(String userID, String title, String message) {
-        try {
-            notifier.notifyUser(userID, title, message);
-        } catch (Exception e) {
-            logger.warn("Failed to notify user {}: {}", userID, e.getMessage());
-        }
-    }
-}

@@ -50,7 +50,6 @@ public class EventService {
         this.notifier = notifier;
     }
 
-    // שונתה לקבל userID במקום username
     public boolean isAuthorized(String company, String userID) {
         boolean o = treeOfRoleRepository.exitsOwner(userID, company);
         boolean m = treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(userID, company);
@@ -64,7 +63,6 @@ public class EventService {
                 throw new RuntimeException("Invalid token");
             }
             
-            // שליפת ה-UUID מהטוקן
             String userID = tokenService.extractUserId(token);
             if (userID == null || !isAuthorized(company, userID)) {
                 logger.info("Unauthorized attempt to create event '{}' for company '{}' by user ID '{}'", eventName, company, userID);
@@ -89,9 +87,7 @@ public class EventService {
                 throw new RuntimeException("Invalid token");
             }
             
-            // שליפת ה-UUID מהטוקן
             String userID = tokenService.extractUserId(token);
-
             if (userID == null || !isAuthorized(companyName, userID)) {
                 logger.info("Unauthorized attempt to delete event '{}' for company '{}'", eventId, companyName);
                 return Response.error("Unauthorized");
@@ -128,7 +124,6 @@ public class EventService {
                 throw new RuntimeException("Invalid token");
             }
             
-            // שליפת ה-UUID מהטוקן
             String userID = tokenService.extractUserId(token);
             if (userID == null || !isAuthorized(company, userID)) {
                 throw new RuntimeException("Unauthorized: User is not an owner or authorized manager");
@@ -248,7 +243,6 @@ public class EventService {
             Date startDate, Date endDate,
             String location, Double minRating) {
         try {
-            // נבדוק את הטוקן רק אם הוא נשלח בבקשה. אם הוא null, נאפשר חיפוש חופשי ציבורי.
             if (token != null && !token.trim().isEmpty()) {
                 boolean isGuest = token.contains("guest-temporary-token");
                 if (!isGuest && !tokenService.validateToken(token)) {

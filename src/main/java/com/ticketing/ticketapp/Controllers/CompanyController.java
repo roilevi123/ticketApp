@@ -44,14 +44,18 @@ public class CompanyController {
             @RequestBody CompanyRequestDTO companyRequest) {
 
         String companyName = companyRequest.getCompanyName();
-        token = extractCleanToken(token);
-        Response<?> response = companyService.CreateCompany(companyName, token);
+        token = extractCleanToken(token); // אם יש לך מתודה כזו, השאר אותה
+        
+        // קוראים ל-Service, שכבר מעודכן להחזיר את טוקן ה-FOUNDER החדש!
+        Response<String> response = companyService.CreateCompany(companyName, token);
 
         if (response.isSuccess()) {
-            return ResponseEntity.ok(response.getData());
+            // עוטפים את הטוקן ב-JSON כדי שה-React יוכל לקרוא response.data.token
+            return ResponseEntity.ok(Map.of("token", response.getData()));
         }
-        return ResponseEntity.badRequest().body(response.getMessage());
-
+        
+        // מחזירים שגיאה בפורמט JSON כדי שה-UI יציג אותה יפה
+        return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
     }
 
     @PostMapping("/events")

@@ -1,25 +1,29 @@
 import { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
 
-export default function SalesAnalyticsTab() {
+// 1. קבלת ה-Prop
+export default function SalesAnalyticsTab({ companyName }) {
   const [transactions, setTransactions] = useState([]);
   const [report, setReport] = useState({ totalRevenue: 0, ticketsSold: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
+      if (!companyName) return; // הגנה
+      setIsLoading(true);
+      
       try {
-        const companyName = encodeURIComponent("BGU Events"); // מקודד את הרווח ב-URL
+        // 2. שימוש במשתנה הדינמי במקום במחרוזת "BGU Events"
+        const encodedCompany = encodeURIComponent(companyName); 
 
         const [reportRes, historyRes] = await Promise.all([
-          axiosClient.get(`/company/${companyName}/sales-report`),
-          axiosClient.get(`/company/${companyName}/purchase-history`),
+          axiosClient.get(`/company/${encodedCompany}/sales-report`),
+          axiosClient.get(`/company/${encodedCompany}/purchase-history`),
         ]);
 
         const reportData = reportRes.data;
         const historyData = historyRes.data;
 
-        // אם חזרו נתונים אמיתיים, נשתמש בהם. אחרת נטען נתוני דמה לתצוגה
         if (historyData && historyData.length > 0) {
           setTransactions(historyData);
           setReport(reportData);
@@ -35,9 +39,8 @@ export default function SalesAnalyticsTab() {
     };
 
     fetchAnalytics();
-  }, []);
+  }, [companyName]);
 
-  // נתוני דמה כדי שנוכל לראות איך המסך נראה גם כשה-DB ריק
   const loadDummyData = () => {
     setReport({ totalRevenue: 12450.00, ticketsSold: 342, pendingOrders: 12 });
     setTransactions([

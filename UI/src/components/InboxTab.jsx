@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
 
-export default function InboxTab() {
+export default function InboxTab({ companyName }) {
   const [messages, setMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [replyText, setReplyText] = useState('');
@@ -9,9 +9,11 @@ export default function InboxTab() {
   const [isLoading, setIsLoading] = useState(true);
 
   // משיכת ההודעות מהשרת ברגע שהטאב נטען
-  useEffect(() => {
-    fetchMessages();
-  }, []);
+useEffect(() => {
+    if(companyName) {
+      fetchMessages();
+    }
+  }, [companyName]);
 
   const fetchMessages = async () => {
     setIsLoading(true);
@@ -57,13 +59,13 @@ export default function InboxTab() {
     }
   };
 
-  const handleSendReply = async () => {
+ const handleSendReply = async () => {
     if (!replyText.trim()) return;
     setIsSending(true);
 
-    // תואם בדיוק ל- ReplyMessageRequestDTO ב-Java שלך!
     const payload = {
-      companyName: "BGU Events", 
+      // 2. העברת השם הדינמי במקום "BGU Events"
+      companyName: companyName, 
       buyerId: selectedMessage.buyerId,
       message: replyText
     };

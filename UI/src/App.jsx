@@ -8,6 +8,8 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MemberProfile from "./components/MemberProfile";
+import CompanySelector from "./components/CompanySelector";
+import CreateCompany from "./components/CreateCompany";
 
 function App() {
   return (
@@ -32,6 +34,22 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["MEMBER", "ADMIN", "OWNER", "MANAGER", "FOUNDER"]}>
                 <MemberProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/select-company"
+            element={
+              <ProtectedRoute allowedRoles={["MEMBER", "OWNER", "MANAGER", "FOUNDER"]}>
+                <CompanySelector />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-company"
+            element={
+              <ProtectedRoute allowedRoles={["MEMBER", "OWNER", "MANAGER", "FOUNDER"]}>
+                <CreateCompany />
               </ProtectedRoute>
             }
           />

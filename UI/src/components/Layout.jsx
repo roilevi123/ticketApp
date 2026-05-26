@@ -6,7 +6,10 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isProducerDashboard = location.pathname.includes("/producer-dashboard");
+  const isProducerArea = 
+    location.pathname.includes("/producer-dashboard") || 
+    location.pathname.includes("/select-company") || 
+    location.pathname.includes("/create-company");
 
   const handleLogout = () => {
     logout();
@@ -15,7 +18,7 @@ export default function Layout() {
 
   return (
     <div
-      className={`min-h-screen ${isProducerDashboard ? "bg-[#101415]" : "bg-zinc-100"}`}
+      className={`min-h-screen ${isProducerArea ? "bg-[#101415]" : "bg-zinc-100"}`}
     >
       <nav className="bg-blue-500 text-white px-6 py-3">
         <div className="flex justify-between">
@@ -27,11 +30,9 @@ export default function Layout() {
             <Link to="/">Home</Link>
 
             {role === "ADMIN" && <Link to="/admin">Dashboard</Link>}
-
-            {(role === "OWNER" ||
-              role === "MANAGER" ||
-              role === "FOUNDER") && (
-              <Link to="/producer-dashboard">Producer Area</Link>
+            {/* השינוי: מציגים לכל משתמש מחובר, ומפנים למסך בחירת החברה */}
+            {token && role !== "GUEST" && (
+              <Link to="/select-company">Producer Area</Link>
             )}
 
             {token && role !== "GUEST" ? (

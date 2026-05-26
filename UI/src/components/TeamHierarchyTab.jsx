@@ -10,7 +10,7 @@ const AVAILABLE_PERMISSIONS = [
     "GENERATE_SALES_REPORTS"
 ];
 
-export default function TeamHierarchyTab() {
+export default function TeamHierarchyTab({ companyName }) {
   const [hierarchyTree, setHierarchyTree] = useState("Loading organizational tree...");
   const [formData, setFormData] = useState({
     targetUserId: '',
@@ -18,11 +18,11 @@ export default function TeamHierarchyTab() {
     permissions: []
   });
 
-  const companyName = "BGU Events"; 
-
   useEffect(() => {
-    fetchHierarchy();
-  }, []);
+    if(companyName) { 
+       fetchHierarchy();
+    }
+  }, [companyName]);
 
   const fetchHierarchy = async () => {
     try {

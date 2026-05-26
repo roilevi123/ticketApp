@@ -68,7 +68,7 @@ public class UserService implements IAuth {
                 throw new RuntimeException("Invalid password");
             }
             User userObj = userRepository.getUserByUsername(username);
-            String actualRole = roleRepository.getUserHighestRole(userObj.getID());
+            String actualRole = "MEMBER";
             String memberToken = tokenService.generateMemberToken(userObj.getID(), userObj.getName(), actualRole);
             logger.info("User {} logged in successfully", username);
             return Response.success(memberToken);
