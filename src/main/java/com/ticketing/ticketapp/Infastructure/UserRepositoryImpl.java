@@ -137,4 +137,14 @@ public class UserRepositoryImpl implements IUserRepository {
         return false;
     }
 
+    @Override
+    public void cancelSuspension(String userId){
+        if(!currentSuspensions.containsKey(userId))
+            throw new RuntimeException("User is not currently suspended");
+        Suspension suspension = currentSuspensions.get(userId);
+        suspension.setEndTime(LocalDateTime.now());
+        currentSuspensions.remove(userId);
+        suspensionHistory.add(suspension);
+    }
+
 }
