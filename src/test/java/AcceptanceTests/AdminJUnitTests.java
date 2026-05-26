@@ -291,4 +291,19 @@ public class AdminJUnitTests {
         assertTrue(sawCompA);
         assertTrue(sawCompB);
     }
+
+    @Test
+    @DisplayName("9. Suspend User Temporarily Success")
+    void suspendUserTemporarilySuccess9() {
+        reg("userToSuspend", "password123");
+        String targetUserId = userRepository.getUserByUsername("userToSuspend").getID();
+
+        var response = adminService.suspendUser(targetUserId, "admin", 7);
+
+        assertTrue(response.isSuccess());
+
+        User user = userRepository.getUserByID(targetUserId);
+        assertNotNull(updatedUser.getCurrentSuspension());
+        assertTrue(updatedUser.getCurrentSuspension().getEndDate().after(new Date()));
+    }
 }
