@@ -16,4 +16,5 @@ public interface IUserRepository {
     public void addCurrentSuspension(String userID, Suspension suspension);
     public void addHistorySuspension(Suspension suspension);
     public boolean isUserSuspendedNow(String userID);
+    public void cancelSuspension(String UserID);
 }
