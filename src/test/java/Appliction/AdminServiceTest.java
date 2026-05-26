@@ -167,7 +167,7 @@ class AdminServiceTest {
 
         adminService.CloseCompany(company, ADMIN_NAME);
 
-        verify(notifier).notifyUser(eq("owner-uuid"), anyString(), anyString());
+        verify(notifier, times(1)).notifyUser(eq("owner-uuid"), anyString(), anyString());
         verify(notifier).notifyUser(eq("manager-uuid"), anyString(), anyString());
     }
 
@@ -280,5 +280,64 @@ class AdminServiceTest {
         assertEquals("Admin does not exist", response.getMessage());
         assertNull(response.getData());
         verify(userRepository, never()).getAllSuspensions();
+    }
+    void sendMessageToUser_Success() {
+        var result = adminService.sendMessageToUser(ADMIN_NAME, "user42", "Hello");
+
+        assertTrue(result.isSuccess());
+        verify(notifier, times(1)).notifyUser(eq("user42"), anyString(), eq("Hello"));
+    }
+
+    @Test
+    void sendMessageToUser_Failure_NotAdmin() {
+        var result = adminService.sendMessageToUser(NOT_ADMIN, "user42", "Hello");
+
+        assertTrue(result.isError());
+        verify(notifier, never()).notifyUser(any(), any(), any());
+    }
+
+    @Test
+    void banUser_Success() {
+        User mockUser = mock(User.class);
+        when(userRepository.getUserByID("user42")).thenReturn(mockUser);
+
+        var result = adminService.banUser("user42", ADMIN_NAME);
+
+        assertTrue(result.isSuccess());
+        verify(tokenService, times(1)).banUser("user42");
+    }
+
+    @Test
+    void banUser_Failure_NotAdmin() {
+        var result = adminService.banUser("user42", NOT_ADMIN);
+
+        assertTrue(result.isError());
+        verify(tokenService, never()).banUser(any());
+    }
+
+    @Test
+    void banUser_Failure_UserNotFound() {
+        when(userRepository.getUserByID("unknown")).thenReturn(null);
+
+        var result = adminService.banUser("unknown", ADMIN_NAME);
+
+        assertTrue(result.isError());
+        verify(tokenService, never()).banUser(any());
+    }
+
+    @Test
+    void unbanUser_Success() {
+        var result = adminService.unbanUser("user42", ADMIN_NAME);
+
+        assertTrue(result.isSuccess());
+        verify(tokenService, times(1)).unbanUser("user42");
+    }
+
+    @Test
+    void unbanUser_Failure_NotAdmin() {
+        var result = adminService.unbanUser("user42", NOT_ADMIN);
+
+        assertTrue(result.isError());
+        verify(tokenService, never()).unbanUser(any());
     }
 }
