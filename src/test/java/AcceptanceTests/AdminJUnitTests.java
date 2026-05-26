@@ -324,4 +324,21 @@ public class AdminJUnitTests {
         assertNull(suspension.getEndTime());
         assertTrue(suspension.isPermanent());
     }
+
+    @Test
+    @DisplayName("11. Cancel Suspension Success")
+    void cancelSuspensionSuccess11() {
+        reg("suspendedUser", "password123");
+        String targetUserId = userRepository.getUserByUsername("suspendedUser").getID();
+        adminService.suspendUser(targetUserId, "admin", 5);
+
+        assertNotNull(userRepository.getCurrentSuspensionByUserID(targetUserId));
+
+        var response = adminService.cancelSuspension(targetUserId, "admin");
+
+        assertTrue(response.isSuccess());
+
+        assertNull(userRepository.getCurrentSuspensionByUserID(targetUserId));
+
+    }
 }
