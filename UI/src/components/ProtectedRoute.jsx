@@ -5,8 +5,8 @@ import { useAuth } from "../contexts/AuthContext";
 function ProtectedRoute({ children, allowedRoles }) {
   const { token, role } = useAuth();
 
-  if (!token) {
-    // If user is not authenticated, redirect to login page
+  if (!token || role === "Guest") {
+    // If user is not authenticated or just a Guest, redirect to login page
     return <Navigate to="/login" replace />;
   }
 

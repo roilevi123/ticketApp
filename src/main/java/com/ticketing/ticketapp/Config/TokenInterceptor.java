@@ -28,6 +28,7 @@ public class TokenInterceptor implements HandlerInterceptor {
         }
 
         String token = authHeader.substring(7);
+        request.setAttribute("cleanToken", token);
         if ("guest-temporary-token".equals(token)) {
             return true;
         }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import axiosClient from "../api/axiosClient";
 
 function Login() {
   const [formData, setFormData] = useState({ username: "", password: "" });
@@ -24,40 +25,30 @@ function Login() {
     setSuccessMsg("");
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer guest-temporary-token",
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
+      const response = await axiosClient.post("/auth/login", formData);
+      const data = response.data;
 
-      if (response.ok && data.success) {
-        setSuccessMsg("Login successful! Redirecting...");
+      setSuccessMsg("Login successful! Redirecting...");
 
-        // Extract token payload
-        const jwtToken = data.data;
-        const decoded = parseJwt(jwtToken);
-        const userId = decoded ? decoded.sub : "unknown";
+      // Extract token payload
+      const jwtToken = data.token;
+      const decoded = parseJwt(jwtToken);
+      const userId = decoded ? decoded.sub : "unknown";
 
-        // Normalize role to Title Case (e.g. "MEMBER" -> "Member")
-        let role = decoded && decoded.role ? decoded.role : "Member";
-        if (role === role.toUpperCase()) {
-          role = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-        }
-
-        login(jwtToken, role, userId);
-
-        setTimeout(() => {
-          navigate("/profile");
-        }, 1500);
-      } else {
-        setErrorMsg(`Login failed: ${data.message || "Invalid credentials"}`);
+      // Normalize role to Title Case (e.g. "MEMBER" -> "Member")
+      let role = decoded && decoded.role ? decoded.role : "Member";
+      if (role === role.toUpperCase()) {
+        role = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
       }
+
+      login(jwtToken, role, userId);
+
+      setTimeout(() => {
+        navigate("/profile");
+      }, 1500);
     } catch (err) {
-      setErrorMsg("Login failed: Unable to connect to server");
+      const respData = err.response?.data;
+      setErrorMsg(`Login failed: ${respData?.error || "Invalid credentials"}`);
     }
   };
 

@@ -10,6 +10,7 @@ import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchasePolicyDTO;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchaseTargetType;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
@@ -45,14 +46,16 @@ public class PurchasePolicyAcceptanceTests {
         IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasePolicyRepository purchasePolicyRepository = new InMemoryPurchasePolicyRepository();
+        iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
+        INotifier notifierMock = mock(INotifier.class);
+        IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
 
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        INotifier notifierMock = mock(INotifier.class);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock, notificationRepository);
+        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
         this.reserveService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
         this.policyService = new PurchasePolicyService(purchasePolicyRepository, tokenService);
 

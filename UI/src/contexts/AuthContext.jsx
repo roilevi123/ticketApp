@@ -1,11 +1,39 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import axiosClient from "../api/axiosClient";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem("token") || null);
-  const [role, setRole] = useState(localStorage.getItem("role") || "Guest");
-  const [userID, setUserID] = useState(localStorage.getItem("userID") || null);
+  // Start without restoring any previous member token so the app
+  // always loads as a guest session on first open.
+  const [token, setToken] = useState(null);
+  const [role, setRole] = useState("Guest");
+  const [userID, setUserID] = useState(null);
+
+  const fetchGuestToken = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/guest");
+      const data = await response.json();
+      if (response.ok) {
+        const guestToken = data.token;
+        setToken(guestToken);
+        setRole("Guest");
+        localStorage.setItem("token", guestToken);
+        localStorage.setItem("role", "Guest");
+      }
+    } catch (e) {
+      console.error("Failed to fetch guest token", e);
+    }
+  };
+
+  useEffect(() => {
+    // Ensure any previously stored member token is cleared so the
+    // app loads as guest (prevents staying logged-in on page reload).
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("userID");
+    fetchGuestToken();
+  }, []);
 
   const login = (newToken, authRole, authUserID) => {
     localStorage.setItem("token", newToken);
@@ -25,6 +53,8 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setRole("Guest");
     setUserID(null);
+
+    fetchGuestToken();
   };
 
   return (
