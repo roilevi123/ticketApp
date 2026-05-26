@@ -9,10 +9,14 @@ import Register from "./components/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MemberProfile from "./components/MemberProfile";
 import MyTickets from "./components/MyTickets";
+import InboxPage from "./components/InboxPage";
+import MessagePage from "./components/MessagePage";
+import { NotificationProvider } from "./contexts/NotificationContext";
 
 function App() {
   return (
     <BrowserRouter>
+      <NotificationProvider>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<EventCatalog />} />
@@ -45,6 +49,22 @@ function App() {
             }
           />
           <Route
+            path="/inbox"
+            element={
+              <ProtectedRoute allowedRoles={["MEMBER", "ADMIN", "OWNER", "MANAGER", "FOUNDER"]}>
+                <InboxPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inbox/:id"
+            element={
+              <ProtectedRoute allowedRoles={["MEMBER", "ADMIN", "OWNER", "MANAGER", "FOUNDER"]}>
+                <MessagePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="*"
             element={
               <div className="text-center text-2xl mt-10">
@@ -54,6 +74,7 @@ function App() {
           />
         </Route>
       </Routes>
+      </NotificationProvider>
     </BrowserRouter>
   );
 }

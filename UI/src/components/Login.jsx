@@ -105,6 +105,15 @@ function Login() {
             Register here
           </Link>
         </div>
+
+        <div className="mt-4 pt-4 border-t border-outline-variant text-center">
+          <button
+            onClick={() => navigate("/")}
+            className="text-on-surface-variant text-label-md hover:text-secondary transition-colors"
+          >
+            View as guest
+          </button>
+        </div>
       </div>
     </div>
   );

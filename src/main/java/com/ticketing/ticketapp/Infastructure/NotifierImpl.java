@@ -14,13 +14,26 @@ public class NotifierImpl implements INotifier {
 
     @Override
     public void notifyUser(String userId, String title, String message) {
-        String formattedMessage = String.format("{\"title\": \"%s\", \"message\": \"%s\"}", title, message);
-        broadcaster.broadcast(userId, formattedMessage);
+        broadcaster.broadcast(userId, buildJson(title, message));
     }
 
     @Override
     public void broadcast(String title, String message) {
-        String formattedMessage = String.format("{\"title\": \"%s\", \"message\": \"%s\"}", title, message);
-        broadcaster.broadcastToAll(formattedMessage);
+        broadcaster.broadcastToAll(buildJson(title, message));
+    }
+
+    private String buildJson(String title, String message) {
+        return "{\"title\":" + jsonString(title) + ",\"message\":" + jsonString(message) + "}";
+    }
+
+    private String jsonString(String value) {
+        if (value == null) return "\"\"";
+        return "\"" + value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
+                + "\"";
     }
 }

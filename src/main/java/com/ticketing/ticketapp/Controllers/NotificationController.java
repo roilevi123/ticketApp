@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -75,7 +77,11 @@ public class NotificationController {
             @RequestAttribute("cleanToken") String token) {
 
         String userId = tokenService.extractUserId(token);
-        List<Notification> notifications = notificationRepository.getAll(userId);
+        List<Notification> notifications = new ArrayList<>(notificationRepository.getAll(userId));
+        if (adminRepository.isAdmin(userId)) {
+            notifications.addAll(notificationRepository.getAll("SYSTEM_ADMIN"));
+        }
+        notifications.sort(Comparator.comparing(Notification::getCreatedAt).reversed());
         return ResponseEntity.ok(notifications);
     }
 
@@ -86,6 +92,34 @@ public class NotificationController {
 
         String userId = tokenService.extractUserId(token);
         notificationRepository.markAsRead(userId, notificationId);
+        if (adminRepository.isAdmin(userId)) {
+            notificationRepository.markAsRead("SYSTEM_ADMIN", notificationId);
+        }
         return ResponseEntity.ok(Map.of("message", "Notification marked as read"));
+    }
+
+    @PutMapping("/{notificationId}/unread")
+    public ResponseEntity<?> markAsUnread(
+            @RequestAttribute("cleanToken") String token,
+            @PathVariable String notificationId) {
+
+        String userId = tokenService.extractUserId(token);
+        notificationRepository.markAsUnread(userId, notificationId);
+        if (adminRepository.isAdmin(userId)) {
+            notificationRepository.markAsUnread("SYSTEM_ADMIN", notificationId);
+        }
+        return ResponseEntity.ok(Map.of("message", "Notification marked as unread"));
+    }
+
+    @PutMapping("/read-all")
+    public ResponseEntity<?> markAllAsRead(
+            @RequestAttribute("cleanToken") String token) {
+
+        String userId = tokenService.extractUserId(token);
+        notificationRepository.markAllAsRead(userId);
+        if (adminRepository.isAdmin(userId)) {
+            notificationRepository.markAllAsRead("SYSTEM_ADMIN");
+        }
+        return ResponseEntity.ok(Map.of("message", "All notifications marked as read"));
     }
 }

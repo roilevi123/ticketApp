@@ -163,14 +163,15 @@ export default function CompanyProfile() {
   const headerGradient = "from-blue-950 via-indigo-900 to-slate-900";
 
   return (
-    <div className="bg-background text-on-surface min-h-screen pb-24">
+    <div className="bg-background text-on-surface min-h-screen">
       {/* ── Top Nav ── */}
-      <nav className="flex items-center justify-between px-margin-mobile w-full h-16 bg-surface z-40 fixed top-0">
+      <nav className="flex items-center justify-between px-margin-mobile w-full h-16 bg-surface">
         <Link
           to="/"
           className="p-2 -ml-2 text-primary flex items-center gap-1 hover:text-secondary transition-colors"
         >
           <span className="material-symbols-outlined">arrow_back</span>
+          <span className="text-label-md font-medium">Home</span>
         </Link>
         <span className="text-headline-sm font-bold tracking-tight text-on-surface">
           UNIVERSITY EVENTS
@@ -266,27 +267,6 @@ export default function CompanyProfile() {
         )}
       </main>
 
-      {/* ── Bottom Nav ── */}
-      <footer className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 bg-surface-container-high shadow-lg rounded-t-xl border-t border-outline-variant">
-        {[
-          { icon: "home", label: "Home", active: false },
-          { icon: "calendar_month", label: "Schedule", active: false },
-          { icon: "confirmation_number", label: "Tickets", active: false },
-          { icon: "person", label: "Profile", active: true },
-        ].map(({ icon, label, active }) => (
-          <div
-            key={label}
-            className={`flex flex-col items-center justify-center transition-all ${
-              active
-                ? "bg-secondary-container text-on-secondary-container rounded-full px-4 py-1"
-                : "text-on-surface-variant hover:text-secondary"
-            }`}
-          >
-            <span className="material-symbols-outlined">{icon}</span>
-            <span className="text-label-sm">{label}</span>
-          </div>
-        ))}
-      </footer>
     </div>
   );
 }
