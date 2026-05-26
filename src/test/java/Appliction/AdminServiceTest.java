@@ -241,4 +241,16 @@ class AdminServiceTest {
         verify(userRepository).cancelSuspension(targetUser);
         verify(notifier).notifyUser(eq(targetUser), eq("Account is no longer suspended"), anyString());
     }
+
+    @Test
+    void cancelSuspension_Fail_UserDoesNotExist() {
+        String targetUser = "missingUser";
+        when(userRepository.getUserByID(targetUser)).thenReturn(null);
+
+        var response = adminService.cancelSuspension(targetUser, ADMIN_NAME);
+
+        assertFalse(response.isSuccess());
+        assertEquals("User does not exist", response.getMessage());
+        verify(userRepository, never()).cancelSuspension(anyString());
+    }
 }
