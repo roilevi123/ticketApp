@@ -14,6 +14,7 @@ import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.Suspension;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
@@ -167,4 +168,22 @@ class AdminServiceTest {
         verify(notifier).notifyUser(eq("owner-uuid"), anyString(), anyString());
         verify(notifier).notifyUser(eq("manager-uuid"), anyString(), anyString());
     }
+
+    @Test
+    void SuspendUser_Temporary_Success(){
+        String targetUser="user1";
+        int durationDays=7;
+        User mockUser=mock(User.class);
+
+        when(userRepository.getUserByID(targetUser)).thenReturn(mockUser);
+
+        var response = adminService.suspendUser(targetUser,ADMIN_NAME,durationDays);
+
+        assertTrue((response.isSuccess()));
+        assertEquals("success",response.getData());
+
+        verify(userRepository).addCurrentSuspension(eq(targetUser), any(Suspension.class));
+        verify(notifier).notifyUser(eq(targetUser), eq("Account suspended"), contains("until"));
+    }
+
 }
