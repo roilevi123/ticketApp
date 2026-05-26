@@ -14,7 +14,6 @@ import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRep
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
-import com.ticketing.ticketapp.Appliction.IPendingNotificationRepository;
 import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,9 +44,10 @@ public class FullCompanyManagementTest {
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-        IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository, new NotificationRepositoryImpl());
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, mock(INotifier.class), notificationRepository);
+
+        INotifier notifierMock = mock(INotifier.class);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();

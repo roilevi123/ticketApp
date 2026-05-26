@@ -51,8 +51,6 @@ class CompanyServiceTest {
     private TokenService tokenService;
     @Mock
     private INotifier notifier;
-    @Mock
-    private IPendingNotificationRepository notificationRepository;
 
     @InjectMocks
     private CompanyService companyService;
@@ -559,7 +557,7 @@ class CompanyServiceTest {
         Response<String> result = companyService.replyToBuyer(TOKEN, COMPANY, "buyer1", "Hello buyer");
 
         assertTrue(result.isSuccess());
-        verify(notificationRepository, times(1)).save(eq("buyer1"), anyString());
+        verify(notifier, times(1)).notifyUser(eq("buyer1"), anyString(), anyString());
     }
 
     @Test
@@ -572,7 +570,7 @@ class CompanyServiceTest {
         Response<String> result = companyService.replyToBuyer(TOKEN, COMPANY, "buyer1", "Hello");
 
         assertTrue(result.isError());
-        verify(notificationRepository, never()).save(any(), any());
+        verify(notifier, never()).notifyUser(eq("buyer1"), anyString(), anyString());
     }
 
     @Test

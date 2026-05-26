@@ -20,19 +20,19 @@ public class UserService implements IAuth {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final IUserRepository userRepository;
     private final TokenService tokenService;
-    private final IPendingNotificationRepository notificationRepository;
     private final INotificationRepository userNotificationRepository;
+    private final INotifier notifier;
 
     public UserService(IPasswordEncoder passwordEncoder,
                        IUserRepository userRepository,
                        TokenService tokenService,
-                       IPendingNotificationRepository notificationRepository,
-                       INotificationRepository userNotificationRepository) {
+                       INotificationRepository userNotificationRepository,
+                       INotifier notifier) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
-        this.notificationRepository = notificationRepository;
         this.userNotificationRepository = userNotificationRepository;
+        this.notifier = notifier;
     }
 
     @Override
@@ -179,9 +179,8 @@ public class UserService implements IAuth {
             String username = tokenService.extractUsername(token);
 
             logger.info("User {} is submitting a complaint to {}", username, targetRole);
-            String formattedMessage = String.format("Complaint from %s: %s", username, messageContent);
             String targetId = targetRole.equalsIgnoreCase("Admin") ? "SYSTEM_ADMIN" : targetRole;
-            notificationRepository.save(targetId, formattedMessage);
+            notifier.notifyUser(targetId, "Complaint from " + username, messageContent);
             logger.info("Successfully submitted complaint from {}", username);
             return Response.success("Complaint sent successfully");
             

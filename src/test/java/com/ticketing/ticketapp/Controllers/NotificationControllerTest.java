@@ -1,5 +1,6 @@
 package com.ticketing.ticketapp.Controllers;
 
+import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
 import com.ticketing.ticketapp.Domain.Notification.Notification;
 import com.ticketing.ticketapp.Infastructure.Broadcaster;
@@ -24,6 +25,7 @@ class NotificationControllerTest {
     @Mock private INotificationRepository notificationRepository;
     @Mock private Broadcaster broadcaster;
     @Mock private TokenService tokenService;
+    @Mock private iAdminRepository adminRepository;
     @InjectMocks private NotificationController notificationController;
 
     private static final String TOKEN = "test-token";
@@ -33,11 +35,13 @@ class NotificationControllerTest {
     @Test
     void stream_RegistersWithBroadcasterAndReturnsSseEmitter() {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USER_ID);
+        when(adminRepository.isAdmin(USER_ID)).thenReturn(false);
 
         SseEmitter emitter = notificationController.stream(TOKEN);
 
         assertNotNull(emitter);
         verify(broadcaster).register(eq(USER_ID), any());
+        verify(broadcaster, never()).register(eq("SYSTEM_ADMIN"), any());
     }
 
     @Test

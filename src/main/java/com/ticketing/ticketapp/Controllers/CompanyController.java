@@ -10,12 +10,9 @@ import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Appliction.PurchasePolicyService;
 import com.ticketing.ticketapp.Appliction.DiscountService;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.*;
-import com.ticketing.ticketapp.Infastructure.TokenService;
 import com.ticketing.ticketapp.Domain.Discount.*;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.Permission;
 import com.ticketing.ticketapp.Appliction.PurchasedService;
-import com.ticketing.ticketapp.Appliction.IPendingNotificationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 
 @RestController
@@ -26,16 +23,13 @@ public class CompanyController {
     private final PurchasePolicyService purchasePolicyService;
     private final DiscountService discountService;
     private final PurchasedService purchasedService;
-    private final IPendingNotificationRepository notificationRepository;
-    
 
-    public CompanyController(EventService eventService, CompanyService companyService, PurchasePolicyService purchasePolicyService, DiscountService discountService, PurchasedService purchasedService, IPendingNotificationRepository notificationRepository) {
+    public CompanyController(EventService eventService, CompanyService companyService, PurchasePolicyService purchasePolicyService, DiscountService discountService, PurchasedService purchasedService) {
         this.eventService = eventService;
         this.companyService = companyService;
         this.purchasePolicyService = purchasePolicyService;
         this.discountService = discountService;
         this.purchasedService = purchasedService;
-        this.notificationRepository = notificationRepository;
     }
 
     @PostMapping("/open")
@@ -307,18 +301,6 @@ public class CompanyController {
         }
         
         return ResponseEntity.badRequest().body(response.getMessage());
-    }
-
-    @GetMapping("/messages")
-    public ResponseEntity<?> getInboxMessages(@RequestAttribute("cleanToken") String token) {
-        
-        List<String> messages = notificationRepository.retrieveAndDelete("BGU Events");
-        
-        if (messages == null) {
-            messages = new ArrayList<>();
-        }
-        
-        return ResponseEntity.ok(messages);
     }
 
     @PostMapping("/reply-message")

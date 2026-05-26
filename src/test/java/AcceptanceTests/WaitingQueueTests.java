@@ -53,11 +53,11 @@ public class WaitingQueueTests {
         this.tokenService = new TokenService();
 
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-        IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository, new NotificationRepositoryImpl());
+
         INotifier notifierMock = mock(INotifier.class);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock, notificationRepository);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
         com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository adminRepositoryMock = mock(com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository.class);
         this.queueService = new QueueService(queueRepository, tokenService, notifierMock, adminRepositoryMock);

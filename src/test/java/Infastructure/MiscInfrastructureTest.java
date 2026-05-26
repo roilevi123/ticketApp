@@ -25,36 +25,6 @@ class MiscInfrastructureTest {
         assertDoesNotThrow(repo::deleteAll);
     }
 
-    // --- PendingNotificationRepositoryImpl ---
-
-    @Test
-    void pendingNotification_SaveAndRetrieve() {
-        PendingNotificationRepositoryImpl repo = new PendingNotificationRepositoryImpl();
-        repo.save("user1", "Hello");
-        repo.save("user1", "World");
-        List<String> msgs = repo.retrieveAndDelete("user1");
-        assertEquals(2, msgs.size());
-        assertTrue(msgs.contains("Hello"));
-        assertTrue(msgs.contains("World"));
-    }
-
-    @Test
-    void pendingNotification_RetrieveNonExistent_ReturnsEmpty() {
-        PendingNotificationRepositoryImpl repo = new PendingNotificationRepositoryImpl();
-        List<String> msgs = repo.retrieveAndDelete("nobody");
-        assertNotNull(msgs);
-        assertTrue(msgs.isEmpty());
-    }
-
-    @Test
-    void pendingNotification_RetrieveDeletesMessages() {
-        PendingNotificationRepositoryImpl repo = new PendingNotificationRepositoryImpl();
-        repo.save("user1", "msg");
-        repo.retrieveAndDelete("user1");
-        List<String> second = repo.retrieveAndDelete("user1");
-        assertTrue(second.isEmpty());
-    }
-
     // --- InMemoryDiscountPolicyRepository (direct, not spy) ---
 
     @Test

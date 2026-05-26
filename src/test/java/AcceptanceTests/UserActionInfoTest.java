@@ -2,20 +2,20 @@ package AcceptanceTests;
 
 import com.ticketing.ticketapp.Appliction.UserService;
 import com.ticketing.ticketapp.Appliction.Response;
-import com.ticketing.ticketapp.Appliction.IPendingNotificationRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.UserDTO;
 import com.ticketing.ticketapp.Infastructure.PasswordEncoderImpl;
 import com.ticketing.ticketapp.Infastructure.NotificationRepositoryImpl;
-import com.ticketing.ticketapp.Infastructure.PendingNotificationRepositoryImpl;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import com.ticketing.ticketapp.Infastructure.UserRepositoryImpl;
+import com.ticketing.ticketapp.Appliction.INotifier;
 import com.ticketing.ticketapp.Appliction.IPasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 @DisplayName("User Action Acceptance Tests")
 public class UserActionInfoTest {
@@ -27,11 +27,10 @@ public class UserActionInfoTest {
 
     @BeforeEach
     void setUp() {
-        IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
         this.userRepository = new UserRepositoryImpl();
         this.passwordEncoder = new PasswordEncoderImpl();
         this.tokenService = new TokenService();
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository, new NotificationRepositoryImpl());
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), mock(INotifier.class));
 
         userRepository.deleteAll();
         tokenService.clearAllData();

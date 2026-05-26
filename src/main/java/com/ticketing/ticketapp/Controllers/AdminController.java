@@ -3,6 +3,9 @@ package com.ticketing.ticketapp.Controllers;
 import com.ticketing.ticketapp.Appliction.AdminService;
 import com.ticketing.ticketapp.Appliction.QueueService;
 import com.ticketing.ticketapp.Appliction.Response;
+import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
+import com.ticketing.ticketapp.Domain.Notification.Notification;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import com.ticketing.ticketapp.Domain.QueueAggregates.QueueEntry;
 import com.ticketing.ticketapp.Domain.User.Suspension;
 import com.ticketing.ticketapp.Infastructure.TokenService;
@@ -19,11 +22,13 @@ public class AdminController {
     private final AdminService adminService;
     private final QueueService queueService;
     private final TokenService tokenService;
+    private final INotificationRepository notificationRepository;
 
-    public AdminController(AdminService adminService, QueueService queueService, TokenService tokenService) {
+    public AdminController(AdminService adminService, QueueService queueService, TokenService tokenService, INotificationRepository notificationRepository) {
         this.adminService = adminService;
         this.queueService = queueService;
         this.tokenService = tokenService;
+        this.notificationRepository = notificationRepository;
     }
 
     @PutMapping("/users/{userId}/suspend")
@@ -126,6 +131,55 @@ public class AdminController {
         }
         return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
     }
+
+    @GetMapping("/purchases")
+    public ResponseEntity<?> getPurchaseHistory(
+            @RequestAttribute("cleanToken") String token,
+            @RequestParam(required = false) String buyerId,
+            @RequestParam(required = false) String company,
+            @RequestParam(required = false) String eventId) {
+
+        String adminId = tokenService.extractUserId(token);
+        Response<List<PurchaseOrderDTO>> response = adminService.getPurchaseHistory(adminId, buyerId, company, eventId);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response.getData());
+        }
+        return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
+    }
+
+    @GetMapping("/analytics")
+    public ResponseEntity<?> getSystemAnalytics(
+            @RequestAttribute("cleanToken") String token) {
+
+        String adminId = tokenService.extractUserId(token);
+        Response<Map<String, Long>> response = adminService.getSystemAnalytics(adminId);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response.getData());
+        }
+        return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
+    }
+
+    @GetMapping("/complaints")
+    public ResponseEntity<?> getComplaints(
+            @RequestAttribute("cleanToken") String token) {
+
+        List<Notification> complaints = notificationRepository.getAll("SYSTEM_ADMIN");
+        return ResponseEntity.ok(complaints);
+    }
+
+    @PostMapping("/users/{userId}/message")
+    public ResponseEntity<?> sendMessageToUser(
+            @RequestAttribute("cleanToken") String token,
+            @PathVariable String userId,
+            @RequestBody AdminMessageRequest request) {
+
+        String adminId = tokenService.extractUserId(token);
+        Response<String> response = adminService.sendMessageToUser(adminId, userId, request.getMessage());
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(Map.of("message", "Message sent successfully"));
+        }
+        return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
+    }
 }
 
 class SuspendRequest {
@@ -143,4 +197,11 @@ class QueueAdjustRequest {
     public void setClear(Boolean clear) { this.clear = clear; }
     public Integer getMaxActiveUsers() { return maxActiveUsers; }
     public void setMaxActiveUsers(Integer maxActiveUsers) { this.maxActiveUsers = maxActiveUsers; }
+}
+
+class AdminMessageRequest {
+    private String message;
+
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
 }

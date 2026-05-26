@@ -17,6 +17,7 @@ public class NotifierImpl implements INotifier {
         String formattedMessage = String.format("{\"title\": \"%s\", \"message\": \"%s\"}", title, message);
         broadcaster.broadcast(userId, formattedMessage);
     }
+
     @Override
     public void broadcast(String title, String message) {
         String formattedMessage = String.format("{\"title\": \"%s\", \"message\": \"%s\"}", title, message);

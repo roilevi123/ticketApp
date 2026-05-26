@@ -4,7 +4,6 @@ import com.ticketing.ticketapp.Appliction.*;
 
 import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
 import com.ticketing.ticketapp.Domain.Notification.Notification;
-import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.TokenService;
@@ -30,13 +29,10 @@ class UserServiceTest {
     private TokenService tokenService;
 
     @Mock
-    private IActiveOrderRepository activeOrderRepository;
-
-    @Mock
-    private IPendingNotificationRepository notificationRepository;
-
-    @Mock
     private INotificationRepository userNotificationRepository;
+
+    @Mock
+    private INotifier notifier;
 
     @InjectMocks
     private UserService userService;
@@ -258,7 +254,7 @@ class UserServiceTest {
         Response<String> result = userService.submitUserComplaint(TOKEN, "Admin", "My complaint");
 
         assertTrue(result.isSuccess());
-        verify(notificationRepository, times(1)).save(eq("SYSTEM_ADMIN"), contains(USERNAME));
+        verify(notifier, times(1)).notifyUser(eq("SYSTEM_ADMIN"), contains("Complaint from"), any());
     }
 
     @Test
@@ -268,7 +264,7 @@ class UserServiceTest {
         Response<String> result = userService.submitUserComplaint(TOKEN, "Admin", "My complaint");
 
         assertTrue(result.isError());
-        verify(notificationRepository, never()).save(any(), any());
+        verify(notifier, never()).notifyUser(any(), any(), any());
     }
 
     @Test

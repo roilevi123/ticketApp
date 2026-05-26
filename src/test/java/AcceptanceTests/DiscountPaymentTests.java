@@ -57,13 +57,13 @@ public class DiscountPaymentTests {
 
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-        IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
+
         ISupplyService supplyService = new SupplyServiceMock();
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
         this.paymentServiceSpy = spy(new PaymentServiceMock());
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository, new NotificationRepositoryImpl());
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock, notificationRepository);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
 

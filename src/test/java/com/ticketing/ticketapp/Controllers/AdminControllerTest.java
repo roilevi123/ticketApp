@@ -3,6 +3,9 @@ package com.ticketing.ticketapp.Controllers;
 import com.ticketing.ticketapp.Appliction.AdminService;
 import com.ticketing.ticketapp.Appliction.QueueService;
 import com.ticketing.ticketapp.Appliction.Response;
+import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
+import com.ticketing.ticketapp.Domain.Notification.Notification;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import com.ticketing.ticketapp.Domain.QueueAggregates.QueueEntry;
 import com.ticketing.ticketapp.Domain.User.Suspension;
 import com.ticketing.ticketapp.Infastructure.TokenService;
@@ -26,6 +29,7 @@ class AdminControllerTest {
     @Mock private AdminService adminService;
     @Mock private QueueService queueService;
     @Mock private TokenService tokenService;
+    @Mock private INotificationRepository notificationRepository;
     @InjectMocks private AdminController adminController;
 
     private static final String TOKEN = "test-token";
@@ -219,6 +223,84 @@ class AdminControllerTest {
         QueueAdjustRequest req = new QueueAdjustRequest();
         req.setClear(true);
         ResponseEntity<?> response = adminController.adjustQueue(TOKEN, EVENT_ID, req);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("Admin does not exist", ((Map<?, ?>) response.getBody()).get("error"));
+    }
+
+    @Test
+    void getPurchaseHistory_NoFilters_Returns200WithAllOrders() {
+        List<PurchaseOrderDTO> orders = List.of(
+                new PurchaseOrderDTO("o1", "buyer1", "Acme", "event-1", List.of()),
+                new PurchaseOrderDTO("o2", "buyer2", "Acme", "event-2", List.of())
+        );
+        when(tokenService.extractUserId(TOKEN)).thenReturn(ADMIN_ID);
+        when(adminService.getPurchaseHistory(ADMIN_ID, null, null, null)).thenReturn(Response.success(orders));
+
+        ResponseEntity<?> response = adminController.getPurchaseHistory(TOKEN, null, null, null);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(orders, response.getBody());
+    }
+
+    @Test
+    void getPurchaseHistory_Failure_Returns400() {
+        when(tokenService.extractUserId(TOKEN)).thenReturn(ADMIN_ID);
+        when(adminService.getPurchaseHistory(ADMIN_ID, null, null, null)).thenReturn(Response.error("Admin does not exist"));
+
+        ResponseEntity<?> response = adminController.getPurchaseHistory(TOKEN, null, null, null);
+
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("Admin does not exist", ((Map<?, ?>) response.getBody()).get("error"));
+    }
+
+    @Test
+    void getSystemAnalytics_Returns200WithCounts() {
+        Map<String, Long> analytics = Map.of("totalPurchases", 10L, "activeOrders", 3L);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(ADMIN_ID);
+        when(adminService.getSystemAnalytics(ADMIN_ID)).thenReturn(Response.success(analytics));
+
+        ResponseEntity<?> response = adminController.getSystemAnalytics(TOKEN);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(analytics, response.getBody());
+    }
+
+    @Test
+    void getComplaints_Returns200WithNotifications() {
+        List<Notification> complaints = List.of(
+                new Notification("c1", "SYSTEM_ADMIN", "Complaint from alice: bad event"),
+                new Notification("c2", "SYSTEM_ADMIN", "Complaint from bob: wrong ticket")
+        );
+        when(notificationRepository.getAll("SYSTEM_ADMIN")).thenReturn(complaints);
+
+        ResponseEntity<?> response = adminController.getComplaints(TOKEN);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(complaints, response.getBody());
+    }
+
+    @Test
+    void sendMessageToUser_Success_Returns200() {
+        when(tokenService.extractUserId(TOKEN)).thenReturn(ADMIN_ID);
+        when(adminService.sendMessageToUser(ADMIN_ID, USER_ID, "Your account is fine")).thenReturn(Response.success("success"));
+
+        AdminMessageRequest req = new AdminMessageRequest();
+        req.setMessage("Your account is fine");
+        ResponseEntity<?> response = adminController.sendMessageToUser(TOKEN, USER_ID, req);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("Message sent successfully", ((Map<?, ?>) response.getBody()).get("message"));
+    }
+
+    @Test
+    void sendMessageToUser_Failure_Returns400() {
+        when(tokenService.extractUserId(TOKEN)).thenReturn(ADMIN_ID);
+        when(adminService.sendMessageToUser(ADMIN_ID, USER_ID, "msg")).thenReturn(Response.error("Admin does not exist"));
+
+        AdminMessageRequest req = new AdminMessageRequest();
+        req.setMessage("msg");
+        ResponseEntity<?> response = adminController.sendMessageToUser(TOKEN, USER_ID, req);
 
         assertEquals(400, response.getStatusCode().value());
         assertEquals("Admin does not exist", ((Map<?, ?>) response.getBody()).get("error"));
