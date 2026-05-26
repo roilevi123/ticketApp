@@ -372,4 +372,13 @@ public class AdminJUnitTests {
 
         assertNull(userRepository.getCurrentSuspensionByUserID(targetUserId));
     }
+
+    @Test
+    @DisplayName("14. Suspend User Failed - User Not Found")
+    void suspendUserFailedUserNotFound14() {
+        var response = adminService.suspendUser("fake-user-id-123", "admin", 5);
+
+        assertFalse(response.isSuccess());
+        assertNull(userRepository.getCurrentSuspensionByUserID("fake-user-id-123"));
+    }
 }
