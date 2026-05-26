@@ -1,6 +1,7 @@
 package com.ticketing.ticketapp.Controllers;
 
 import com.ticketing.ticketapp.Appliction.OrderService;
+import com.ticketing.ticketapp.Appliction.PurchasedService;
 import com.ticketing.ticketapp.Appliction.Response;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import org.springframework.http.HttpStatus;
@@ -8,15 +9,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
 
     private final OrderService orderService;
+    private final PurchasedService purchasedService;
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, PurchasedService purchasedService) {
         this.orderService = orderService;
+        this.purchasedService = purchasedService;
     }
 
     @PostMapping("/reserve")
@@ -42,9 +46,9 @@ public class OrderController {
     }
 
     @GetMapping("/active")
-    public ResponseEntity<?> getActiveOrderTickets( 
+    public ResponseEntity<?> getActiveOrderTickets(
         @RequestAttribute("cleanToken") String token,
-        @RequestParam(required = false, value = "orderId") String orderId) {
+        @RequestParam(required = false) String orderId) {
         try {
             Response<List<TicketDTO>> result = orderService.getActiveOrderTickets(token, orderId);
             if (result.isSuccess()) {
@@ -56,6 +60,37 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
         }
     }
+
+    @PostMapping("/purchase")
+    public ResponseEntity<?> purchaseTicket(
+            @RequestAttribute("cleanToken") String token,
+            @RequestBody PurchaseRequestDTO request) {
+        try {
+            String coupon = (request.getCoupon() != null && !request.getCoupon().isBlank())
+                    ? request.getCoupon() : "none";
+            Response<String> result = purchasedService.PurchaseTicket(
+                    request.getEmail(), null, token, coupon);
+            if (result.isSuccess()) {
+                return ResponseEntity.ok(Map.of("message", "Purchase successful"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", result.getMessage()));
+            }
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+}
+
+class PurchaseRequestDTO {
+    private String email;
+    private String coupon;
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getCoupon() { return coupon; }
+    public void setCoupon(String coupon) { this.coupon = coupon; }
 }
 
 class ReserveRequestDTO {
