@@ -15,10 +15,12 @@ public class PurchasePolicyService {
     private final iPurchasePolicyRepository purchaseRepo;
     private final TokenService tokenService;
     private static final Logger logger = LoggerFactory.getLogger(PurchasePolicyService.class);
+    private final UserService userService;
 
-    public PurchasePolicyService(iPurchasePolicyRepository purchaseRepo, TokenService tokenService) {
+    public PurchasePolicyService(iPurchasePolicyRepository purchaseRepo, TokenService tokenService, UserService userService) {
         this.purchaseRepo = purchaseRepo;
         this.tokenService = tokenService;
+        this.userService = userService;
     }
 
     public Response<String> createAgeLimitPolicy(String token, String targetId, PurchaseTargetType type, int minAge) {
