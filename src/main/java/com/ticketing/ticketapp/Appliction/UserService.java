@@ -1,5 +1,6 @@
 package com.ticketing.ticketapp.Appliction;
 
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Domain.User.UserDTO;
@@ -19,16 +20,18 @@ public class UserService implements IAuth {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final IUserRepository userRepository;
     private final TokenService tokenService;
-    private final IPendingNotificationRepository notificationRepository;    
+    private final IPendingNotificationRepository notificationRepository; 
+    private final iTreeOfRoleRepository roleRepository;   
 
     public UserService(IPasswordEncoder passwordEncoder,
                        IUserRepository userRepository,
                        TokenService tokenService,
-                       IPendingNotificationRepository notificationRepository) {
+                       IPendingNotificationRepository notificationRepository, iTreeOfRoleRepository roleRepository) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.notificationRepository = notificationRepository;
+        this.roleRepository = roleRepository;
     }
 
     @Override
@@ -65,7 +68,8 @@ public class UserService implements IAuth {
                 throw new RuntimeException("Invalid password");
             }
             User userObj = userRepository.getUserByUsername(username);
-            String memberToken = tokenService.generateMemberToken(userObj.getID(), userObj.getName());
+            String actualRole = roleRepository.getUserHighestRole(userObj.getID());
+            String memberToken = tokenService.generateMemberToken(userObj.getID(), userObj.getName(), actualRole);
             logger.info("User {} logged in successfully", username);
             return Response.success(memberToken);
         } catch (Exception e) {
@@ -197,6 +201,39 @@ public class UserService implements IAuth {
             return Response.success(messages != null ? messages : new ArrayList<>());
         } catch (Exception e) {
             logger.error("Failed to fetch notifications", e);
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<List<String>> getUserCompanies(String token) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userId = tokenService.extractUserId(token);
+            List<String> companies = roleRepository.getUserCompanies(userId);
+            return Response.success(companies);
+        } catch (Exception e) {
+            logger.error("Failed to fetch user companies", e);
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> switchCompanyContext(String token, String companyName) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userId = tokenService.extractUserId(token);
+            User user = userRepository.getUserByID(userId);
+            
+            String roleInCompany = roleRepository.getRoleInCompany(userId, companyName);
+            if (roleInCompany.equals("MEMBER")) {
+                throw new RuntimeException("User is not authorized in this company");
+            }
+            
+            String companyToken = tokenService.generateCompanyToken(userId, user.getName(), roleInCompany, companyName);
+            
+            logger.info("User {} switched context to company {} with role {}", user.getName(), companyName, roleInCompany);
+            return Response.success(companyToken);
+        } catch (Exception e) {
+            logger.error("Failed to switch company context", e);
             return Response.error(e.getMessage());
         }
     }

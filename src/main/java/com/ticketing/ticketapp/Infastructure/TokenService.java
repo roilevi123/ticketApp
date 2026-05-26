@@ -22,10 +22,10 @@ public class TokenService {
 
     private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
 
-    public String generateMemberToken(String userId, String username) {
+    public String generateMemberToken(String userId, String username, String role) {
         return Jwts.builder()
                 .setSubject(userId)
-                .claim("role", "MEMBER")
+                .claim("role", role)
                 .claim("username", username)
                 .setId(UUID.randomUUID().toString())
                 .setIssuedAt(new Date())
@@ -39,6 +39,19 @@ public class TokenService {
         return Jwts.builder()
                 .setSubject(guestId)
                 .claim("role", "GUEST")
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateCompanyToken(String userId, String username, String role, String companyName) {
+        return Jwts.builder()
+                .setSubject(userId)
+                .claim("role", role)
+                .claim("username", username)
+                .claim("company", companyName) 
+                .setId(UUID.randomUUID().toString())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
                 .signWith(key, SignatureAlgorithm.HS256)

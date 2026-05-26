@@ -220,4 +220,55 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         }
     }
 
+    @Override
+    public String getUserHighestRole(String userID) {
+        for (Owner o : owners.values()) {
+            if (o.getUserID().equals(userID)) {
+                return "OWNER";
+            }
+        }
+        for (Manager m : managers.values()) {
+            if (m.getUserID().equals(userID)) {
+                return "MANAGER";
+            }
+        }
+        return "MEMBER";
+    }
+
+    @Override
+    public List<String> getUserCompanies(String userID) {
+        Set<String> userCompanies = new HashSet<>();
+        // מוצאים איפה הוא בעלים
+        for (Owner o : owners.values()) {
+            if (o.getUserID().equals(userID) && o.isAccepted()) {
+                userCompanies.add(o.getCompanyName());
+            }
+        }
+        // מוצאים איפה הוא מנהל
+        for (Manager m : managers.values()) {
+            if (m.getUserID().equals(userID) && m.isAccepted()) {
+                userCompanies.add(m.getCompanyName());
+            }
+        }
+        return new ArrayList<>(userCompanies);
+    }
+
+    @Override
+    public String getRoleInCompany(String userID, String companyName) {
+        String key = userID + companyName;
+        
+        if (owners.containsKey(key) && owners.get(key).isAccepted()) {
+            if (FOUNDER_APPOINTER.equals(owners.get(key).getAppointerID())) {
+                return "FOUNDER";
+            }
+            return "OWNER";
+        }
+        
+        if (managers.containsKey(key) && managers.get(key).isAccepted()) {
+            return "MANAGER";
+        }
+        
+        return "MEMBER";
+    }
+
 }

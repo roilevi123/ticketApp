@@ -7,6 +7,8 @@ import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.UserDTO;
 import com.ticketing.ticketapp.Infastructure.PasswordEncoderImpl;
 import com.ticketing.ticketapp.Infastructure.PendingNotificationRepositoryImpl;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import com.ticketing.ticketapp.Infastructure.TreeOfRoleRepositoryImpl;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import com.ticketing.ticketapp.Infastructure.UserRepositoryImpl;
 import com.ticketing.ticketapp.Appliction.IPasswordEncoder;
@@ -21,6 +23,7 @@ public class UserActionInfoTest {
 
     private UserService userService;
     private IUserRepository userRepository;
+    private iTreeOfRoleRepository treeOfRoleRepository;
     private IPasswordEncoder passwordEncoder;
     private TokenService tokenService;
 
@@ -30,7 +33,8 @@ public class UserActionInfoTest {
         this.userRepository = new UserRepositoryImpl();
         this.passwordEncoder = new PasswordEncoderImpl();
         this.tokenService = new TokenService();
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
+        this.treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository, treeOfRoleRepository);
 
         userRepository.deleteAll();
         tokenService.clearAllData();

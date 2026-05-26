@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
-
+import java.util.Set;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -44,6 +44,7 @@ public class DataInitializer implements ApplicationRunner {
             String adminToken = userService.login(loginToken, "admin", "admin123").getData();
 
             companyService.CreateCompany("BGU Events", adminToken);
+
 
             MapArea[][] map = makeMap(8, 10);
 

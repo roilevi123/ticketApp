@@ -5,7 +5,7 @@ import com.ticketing.ticketapp.Appliction.Response;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -76,6 +76,31 @@ public class AuthController {
             "message", "Guest token generated",
             "token", guestToken
         ));
+    }
+
+    @GetMapping("/my-companies")
+    public ResponseEntity<?> getMyCompanies(@RequestHeader("Authorization") String token) {
+        String cleanToken = token.replace("Bearer ", "");
+        Response<List<String>> response = userService.getUserCompanies(cleanToken);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response.getData());
+        }
+        return ResponseEntity.status(400).body(Map.of("error", response.getMessage()));
+    }
+
+    @PostMapping("/switch-company")
+    public ResponseEntity<?> switchCompanyContext(
+            @RequestHeader("Authorization") String token, 
+            @RequestBody Map<String, String> body) {
+        
+        String cleanToken = token.replace("Bearer ", "");
+        String companyName = body.get("companyName");
+        
+        Response<String> response = userService.switchCompanyContext(cleanToken, companyName);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(Map.of("token", response.getData())); // מחזיר את הטוקן המשודרג
+        }
+        return ResponseEntity.status(401).body(Map.of("error", response.getMessage()));
     }
 
     

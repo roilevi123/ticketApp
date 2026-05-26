@@ -6,9 +6,9 @@ import { AuthProvider } from "./contexts/AuthContext.jsx";
 
 // Ensure any persisted member session is cleared synchronously
 // before the app renders so the initial load is treated as a guest.
-localStorage.removeItem("token");
-localStorage.removeItem("role");
-localStorage.removeItem("userID");
+//localStorage.removeItem("token");
+//localStorage.removeItem("role");
+//localStorage.removeItem("userID");
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
