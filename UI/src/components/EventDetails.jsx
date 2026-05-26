@@ -28,13 +28,16 @@ const DEFAULT_TYPE = {
 
 const ROW_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
-// Converts the backend 2D map array into flat seat objects
+// Converts the backend 2D map array into flat seat objects.
+// rawRow / rawCol are the 0-based indices used by the backend reserve endpoint.
 function parseMapData(map) {
   return map.flatMap((row, rowIdx) =>
     row.map((cell, colIdx) => ({
       id: `${ROW_LABELS[rowIdx] ?? rowIdx}${colIdx + 1}`,
       row: ROW_LABELS[rowIdx] ?? String(rowIdx),
+      rawRow: rowIdx,
       col: colIdx + 1,
+      rawCol: colIdx,
       available: cell === "SEAT",
       vip: rowIdx === 0,
     })),
@@ -43,23 +46,12 @@ function parseMapData(map) {
 
 // Fallback mock seats used when backend provides no map
 const TAKEN = new Set([
-  "A2",
-  "A5",
-  "B1",
-  "B4",
-  "B7",
-  "C3",
-  "C6",
-  "D2",
-  "D5",
-  "E1",
-  "E4",
-  "E7",
+  "A2", "A5", "B1", "B4", "B7", "C3", "C6", "D2", "D5", "E1", "E4", "E7",
 ]);
-const MOCK_SEATS = ["A", "B", "C", "D", "E"].flatMap((row) =>
+const MOCK_SEATS = ["A", "B", "C", "D", "E"].flatMap((row, rowIdx) =>
   Array.from({ length: 8 }, (_, i) => {
     const id = `${row}${i + 1}`;
-    return { id, row, col: i + 1, available: !TAKEN.has(id), vip: row === "A" };
+    return { id, row, rawRow: rowIdx, col: i + 1, rawCol: i, available: !TAKEN.has(id), vip: row === "A" };
   }),
 );
 
@@ -118,7 +110,10 @@ function EventDetailsSkeleton() {
   );
 }
 
-function SeatingMap({ seats, selectedSeat, onSeatSelect }) {
+// ── SeatingMap ────────────────────────────────────────────────────────────────
+// selectedSeats : array of seat objects currently chosen by the user
+// atLimit       : true when the policy cap has been reached (greys out non-selected available seats)
+function SeatingMap({ seats, selectedSeats, onSeatSelect, atLimit }) {
   const rows = [...new Set(seats.map((s) => s.row))];
 
   return (
@@ -139,30 +134,37 @@ function SeatingMap({ seats, selectedSeat, onSeatSelect }) {
               {seats
                 .filter((s) => s.row === row)
                 .map((seat) => {
-                  const isSelected = selectedSeat?.id === seat.id;
+                  const isSelected = selectedSeats.some((s) => s.id === seat.id);
+                  const blockedByLimit = !isSelected && atLimit && seat.available;
+                  const isDisabled = !seat.available || blockedByLimit;
+
                   let cls;
                   if (!seat.available) {
-                    cls =
-                      "bg-surface-container-highest text-outline cursor-not-allowed opacity-40";
+                    cls = "bg-surface-container-highest text-outline cursor-not-allowed opacity-40";
                   } else if (isSelected) {
-                    cls = "bg-secondary text-on-secondary scale-110 shadow-lg";
+                    cls = "bg-secondary text-on-secondary scale-110 shadow-lg ring-2 ring-secondary/50";
+                  } else if (blockedByLimit) {
+                    cls = "bg-surface-container border border-outline-variant text-on-surface-variant opacity-30 cursor-not-allowed";
                   } else if (seat.vip) {
-                    cls =
-                      "bg-primary-container border border-primary/40 text-primary hover:border-primary active:scale-95";
+                    cls = "bg-primary-container border border-primary/40 text-primary hover:border-primary active:scale-95";
                   } else {
-                    cls =
-                      "bg-surface-container border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary active:scale-95";
+                    cls = "bg-surface-container border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary active:scale-95";
                   }
+
+                  const title = !seat.available
+                    ? `Seat ${seat.id} — Unavailable`
+                    : isSelected
+                    ? `Seat ${seat.id} — Click to deselect`
+                    : blockedByLimit
+                    ? `Seat limit reached — deselect a seat to choose this one`
+                    : `Seat ${seat.id}${seat.vip ? " (VIP)" : ""}`;
+
                   return (
                     <button
                       key={seat.id}
-                      disabled={!seat.available}
-                      onClick={() => onSeatSelect(isSelected ? null : seat)}
-                      title={
-                        seat.available
-                          ? `Seat ${seat.id}${seat.vip ? " (VIP)" : ""}`
-                          : `Seat ${seat.id} — Unavailable`
-                      }
+                      disabled={isDisabled}
+                      onClick={() => onSeatSelect(seat)}
+                      title={title}
                       className={`w-8 h-8 rounded text-label-sm font-bold transition-all ${cls}`}
                     >
                       {seat.col}
@@ -176,22 +178,14 @@ function SeatingMap({ seats, selectedSeat, onSeatSelect }) {
 
       <div className="flex flex-wrap gap-4 mt-6">
         {[
-          {
-            cls: "bg-surface-container border border-outline-variant",
-            label: "Available",
-          },
-          {
-            cls: "bg-primary-container border border-primary/40",
-            label: "VIP",
-          },
-          { cls: "bg-secondary", label: "Selected" },
+          { cls: "bg-surface-container border border-outline-variant", label: "Available" },
+          { cls: "bg-primary-container border border-primary/40", label: "VIP" },
+          { cls: "bg-secondary ring-2 ring-secondary/50", label: "Selected" },
           { cls: "bg-surface-container-highest opacity-40", label: "Taken" },
         ].map(({ cls, label }) => (
           <div key={label} className="flex items-center gap-2">
             <div className={`w-4 h-4 rounded ${cls}`} />
-            <span className="text-label-sm text-on-surface-variant">
-              {label}
-            </span>
+            <span className="text-label-sm text-on-surface-variant">{label}</span>
           </div>
         ))}
       </div>
@@ -199,19 +193,28 @@ function SeatingMap({ seats, selectedSeat, onSeatSelect }) {
   );
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
 export default function EventDetails() {
   const { companyName, eventName } = useParams();
   const { role, token } = useAuth();
+
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedSeat, setSelectedSeat] = useState(null);
+
+  // Multi-seat selection state
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [maxSeats, setMaxSeats] = useState(null);   // null = unlimited
+
+  // Reservation state
+  const [buying, setBuying] = useState(false);
+  const [reservation, setReservation] = useState(null); // { orderId, seatCount }
+  const [reserveError, setReserveError] = useState(null);
 
   const normalizedRole = (role ?? "").toUpperCase();
   const isRegisteredMember = Boolean(token) && normalizedRole !== "GUEST";
 
-  const normalizeName = (value) => (value ?? "").trim().toLowerCase();
-
+  // ── Load event ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const controller = new AbortController();
 
@@ -221,26 +224,84 @@ export default function EventDetails() {
           `/discovery/companies/${encodeURIComponent(companyName)}/events/${encodeURIComponent(eventName)}`,
           { signal: controller.signal },
         );
-        // DEV: force isHighDemand true to test lottery UI — remove once backend sets this flag
         setEvent({ ...res.data, isHighDemand: true });
       } catch (err) {
-        if (err.code !== "ERR_CANCELED") {
-          setError(err.message);
-        }
+        if (err.code !== "ERR_CANCELED") setError(err.message);
       } finally {
         setLoading(false);
       }
     }
 
     loadEvent();
-
     return () => controller.abort();
   }, [companyName, eventName]);
 
-  const { gradient, icon } =
-    TYPE_CONFIG[event?.type?.toUpperCase()] ?? DEFAULT_TYPE;
+  // ── Load seat limit from policy ─────────────────────────────────────────────
+  useEffect(() => {
+    axiosClient
+      .get(
+        `/discovery/companies/${encodeURIComponent(companyName)}/events/${encodeURIComponent(eventName)}/seat-limit`,
+      )
+      .then((res) => setMaxSeats(res.data.maxSeats ?? null))
+      .catch(() => setMaxSeats(null)); // graceful fallback: no limit enforced in UI
+  }, [companyName, eventName]);
+
+  // ── Seat toggle with limit enforcement ─────────────────────────────────────
+  function handleSeatSelect(seat) {
+    setSelectedSeats((prev) => {
+      const alreadySelected = prev.some((s) => s.id === seat.id);
+      if (alreadySelected) {
+        // Always allow deselection
+        return prev.filter((s) => s.id !== seat.id);
+      }
+      // Enforce policy cap
+      if (maxSeats !== null && prev.length >= maxSeats) {
+        return prev;
+      }
+      return [...prev, seat];
+    });
+  }
+
+  // ── Reserve tickets ─────────────────────────────────────────────────────────
+  async function handleReserve() {
+    if (!isRegisteredMember || selectedSeats.length === 0 || buying) return;
+
+    setBuying(true);
+    setReserveError(null);
+
+    try {
+      // Backend expects: List<int[]> where each entry is [colIndex, rowIndex] (0-based)
+      const requests = selectedSeats.map((s) => [s.rawCol, s.rawRow]);
+      const res = await axiosClient.post("/orders/reserve", {
+        company: companyName,
+        event: eventName,
+        requests,
+      });
+      setReservation({ orderId: res.data, seatCount: selectedSeats.length });
+      setSelectedSeats([]);
+    } catch (err) {
+      const msg =
+        err.response?.data?.error ||
+        err.response?.data ||
+        err.message;
+      setReserveError(typeof msg === "string" ? msg : "Reservation failed. Please try again.");
+    } finally {
+      setBuying(false);
+    }
+  }
+
+  const { gradient, icon } = TYPE_CONFIG[event?.type?.toUpperCase()] ?? DEFAULT_TYPE;
   const seats = event?.map?.length ? parseMapData(event.map) : MOCK_SEATS;
   const minPrice = event?.price ?? 0;
+  const atLimit = maxSeats !== null && selectedSeats.length >= maxSeats;
+
+  // ── Selection counter label ─────────────────────────────────────────────────
+  const selectionLabel =
+    selectedSeats.length === 0
+      ? null
+      : maxSeats !== null
+      ? `${selectedSeats.length} / ${maxSeats} seat${maxSeats !== 1 ? "s" : ""} selected`
+      : `${selectedSeats.length} seat${selectedSeats.length !== 1 ? "s" : ""} selected`;
 
   return (
     <div className="bg-background text-on-surface min-h-screen pb-32">
@@ -266,28 +327,18 @@ export default function EventDetails() {
           <EventDetailsSkeleton />
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-margin-mobile">
-            <span
-              className="material-symbols-outlined text-error mb-4"
-              style={{ fontSize: "48px" }}
-            >
+            <span className="material-symbols-outlined text-error mb-4" style={{ fontSize: "48px" }}>
               error_outline
             </span>
-            <p className="text-headline-sm text-on-surface mb-2">
-              Unable to load event
-            </p>
+            <p className="text-headline-sm text-on-surface mb-2">Unable to load event</p>
             <p className="text-body-md text-on-surface-variant">{error}</p>
           </div>
         ) : event ? (
           <>
             {/* ── Hero ── */}
             <section className="relative w-full h-[397px] overflow-hidden">
-              <div
-                className={`absolute inset-0 bg-gradient-to-br ${gradient} flex items-center justify-center`}
-              >
-                <span
-                  className="material-symbols-outlined text-white/10"
-                  style={{ fontSize: "120px" }}
-                >
+              <div className={`absolute inset-0 bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                <span className="material-symbols-outlined text-white/10" style={{ fontSize: "120px" }}>
                   {icon}
                 </span>
               </div>
@@ -303,44 +354,26 @@ export default function EventDetails() {
                   </span>
                 </div>
               )}
-
-              <h1 className="text-display-lg-mobile text-on-surface font-bold mb-2">
-                {event.name}
-              </h1>
-
+              <h1 className="text-display-lg-mobile text-on-surface font-bold mb-2">{event.name}</h1>
               {event.artistName && (
-                <p className="text-body-lg text-on-surface-variant mb-1">
-                  {event.artistName}
-                </p>
+                <p className="text-body-lg text-on-surface-variant mb-1">{event.artistName}</p>
               )}
-
               <div className="flex flex-col gap-3 mt-6">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center border border-outline-variant shrink-0">
-                    <span className="material-symbols-outlined text-secondary">
-                      calendar_month
-                    </span>
+                    <span className="material-symbols-outlined text-secondary">calendar_month</span>
                   </div>
                   <div>
-                    <p className="text-label-md text-on-surface">
-                      {formatDate(event.date ?? event.startDate)}
-                    </p>
-                    <p className="text-label-sm text-on-surface-variant">
-                      {formatTime(event.date ?? event.startDate)}
-                    </p>
+                    <p className="text-label-md text-on-surface">{formatDate(event.date ?? event.startDate)}</p>
+                    <p className="text-label-sm text-on-surface-variant">{formatTime(event.date ?? event.startDate)}</p>
                   </div>
                 </div>
-
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center border border-outline-variant shrink-0">
-                    <span className="material-symbols-outlined text-secondary">
-                      location_on
-                    </span>
+                    <span className="material-symbols-outlined text-secondary">location_on</span>
                   </div>
                   <div>
-                    <p className="text-label-md text-on-surface">
-                      {event.location || "Venue TBD"}
-                    </p>
+                    <p className="text-label-md text-on-surface">{event.location || "Venue TBD"}</p>
                     {event.companyName ? (
                       <Link
                         to={`/company/${encodeURIComponent(event.companyName)}`}
@@ -349,9 +382,7 @@ export default function EventDetails() {
                         {event.companyName}
                       </Link>
                     ) : (
-                      <span className="text-label-sm text-on-surface-variant">
-                        View Map
-                      </span>
+                      <span className="text-label-sm text-on-surface-variant">View Map</span>
                     )}
                   </div>
                 </div>
@@ -361,9 +392,7 @@ export default function EventDetails() {
             {/* ── About ── */}
             <div className="mx-margin-mobile h-px bg-outline-variant my-8" />
             <section className="px-margin-mobile">
-              <h2 className="text-headline-sm text-on-surface mb-3">
-                About the Event
-              </h2>
+              <h2 className="text-headline-sm text-on-surface mb-3">About the Event</h2>
               <p className="text-body-md text-on-surface-variant leading-relaxed">
                 {event.description || "No description available."}
               </p>
@@ -374,44 +403,28 @@ export default function EventDetails() {
               <>
                 <div className="mx-margin-mobile h-px bg-outline-variant my-8" />
                 <section className="px-margin-mobile">
-                  <h2 className="text-headline-sm text-on-surface mb-4">
-                    Ticket Options
-                  </h2>
+                  <h2 className="text-headline-sm text-on-surface mb-4">Ticket Options</h2>
                   <div className="grid gap-3">
                     <div className="p-4 rounded-xl bg-surface-container border border-outline-variant flex justify-between items-center">
                       <div>
-                        <p className="text-label-md text-on-surface">
-                          General Admission
-                        </p>
-                        <p className="text-label-sm text-on-surface-variant">
-                          Standard seating access
-                        </p>
+                        <p className="text-label-md text-on-surface">General Admission</p>
+                        <p className="text-label-sm text-on-surface-variant">Standard seating access</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-headline-sm text-secondary">
-                          {formatPrice(event.price)}
-                        </p>
+                        <p className="text-headline-sm text-secondary">{formatPrice(event.price)}</p>
                         <div className="inline-flex bg-secondary/10 px-2 py-0.5 rounded mt-1">
-                          <span className="text-[10px] font-bold text-secondary uppercase tracking-wider">
-                            Available
-                          </span>
+                          <span className="text-[10px] font-bold text-secondary uppercase tracking-wider">Available</span>
                         </div>
                       </div>
                     </div>
                     {event.studentPrice != null && (
                       <div className="p-4 rounded-xl bg-surface-container border border-outline-variant flex justify-between items-center">
                         <div>
-                          <p className="text-label-md text-on-surface">
-                            Student
-                          </p>
-                          <p className="text-label-sm text-on-surface-variant">
-                            Valid University ID required
-                          </p>
+                          <p className="text-label-md text-on-surface">Student</p>
+                          <p className="text-label-sm text-on-surface-variant">Valid University ID required</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-headline-sm text-secondary">
-                            {formatPrice(event.studentPrice)}
-                          </p>
+                          <p className="text-headline-sm text-secondary">{formatPrice(event.studentPrice)}</p>
                         </div>
                       </div>
                     )}
@@ -424,26 +437,40 @@ export default function EventDetails() {
             <div className="mx-margin-mobile h-px bg-outline-variant my-8" />
             <section className="px-margin-mobile">
               <div className="flex items-center justify-between mb-1">
-                <h2 className="text-headline-sm text-on-surface">
-                  Seating Map
-                </h2>
-                {selectedSeat && (
-                  <span className="text-label-sm text-secondary">
-                    Selected:{" "}
-                    <span className="font-bold">{selectedSeat.id}</span>
-                    {selectedSeat.vip ? " (VIP)" : ""}
+                <h2 className="text-headline-sm text-on-surface">Seating Map</h2>
+                {selectionLabel && (
+                  <span className={`text-label-sm font-bold ${atLimit ? "text-error" : "text-secondary"}`}>
+                    {selectionLabel}
                   </span>
                 )}
               </div>
-              <p className="text-label-sm text-on-surface-variant mb-5">
-                Tap an available seat to select it.
+
+              <p className="text-label-sm text-on-surface-variant mb-1">
+                {maxSeats !== null
+                  ? `Select up to ${maxSeats} seat${maxSeats !== 1 ? "s" : ""} — policy limit applies.`
+                  : "Select one or more seats."}
                 {!event.map?.length && " (Preview — map data pending)"}
               </p>
+
+              {atLimit && (
+                <p className="text-label-sm text-error mb-4">
+                  Limit reached. Deselect a seat to choose a different one.
+                </p>
+              )}
+
+              {reserveError && (
+                <div className="mb-4 px-4 py-3 rounded-lg bg-error/10 border border-error/30 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-error text-[18px]">error</span>
+                  <p className="text-label-sm text-error">{reserveError}</p>
+                </div>
+              )}
+
               <div className="overflow-x-auto pb-2">
                 <SeatingMap
                   seats={seats}
-                  selectedSeat={selectedSeat}
-                  onSeatSelect={setSelectedSeat}
+                  selectedSeats={selectedSeats}
+                  onSeatSelect={handleSeatSelect}
+                  atLimit={atLimit}
                 />
               </div>
             </section>
@@ -459,12 +486,9 @@ export default function EventDetails() {
                         local_fire_department
                       </span>
                       <div>
-                        <h3 className="text-headline-sm text-on-tertiary-container mb-1">
-                          High Demand Event
-                        </h3>
+                        <h3 className="text-headline-sm text-on-tertiary-container mb-1">High Demand Event</h3>
                         <p className="text-label-sm text-on-surface-variant">
-                          Tickets are distributed by lottery. Registered members
-                          can enter for a chance to purchase.
+                          Tickets are distributed by lottery. Registered members can enter for a chance to purchase.
                         </p>
                       </div>
                     </div>
@@ -477,9 +501,7 @@ export default function EventDetails() {
                             : "bg-surface-container text-outline cursor-not-allowed border border-outline-variant"
                         }`}
                       >
-                        <span className="material-symbols-outlined text-[18px]">
-                          casino
-                        </span>
+                        <span className="material-symbols-outlined text-[18px]">casino</span>
                         Enter Lottery
                       </button>
                       {!isRegisteredMember && (
@@ -495,12 +517,8 @@ export default function EventDetails() {
           </>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center px-margin-mobile">
-            <p className="text-headline-sm text-on-surface mb-2">
-              Event not found
-            </p>
-            <p className="text-body-md text-on-surface-variant">
-              The event details could not be loaded.
-            </p>
+            <p className="text-headline-sm text-on-surface mb-2">Event not found</p>
+            <p className="text-body-md text-on-surface-variant">The event details could not be loaded.</p>
           </div>
         )}
       </main>
@@ -508,15 +526,28 @@ export default function EventDetails() {
       {/* ── Fixed Bottom Action Bar ── */}
       {!loading && !error && event && (
         <footer className="fixed bottom-0 left-0 w-full z-50 bg-surface-container-high shadow-lg border-t border-outline-variant px-margin-mobile py-4 flex items-center justify-between gap-4">
-          <div className="flex flex-col">
-            <span className="text-label-sm text-on-surface-variant">
-              Starting from
-            </span>
-            <span className="text-headline-md text-on-surface font-bold">
-              {formatPrice(minPrice)}
-            </span>
+
+          {/* Price + reservation success feedback */}
+          <div className="flex flex-col min-w-0">
+            {reservation ? (
+              <>
+                <span className="text-label-sm text-secondary font-bold flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  Reserved!
+                </span>
+                <span className="text-label-xs text-on-surface-variant truncate">
+                  {reservation.seatCount} seat{reservation.seatCount !== 1 ? "s" : ""} · Order #{reservation.orderId}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-label-sm text-on-surface-variant">Starting from</span>
+                <span className="text-headline-md text-on-surface font-bold">{formatPrice(minPrice)}</span>
+              </>
+            )}
           </div>
 
+          {/* Action button */}
           {event.isHighDemand ? (
             <div className="relative group">
               <button
@@ -527,9 +558,7 @@ export default function EventDetails() {
                     : "bg-surface-container border border-outline-variant text-outline cursor-not-allowed"
                 }`}
               >
-                <span className="material-symbols-outlined text-[20px]">
-                  casino
-                </span>
+                <span className="material-symbols-outlined text-[20px]">casino</span>
                 Lottery Registration
               </button>
               {!isRegisteredMember && (
@@ -538,19 +567,47 @@ export default function EventDetails() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : reservation ? (
+            // Post-reservation: offer to reserve more
             <button
-              className={`font-bold px-8 py-3 rounded-full transition-transform active:scale-95 flex items-center gap-2 ${
-                minPrice === 0
-                  ? "bg-primary text-on-primary"
-                  : "bg-secondary text-on-secondary"
-              }`}
+              onClick={() => { setReservation(null); setReserveError(null); }}
+              className="font-bold px-6 py-3 rounded-full border border-secondary text-secondary hover:bg-secondary/10 transition-all active:scale-95 text-label-md"
             >
-              <span className="material-symbols-outlined text-[20px]">
-                confirmation_number
-              </span>
-              {minPrice === 0 ? "Get Passes" : "Buy Tickets"}
+              Reserve More
             </button>
+          ) : (
+            <div className="relative group">
+              <button
+                onClick={handleReserve}
+                disabled={!isRegisteredMember || selectedSeats.length === 0 || buying}
+                className={`font-bold px-8 py-3 rounded-full transition-all active:scale-95 flex items-center gap-2 ${
+                  isRegisteredMember && selectedSeats.length > 0 && !buying
+                    ? minPrice === 0
+                      ? "bg-primary text-on-primary hover:brightness-110"
+                      : "bg-secondary text-on-secondary hover:brightness-110"
+                    : "bg-surface-container border border-outline-variant text-outline cursor-not-allowed opacity-60"
+                }`}
+              >
+                {buying ? (
+                  <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                ) : (
+                  <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
+                )}
+                {buying
+                  ? "Reserving…"
+                  : selectedSeats.length > 0
+                  ? `Reserve ${selectedSeats.length} Seat${selectedSeats.length !== 1 ? "s" : ""}`
+                  : minPrice === 0 ? "Get Passes" : "Buy Tickets"}
+              </button>
+              {/* Tooltip when disabled */}
+              {(!isRegisteredMember || selectedSeats.length === 0) && !buying && (
+                <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-surface-container-highest rounded-lg text-label-sm text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-outline-variant z-10">
+                  {!isRegisteredMember
+                    ? "Sign in to buy tickets"
+                    : "Select at least one seat"}
+                </div>
+              )}
+            </div>
           )}
         </footer>
       )}
