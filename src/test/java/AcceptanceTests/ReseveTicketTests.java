@@ -47,10 +47,10 @@ public class ReseveTicketTests {
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
         iPurchasePolicyRepository purchasePolicyRepository = new InMemoryPurchasePolicyRepository();
-        IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
+
         INotifier notifierMock = mock(INotifier.class);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock, notificationRepository);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
 

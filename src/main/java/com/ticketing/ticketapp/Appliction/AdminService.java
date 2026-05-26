@@ -11,6 +11,7 @@ import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 
+import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
@@ -22,7 +23,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import java.time.LocalDateTime;
 import com.ticketing.ticketapp.Domain.User.Suspension;
@@ -38,6 +42,7 @@ public class AdminService {
     private iEventRepository eventRepository;
     private TokenService tokenService;
     private INotifier notifier;
+    private IActiveOrderRepository activeOrderRepository;
     private static final Logger logger = LoggerFactory.getLogger(AdminService.class);
 
     public AdminService(
@@ -50,6 +55,7 @@ public class AdminService {
             , iEventRepository eventRepository
             , TokenService tokenService
             , INotifier notifier
+            , IActiveOrderRepository activeOrderRepository
     ) {
         this.treeOfRoleRepository = treeOfRoleRepository;
         this.companyRepository = companyRepository;
@@ -60,6 +66,7 @@ public class AdminService {
         this.eventRepository = eventRepository;
         this.tokenService = tokenService;
         this.notifier = notifier;
+        this.activeOrderRepository = activeOrderRepository;
     }
     public Response<String> CloseCompany(String companyName,String adminID) {
         try {
@@ -260,4 +267,54 @@ public class AdminService {
             return Response.error(e.getMessage());
         }
     }
+
+    public Response<List<PurchaseOrderDTO>> getPurchaseHistory(String adminId, String buyerId, String company, String eventId) {
+        try {
+            if (!adminRepository.isAdmin(adminId))
+                throw new Exception("Admin does not exist");
+
+            List<PurchaseOrder> orders;
+            if (company != null && !company.isBlank()) {
+                orders = purchasedOrderRepository.getPurchasedOrdersForCompany(company);
+            } else if (buyerId != null && !buyerId.isBlank()) {
+                orders = purchasedOrderRepository.getPurchasedOrdersForUser(buyerId);
+            } else {
+                orders = purchasedOrderRepository.GetAllPurchasedOrders();
+            }
+
+            if (eventId != null && !eventId.isBlank()) {
+                orders = orders.stream().filter(o -> eventId.equals(o.getEvent())).collect(Collectors.toList());
+            }
+
+            List<PurchaseOrderDTO> dtos = new ArrayList<>();
+            for (PurchaseOrder order : orders) {
+                List<Ticket> ticketList = ticketRepository.getTickets(order.getTicketsId());
+                List<TicketDTO> ticketDTOs = ticketList.stream().map(TicketDTO::fromEntity).collect(Collectors.toList());
+                dtos.add(PurchaseOrderDTO.create(order, ticketDTOs));
+            }
+            return Response.success(dtos);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<Map<String, Long>> getSystemAnalytics(String adminId) {
+        try {
+            if (!adminRepository.isAdmin(adminId))
+                throw new Exception("Admin does not exist");
+
+            long totalPurchases = purchasedOrderRepository.GetAllPurchasedOrders().size();
+            long activeOrders = activeOrderRepository.getAllActiveOrders().size();
+
+            Map<String, Long> analytics = new HashMap<>();
+            analytics.put("totalPurchases", totalPurchases);
+            analytics.put("activeOrders", activeOrders);
+            return Response.success(analytics);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
 }

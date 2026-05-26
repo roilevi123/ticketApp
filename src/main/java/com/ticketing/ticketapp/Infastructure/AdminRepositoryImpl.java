@@ -17,6 +17,13 @@ public class AdminRepositoryImpl implements iAdminRepository {
 
 
     @Override
+    public void addAdmin(String adminID) {
+        if (!adminsIDs.contains(adminID)) {
+            adminsIDs.add(adminID);
+        }
+    }
+
+    @Override
     public void deleteAll() {
         adminsIDs.clear();
     }

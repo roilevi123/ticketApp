@@ -2,7 +2,8 @@ package Appliction;
 
 import com.ticketing.ticketapp.Appliction.*;
 
-import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
+import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
+import com.ticketing.ticketapp.Domain.Notification.Notification;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.TokenService;
@@ -28,10 +29,10 @@ class UserServiceTest {
     private TokenService tokenService;
 
     @Mock
-    private IActiveOrderRepository activeOrderRepository;
+    private INotificationRepository userNotificationRepository;
 
     @Mock
-    private IPendingNotificationRepository notificationRepository;
+    private INotifier notifier;
 
     @InjectMocks
     private UserService userService;
@@ -253,7 +254,7 @@ class UserServiceTest {
         Response<String> result = userService.submitUserComplaint(TOKEN, "Admin", "My complaint");
 
         assertTrue(result.isSuccess());
-        verify(notificationRepository, times(1)).save(eq("SYSTEM_ADMIN"), contains(USERNAME));
+        verify(notifier, times(1)).notifyUser(eq("SYSTEM_ADMIN"), contains("Complaint from"), any());
     }
 
     @Test
@@ -263,14 +264,17 @@ class UserServiceTest {
         Response<String> result = userService.submitUserComplaint(TOKEN, "Admin", "My complaint");
 
         assertTrue(result.isError());
-        verify(notificationRepository, never()).save(any(), any());
+        verify(notifier, never()).notifyUser(any(), any(), any());
     }
 
     @Test
     void getUserNotifications_Success_ShouldReturnMessages() {
+        String userId = "user-id-123";
+        Notification n1 = new Notification("id1", userId, "msg1");
+        Notification n2 = new Notification("id2", userId, "msg2");
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-        when(notificationRepository.retrieveAndDelete(USERNAME)).thenReturn(java.util.List.of("msg1", "msg2"));
+        when(tokenService.extractUserId(TOKEN)).thenReturn(userId);
+        when(userNotificationRepository.getAll(userId)).thenReturn(java.util.List.of(n1, n2));
 
         Response<java.util.List<String>> result = userService.getUserNotifications(TOKEN);
 
@@ -285,6 +289,6 @@ class UserServiceTest {
         Response<java.util.List<String>> result = userService.getUserNotifications(TOKEN);
 
         assertTrue(result.isError());
-        verify(notificationRepository, never()).retrieveAndDelete(any());
+        verify(userNotificationRepository, never()).getAll(any());
     }
 }

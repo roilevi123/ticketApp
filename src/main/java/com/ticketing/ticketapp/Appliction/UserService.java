@@ -1,5 +1,6 @@
 package com.ticketing.ticketapp.Appliction;
 
+import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Domain.User.UserDTO;
@@ -19,16 +20,19 @@ public class UserService implements IAuth {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final IUserRepository userRepository;
     private final TokenService tokenService;
-    private final IPendingNotificationRepository notificationRepository;    
+    private final INotificationRepository userNotificationRepository;
+    private final INotifier notifier;
 
     public UserService(IPasswordEncoder passwordEncoder,
                        IUserRepository userRepository,
                        TokenService tokenService,
-                       IPendingNotificationRepository notificationRepository) {
+                       INotificationRepository userNotificationRepository,
+                       INotifier notifier) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
-        this.notificationRepository = notificationRepository;
+        this.userNotificationRepository = userNotificationRepository;
+        this.notifier = notifier;
     }
 
     @Override
@@ -175,9 +179,8 @@ public class UserService implements IAuth {
             String username = tokenService.extractUsername(token);
 
             logger.info("User {} is submitting a complaint to {}", username, targetRole);
-            String formattedMessage = String.format("Complaint from %s: %s", username, messageContent);
             String targetId = targetRole.equalsIgnoreCase("Admin") ? "SYSTEM_ADMIN" : targetRole;
-            notificationRepository.save(targetId, formattedMessage);
+            notifier.notifyUser(targetId, "Complaint from " + username, messageContent);
             logger.info("Successfully submitted complaint from {}", username);
             return Response.success("Complaint sent successfully");
             
@@ -192,10 +195,11 @@ public class UserService implements IAuth {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            String username = tokenService.extractUsername(token);
-            List<String> messages = notificationRepository.retrieveAndDelete(username);
-            
-            return Response.success(messages != null ? messages : new ArrayList<>());
+            String userId = tokenService.extractUserId(token);
+            List<String> messages = userNotificationRepository.getAll(userId).stream()
+                    .map(n -> n.getMessage())
+                    .collect(java.util.stream.Collectors.toList());
+            return Response.success(messages);
         } catch (Exception e) {
             logger.error("Failed to fetch notifications", e);
             return Response.error(e.getMessage());

@@ -24,8 +24,6 @@ class CompanyControllerTest {
     @Mock private PurchasePolicyService purchasePolicyService;
     @Mock private DiscountService discountService;
     @Mock private PurchasedService purchasedService;
-    @Mock private IPendingNotificationRepository notificationRepository;
-
     @InjectMocks
     private CompanyController companyController;
 
@@ -102,28 +100,6 @@ class CompanyControllerTest {
         ResponseEntity<?> response = companyController.assignRole(TOKEN, dto);
 
         assertEquals(400, response.getStatusCode().value());
-    }
-
-    // --- getInboxMessages ---
-
-    @Test
-    void getInboxMessages_Returns200WithMessages() {
-        when(notificationRepository.retrieveAndDelete("BGU Events")).thenReturn(List.of("msg1", "msg2"));
-
-        ResponseEntity<?> response = companyController.getInboxMessages(TOKEN);
-
-        assertEquals(200, response.getStatusCode().value());
-        assertEquals(List.of("msg1", "msg2"), response.getBody());
-    }
-
-    @Test
-    void getInboxMessages_NullFromRepo_Returns200WithEmptyList() {
-        when(notificationRepository.retrieveAndDelete("BGU Events")).thenReturn(null);
-
-        ResponseEntity<?> response = companyController.getInboxMessages(TOKEN);
-
-        assertEquals(200, response.getStatusCode().value());
-        assertTrue(((List<?>) response.getBody()).isEmpty());
     }
 
     // --- removeOwner ---

@@ -5,6 +5,7 @@ import com.ticketing.ticketapp.Appliction.EventService;
 import com.ticketing.ticketapp.Appliction.UserService;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
+import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
@@ -32,17 +33,20 @@ public class DataInitializer implements ApplicationRunner {
     private final TokenService tokenService;
     private final iTicketRepository ticketRepository;
     private final iPurchasedOrderRepository purchasedOrderRepository;
+    private final iAdminRepository adminRepository;
 
     public DataInitializer(UserService userService, CompanyService companyService,
                            EventService eventService, TokenService tokenService,
                            iTicketRepository ticketRepository,
-                           iPurchasedOrderRepository purchasedOrderRepository) {
+                           iPurchasedOrderRepository purchasedOrderRepository,
+                           iAdminRepository adminRepository) {
         this.userService = userService;
         this.companyService = companyService;
         this.eventService = eventService;
         this.tokenService = tokenService;
         this.ticketRepository = ticketRepository;
         this.purchasedOrderRepository = purchasedOrderRepository;
+        this.adminRepository = adminRepository;
     }
 
     @Override
@@ -54,6 +58,7 @@ public class DataInitializer implements ApplicationRunner {
             userService.register(guestToken2, "koren_manager", "koren123", 25, "koren@bgu.ac.il");
             String loginToken = tokenService.generateGuestToken();
             String adminToken = userService.login(loginToken, "admin", "admin123").getData();
+            adminRepository.addAdmin(tokenService.extractUserId(adminToken));
 
             companyService.CreateCompany("BGU Events", adminToken);
 

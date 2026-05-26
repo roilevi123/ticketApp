@@ -62,15 +62,15 @@ public class AdminJUnitTests {
         };
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-        IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
+
         ISupplyService supplyService = new SupplyServiceMock();
         IPaymentService paymentService = new PaymentServiceMock();
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
         INotifier notifierMock = mock(INotifier.class);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock);
 
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock, notificationRepository);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
 
         this.eventService = new EventService(companyRepository, eventRepository, tokenService,
                 treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
@@ -91,7 +91,8 @@ public class AdminJUnitTests {
                 ticketRepository,
                 eventRepository,
                 tokenService,
-                notifierMock
+                notifierMock,
+                activeOrderRepository
         );
 
         userRepository.deleteAll();

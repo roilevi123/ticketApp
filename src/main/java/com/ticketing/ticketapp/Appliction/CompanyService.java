@@ -20,20 +20,17 @@ public class CompanyService {
     private iCompanyRepository companyRepository;
     private IUserRepository userRepository;
     private iTreeOfRoleRepository treeOfRoleRepository;
-    private IPendingNotificationRepository notificationRepository;
     private TokenService tokenService;
     private INotifier notifier;
     private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
 
     public CompanyService(iCompanyRepository companyRepository, IUserRepository userRepository,
-            iTreeOfRoleRepository iTreeOfRoleRepository, TokenService tokenService, INotifier notifier,
-            IPendingNotificationRepository notificationRepository) {
+            iTreeOfRoleRepository iTreeOfRoleRepository, TokenService tokenService, INotifier notifier) {
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.treeOfRoleRepository = iTreeOfRoleRepository;
         this.notifier = notifier;
-        this.notificationRepository = notificationRepository;
     }
 
     public Response<String> CreateCompany(String company, String token) {
@@ -327,8 +324,7 @@ public class CompanyService {
                 throw new RuntimeException("Unauthorized: Only owners or managers can reply to buyers");
             }
 
-            String formattedMessage = String.format("Message from %s: %s", companyName, message);
-            notificationRepository.save(buyerId, formattedMessage);
+            notifier.notifyUser(buyerId, "Message from " + companyName, message);
             logger.info("Successfully replied to buyer {}", buyerId);
             return Response.success("success");
 
