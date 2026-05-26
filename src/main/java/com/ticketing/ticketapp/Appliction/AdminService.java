@@ -24,6 +24,9 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.time.LocalDateTime;
+import com.ticketing.ticketapp.Domain.User.Suspension;
+
 @Service
 public class AdminService {
     private iCompanyRepository companyRepository;
@@ -179,6 +182,81 @@ public class AdminService {
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> suspendUser(String targetUserID, String adminID, int durationInDays){
+        try {
+            logger.info("Admin {} is suspending user {} for {} days", adminID, targetUserID, durationInDays);
+
+            if(!adminRepository.isAdmin(adminID))
+                throw new Exception("Admin does not exist");
+
+            User user = userRepository.getUserByID(targetUserID);
+            if(user==null)
+                throw new Exception("User not found");
+
+            LocalDateTime startTime = LocalDateTime.now();
+            Suspension suspension;
+            LocalDateTime endTime;
+
+            if(durationInDays==0){
+                suspension=new Suspension(targetUserID, startTime);
+                userRepository.addCurrentSuspension(targetUserID,suspension);
+                logger.info("User {} suspended permanently successfully", targetUserID);
+                notifier.notifyUser(targetUserID, "Account Suspended", "Your account has been suspended by an adminstrator for good");
+
+            }
+            else {
+                endTime = startTime.plusDays(durationInDays);
+                suspension = new Suspension(targetUserID, startTime, endTime);
+                userRepository.addCurrentSuspension(targetUserID,suspension);
+                logger.info("User {} suspended successfully until {}", targetUserID, endTime);
+                notifier.notifyUser(targetUserID, "Account Suspended", "Your account has been suspended by an adminstrator until "+endTime.toString());
+            }
+
+            return Response.success("success");
+
+        }catch (Exception e){
+            logger.info("Failed to suspend user: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> cancelSuspension(String targetUserId, String adminId){
+        try{
+            logger.info("Admin {} is canceling the suspension of the user {}", targetUserId, adminId);
+
+            if(!adminRepository.isAdmin(adminId))
+                throw new Exception("Admin does not exist");
+
+            User user = userRepository.getUserByID(targetUserId);
+            if(user==null)
+                throw new Exception("User does not exist");
+
+            userRepository.cancelSuspension(targetUserId);
+            logger.info("User {} is not suspended anymore", targetUserId);
+            notifier.notifyUser(targetUserId, "Account is no longer suspended", "The suspension of your account was canceled by an adminstrator");
+
+            return Response.success("success");
+        }catch(Exception e){
+            logger.info("Failed to cancel suspension of user: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<List<Suspension>> getAllSuspensions(String adminId){
+        try{
+            logger.info("Admin {} is viewing suspension history", adminId);
+
+            if(!adminRepository.isAdmin(adminId))
+                throw new Exception("Admin does not exist");
+
+            List<Suspension> suspensions = userRepository.getAllSuspensions();
+            return Response.success(suspensions);
+        }catch(Exception e){
+            logger.info("Failed to get all suspensions: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
     }

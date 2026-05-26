@@ -51,6 +51,7 @@ public class OrderService {
             if (tokenService.validateToken(token)) {
                 userID = tokenService.extractUserId(token);
             }
+
             int totalRequested = requests.stream().mapToInt(r -> (r.length > 2) ? r[2] : 1).sum();
             validatePurchasePolicies(event, company, userID, totalRequested);
 

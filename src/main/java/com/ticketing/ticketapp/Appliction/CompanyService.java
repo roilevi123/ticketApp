@@ -48,6 +48,7 @@ public class CompanyService {
             }
             String username = userObj.getName();
             logger.info("trying create company", username, company);
+
             companyRepository.store(company, username);
             treeOfRoleRepository.storeOwner(username, company, iTreeOfRoleRepository.FOUNDER_APPOINTER);
             logger.info("successfully create company", username, company);
@@ -74,6 +75,7 @@ public class CompanyService {
             if (!UserExists) {
                 throw new RuntimeException("User not found2");
             }
+
             treeOfRoleRepository.storeManager(managerID, company, permissions, username);
             logger.info("successfully appointAManager", managerID, company);
             notifyMember(managerID, "Manager Appointment",
@@ -111,6 +113,7 @@ public class CompanyService {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
+
             boolean m = treeOfRoleRepository.isManager(username, company);
             if (!m) {
                 throw new RuntimeException("User not found2");
@@ -131,6 +134,7 @@ public class CompanyService {
                 throw new RuntimeException("Invalid token");
             }
             String username = tokenService.extractUsername(token);
+
             boolean o = treeOfRoleRepository.exitsOwner(username, company);
             if (!o) {
                 throw new RuntimeException("User not found1");
@@ -158,6 +162,7 @@ public class CompanyService {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
+
             Owner m = treeOfRoleRepository.getOwner(username, company);
             m.acceptAppointment();
             treeOfRoleRepository.save(m);
@@ -176,6 +181,7 @@ public class CompanyService {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
+
             boolean m = treeOfRoleRepository.isOwner(username, company);
             if (!m) {
                 throw new RuntimeException("User not found2");
@@ -200,6 +206,7 @@ public class CompanyService {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
+
             boolean m = treeOfRoleRepository.isAppointerOwner(ownerID, company, username);
             if (!m) {
                 throw new RuntimeException("you are not allowed to fire owner ");
@@ -220,6 +227,7 @@ public class CompanyService {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
+
             boolean m = treeOfRoleRepository.isAppointerManager(managerID, company, username);
             if (!m) {
                 throw new RuntimeException("you are not allowed to fire owner ");
@@ -240,8 +248,7 @@ public class CompanyService {
                 throw new RuntimeException("Invalid token");
             }
             String username = tokenService.extractUsername(token);
-            logger.info("User {} is trying to change permissions for manager {} in company {}", username, managerID,
-                    company);
+            logger.info("User {} is trying to change permissions for manager {} in company {}", username, managerID,company);
             Manager manager = treeOfRoleRepository.getManager(managerID, company);
             if (manager == null) {
                 throw new RuntimeException("Manager not found");
@@ -268,6 +275,7 @@ public class CompanyService {
             }
             String username = tokenService.extractUsername(token);
             logger.info("trying freeze company", username, company);
+
             Company companyObj = companyRepository.getCompany(company);
             companyObj.freezeCompany(username);
             companyRepository.save(companyObj);
@@ -292,6 +300,7 @@ public class CompanyService {
             }
             String username = tokenService.extractUsername(token);
             logger.info("trying unfreeze company", username, company);
+
             Company companyObj = companyRepository.getCompany(company);
             companyObj.unfreezeCompany(username);
             companyRepository.save(companyObj);

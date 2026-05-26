@@ -125,6 +125,7 @@ public class EventService {
             if (username == null || !isAuthorized(company, username)) {
                 throw new RuntimeException("Unauthorized: User is not an owner or authorized manager");
             }
+
             Event event = eventRepository.getEvent(eventName, company);
             if (event == null) {
                 throw new RuntimeException("Event not found: " + eventName);
