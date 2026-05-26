@@ -174,9 +174,6 @@ public class UserService implements IAuth {
             
             String username = tokenService.extractUsername(token);
 
-            if(userRepository.isUserSuspendedNow(username))
-                throw new Exception("User is suspended by adminstartor");
-
             logger.info("User {} is submitting a complaint to {}", username, targetRole);
             String formattedMessage = String.format("Complaint from %s: %s", username, messageContent);
             String targetId = targetRole.equalsIgnoreCase("Admin") ? "SYSTEM_ADMIN" : targetRole;
