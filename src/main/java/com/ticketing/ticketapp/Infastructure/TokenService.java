@@ -22,10 +22,11 @@ public class TokenService {
 
     private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
 
-    public String generateMemberToken(String userId, String username, String role) {
+    // שיניתי כאן שיהיה תפקיד MEMBER קבוע
+    public String generateMemberToken(String userId, String username) {
         return Jwts.builder()
                 .setSubject(userId)
-                .claim("role", role)
+                .claim("role", "MEMBER")
                 .claim("username", username)
                 .setId(UUID.randomUUID().toString())
                 .setIssuedAt(new Date())

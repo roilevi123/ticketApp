@@ -103,6 +103,23 @@ public class AuthController {
         return ResponseEntity.status(401).body(Map.of("error", response.getMessage()));
     }
 
+    @PostMapping("/exit-company")
+    public ResponseEntity<?> exitCompany(@RequestHeader("Authorization") String token) {
+        try {
+            String cleanToken = token.replace("Bearer ", "");
+            
+            if (!tokenService.validateToken(cleanToken)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Invalid token"));
+            }
+            String userId = tokenService.extractUserId(cleanToken);
+            String username = tokenService.extractUsername(cleanToken);
+            String memberToken = tokenService.generateMemberToken(userId, username);
+            return ResponseEntity.ok(Map.of("token", memberToken));           
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
+        }
+    }
+
     
     public static class RegisterRequest {
         private String username;

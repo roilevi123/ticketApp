@@ -61,7 +61,7 @@ class UserServiceTest {
         when(userRepository.getUserPassword(USERNAME)).thenReturn(ENCODED_PASSWORD);
         when(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD)).thenReturn(true);
         when(userRepository.getUserByUsername(USERNAME)).thenReturn(mockUser);
-        when(tokenService.generateMemberToken(mockUser.getID(), USERNAME), mock).thenReturn(TOKEN);
+        when(tokenService.generateMemberToken(mockUser.getID(), USERNAME)).thenReturn(TOKEN);
 
         Response<String> result = userService.login(TOKEN, USERNAME, RAW_PASSWORD);
 

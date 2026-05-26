@@ -69,7 +69,7 @@ public class UserService implements IAuth {
             }
             User userObj = userRepository.getUserByUsername(username);
             String actualRole = "MEMBER";
-            String memberToken = tokenService.generateMemberToken(userObj.getID(), userObj.getName(), actualRole);
+            String memberToken = tokenService.generateMemberToken(userObj.getID(), userObj.getName());
             logger.info("User {} logged in successfully", username);
             return Response.success(memberToken);
         } catch (Exception e) {
