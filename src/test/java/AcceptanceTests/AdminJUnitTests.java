@@ -339,6 +339,6 @@ public class AdminJUnitTests {
         assertTrue(response.isSuccess());
 
         assertNull(userRepository.getCurrentSuspensionByUserID(targetUserId));
-
+        assertFalse(userRepository.isUserSuspendedNow(targetUserId));
     }
 }
