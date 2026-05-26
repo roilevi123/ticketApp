@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import axiosClient from '../api/axiosClient';
 
 const AVAILABLE_PERMISSIONS = [
     "MANAGE_INVENTORY",
@@ -25,15 +26,8 @@ export default function TeamHierarchyTab() {
 
   const fetchHierarchy = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/api/company/${encodeURIComponent(companyName)}/hierarchy`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setHierarchyTree(data.tree || "No tree data available.");
-      } else {
-        setHierarchyTree("Error: Could not load hierarchy tree.");
-      }
+      const response = await axiosClient.get(`/company/${encodeURIComponent(companyName)}/hierarchy`);
+      setHierarchyTree(response.data.tree || "No tree data available.");
     } catch (error) {
       setHierarchyTree("Network error. Server might be offline.");
     }
@@ -65,25 +59,13 @@ export default function TeamHierarchyTab() {
     };
 
     try {
-      const response = await fetch('http://localhost:8080/api/company/assign-role', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        alert(`${formData.role} assigned successfully to user ${formData.targetUserId}!`);
-        setFormData({ targetUserId: '', role: 'MANAGER', permissions: [] });
-        fetchHierarchy(); 
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to assign role: ${errorText}`);
-      }
+      await axiosClient.post('/company/assign-role', payload);
+      alert(`${formData.role} assigned successfully to user ${formData.targetUserId}!`);
+      setFormData({ targetUserId: '', role: 'MANAGER', permissions: [] });
+      fetchHierarchy();
     } catch (error) {
-      alert("Network error connecting to server.");
+      const msg = error.response?.data || error.message || "Network error.";
+      alert(`Failed to assign role: ${msg}`);
     }
   };
 

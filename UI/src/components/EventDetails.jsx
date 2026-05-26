@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-
-const AUTH_HEADER = 'Bearer guest-temporary-token';
+import axiosClient from '../api/axiosClient';
 
 const TYPE_CONFIG = {
   LIVE_PERFORMANCE: { gradient: 'from-blue-950 via-indigo-900 to-blue-800', icon: 'music_note' },
@@ -161,21 +160,17 @@ export default function EventDetails() {
   useEffect(() => {
     const controller = new AbortController();
 
-    fetch(
-      `http://localhost:8080/api/discovery/companies/${encodeURIComponent(companyName)}/events/${encodeURIComponent(eventName)}`,
-      { headers: { Authorization: AUTH_HEADER }, signal: controller.signal }
+    axiosClient.get(
+      `/discovery/companies/${encodeURIComponent(companyName)}/events/${encodeURIComponent(eventName)}`,
+      { signal: controller.signal }
     )
       .then((res) => {
-        if (!res.ok) throw new Error(`Failed to load event (${res.status})`);
-        return res.json();
-      })
-      .then((data) => {
         // DEV: force isHighDemand true to test lottery UI — remove once backend sets this flag
-        setEvent({ ...data, isHighDemand: true });
+        setEvent({ ...res.data, isHighDemand: true });
         setLoading(false);
       })
       .catch((err) => {
-        if (err.name !== 'AbortError') {
+        if (err.code !== 'ERR_CANCELED') {
           setError(err.message);
           setLoading(false);
         }
