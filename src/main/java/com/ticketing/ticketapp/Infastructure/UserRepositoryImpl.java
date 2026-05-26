@@ -147,4 +147,16 @@ public class UserRepositoryImpl implements IUserRepository {
         suspensionHistory.add(suspension);
     }
 
+    @Override
+    public List<Suspension> getAllSuspensions(){
+        List<Suspension> suspensions = new LinkedList<>();
+        for(Suspension suspension: currentSuspensions.values()){
+            suspensions.add(suspension);
+        }
+        for (Suspension suspension:suspensionHistory){
+            suspensions.add(suspension);
+        }
+        return suspensions;
+    }
+
 }
