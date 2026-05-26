@@ -36,12 +36,13 @@ function Login() {
       const userId = decoded ? decoded.sub : "unknown";
 
       // Keep role canonical in UPPERCASE
-      let role = decoded && decoded.role ? String(decoded.role).toUpperCase() : "MEMBER";
+      let role =
+        decoded && decoded.role ? String(decoded.role).toUpperCase() : "MEMBER";
 
       login(jwtToken, role, userId);
 
       setTimeout(() => {
-        navigate("/profile");
+        navigate("/");
       }, 1500);
     } catch (err) {
       const respData = err.response?.data;
@@ -51,7 +52,7 @@ function Login() {
 
   return (
     <div className="flex flex-col items-center justify-center p-8 min-h-[70vh] bg-surface-dim rounded-2xl border border-outline-variant my-8">
-      <div className="bg-surface-container-highest border border-outline-variant p-8 rounded-xl w-full max-w-sm shadow-2xl">
+      <div className="bg-surface-container-highest border border-outline-variant p-12 rounded-xl w-full max-w-[36rem] shadow-2xl">
         <h2 className="text-headline-md text-on-surface mb-6 text-center">
           Login
         </h2>
