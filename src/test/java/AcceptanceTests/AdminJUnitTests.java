@@ -394,4 +394,13 @@ public class AdminJUnitTests {
         assertFalse(response.isSuccess());
         assertNotNull(userRepository.getCurrentSuspensionByUserID(targetUserId));
     }
+
+    @Test
+    @DisplayName("16. Get All Suspensions Failed - Not Admin")
+    void getAllSuspensionsFailedNotAdmin16() {
+        var response = adminService.getAllSuspensions("hacker_user");
+
+        assertFalse(response.isSuccess());
+        assertNull(response.getData());
+    }
 }
