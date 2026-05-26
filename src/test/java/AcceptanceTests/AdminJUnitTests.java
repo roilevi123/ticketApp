@@ -403,4 +403,15 @@ public class AdminJUnitTests {
         assertFalse(response.isSuccess());
         assertNull(response.getData());
     }
+
+    @Test
+    @DisplayName("17. Cancel Suspension Failed - User Not Suspended")
+    void cancelSuspensionFailedNotSuspended17() {
+        reg("activeUser", "password123");
+        String targetUserId = userRepository.getUserByUsername("activeUser").getID();
+
+        var response = adminService.cancelSuspension(targetUserId, "admin");
+
+        assertFalse(response.isSuccess());
+    }
 }
