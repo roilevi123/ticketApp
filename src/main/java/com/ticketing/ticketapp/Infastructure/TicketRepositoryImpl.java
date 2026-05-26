@@ -150,14 +150,18 @@ public class TicketRepositoryImpl implements iTicketRepository {
                 MapArea area = mapAreas[i][j];
 
                 if (area == MapArea.SEAT) {
-                    storeTicket(i, j, event, company, price);
+                    storeTicketWithDate(i, j, event, company, price, date);
                 } else if (area == MapArea.STAND) {
-                    for (int k = 0; k < 1; k++) {
-                        storeTicket(i, j, event, company, price);
-                    }
+                    storeTicketWithDate(i, j, event, company, price, date);
                 }
             }
         }
+    }
+
+    private void storeTicketWithDate(int row, int col, String event, String company, double price, Date date) {
+        Ticket ticket = new Ticket(row, col, event, company, String.valueOf(idCounter.getAndIncrement()), price);
+        ticket.setDate(date);
+        tickets.computeIfAbsent(event + company, k -> new CopyOnWriteArrayList<>()).add(ticket);
     }
     @Override
     public List<Ticket> getTicketsForEvent(String company, String event) {
