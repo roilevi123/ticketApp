@@ -159,4 +159,10 @@ public class UserRepositoryImpl implements IUserRepository {
         return suspensions;
     }
 
+    @Override
+    public Suspension getCurrentSuspensionByUserID(String userID){
+        Suspension suspension = currentSuspensions.get(userID);
+        return suspension;
+    }
+
 }
