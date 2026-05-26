@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 public class Suspension {
     String userID;
-    LocalDateTime startTime;
+    final LocalDateTime startTime;
     LocalDateTime endTime;
     boolean isPermanent;
 
@@ -35,5 +35,10 @@ public class Suspension {
 
     public boolean isPermanent(){
         return isPermanent;
+    }
+
+    public void setEndTime(LocalDateTime endTime){
+        this.endTime=endTime;
+        this.isPermanent=false;
     }
 }
