@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-
-const API_BASE    = 'http://localhost:8080';
-const AUTH_HEADER = 'Bearer guest-temporary-token';
+import axiosClient from '../api/axiosClient';
 
 // ─── Toast notification ───────────────────────────────────────────────────────
 
@@ -63,14 +61,9 @@ export default function MemberProfile() {
 
   // ── Fetch profile on mount ──────────────────────────────────────────────────
   useEffect(() => {
-    fetch(`${API_BASE}/api/users/profile`, {
-      headers: { Authorization: AUTH_HEADER },
-    })
+    axiosClient.get('/users/profile')
       .then((res) => {
-        if (!res.ok) throw new Error(`Server error ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
+        const data = res.data;
         // Backend stores one combined name field; split it for the two inputs
         const parts = (data.name ?? '').trim().split(/\s+/);
         setFirstName(parts[0] ?? '');
@@ -86,20 +79,12 @@ export default function MemberProfile() {
   async function handleSave() {
     setSaveLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/users/profile`, {
-        method: 'PUT',
-        headers: {
-          Authorization: AUTH_HEADER,
-          'Content-Type': 'application/json',
-        },
-        // Backend uses combined name + ID (studentId) + email
-      body: JSON.stringify({
+      // Backend uses combined name + ID (studentId) + email
+      await axiosClient.put('/users/profile', {
         name: `${firstName} ${lastName}`.trim(),
         ID: studentId,
         email,
-      }),
       });
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
       setIsEditing(false);
       showToast('success', 'Profile saved successfully.');
     } catch (err) {
@@ -114,15 +99,7 @@ export default function MemberProfile() {
     e.preventDefault();
     setSubmitLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/support/ticket`, {
-        method: 'POST',
-        headers: {
-          Authorization: AUTH_HEADER,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ supportType, subject, message }),
-      });
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      await axiosClient.post('/support/ticket', { supportType, subject, message });
       setSubject('');
       setMessage('');
       setSupportType('admin');
