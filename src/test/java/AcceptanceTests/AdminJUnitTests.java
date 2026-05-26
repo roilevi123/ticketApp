@@ -414,4 +414,12 @@ public class AdminJUnitTests {
 
         assertFalse(response.isSuccess());
     }
+
+    @Test
+    @DisplayName("18. Cancel Suspension Failed - User Not Found")
+    void cancelSuspensionFailedUserNotFound18() {
+        var response = adminService.cancelSuspension("fake-user-id-999", "admin");
+
+        assertFalse(response.isSuccess());
+    }
 }
