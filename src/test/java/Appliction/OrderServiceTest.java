@@ -70,6 +70,86 @@ class OrderServiceTest {
         verify(orderRepository, times(1)).store(eq(COMPANY), eq(EVENT), anyList(), eq(USERNAME), any(Date.class));
     }
 
+    @Test
+    void reserveTickets_GuestToken_ReservesWithNullUserId() {
+        ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(false);
+        // ConcurrentHashMap throws NPE on null key — stub to return null for guest (no user record)
+        doReturn(null).when(userRepository).getUserByID(null);
+
+        List<int[]> requests = List.of(new int[]{0, 0});
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+
+        assertTrue(response.isSuccess());
+    }
+
+    @Test
+    void reserveTickets_NotEnoughTickets_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+
+        // request 2 tickets at spot (0,0) but only 1 available
+        ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
+        List<int[]> requests = List.of(new int[]{0, 0, 2});
+
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+
+        assertFalse(response.isSuccess());
+    }
+
+    @Test
+    void getActiveOrderTickets_WithOrderId_ReturnsTickets() {
+        ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+
+        List<int[]> requests = List.of(new int[]{0, 0});
+        Response<String> reserveResponse = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+        assertTrue(reserveResponse.isSuccess());
+
+        String orderId = reserveResponse.getData();
+        Response<java.util.List<com.ticketing.ticketapp.Domain.Ticket.TicketDTO>> result =
+                reserveTicketService.getActiveOrderTickets(TOKEN, orderId);
+
+        assertTrue(result.isSuccess());
+        assertFalse(result.getData().isEmpty());
+    }
+
+    @Test
+    void getActiveOrderTickets_OrderIdNotFound_ReturnsError() {
+        Response<java.util.List<com.ticketing.ticketapp.Domain.Ticket.TicketDTO>> result =
+                reserveTicketService.getActiveOrderTickets(TOKEN, "nonexistent-id");
+
+        assertFalse(result.isSuccess());
+        assertEquals("Order not found", result.getMessage());
+    }
+
+    @Test
+    void getActiveOrderTickets_NullOrderId_ValidToken_ReturnsTickets() {
+        ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+
+        List<int[]> requests = List.of(new int[]{0, 0});
+        reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+
+        Response<java.util.List<com.ticketing.ticketapp.Domain.Ticket.TicketDTO>> result =
+                reserveTicketService.getActiveOrderTickets(TOKEN, null);
+
+        assertTrue(result.isSuccess());
+    }
+
+    @Test
+    void getActiveOrderTickets_NullOrderId_InvalidToken_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(false);
+
+        Response<java.util.List<com.ticketing.ticketapp.Domain.Ticket.TicketDTO>> result =
+                reserveTicketService.getActiveOrderTickets(TOKEN, null);
+
+        assertFalse(result.isSuccess());
+    }
+
     public boolean isNumeric(String str) {
         if (str == null) return false;
         try {
