@@ -385,4 +385,41 @@ class PurchasedServiceTest {
         assertTrue(result.isError());
         verify(purchasedOrderRepository, never()).getPurchasedOrdersForUser(anyString());
     }
+
+    @Test
+    void getSubTreeSalesReport_InvalidToken_ReturnsError() {
+        when(tokenService.validateToken("bad_token")).thenReturn(false);
+
+        var result = purchasedService.getSubTreeSalesReport("bad_token", COMPANY);
+
+        assertTrue(result.isError());
+    }
+
+    @Test
+    void getSubTreeSalesReport_NotAuthorized_ReturnsError() {
+        when(tokenService.validateToken(USERNAME)).thenReturn(true);
+        when(tokenService.extractUsername(USERNAME)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
+        when(treeOfRoleRepository.ManagerPermitToSeeTransactions(USERNAME, COMPANY)).thenReturn(false);
+
+        var result = purchasedService.getSubTreeSalesReport(USERNAME, COMPANY);
+
+        assertTrue(result.isError());
+    }
+
+    @Test
+    void getSubTreeSalesReport_AsOwner_ReturnsReport() {
+        when(tokenService.validateToken(USERNAME)).thenReturn(true);
+        when(tokenService.extractUsername(USERNAME)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+        when(treeOfRoleRepository.getAllOwnersByCompany(COMPANY)).thenReturn(List.of());
+        when(treeOfRoleRepository.getAllManagersByCompany(COMPANY)).thenReturn(List.of());
+        when(purchasedOrderRepository.getPurchasedOrdersForCompany(COMPANY)).thenReturn(List.of());
+
+        var result = purchasedService.getSubTreeSalesReport(USERNAME, COMPANY);
+
+        assertTrue(result.isSuccess());
+        assertEquals(0.0, result.getData().getTotalRevenue(), 0.001);
+        assertEquals(0, result.getData().getTotalTicketsSold());
+    }
 }

@@ -1,4 +1,5 @@
 package com.ticketing.ticketapp.Infastructure;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import com.ticketing.ticketapp.Domain.Company.Company;
@@ -9,12 +10,15 @@ import java.util.List;
 @Repository
 public class CompanyRepositoryImpl implements iCompanyRepository {
     private Map<String, Company> companies = new ConcurrentHashMap<String, Company>();
+
     public CompanyRepositoryImpl() {
 
     }
+
     @Override
     public String getCompanyDescription(String company) {
-        return companies.get(company).toString();
+        Company c = companies.get(company);
+        return c == null ? "" : c.toString();
     }
 
     @Override
@@ -25,8 +29,12 @@ public class CompanyRepositoryImpl implements iCompanyRepository {
 
     @Override
     public String getCompanyFounder(String company) {
-        return companies.get(company).getFounderID();
+        Company c = companies.get(company);
+        if (c == null)
+            throw new RuntimeException("Company not found: " + company);
+        return c.getFounderID();
     }
+
     @Override
     public void save(Company companyToUpdate) {
         String name = companyToUpdate.getCompanyName();
@@ -64,7 +72,8 @@ public class CompanyRepositoryImpl implements iCompanyRepository {
 
     @Override
     public boolean isCompanyActive(String company) {
-        return companies.get(company).getActive();
+        Company c = companies.get(company);
+        return c != null && c.getActive();
     }
 
     @Override
