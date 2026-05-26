@@ -285,17 +285,10 @@ export default function EventCatalog() {
 
         {/* ── All Events Grid ── */}
         <section className="max-w-container-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12">
-          <div className="flex justify-between items-end mb-8 border-b border-outline-variant pb-4">
+          <div className="mb-8 border-b border-outline-variant pb-4">
             <h2 className="text-headline-md text-on-surface">
               {isSearching ? `Results for "${searchQuery}"` : 'All Events'}
             </h2>
-            {!isSearching && (
-              <div className="flex gap-4">
-                <button className="text-label-md text-on-surface-variant hover:text-secondary px-2 transition-colors">Music</button>
-                <button className="text-label-md text-on-surface-variant hover:text-secondary px-2 transition-colors">Theater</button>
-                <button className="text-label-md text-on-surface-variant hover:text-secondary px-2 transition-colors">Academic</button>
-              </div>
-            )}
           </div>
 
           {error ? (

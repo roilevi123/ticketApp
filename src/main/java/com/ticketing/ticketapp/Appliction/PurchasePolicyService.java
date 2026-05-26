@@ -94,6 +94,29 @@ public class PurchasePolicyService {
         }
     }
 
+    /**
+     * Returns the most restrictive seat cap enforced by the event-level and/or
+     * company-level purchase policies.  Returns {@code null} (no cap) when
+     * neither policy defines a quantity limit.
+     */
+    public Response<Integer> getMaxSeatsForEvent(String eventName, String companyName) {
+        try {
+            PurchasePolicy eventPolicy   = purchaseRepo.findByEvent(eventName);
+            PurchasePolicy companyPolicy = purchaseRepo.findByCompany(companyName);
+
+            Integer eventMax   = (eventPolicy   != null) ? eventPolicy.getRoot().getMaxSeats()   : null;
+            Integer companyMax = (companyPolicy != null) ? companyPolicy.getRoot().getMaxSeats() : null;
+
+            if (eventMax == null && companyMax == null) return Response.success(null);
+            if (eventMax   == null) return Response.success(companyMax);
+            if (companyMax == null) return Response.success(eventMax);
+            return Response.success(Math.min(eventMax, companyMax));
+        } catch (Exception e) {
+            logger.error("Error getting max seats for event {}: {}", eventName, e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
     public Response<List<PurchasePolicyDTO>> getPoliciesForEventAndCompany(String token, String eventId, String companyName) {
         try {
             validateToken(token);

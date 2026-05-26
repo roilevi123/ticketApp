@@ -20,6 +20,11 @@ public class QuantityLimitCondition implements PurchaseComponent {
     public int getMaxQuantity() {
         return maxQuantity;
     }
+
+    @Override
+    public Integer getMaxSeats() {
+        return maxQuantity;
+    }
     @Override
     public String getDescription() {
         return String.format("Quantity between %d and %d", minQuantity, maxQuantity);
