@@ -65,7 +65,7 @@ public class DiscountPaymentTests {
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
 
         this.purchasedService = new PurchasedService(
                 activeOrderRepository, ticketRepository, purchasedOrderRepository,
@@ -113,7 +113,7 @@ public class DiscountPaymentTests {
         discountService.createSimpleDiscount(ownerToken, "E1", DiscountTargetType.EVENT, 10.0, "C1");
 
         String buyerToken = registerAndLoginBuyer("b1");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C1", "E1", List.of(new int[]{0, 0, 1})).getData();
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
 
         purchasedService.PurchaseTicket("b1@g.com", orderId, "b1", "none");
 
@@ -127,7 +127,7 @@ public class DiscountPaymentTests {
         discountService.createCouponDiscount(ownerToken, "E2", DiscountTargetType.EVENT, "PROMO50", 50.0, "C2");
 
         String buyerToken = registerAndLoginBuyer("b2");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C2", "E2", List.of(new int[]{0, 0, 1})).getData();
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C2", "E2", List.of(new int[]{0, 0, 1}), null).getData();
 
         purchasedService.PurchaseTicket("b2@g.com", orderId, "b2", "PROMO50");
 
@@ -142,7 +142,7 @@ public class DiscountPaymentTests {
 
         String buyerToken = registerAndLoginBuyer("b3");
         List<int[]> seats = List.of(new int[]{0, 0, 1}, new int[]{0, 1, 1});
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C3", "E3", seats).getData();
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C3", "E3", seats, null).getData();
 
         purchasedService.PurchaseTicket("b3@g.com", orderId, "b3", "none");
 
@@ -160,7 +160,7 @@ public class DiscountPaymentTests {
         discountService.createSumDiscountPolicy(ownerToken, "E4", DiscountTargetType.EVENT, List.of(d1, d2), "C4");
 
         String buyerToken = registerAndLoginBuyer("b4");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C4", "E4", List.of(new int[]{0, 0, 1})).getData();
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C4", "E4", List.of(new int[]{0, 0, 1}), null).getData();
 
         purchasedService.PurchaseTicket("b4@g.com", orderId, "b4", "PLUS5");
 
@@ -178,7 +178,7 @@ public class DiscountPaymentTests {
         discountService.createMaxDiscountPolicy(ownerToken, "E5", DiscountTargetType.EVENT, List.of(d1, d2), "C5");
 
         String buyerToken = registerAndLoginBuyer("b5");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C5", "E5", List.of(new int[]{0, 0, 1})).getData();
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C5", "E5", List.of(new int[]{0, 0, 1}), null).getData();
 
         purchasedService.PurchaseTicket("b5@g.com", orderId, "b5", "none");
 
@@ -195,7 +195,7 @@ public class DiscountPaymentTests {
         discountService.createTimeLimitedDiscount(ownerToken, "E6", DiscountTargetType.EVENT, 50.0, cal.getTime(), "C6");
 
         String buyerToken = registerAndLoginBuyer("b6");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C6", "E6", List.of(new int[]{0, 0, 1})).getData();
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C6", "E6", List.of(new int[]{0, 0, 1}), null).getData();
 
         purchasedService.PurchaseTicket("b6@g.com", orderId, "b6", "none");
 
@@ -209,7 +209,7 @@ public class DiscountPaymentTests {
         discountService.createCouponDiscount(ownerToken, "E7", DiscountTargetType.EVENT, "REAL_CODE", 20.0, "C7");
 
         String buyerToken = registerAndLoginBuyer("b7");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C7", "E7", List.of(new int[]{0, 0, 1})).getData();
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C7", "E7", List.of(new int[]{0, 0, 1}), null).getData();
 
         purchasedService.PurchaseTicket("b7@g.com", orderId, "b7", "FAKE_CODE");
 

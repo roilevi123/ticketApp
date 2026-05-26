@@ -33,7 +33,7 @@ class OrderControllerTest {
         dto.setEvent("EventX");
         dto.setRequests(List.of(new int[]{1, 2}));
 
-        when(orderService.reserveTickets(TOKEN, "CompanyA", "EventX", dto.getRequests()))
+        when(orderService.reserveTickets(TOKEN, "CompanyA", "EventX", dto.getRequests(), null))
                 .thenReturn(Response.success("order-123"));
 
         ResponseEntity<?> response = orderController.reserveTickets(TOKEN, dto);
@@ -49,7 +49,7 @@ class OrderControllerTest {
         dto.setEvent("EventX");
         dto.setRequests(List.of());
 
-        when(orderService.reserveTickets(TOKEN, "CompanyA", "EventX", List.of()))
+        when(orderService.reserveTickets(TOKEN, "CompanyA", "EventX", List.of(), null))
                 .thenReturn(Response.error("No tickets available"));
 
         ResponseEntity<?> response = orderController.reserveTickets(TOKEN, dto);

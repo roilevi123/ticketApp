@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+
 import java.util.Date;
 
 @RestController
@@ -113,6 +114,7 @@ public class EventController {
         }
         return ResponseEntity.badRequest().body(response.getMessage());
     }
+
 
     @GetMapping("/companies")
     public ResponseEntity<?> getActiveCompanies(

@@ -56,7 +56,7 @@ public class PurchasePolicyAcceptanceTests {
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
-        this.reserveService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
+        this.reserveService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
         this.policyService = new PurchasePolicyService(purchasePolicyRepository, tokenService);
 
         userRepository.deleteAll();
@@ -102,7 +102,7 @@ public class PurchasePolicyAcceptanceTests {
     void underageForEvent() {
         regAndSetup("admin", "C1", "E1", 18);
         String userToken = quickReg("kid", 12);
-        Response<String> result = reserveService.reserveTickets(userToken, "C1", "E1", List.of(new int[]{0, 0, 1}));
+        Response<String> result = reserveService.reserveTickets(userToken, "C1", "E1", List.of(new int[]{0, 0, 1}), null);
         assertTrue(result.isError());
         assertTrue(result.getMessage().contains("Doesn't stand in Event Purchase Policy"));
     }
@@ -111,7 +111,7 @@ public class PurchasePolicyAcceptanceTests {
     void meetsAgePolicy() {
         regAndSetup("admin", "C1", "E1", 18);
         String userToken = quickReg("adult", 25);
-        Response<String> result = reserveService.reserveTickets(userToken, "C1", "E1", List.of(new int[]{1, 1, 1}));
+        Response<String> result = reserveService.reserveTickets(userToken, "C1", "E1", List.of(new int[]{1, 1, 1}), null);
         assertTrue(isNumeric(result.getData()), "Expected numeric Order ID but got: " + result.getData());
     }
 
@@ -120,7 +120,7 @@ public class PurchasePolicyAcceptanceTests {
         String admin = regAndSetup("admin", "C1", "E1", 0);
         policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 0, 2);
         String user = quickReg("u1", 20);
-        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{0, 0, 5}));
+        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{0, 0, 5}), null);
         assertTrue(result.isError());
     }
 
@@ -129,7 +129,7 @@ public class PurchasePolicyAcceptanceTests {
         String admin = regAndSetup("admin", "C1", "E1", 0);
         policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 5, 10);
         String user = quickReg("u1", 20);
-        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{0, 0, 2}));
+        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{0, 0, 2}), null);
         assertTrue(result.isError());
     }
 
@@ -138,7 +138,7 @@ public class PurchasePolicyAcceptanceTests {
         String admin = regAndSetup("admin", "C1", "E1", 0);
         policyService.createAgeLimitPolicy(admin, "C1", PurchaseTargetType.COMPANY, 21);
         String userToken = quickReg("u1", 19);
-        Response<String> result = reserveService.reserveTickets(userToken, "C1", "E1", List.of(new int[]{0, 0, 1}));
+        Response<String> result = reserveService.reserveTickets(userToken, "C1", "E1", List.of(new int[]{0, 0, 1}), null);
         assertTrue(result.isError());
         assertTrue(result.getMessage().contains("Company Purchase Policy"));
     }
@@ -151,7 +151,7 @@ public class PurchasePolicyAcceptanceTests {
         policyService.createAndPolicy(admin, "E1", PurchaseTargetType.EVENT, Arrays.asList(p1, p2));
 
         String user = quickReg("u1", 20);
-        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{2, 2, 1}));
+        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{2, 2, 1}), null);
         assertTrue(isNumeric(result.getData()));
     }
 
@@ -163,7 +163,7 @@ public class PurchasePolicyAcceptanceTests {
         policyService.createOrPolicy(admin, "E1", PurchaseTargetType.EVENT, Arrays.asList(p1, p2));
 
         String user = quickReg("u1", 20);
-        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{0, 0, 5}));
+        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{0, 0, 5}), null);
         assertTrue(result.isError());
     }
 
@@ -175,14 +175,14 @@ public class PurchasePolicyAcceptanceTests {
         policyService.createOrPolicy(admin, "E1", PurchaseTargetType.EVENT, Arrays.asList(pAge, pQty));
 
         String user = quickReg("u1", 10); // Underage but quantity is 1
-        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{3, 3, 1}));
+        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{3, 3, 1}), null);
         assertTrue(isNumeric(result.getData()));
     }
 
     @Test @DisplayName("9. Fail - Guest User on Age Policy")
     void guestUserAgeFail() {
         regAndSetup("admin", "C1", "E1", 18);
-        Response<String> result = reserveService.reserveTickets(gt(), "C1", "E1", List.of(new int[]{0, 0, 1}));
+        Response<String> result = reserveService.reserveTickets(gt(), "C1", "E1", List.of(new int[]{0, 0, 1}), null);
         assertTrue(isNumeric(result.getData()));
     }
 
@@ -192,7 +192,7 @@ public class PurchasePolicyAcceptanceTests {
         policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 0, 3);
         String user = quickReg("u1", 20);
         List<int[]> reqs = List.of(new int[]{4, 4, 2}, new int[]{5, 5, 2});
-        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", reqs);
+        Response<String> result = reserveService.reserveTickets(user, "C1", "E1", reqs, null);
         assertTrue(result.isError());
     }
 

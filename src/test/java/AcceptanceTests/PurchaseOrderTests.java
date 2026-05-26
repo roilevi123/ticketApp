@@ -61,7 +61,7 @@ public class PurchaseOrderTests {
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentService, barcodeGenerator, tokenService, treeOfRoleRepository, discountPolicyRepository, userRepository, notifierMock);
 
         activeOrderRepository.deleteAllActiveOrders();
@@ -112,7 +112,7 @@ public class PurchaseOrderTests {
         reg("2", "2");
         String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
-        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests).getData();
+        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
         assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none").getData());
     }
 
@@ -125,7 +125,7 @@ public class PurchaseOrderTests {
         reg("2", "2");
         String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
-        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests).getData();
+        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
         Thread.sleep(11000);
         assertTrue(purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none").isError());
     }
@@ -139,7 +139,7 @@ public class PurchaseOrderTests {
         reg("2", "2");
         String token1 = log("2", "2");
         List<int[]> requests = Arrays.asList(new int[]{0, 0, 1}, new int[]{1, 1, 1});
-        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests).getData();
+        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
         assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none").getData());
     }
 
@@ -152,7 +152,7 @@ public class PurchaseOrderTests {
         reg("2", "2");
         String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
-        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests).getData();
+        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
         purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none");
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token).getData();
 
@@ -183,7 +183,7 @@ public class PurchaseOrderTests {
         reg("2", "2");
         String token1 = log("2", "2");
         List<int[]> requests = Arrays.asList(new int[]{0, 0, 1}, new int[]{1, 1, 1});
-        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests).getData();
+        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
         purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none");
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token).getData();
 
@@ -224,7 +224,7 @@ public class PurchaseOrderTests {
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
         reg("2", "2");
         String token2 = log("2", "2");
-        String orderId = reserveTicketService.reserveTickets(token2, "1", "1", List.of(new int[]{0, 0, 1})).getData();
+        String orderId = reserveTicketService.reserveTickets(token2, "1", "1", List.of(new int[]{0, 0, 1}), null).getData();
         purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none");
 
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token3).getData();
@@ -264,8 +264,8 @@ public class PurchaseOrderTests {
 
         List<int[]> requests = List.of(new int[]{0, 0, 1});
 
-        String o1 = reserveTicketService.reserveTickets(tB2, "1", "E1", requests).getData();
-        String o2 = reserveTicketService.reserveTickets(tB3, "1", "E2", requests).getData();
+        String o1 = reserveTicketService.reserveTickets(tB2, "1", "E1", requests, null).getData();
+        String o2 = reserveTicketService.reserveTickets(tB3, "1", "E2", requests, null).getData();
 
         assertEquals("success", purchasedService.PurchaseTicket("r2@g.com", o1, "buyer2", "none").getData());
         assertEquals("success", purchasedService.PurchaseTicket("r3@g.com", o2, "buyer3", "none").getData());
@@ -321,8 +321,8 @@ public class PurchaseOrderTests {
         reg("buyer9b", "p");
         String tB = log("buyer9b", "p");
 
-        String o1 = reserveTicketService.reserveTickets(tA, "C9", "E1", List.of(new int[]{0, 0, 1})).getData();
-        String o2 = reserveTicketService.reserveTickets(tB, "C9", "E2", List.of(new int[]{0, 0, 1})).getData();
+        String o1 = reserveTicketService.reserveTickets(tA, "C9", "E1", List.of(new int[]{0, 0, 1}), null).getData();
+        String o2 = reserveTicketService.reserveTickets(tB, "C9", "E2", List.of(new int[]{0, 0, 1}), null).getData();
 
         assertEquals("success", purchasedService.PurchaseTicket("a@g.com", o1, "buyer9a", "none").getData());
         assertEquals("success", purchasedService.PurchaseTicket("b@g.com", o2, "buyer9b", "none").getData());
@@ -352,7 +352,7 @@ public class PurchaseOrderTests {
 
         reg("20", "20");
         String tB = log("20", "20");
-        String orderId = reserveTicketService.reserveTickets(tB, "C10", "E10", List.of(new int[]{0, 0, 1})).getData();
+        String orderId = reserveTicketService.reserveTickets(tB, "C10", "E10", List.of(new int[]{0, 0, 1}), null).getData();
         purchasedService.PurchaseTicket("b@gmail.com", orderId, "20", "none");
 
         List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(tB).getData();
@@ -390,10 +390,10 @@ public class PurchaseOrderTests {
         String tB = log("buyer", "p");
         List<int[]> req = List.of(new int[]{0, 0, 1});
 
-        String oA = reserveTicketService.reserveTickets(tB, "CA", "EA", req).getData();
+        String oA = reserveTicketService.reserveTickets(tB, "CA", "EA", req, null).getData();
         assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oA, "buyer", "none").getData(), "Purchase for CA failed");
 
-        String oB = reserveTicketService.reserveTickets(tB, "CB", "EB", req).getData();
+        String oB = reserveTicketService.reserveTickets(tB, "CB", "EB", req, null).getData();
         assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oB, "buyer", "none").getData(), "Purchase for CB failed");
 
         List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(tB).getData();
@@ -436,7 +436,7 @@ public class PurchaseOrderTests {
         eventService.createEvent(tO, "SecE", "SecC", EventType.PLAY, 100, new Date(), "L", "SecC", getMapArea());
 
         String guestToken = tokenService.generateGuestToken();
-        String order1 = reserveTicketService.reserveTickets(guestToken, "SecC", "SecE", List.of(new int[]{0, 0, 1})).getData();
+        String order1 = reserveTicketService.reserveTickets(guestToken, "SecC", "SecE", List.of(new int[]{0, 0, 1}), null).getData();
         assertEquals("success", purchasedService.PurchaseTicket("u1@gmail.com", order1, "guestUser", "none").getData());
     }
 
@@ -449,7 +449,7 @@ public class PurchaseOrderTests {
 
         reg("2", "2");
         String tB = log("2", "2");
-        String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1})).getData();
+        String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
 
         userService.logout(tB);
         log("2", "2");
@@ -475,7 +475,7 @@ public class PurchaseOrderTests {
 
         reg("2", "2");
         String tB = log("2", "2");
-        String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1})).getData();
+        String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
 
         userService.logout(tB);
         Thread.sleep(11000);

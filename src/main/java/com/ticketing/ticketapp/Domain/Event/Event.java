@@ -5,8 +5,8 @@ import java.util.Date;
 
 public class Event {
     private String eventId;
-    private String companyName; 
-    private String queueId; 
+    private String companyName;
+    private String queueId;
     private String name;
     private String description;
     private double rating;
@@ -17,8 +17,14 @@ public class Event {
     private double price;
     private int totalTickets;
     private int availableTickets;
-    private int version; 
+    private int version;
     private MapArea[][] map;
+
+    // ── Lottery fields ────────────────────────────────────────────────────────
+    private boolean highDemand;
+    private Date lotteryEndDate;
+    private int lotteryMaxWinners;
+
 
     public Event(String eventId, String companyName, String queueId, String name, String location, String artistName, Date date, double price, int totalTickets, EventType type, MapArea[][] mapArea) {
         this.eventId = eventId;
@@ -34,6 +40,9 @@ public class Event {
         this.version = 0;
         this.type = type;
         this.map = mapArea;
+        this.highDemand = false;
+        this.lotteryEndDate = null;
+        this.lotteryMaxWinners = 0;
     }
 
     public Event(Event event) {
@@ -52,6 +61,9 @@ public class Event {
         this.artistName = event.getArtistName();
         this.map = event.getMap();
         this.rating = event.getRating();
+        this.highDemand = event.isHighDemand();
+        this.lotteryEndDate = event.getLotteryEndDate();
+        this.lotteryMaxWinners = event.getLotteryMaxWinners();
     }
 
 
@@ -72,17 +84,26 @@ public class Event {
     public String getArtistName() { return artistName; }
     public double getRating() { return rating; }
 
+    // getters – lottery
+    public boolean isHighDemand()          { return highDemand; }
+    public Date    getLotteryEndDate()     { return lotteryEndDate; }
+    public int     getLotteryMaxWinners()  { return lotteryMaxWinners; }
+
     // setters
-    public void setName(String name) { this.name = name; }
-    public void setType(EventType type) { this.type = type; }
-    public void setLocation(String location) { this.location = location; }
-    public void setArtistName(String artistName) { this.artistName = artistName; }
-    public void setMap(MapArea[][] map) { this.map = map; }
-    public void setPrice(double price) { this.price = price; }
-    public void setDate(Date date) { this.date = date; }
-    public void setVersion(int version) { this.version = version; }
-    public void setRating(double rating) { this.rating = rating; }
-    public void setCompany(String companyName) { this.companyName = companyName; }
+    public void setName(String name)               { this.name = name; }
+    public void setType(EventType type)            { this.type = type; }
+    public void setLocation(String location)       { this.location = location; }
+    public void setArtistName(String artistName)   { this.artistName = artistName; }
+    public void setMap(MapArea[][] map)            { this.map = map; }
+    public void setPrice(double price)             { this.price = price; }
+    public void setDate(Date date)                 { this.date = date; }
+    public void setVersion(int version)            { this.version = version; }
+    public void setRating(double rating)           { this.rating = rating; }
+    public void setCompany(String companyName)     { this.companyName = companyName; }
+    // setters – lottery
+    public void setHighDemand(boolean highDemand)          { this.highDemand = highDemand; }
+    public void setLotteryEndDate(Date lotteryEndDate)     { this.lotteryEndDate = lotteryEndDate; }
+    public void setLotteryMaxWinners(int lotteryMaxWinners){ this.lotteryMaxWinners = lotteryMaxWinners; }
     
 
     @Override
