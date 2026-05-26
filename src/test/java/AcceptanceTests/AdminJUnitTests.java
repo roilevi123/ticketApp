@@ -28,6 +28,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.LocalDateTime;
+
 @DisplayName("Admin Management Acceptance Tests")
 public class AdminJUnitTests {
 
@@ -302,8 +304,8 @@ public class AdminJUnitTests {
 
         assertTrue(response.isSuccess());
 
-        User user = userRepository.getUserByID(targetUserId);
-        assertNotNull(userRepository.isUserSuspendedNow(user.getID()));
-        assertTrue(updatedUser.getCurrentSuspension().getEndDate().after(new Date()));
+        Suspension suspension = userRepository.getCurrentSuspensionByUserID(targetUserId);
+        assertNotNull(suspension);
+        assertTrue(suspension.getEndTime().isAfter(LocalDateTime.now()));
     }
 }
