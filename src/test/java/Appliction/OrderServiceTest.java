@@ -1,8 +1,6 @@
 package Appliction;
-
 import com.ticketing.ticketapp.Appliction.*;
-
-import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
+import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.*;
@@ -47,7 +45,13 @@ class OrderServiceTest {
         purchasePolicyRepository = spy(new InMemoryPurchasePolicyRepository());
 
         INotifier notifierMock = mock(INotifier.class);
-        reserveTicketService = new OrderService(orderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
+        iEventRepository eventRepositoryMock = mock(iEventRepository.class);
+        LotteryService lotteryServiceMock = mock(LotteryService.class);
+        // Normal events are not high-demand: return null so the lottery gate is skipped
+        when(eventRepositoryMock.getEvent(any(), any())).thenReturn(null);
+        reserveTicketService = new OrderService(orderRepository, tokenService, ticketRepository,
+                userRepository, purchasePolicyRepository, notifierMock,
+                eventRepositoryMock, lotteryServiceMock);
     }
 
     @Test
@@ -63,7 +67,7 @@ class OrderServiceTest {
         requests.add(new int[]{0, 0});
         requests.add(new int[]{1, 1});
 
-        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests, null);
 
         assertTrue(response.isSuccess());
         assertEquals("1", response.getData());
@@ -79,7 +83,7 @@ class OrderServiceTest {
         doReturn(null).when(userRepository).getUserByID(null);
 
         List<int[]> requests = List.of(new int[]{0, 0});
-        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests, null);
 
         assertTrue(response.isSuccess());
     }
@@ -93,7 +97,7 @@ class OrderServiceTest {
         ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
         List<int[]> requests = List.of(new int[]{0, 0, 2});
 
-        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests, null);
 
         assertFalse(response.isSuccess());
     }
@@ -105,7 +109,7 @@ class OrderServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
 
         List<int[]> requests = List.of(new int[]{0, 0});
-        Response<String> reserveResponse = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+        Response<String> reserveResponse = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests, null);
         assertTrue(reserveResponse.isSuccess());
 
         String orderId = reserveResponse.getData();
@@ -132,7 +136,7 @@ class OrderServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
 
         List<int[]> requests = List.of(new int[]{0, 0});
-        reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+        reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests, null);
 
         Response<java.util.List<com.ticketing.ticketapp.Domain.Ticket.TicketDTO>> result =
                 reserveTicketService.getActiveOrderTickets(TOKEN, null);
@@ -173,7 +177,7 @@ class OrderServiceTest {
 
         List<int[]> requests = List.of(new int[]{0, 0});
 
-        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests, null);
 
         assertFalse(response.isSuccess());
     }
@@ -191,7 +195,7 @@ class OrderServiceTest {
         Date pastDate = new Date(System.currentTimeMillis() - 100000);
         orderRepository.store(COMPANY, EVENT, List.of("T_OLD"), USERNAME, pastDate);
 
-        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests, null);
 
         assertTrue(response.isSuccess());
         assertTrue(isNumeric(response.getData()));

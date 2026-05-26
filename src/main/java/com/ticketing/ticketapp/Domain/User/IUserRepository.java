@@ -1,7 +1,6 @@
 package com.ticketing.ticketapp.Domain.User;
 
 import java.util.List;
-import java.util.Map;
 
 public interface IUserRepository {
     public User Store(String username, String password, int age, String email);

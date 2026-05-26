@@ -75,7 +75,7 @@ public class AdminJUnitTests {
         this.eventService = new EventService(companyRepository, eventRepository, tokenService,
                 treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
 
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
 
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository,
                 purchasedOrderRepository, supplyService,
@@ -185,7 +185,7 @@ public class AdminJUnitTests {
 
         reg("buyer", "p");
         String tB = log("buyer", "p");
-        String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1})).getData();
+        String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
         purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer", "none");
 
         var response = adminService.GetAllPurchasedOrders("admin");
@@ -218,12 +218,12 @@ public class AdminJUnitTests {
 
         reg("b1", "p");
         String tB1 = log("b1", "p");
-        String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", List.of(new int[]{0, 0, 1})).getData();
+        String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
         purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1", "none");
 
         reg("b2", "p");
         String tB2 = log("b2", "p");
-        String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1})).getData();
+        String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1}), null).getData();
         purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2", "none");
 
         var response = adminService.GetAllPurchasedOrders("admin");
@@ -271,10 +271,10 @@ public class AdminJUnitTests {
         reg("buyer8", "p");
         String tB = log("buyer8", "p");
 
-        String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", List.of(new int[]{0, 0, 1})).getData();
+        String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", List.of(new int[]{0, 0, 1}), null).getData();
         purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8", "none");
 
-        String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1})).getData();
+        String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1}), null).getData();
         purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8", "none");
 
         var response = adminService.GetAllPurchasedOrders("admin");

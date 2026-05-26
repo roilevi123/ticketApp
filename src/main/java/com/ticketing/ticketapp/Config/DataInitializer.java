@@ -2,6 +2,7 @@ package com.ticketing.ticketapp.Config;
 
 import com.ticketing.ticketapp.Appliction.CompanyService;
 import com.ticketing.ticketapp.Appliction.EventService;
+import com.ticketing.ticketapp.Appliction.LotteryService;
 import com.ticketing.ticketapp.Appliction.UserService;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
@@ -28,17 +29,19 @@ public class DataInitializer implements ApplicationRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(DataInitializer.class);
 
-    private final UserService userService;
+    private final UserService   userService;
     private final CompanyService companyService;
-    private final EventService eventService;
-    private final TokenService tokenService;
+    private final EventService  eventService;
+    private final LotteryService lotteryService;
+    private final TokenService  tokenService;
     private final iTicketRepository ticketRepository;
     private final iPurchasedOrderRepository purchasedOrderRepository;
     private final iAdminRepository adminRepository;
     private final INotificationRepository notificationRepository;
 
     public DataInitializer(UserService userService, CompanyService companyService,
-                           EventService eventService, TokenService tokenService,
+                           EventService eventService, LotteryService lotteryService,
+                           TokenService tokenService,
                            iTicketRepository ticketRepository,
                            iPurchasedOrderRepository purchasedOrderRepository,
                            iAdminRepository adminRepository,
@@ -46,6 +49,7 @@ public class DataInitializer implements ApplicationRunner {
         this.userService = userService;
         this.companyService = companyService;
         this.eventService = eventService;
+        this.lotteryService = lotteryService;
         this.tokenService = tokenService;
         this.ticketRepository = ticketRepository;
         this.purchasedOrderRepository = purchasedOrderRepository;
@@ -88,6 +92,17 @@ public class DataInitializer implements ApplicationRunner {
 
             createEvent(adminToken, "AI Research Conference", "Dr. Yael Stern",
                     EventType.CONFERENCE, 15.00, daysFromNow(60), "Alon Building, Room 201", map);
+
+            // ── High-demand lottery event ──────────────────────────────────────
+            // Lottery window closes in 5 minutes so it is easy to test locally.
+            createEvent(adminToken, "Coldplay World Tour", "Coldplay",
+                    EventType.LIVE_PERFORMANCE, 149.99, daysFromNow(90), "BGU Arena", map);
+            Date lotteryEnd = minutesFromNow(5);
+            lotteryService.configureLottery(adminToken, "BGU Events", "Coldplay World Tour",
+                    lotteryEnd, 50);
+            logger.info("DataInitializer: seeded high-demand lottery event 'Coldplay World Tour' " +
+                    "(lottery closes in 5 minutes, 50 winners)");
+
 
             // Seed purchased tickets for the admin user so "My Tickets" has test data
             String adminUserId = tokenService.extractUserId(adminToken);
@@ -148,5 +163,12 @@ public class DataInitializer implements ApplicationRunner {
         cal.add(Calendar.DAY_OF_YEAR, days);
         return cal.getTime();
     }
+
+    private Date minutesFromNow(int minutes) {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MINUTE, minutes);
+        return cal.getTime();
+    }
+
 
 }

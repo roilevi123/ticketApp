@@ -29,10 +29,11 @@ public class OrderController {
             @RequestBody ReserveRequestDTO request) {
         try {
             Response<String> result = orderService.reserveTickets(
-                    token, 
-                    request.getCompany(), 
-                    request.getEvent(), 
-                    request.getRequests()
+                    token,
+                    request.getCompany(),
+                    request.getEvent(),
+                    request.getRequests(),
+                    request.getLotteryCode()
             );
 
             if (result.isSuccess()) {
@@ -97,13 +98,18 @@ class ReserveRequestDTO {
     private String company;
     private String event;
     private List<int[]> requests;
+    /** Optional lottery purchase code – required for high-demand events. */
+    private String lotteryCode;
 
     public String getCompany() { return company; }
     public void setCompany(String company) { this.company = company; }
-    
+
     public String getEvent() { return event; }
     public void setEvent(String event) { this.event = event; }
-    
+
     public List<int[]> getRequests() { return requests; }
     public void setRequests(List<int[]> requests) { this.requests = requests; }
+
+    public String getLotteryCode() { return lotteryCode; }
+    public void setLotteryCode(String lotteryCode) { this.lotteryCode = lotteryCode; }
 }

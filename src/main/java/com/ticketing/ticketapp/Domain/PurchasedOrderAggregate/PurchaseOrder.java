@@ -1,6 +1,5 @@
 package com.ticketing.ticketapp.Domain.PurchasedOrderAggregate;
 
-import com.ticketing.ticketapp.Domain.Order.ActiveOrder;
 
 import java.util.List;
 

@@ -315,29 +315,6 @@ export default function MemberProfile() {
                 </div>
               </div>
             </div>
-
-            {/* Account Status card */}
-            <div className="bg-primary-container p-6 rounded-lg border border-outline-variant relative overflow-hidden">
-              <div className="relative z-10">
-                <h3 className="text-on-primary-container text-label-md font-bold mb-2 uppercase">
-                  Account Status
-                </h3>
-                <div className="flex items-center gap-2">
-                  <span className="inline-block h-2 w-2 rounded-full bg-secondary" />
-                  <p className="text-on-surface text-body-md">
-                    Verified Alumni Member
-                  </p>
-                </div>
-              </div>
-              <div className="absolute top-[-20%] right-[-10%] opacity-10 pointer-events-none">
-                <span
-                  className="material-symbols-outlined text-on-surface"
-                  style={{ fontSize: "120px" }}
-                >
-                  school
-                </span>
-              </div>
-            </div>
           </section>
 
           {/* ── Right Column: Contact Support ── */}
