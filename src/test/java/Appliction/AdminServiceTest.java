@@ -226,4 +226,19 @@ class AdminServiceTest {
         verify(userRepository, never()).addCurrentSuspension(anyString(), any());
     }
 
+    @Test
+    void cancelSuspension_Success() {
+        String targetUser = "user1";
+        User mockUser = mock(User.class);
+
+        when(userRepository.getUserByID(targetUser)).thenReturn(mockUser);
+
+        var response = adminService.cancelSuspension(targetUser, ADMIN_NAME);
+
+        assertTrue(response.isSuccess());
+        assertEquals("success", response.getData());
+
+        verify(userRepository).cancelSuspension(targetUser);
+        verify(notifier).notifyUser(eq(targetUser), eq("Account is no longer suspended"), anyString());
+    }
 }
