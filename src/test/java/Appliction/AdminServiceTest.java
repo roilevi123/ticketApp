@@ -280,6 +280,7 @@ class AdminServiceTest {
         assertEquals("Admin does not exist", response.getMessage());
         assertNull(response.getData());
         verify(userRepository, never()).getAllSuspensions();
+    }
     void sendMessageToUser_Success() {
         var result = adminService.sendMessageToUser(ADMIN_NAME, "user42", "Hello");
 
