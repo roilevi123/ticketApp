@@ -40,7 +40,7 @@ function Register() {
 
   return (
     <div className="flex flex-col items-center justify-center p-8 min-h-[70vh] bg-surface-dim rounded-2xl border border-outline-variant my-8">
-      <div className="bg-surface-container-highest border border-outline-variant p-8 rounded-xl w-full max-w-sm shadow-2xl">
+      <div className="bg-surface-container-highest border border-outline-variant p-12 rounded-xl w-full max-w-[36rem] shadow-2xl">
         <h2 className="text-headline-md text-on-surface mb-6 text-center">
           Register
         </h2>
