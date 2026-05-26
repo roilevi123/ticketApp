@@ -303,7 +303,7 @@ public class AdminJUnitTests {
         assertTrue(response.isSuccess());
 
         User user = userRepository.getUserByID(targetUserId);
-        assertNotNull(updatedUser.getCurrentSuspension());
+        assertNotNull(userRepository.isUserSuspendedNow(user.getID()));
         assertTrue(updatedUser.getCurrentSuspension().getEndDate().after(new Date()));
     }
 }
