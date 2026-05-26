@@ -7,5 +7,7 @@ public interface INotificationRepository {
     List<Notification> getAll(String userId);
     List<Notification> getUnread(String userId);
     void markAsRead(String userId, String notificationId);
+    void markAsUnread(String userId, String notificationId);
+    void markAllAsRead(String userId);
     void deleteAll();
 }

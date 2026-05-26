@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -218,6 +219,7 @@ export default function MyTickets() {
 
   const navigate = useNavigate();
   const { token } = useAuth();
+  const { hasUnread } = useNotifications();
 
   const fetchHistory = useCallback(() => {
     setLoading(true);
@@ -263,16 +265,16 @@ export default function MyTickets() {
       </div>
 
       {/* ── Header ── */}
-      <header className="w-full sticky top-0 bg-surface-dim border-b border-outline-variant z-50">
+      <header className="w-full bg-surface-dim border-b border-outline-variant">
         <div className="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-container-max-width mx-auto">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(-1)}
-              className="flex items-center text-on-surface-variant hover:text-secondary transition-colors"
+              onClick={() => navigate("/")}
+              className="flex items-center gap-1 text-on-surface-variant hover:text-secondary transition-colors"
             >
               <span className="material-symbols-outlined">arrow_back</span>
+              <span className="text-label-md font-medium">Home</span>
             </button>
-            <span className="text-headline-md font-bold text-secondary">My Tickets</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -288,6 +290,16 @@ export default function MyTickets() {
           </nav>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate("/inbox")}
+              className="relative flex items-center p-2 rounded-full text-on-surface-variant hover:text-secondary transition-colors"
+              title="Notifications"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "24px" }}>notifications</span>
+              {hasUnread && (
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full" />
+              )}
+            </button>
             <Link to="/profile">
               <span
                 className="material-symbols-outlined text-secondary hover:opacity-75 transition-opacity cursor-pointer"

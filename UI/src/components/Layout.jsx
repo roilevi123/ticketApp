@@ -1,61 +1,43 @@
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { Outlet, useLocation } from "react-router-dom";
+import { useNotifications } from "../contexts/NotificationContext";
 
 export default function Layout() {
-  const { role, logout, token } = useAuth();
+  const { popup, dismissPopup } = useNotifications();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const isProducerDashboard = location.pathname.includes("/producer-dashboard");
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
   return (
-    <div
-      className={`min-h-screen ${isProducerDashboard ? "bg-[#101415]" : "bg-zinc-100"}`}
-    >
-      <nav className="bg-blue-500 text-white px-6 py-3">
-        <div className="flex justify-between">
-          <Link to="/" className="font-bold text-lg">
-            Ticket System
-          </Link>
-
-          <div className="flex gap-3 items-center">
-            <Link to="/">Home</Link>
-
-            {role === "ADMIN" && <Link to="/admin">Dashboard</Link>}
-
-            {(role === "OWNER" ||
-              role === "MANAGER" ||
-              role === "FOUNDER") && (
-              <Link to="/producer-dashboard">Producer Area</Link>
-            )}
-
-            {token && role !== "GUEST" ? (
-              <>
-                <Link to="/profile">Profile</Link>
-                <button
-                  onClick={handleLogout}
-                  className="font-medium hover:underline"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <Link to="/login" className="font-medium hover:underline">
-                Sign in
-              </Link>
-            )}
+    <div className={`min-h-screen ${isProducerDashboard ? "bg-[#101415]" : "bg-background"}`}>
+      {/* Sliding notification popup */}
+      {popup && (
+        <div className="fixed top-16 right-4 z-50 animate-slide-in">
+          <div className="flex items-start gap-3 bg-[#1d2022] border border-[#e9c349] text-white px-4 py-3 rounded-lg shadow-2xl min-w-[260px] max-w-xs">
+            <span
+              className="material-symbols-outlined text-[#e9c349] flex-shrink-0 mt-0.5"
+              style={{ fontSize: "20px", fontVariationSettings: "'FILL' 1" }}
+            >
+              notifications
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#e9c349] mb-0.5">
+                New message
+              </p>
+              <p className="text-sm text-white truncate">{popup.title}</p>
+            </div>
+            <button
+              onClick={dismissPopup}
+              className="text-gray-400 hover:text-white flex-shrink-0 ml-1"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+                close
+              </span>
+            </button>
           </div>
         </div>
-      </nav>
+      )}
 
-      <div className="p-5">
-        <Outlet />
-      </div>
+      <Outlet />
     </div>
   );
 }

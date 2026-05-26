@@ -304,15 +304,15 @@ export default function EventDetails() {
       : `${selectedSeats.length} seat${selectedSeats.length !== 1 ? "s" : ""} selected`;
 
   return (
-    <div className="bg-background text-on-surface min-h-screen pb-32">
+    <div className="bg-background text-on-surface min-h-screen">
       {/* ── Top Nav ── */}
-      <nav className="flex items-center justify-between px-margin-mobile w-full h-16 bg-surface z-40 fixed top-0">
+      <nav className="flex items-center justify-between px-margin-mobile w-full h-16 bg-surface">
         <Link
           to="/"
           className="p-2 -ml-2 text-primary flex items-center gap-1 hover:text-secondary transition-colors"
         >
           <span className="material-symbols-outlined">arrow_back</span>
-          <span className="text-label-md font-medium">Catalog</span>
+          <span className="text-label-md font-medium">Home</span>
         </Link>
         <span className="text-headline-sm font-bold tracking-tight text-on-surface">
           UNIVERSITY EVENTS
@@ -523,94 +523,6 @@ export default function EventDetails() {
         )}
       </main>
 
-      {/* ── Fixed Bottom Action Bar ── */}
-      {!loading && !error && event && (
-        <footer className="fixed bottom-0 left-0 w-full z-50 bg-surface-container-high shadow-lg border-t border-outline-variant px-margin-mobile py-4 flex items-center justify-between gap-4">
-
-          {/* Price + reservation success feedback */}
-          <div className="flex flex-col min-w-0">
-            {reservation ? (
-              <>
-                <span className="text-label-sm text-secondary font-bold flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
-                  Reserved!
-                </span>
-                <span className="text-label-xs text-on-surface-variant truncate">
-                  {reservation.seatCount} seat{reservation.seatCount !== 1 ? "s" : ""} · Order #{reservation.orderId}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="text-label-sm text-on-surface-variant">Starting from</span>
-                <span className="text-headline-md text-on-surface font-bold">{formatPrice(minPrice)}</span>
-              </>
-            )}
-          </div>
-
-          {/* Action button */}
-          {event.isHighDemand ? (
-            <div className="relative group">
-              <button
-                disabled={!isRegisteredMember}
-                className={`font-bold px-8 py-3 rounded-full transition-transform active:scale-95 flex items-center gap-2 ${
-                  isRegisteredMember
-                    ? "bg-on-tertiary-container text-on-tertiary hover:brightness-110"
-                    : "bg-surface-container border border-outline-variant text-outline cursor-not-allowed"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[20px]">casino</span>
-                Lottery Registration
-              </button>
-              {!isRegisteredMember && (
-                <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-surface-container-highest rounded-lg text-label-sm text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-outline-variant z-10">
-                  Members only — register to enter the lottery
-                </div>
-              )}
-            </div>
-          ) : reservation ? (
-            // Post-reservation: offer to reserve more
-            <button
-              onClick={() => { setReservation(null); setReserveError(null); }}
-              className="font-bold px-6 py-3 rounded-full border border-secondary text-secondary hover:bg-secondary/10 transition-all active:scale-95 text-label-md"
-            >
-              Reserve More
-            </button>
-          ) : (
-            <div className="relative group">
-              <button
-                onClick={handleReserve}
-                disabled={!isRegisteredMember || selectedSeats.length === 0 || buying}
-                className={`font-bold px-8 py-3 rounded-full transition-all active:scale-95 flex items-center gap-2 ${
-                  isRegisteredMember && selectedSeats.length > 0 && !buying
-                    ? minPrice === 0
-                      ? "bg-primary text-on-primary hover:brightness-110"
-                      : "bg-secondary text-on-secondary hover:brightness-110"
-                    : "bg-surface-container border border-outline-variant text-outline cursor-not-allowed opacity-60"
-                }`}
-              >
-                {buying ? (
-                  <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
-                ) : (
-                  <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
-                )}
-                {buying
-                  ? "Reserving…"
-                  : selectedSeats.length > 0
-                  ? `Reserve ${selectedSeats.length} Seat${selectedSeats.length !== 1 ? "s" : ""}`
-                  : minPrice === 0 ? "Get Passes" : "Buy Tickets"}
-              </button>
-              {/* Tooltip when disabled */}
-              {(!isRegisteredMember || selectedSeats.length === 0) && !buying && (
-                <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-surface-container-highest rounded-lg text-label-sm text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-outline-variant z-10">
-                  {!isRegisteredMember
-                    ? "Sign in to buy tickets"
-                    : "Select at least one seat"}
-                </div>
-              )}
-            </div>
-          )}
-        </footer>
-      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
 
 //const API_URL = 'http://localhost:8080/api/discovery/events/search';
 //const AUTH_HEADER = 'Bearer guest-temporary-token';
@@ -248,6 +249,7 @@ export default function EventCatalog() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { role, logout, token } = useAuth();
+  const { hasUnread } = useNotifications();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -298,7 +300,7 @@ export default function EventCatalog() {
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col">
       {/* ── Top Nav ── */}
-      <header className="w-full sticky top-0 bg-surface-dim border-b border-outline-variant z-50">
+      <header className="w-full bg-surface-dim border-b border-outline-variant">
         <div className="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-container-max-width mx-auto">
           <div className="flex items-center gap-8">
             <span className="text-headline-md font-bold text-secondary">
@@ -325,6 +327,18 @@ export default function EventCatalog() {
                 className="w-full bg-surface-container-lowest border border-outline text-on-surface py-2 pl-10 pr-4 rounded-xl focus:border-secondary outline-none text-body-md placeholder:text-on-surface-variant"
               />
             </div>
+            {token && role !== "GUEST" && (
+              <button
+                onClick={() => navigate("/inbox")}
+                className="relative flex items-center p-2 rounded-full text-on-surface-variant hover:text-secondary transition-colors flex-shrink-0"
+                title="Notifications"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "24px" }}>notifications</span>
+                {hasUnread && (
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full" />
+                )}
+              </button>
+            )}
             <Link
               to="/profile"
               className="hover:bg-surface-container-highest transition-all p-2 rounded-full active:scale-95 duration-150 flex items-center"

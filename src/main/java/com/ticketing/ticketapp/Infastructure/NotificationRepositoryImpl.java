@@ -34,13 +34,31 @@ public class NotificationRepositoryImpl implements INotificationRepository {
 
     @Override
     public void markAsRead(String userId, String notificationId) {
+        setReadStatus(userId, notificationId, true);
+    }
+
+    @Override
+    public void markAsUnread(String userId, String notificationId) {
+        setReadStatus(userId, notificationId, false);
+    }
+
+    @Override
+    public void markAllAsRead(String userId) {
+        List<Notification> notifications = store.get(userId);
+        if (notifications == null) return;
+        synchronized (notifications) {
+            notifications.forEach(n -> n.setRead(true));
+        }
+    }
+
+    private void setReadStatus(String userId, String notificationId, boolean read) {
         List<Notification> notifications = store.get(userId);
         if (notifications == null) return;
         synchronized (notifications) {
             notifications.stream()
                     .filter(n -> n.getId().equals(notificationId))
                     .findFirst()
-                    .ifPresent(n -> n.setRead(true));
+                    .ifPresent(n -> n.setRead(read));
         }
     }
 

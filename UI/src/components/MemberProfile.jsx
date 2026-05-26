@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 
 // ─── Toast notification ───────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export default function MemberProfile() {
 
   const navigate = useNavigate();
   const { token, role, logout } = useAuth();
+  const { hasUnread } = useNotifications();
 
   function showToast(type, msg) {
     setToast({ type, message: msg });
@@ -111,13 +113,16 @@ export default function MemberProfile() {
     e.preventDefault();
     setSubmitLoading(true);
     try {
-      await axiosClient.post('/support/ticket', { supportType, subject, message });
+      await axiosClient.post('/users/support/message', {
+        recipientRole: supportType,
+        content: subject ? `[${subject}] ${message}` : message,
+      });
       setSubject('');
       setMessage('');
       setSupportType('ADMIN');
-      showToast('success', "Ticket submitted — we'll respond within 2–4 business hours.");
+      showToast('success', "Message sent successfully.");
     } catch (err) {
-      showToast("error", `Could not submit ticket: ${err.message}`);
+      showToast("error", `Could not send message: ${err.message}`);
     } finally {
       setSubmitLoading(false);
     }
@@ -137,7 +142,7 @@ export default function MemberProfile() {
       </div>
 
       {/* ── Header ── */}
-      <header className="w-full sticky top-0 bg-surface-dim border-b border-outline-variant z-50">
+      <header className="w-full bg-surface-dim border-b border-outline-variant">
         <div className="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-container-max-width mx-auto">
           <div className="flex items-center gap-4">
             <button
@@ -167,8 +172,15 @@ export default function MemberProfile() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <button className="flex items-center text-on-surface-variant hover:text-secondary transition-colors">
+            <button
+              onClick={() => navigate("/inbox")}
+              className="relative flex items-center p-2 rounded-full text-on-surface-variant hover:text-secondary transition-colors"
+              title="Notifications"
+            >
               <span className="material-symbols-outlined">notifications</span>
+              {hasUnread && (
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full" />
+              )}
             </button>
             <span
               className="material-symbols-outlined text-secondary cursor-pointer"
