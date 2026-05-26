@@ -359,4 +359,17 @@ public class AdminJUnitTests {
         assertNotNull(response.getData());
         assertTrue(response.getData().size() == 2);
     }
+
+    @Test
+    @DisplayName("13. Suspend User Failed - Not Admin")
+    void suspendUserFailedNotAdmin13() {
+        reg("userToSuspend3", "password123");
+        String targetUserId = userRepository.getUserByUsername("userToSuspend3").getID();
+
+        var response = adminService.suspendUser(targetUserId, "not_admin", 5);
+
+        assertFalse(response.isSuccess());
+
+        assertNull(userRepository.getCurrentSuspensionByUserID(targetUserId));
+    }
 }
