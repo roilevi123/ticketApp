@@ -117,7 +117,7 @@ function EventCard({ event, companyName }) {
             onClick={(e) => { e.stopPropagation(); navigate(path); }}
             className="bg-secondary text-on-secondary px-6 py-2 rounded-lg text-label-md font-bold uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all"
           >
-            {isFree ? "Get Passes" : "Buy Tickets"}
+            Buy Tickets
           </button>
         </div>
       </div>
