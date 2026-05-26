@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axiosClient from '../api/axiosClient';
 
 export default function PolicyBuilderTab() {
   // ניהול המצב של הטופס הנוכחי
@@ -94,27 +95,13 @@ export default function PolicyBuilderTab() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/company/policies/purchase/bulk', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(`Policy saved successfully! \nID: ${data.policyId}`);
-        // אופציונלי: לנקות את העץ אחרי שמירה מוצלחת
-        // setRules([]); 
-      } else {
-        const errorData = await response.text();
-        alert(`Failed to save policy: ${errorData}`);
-      }
+      const response = await axiosClient.post('/company/policies/purchase/bulk', payload);
+      alert(`Policy saved successfully! \nID: ${response.data.policyId}`);
+      // אופציונלי: לנקות את העץ אחרי שמירה מוצלחת
+      // setRules([]);
     } catch (error) {
-      console.error('Error connecting to server:', error);
-      alert('Network error. Is the Spring Boot server running?');
+      const msg = error.response?.data || error.message || "Network error.";
+      alert(`Failed to save policy: ${msg}`);
     }
   };
 

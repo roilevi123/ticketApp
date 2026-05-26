@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import axiosClient from '../api/axiosClient';
 
 export default function InboxTab() {
   const [messages, setMessages] = useState([]);
@@ -15,15 +16,11 @@ export default function InboxTab() {
   const fetchMessages = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/company/messages', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json(); 
-        
-        // מפרקים את המחרוזת ("Complaint from X: Y") לאובייקטים
-        const parsedMessages = data.map((msgString, index) => {
+      const response = await axiosClient.get('/company/messages');
+      const data = response.data;
+
+      // מפרקים את המחרוזת ("Complaint from X: Y") לאובייקטים
+      const parsedMessages = data.map((msgString, index) => {
           const splitIndex = msgString.indexOf(':');
           const senderPart = splitIndex !== -1 ? msgString.substring(0, splitIndex) : "Unknown Sender";
           const contentPart = splitIndex !== -1 ? msgString.substring(splitIndex + 1).trim() : msgString;
@@ -42,9 +39,8 @@ export default function InboxTab() {
           };
         });
 
-        setMessages(parsedMessages);
-        setSelectedMessage(null);
-      }
+      setMessages(parsedMessages);
+      setSelectedMessage(null);
     } catch (error) {
       console.error("Failed to fetch messages", error);
     } finally {
@@ -73,25 +69,13 @@ export default function InboxTab() {
     };
 
     try {
-      const response = await fetch('http://localhost:8080/api/company/reply-message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        alert('Reply sent successfully to the buyer!');
-        setMessages(messages.map(m => m.id === selectedMessage.id ? { ...m, hasReplied: true } : m));
-        setReplyText('');
-      } else {
-        const errorText = await response.text();
-        alert(`Failed to send reply: ${errorText}`);
-      }
+      await axiosClient.post('/company/reply-message', payload);
+      alert('Reply sent successfully to the buyer!');
+      setMessages(messages.map(m => m.id === selectedMessage.id ? { ...m, hasReplied: true } : m));
+      setReplyText('');
     } catch (error) {
-      alert("Network error. Could not connect to the server.");
+      const msg = error.response?.data || error.message || "Network error.";
+      alert(`Failed to send reply: ${msg}`);
     } finally {
       setIsSending(false);
     }
