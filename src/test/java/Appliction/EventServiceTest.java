@@ -462,5 +462,45 @@ public class EventServiceTest {
         assertTrue(result.isSuccess());
         assertEquals(1, result.getData().size());
         assertEquals("Summer Fest", result.getData().get(0).name());
+    void getCompanyEvents_Success() {
+        eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "TLV", COMPANY, MAP);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(companyRepository.isCompanyActive(COMPANY)).thenReturn(true);
+
+        Response<List<EventDTO>> result = eventService.getCompanyEvents(TOKEN, COMPANY);
+
+        assertTrue(result.isSuccess());
+        assertFalse(result.getData().isEmpty());
+        assertEquals(EVENT_NAME, result.getData().get(0).name());
+    }
+
+    @Test
+    void getCompanyEvents_Failure_CompanyNotActive() {
+        when(companyRepository.isCompanyActive(COMPANY)).thenReturn(false);
+
+        Response<List<EventDTO>> result = eventService.getCompanyEvents(TOKEN, COMPANY);
+
+        assertTrue(result.isError());
+    }
+
+    @Test
+    void getEvent_Success() {
+        eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "TLV", COMPANY, MAP);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+
+        Response<EventDTO> result = eventService.getEvent(TOKEN, COMPANY, EVENT_NAME);
+
+        assertTrue(result.isSuccess());
+        assertEquals(EVENT_NAME, result.getData().name());
+    }
+
+    @Test
+    void getEvent_NotFound_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+
+        Response<EventDTO> result = eventService.getEvent(TOKEN, COMPANY, "NonExistentEvent");
+
+        assertTrue(result.isError());
+        assertEquals("Event not found", result.getMessage());
     }
 }
