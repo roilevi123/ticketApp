@@ -15,6 +15,7 @@ import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.mock;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -52,11 +53,13 @@ public class WaitingQueueTests {
         this.tokenService = new TokenService();
 
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
+        IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService);
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository);
-        this.queueService = new QueueService(queueRepository, tokenService);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
+        INotifier notifierMock = mock(INotifier.class);
+        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock, notificationRepository);
+        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
+        this.queueService = new QueueService(queueRepository, tokenService, notifierMock);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();

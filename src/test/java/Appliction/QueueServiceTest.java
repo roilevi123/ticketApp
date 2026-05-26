@@ -3,6 +3,7 @@ package Appliction;
 import com.ticketing.ticketapp.Appliction.*;
 
 import com.ticketing.ticketapp.Domain.QueueAggregates.QueueEntry;
+import com.ticketing.ticketapp.Appliction.INotifier;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Infastructure.QueueRepositoryImpl;
 import com.ticketing.ticketapp.Infastructure.TokenService;
@@ -24,6 +25,8 @@ class QueueServiceTest {
 
     @Mock
     private TokenService tokenService;
+    @Mock
+    private INotifier notifier;
 
     private final String EVENT_ID = "Event123";
 
@@ -34,7 +37,7 @@ class QueueServiceTest {
         queueRepository.initQueue(EVENT_ID);
         when(tokenService.validateToken(anyString())).thenReturn(true);
         when(tokenService.extractUserId(anyString())).thenAnswer(inv -> inv.getArgument(0));
-        queueService = new QueueService(queueRepository, tokenService);
+        queueService = new QueueService(queueRepository, tokenService, notifier);
     }
 
     @Test

@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -47,6 +48,8 @@ class CompanyServiceTest {
     private iTreeOfRoleRepository treeOfRoleRepository;
     @Mock
     private TokenService tokenService;
+    @Mock
+    private INotifier notifier;
 
     @InjectMocks
     private CompanyService companyService;
@@ -517,5 +520,30 @@ class CompanyServiceTest {
         Response<Set<Permission>> result = companyService.GetManagerPermissions(TOKEN, COMPANY, managerName);
         assertTrue(result.isError());
         verify(treeOfRoleRepository, never()).getManager(anyString(), anyString());
+    }
+
+    @Test
+    void freezeCompany_NotifiesOwnersAndManagers() {
+        Owner owner = new Owner(USERNAME, COMPANY, "SYSTEM_FOUNDER");
+        Manager manager = new Manager("managerUsername", COMPANY, Set.of(), USERNAME);
+
+        User ownerUser = mock(User.class);
+        User managerUser = mock(User.class);
+        when(ownerUser.getID()).thenReturn("owner-uuid");
+        when(managerUser.getID()).thenReturn("manager-uuid");
+
+        Company mockCompany = new Company(COMPANY, USERNAME);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(companyRepository.getCompany(COMPANY)).thenReturn(mockCompany);
+        when(treeOfRoleRepository.getAllOwnersByCompany(COMPANY)).thenReturn(List.of(owner));
+        when(treeOfRoleRepository.getAllManagersByCompany(COMPANY)).thenReturn(List.of(manager));
+        when(userRepository.getUserByUsername(USERNAME)).thenReturn(ownerUser);
+        when(userRepository.getUserByUsername("managerUsername")).thenReturn(managerUser);
+
+        companyService.freezeCompany(COMPANY, TOKEN);
+
+        verify(notifier).notifyUser(eq("owner-uuid"), anyString(), anyString());
+        verify(notifier).notifyUser(eq("manager-uuid"), anyString(), anyString());
     }
 }

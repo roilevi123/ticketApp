@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-
-const API_BASE = "";
+import axiosClient from "../api/axiosClient";
 
 // ─── Toast notification ───────────────────────────────────────────────────────
 
@@ -58,7 +57,6 @@ export default function MemberProfile() {
 
   const navigate = useNavigate();
   const { token, role, logout } = useAuth();
-  const AUTH_HEADER = `Bearer ${token || "guest-temporary-token"}`;
 
   function showToast(type, msg) {
     setToast({ type, message: msg });
@@ -67,50 +65,39 @@ export default function MemberProfile() {
 
   // ── Fetch profile on mount ──────────────────────────────────────────────────
   useEffect(() => {
-    fetch(`${API_BASE}/api/users/profile`, {
-      headers: { Authorization: AUTH_HEADER },
-    })
-      .then((res) => {
-        if (res.status === 401) {
-          logout();
-          navigate("/login");
-          throw new Error("Session expired. Please log in again.");
-        }
-        if (!res.ok) throw new Error(`Server error ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        // Backend stores one combined name field; split it for the two inputs
+    setProfileLoading(true);
+    axiosClient
+      .get("/users/profile")
+      .then((resp) => {
+        const data = resp.data;
         const parts = (data.name ?? "").trim().split(/\s+/);
         setFirstName(parts[0] ?? "");
         setLastName(parts.slice(1).join(" "));
         setEmail(data.email ?? "");
         setStudentId(data.ID ?? "");
       })
-      .catch((err) =>
-        showToast("error", `Could not load profile: ${err.message}`),
-      )
+      .catch((err) => {
+        const status = err.response?.status;
+        if (status === 401) {
+          logout();
+          navigate("/login");
+          showToast("error", "Session expired. Please log in again.");
+          return;
+        }
+        showToast("error", `Could not load profile: ${err.message}`);
+      })
       .finally(() => setProfileLoading(false));
-  }, []);
+  }, [token]);
 
   // ── Save profile ────────────────────────────────────────────────────────────
   async function handleSave() {
     setSaveLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/users/profile`, {
-        method: "PUT",
-        headers: {
-          Authorization: AUTH_HEADER,
-          "Content-Type": "application/json",
-        },
-        // Backend uses combined name + ID (studentId) + email
-        body: JSON.stringify({
-          name: `${firstName} ${lastName}`.trim(),
-          ID: studentId,
-          email,
-        }),
+      await axiosClient.put("/users/profile", {
+        name: `${firstName} ${lastName}`.trim(),
+        ID: studentId,
+        email,
       });
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
       setIsEditing(false);
       showToast("success", "Profile saved successfully.");
     } catch (err) {
@@ -125,15 +112,11 @@ export default function MemberProfile() {
     e.preventDefault();
     setSubmitLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/support/ticket`, {
-        method: "POST",
-        headers: {
-          Authorization: AUTH_HEADER,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ supportType, subject, message }),
+      await axiosClient.post("/support/ticket", {
+        supportType,
+        subject,
+        message,
       });
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
       setSubject("");
       setMessage("");
       setSupportType("admin");

@@ -111,7 +111,7 @@ public class TicketRepositoryImpl implements iTicketRepository {
     public List<Ticket> getAvailableTicketsByEventAndCompany(String company, String event) {
         List<Ticket> allTickets = tickets.get(event + company);
         if (allTickets == null) {
-            return null;
+            return new ArrayList<>();
         }
         List<Ticket> availableTickets = new ArrayList<>();
         for (Ticket ticket : allTickets) {

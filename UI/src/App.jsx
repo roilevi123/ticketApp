@@ -1,32 +1,28 @@
-import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
-
+import Layout from "./components/Layout";
 import EventCatalog from "./components/EventCatalog";
 import CompanyProfile from "./components/CompanyProfile";
 import EventDetails from "./components/EventDetails";
-import MemberProfile from "./components/MemberProfile";
+import ProducerDashboard from "./components/ProducerDashboard";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import ProtectedRoute from "./components/ProtectedRoute";
+import MemberProfile from "./components/MemberProfile";
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<EventCatalog />} />
-          <Route path="/company/:companyName" element={<CompanyProfile />} />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<EventCatalog />} />
+          <Route path="company/:id" element={<CompanyProfile />} />
           <Route
-            path="/event/:companyName/:eventName"
+            path="event/:companyName/:eventName"
             element={<EventDetails />}
           />
-
-          {/* Auth Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-
-          {/* Protected Routes */}
+          <Route path="producer-dashboard" element={<ProducerDashboard />} />
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
           <Route
             path="/profile"
             element={
@@ -35,9 +31,17 @@ function App() {
               </ProtectedRoute>
             }
           />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+          <Route
+            path="*"
+            element={
+              <div className="text-center text-2xl mt-10">
+                404 - Page Not Found
+              </div>
+            }
+          />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import axiosClient from "../api/axiosClient";
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -18,31 +19,22 @@ function Register() {
     setSuccessMsg("");
 
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer guest-temporary-token",
-        },
-        body: JSON.stringify({
-          ...formData,
-          age: parseInt(formData.age, 10),
-        }),
-      });
-      const data = await response.json();
+      const payload = {
+        ...formData,
+        age: parseInt(formData.age, 10),
+      };
 
-      if (response.ok && data.success) {
-        setSuccessMsg("Registration successful! You can now log in.");
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
-      } else {
-        setErrorMsg(
-          `Registration failed: ${data.message || "Please check your inputs"}`,
-        );
-      }
+      const response = await axiosClient.post("/auth/register", payload);
+
+      setSuccessMsg("Registration successful! You can now log in.");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
     } catch (err) {
-      setErrorMsg("Registration failed: Unable to connect to server");
+      const respData = err.response?.data;
+      setErrorMsg(
+        `Registration failed: ${respData?.error || "Please check your inputs"}`,
+      );
     }
   };
 

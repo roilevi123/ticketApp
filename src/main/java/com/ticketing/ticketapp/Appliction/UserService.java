@@ -6,6 +6,9 @@ import com.ticketing.ticketapp.Domain.User.UserDTO;
 
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.springframework.stereotype.Service;
+
+import java.util.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,13 +19,16 @@ public class UserService implements IAuth {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final IUserRepository userRepository;
     private final TokenService tokenService;
+    private final IPendingNotificationRepository notificationRepository;    
 
     public UserService(IPasswordEncoder passwordEncoder,
                        IUserRepository userRepository,
-                       TokenService tokenService) {
+                       TokenService tokenService,
+                       IPendingNotificationRepository notificationRepository) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
+        this.notificationRepository = notificationRepository;
     }
 
     @Override
@@ -85,6 +91,33 @@ public class UserService implements IAuth {
         }
     }
 
+    public Response<String> updateUserProfile(String token, UserDTO request) {
+        try {
+            logger.info("Updating user profile");
+            if (!tokenService.validateToken(token)) {
+                logger.error("Invalid token provided for updating profile");
+                throw new RuntimeException("Invalid token");
+            }
+            String userId = tokenService.extractUserId(token);
+            User user = userRepository.getUserByID(userId);
+            if (user == null) {
+                logger.error("User {} not found while updating profile", userId);
+                throw new RuntimeException("User not found");
+            }
+            
+            user.setName(request.getName());
+            user.setEmail(request.getEmail());
+            
+            userRepository.save(user); 
+            
+            logger.info("Profile updated successfully for user {}", userId);
+            return Response.success("Profile updated successfully");
+        } catch (Exception e) {
+            logger.error("Failed to update profile", e);
+            return Response.error(e.getMessage());
+        }
+    }
+
     @Override
     public Response<UserDTO> getUserProfile(String token) {
         try {
@@ -128,6 +161,42 @@ public class UserService implements IAuth {
             return Response.success("success");
         } catch (Exception e) {
             logger.error("Failed to update password", e);
+            return Response.error(e.getMessage());
+        }
+    }
+
+
+    public Response<String> submitUserComplaint(String token, String targetRole, String messageContent) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
+            
+            String username = tokenService.extractUsername(token);
+            logger.info("User {} is submitting a complaint to {}", username, targetRole);
+            String formattedMessage = String.format("Complaint from %s: %s", username, messageContent);
+            String targetId = targetRole.equalsIgnoreCase("Admin") ? "SYSTEM_ADMIN" : targetRole;
+            notificationRepository.save(targetId, formattedMessage);
+            logger.info("Successfully submitted complaint from {}", username);
+            return Response.success("Complaint sent successfully");
+            
+        } catch (Exception e) {
+            logger.error("Failed to submit complaint: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<List<String>> getUserNotifications(String token) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                throw new RuntimeException("Invalid token");
+            }
+            String username = tokenService.extractUsername(token);
+            List<String> messages = notificationRepository.retrieveAndDelete(username);
+            
+            return Response.success(messages != null ? messages : new ArrayList<>());
+        } catch (Exception e) {
+            logger.error("Failed to fetch notifications", e);
             return Response.error(e.getMessage());
         }
     }
