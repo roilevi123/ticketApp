@@ -30,12 +30,11 @@ export default function Layout() {
 
             {(role === "OWNER" ||
               role === "MANAGER" ||
-              role === "FOUNDER" ||
-              role === "Producer") && (
+              role === "FOUNDER") && (
               <Link to="/producer-dashboard">Producer Area</Link>
             )}
 
-            {token && role !== "Guest" ? (
+            {token && role !== "GUEST" ? (
               <>
                 <Link to="/profile">Profile</Link>
                 <button

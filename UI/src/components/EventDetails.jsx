@@ -207,8 +207,8 @@ export default function EventDetails() {
   const [error, setError] = useState(null);
   const [selectedSeat, setSelectedSeat] = useState(null);
 
-  const normalizedRole = (role ?? "").toLowerCase();
-  const isRegisteredMember = Boolean(token) && normalizedRole !== "guest";
+  const normalizedRole = (role ?? "").toUpperCase();
+  const isRegisteredMember = Boolean(token) && normalizedRole !== "GUEST";
 
   const normalizeName = (value) => (value ?? "").trim().toLowerCase();
 

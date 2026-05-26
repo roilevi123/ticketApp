@@ -48,7 +48,7 @@ export default function MemberProfile() {
   const [submitLoading, setSubmitLoading] = useState(false);
 
   // Support form state
-  const [supportType, setSupportType] = useState("admin");
+  const [supportType, setSupportType] = useState("ADMIN");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
@@ -105,7 +105,7 @@ export default function MemberProfile() {
       await axiosClient.post('/support/ticket', { supportType, subject, message });
       setSubject('');
       setMessage('');
-      setSupportType('admin');
+      setSupportType('ADMIN');
       showToast('success', "Ticket submitted — we'll respond within 2–4 business hours.");
     } catch (err) {
       showToast("error", `Could not submit ticket: ${err.message}`);
@@ -361,8 +361,8 @@ export default function MemberProfile() {
                       onChange={(e) => setSupportType(e.target.value)}
                       className="w-full bg-background border border-outline-variant text-on-surface text-body-md px-4 py-3 rounded appearance-none focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all"
                     >
-                      <option value="admin">Admin</option>
-                      <option value="producer">Event Producer</option>
+                      <option value="ADMIN">Admin</option>
+                      <option value="PRODUCER">Event Producer</option>
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                       <span className="material-symbols-outlined text-on-surface-variant">

@@ -17,13 +17,20 @@ function App() {
           <Route index element={<EventCatalog />} />
           <Route path="company/:companyName" element={<CompanyProfile />} />
           <Route path="event/:companyName/:eventName" element={<EventDetails />} />
-          <Route path="producer-dashboard" element={<ProducerDashboard />} />
+          <Route
+            path="producer-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["OWNER", "MANAGER", "FOUNDER"]}>
+                <ProducerDashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route
             path="/profile"
             element={
-              <ProtectedRoute allowedRoles={["Member", "Admin", "Producer"]}>
+              <ProtectedRoute allowedRoles={["MEMBER", "ADMIN", "OWNER", "MANAGER", "FOUNDER"]}>
                 <MemberProfile />
               </ProtectedRoute>
             }
