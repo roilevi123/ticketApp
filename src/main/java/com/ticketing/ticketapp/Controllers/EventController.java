@@ -2,11 +2,15 @@ package com.ticketing.ticketapp.Controllers;
 
 import com.ticketing.ticketapp.Appliction.CompanyService;
 import com.ticketing.ticketapp.Appliction.EventService;
+import com.ticketing.ticketapp.Appliction.PurchasePolicyService;
 import com.ticketing.ticketapp.Appliction.Response;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import java.util.Date;
 
@@ -16,10 +20,13 @@ public class EventController {
 
     private final EventService eventService;
     private final CompanyService companyService;
+    private final PurchasePolicyService purchasePolicyService;
 
-    public EventController(EventService eventService, CompanyService companyService) {
+    public EventController(EventService eventService, CompanyService companyService,
+                           PurchasePolicyService purchasePolicyService) {
         this.eventService = eventService;
         this.companyService = companyService;
+        this.purchasePolicyService = purchasePolicyService;
     }
 
     @GetMapping("/events/search")
@@ -81,6 +88,28 @@ public class EventController {
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response.getData());
+        }
+        return ResponseEntity.badRequest().body(response.getMessage());
+    }
+
+    /**
+     * Returns the maximum number of seats a user may select for this event,
+     * as dictated by the event-level and/or company-level purchase policies.
+     * {@code maxSeats: null} means no limit is defined.
+     * This endpoint is public (excluded from token-interceptor via /api/discovery/**).
+     */
+    @GetMapping("/companies/{companyName}/events/{eventName}/seat-limit")
+    public ResponseEntity<?> getEventSeatLimit(
+            @RequestAttribute(value = "cleanToken", required = false) String token,
+            @PathVariable("companyName") String companyName,
+            @PathVariable("eventName") String eventName) {
+
+        Response<Integer> response = purchasePolicyService.getMaxSeatsForEvent(eventName, companyName);
+
+        if (response.isSuccess()) {
+            Map<String, Object> body = new HashMap<>();
+            body.put("maxSeats", response.getData()); // null == unrestricted
+            return ResponseEntity.ok(body);
         }
         return ResponseEntity.badRequest().body(response.getMessage());
     }

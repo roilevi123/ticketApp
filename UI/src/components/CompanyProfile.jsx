@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 
 const TYPE_CONFIG = {
@@ -58,13 +58,18 @@ function EventCardSkeleton() {
   );
 }
 
-function EventCard({ event }) {
+function EventCard({ event, companyName }) {
   const { gradient, icon } =
     TYPE_CONFIG[event.type?.toUpperCase()] || DEFAULT_TYPE;
   const isFree = !event.price || event.price === 0;
+  const navigate = useNavigate();
+  const path = `/event/${encodeURIComponent(companyName)}/${encodeURIComponent(event.name)}`;
 
   return (
-    <div className="bg-surface-container-high rounded-xl overflow-hidden border border-outline-variant transition-all hover:border-secondary">
+    <div
+      className="bg-surface-container-high rounded-xl overflow-hidden border border-outline-variant transition-all hover:border-secondary cursor-pointer"
+      onClick={() => navigate(path)}
+    >
       <div
         className={`relative h-48 bg-gradient-to-br ${gradient} flex items-center justify-center`}
       >
@@ -108,8 +113,11 @@ function EventCard({ event }) {
               {formatPrice(event.price)}
             </span>
           </div>
-          <button className="bg-secondary text-on-secondary px-6 py-2 rounded-lg text-label-md font-bold uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all">
-            {isFree ? "Get Passes" : "Buy Tickets"}
+          <button
+            onClick={(e) => { e.stopPropagation(); navigate(path); }}
+            className="bg-secondary text-on-secondary px-6 py-2 rounded-lg text-label-md font-bold uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all"
+          >
+            Buy Tickets
           </button>
         </div>
       </div>
@@ -251,7 +259,7 @@ export default function CompanyProfile() {
               </div>
             ) : (
               events.map((event, i) => (
-                <EventCard key={event.eventId ?? i} event={event} />
+                <EventCard key={event.eventId ?? i} event={event} companyName={companyName} />
               ))
             )}
           </div>

@@ -305,24 +305,8 @@ export default function EventCatalog() {
               UNI-TICKETS
             </span>
             <nav className="hidden md:flex items-center gap-6">
-              <a
-                className="text-secondary border-b-2 border-secondary pb-1 font-bold text-body-md"
-                href="#"
-              >
-                Events
-              </a>
-              <Link
-                className="text-on-surface-variant hover:text-on-surface transition-colors text-body-md"
-                to="/my-tickets"
-              >
-                My Tickets
-              </Link>
-              <a
-                className="text-on-surface-variant hover:text-on-surface transition-colors text-body-md"
-                href="#"
-              >
-                Help
-              </a>
+              <a className="text-secondary border-b-2 border-secondary pb-1 font-bold text-body-md" href="#">Events</a>
+              <Link className="text-on-surface-variant hover:text-on-surface transition-colors text-body-md" to="/my-tickets">My Tickets</Link>
             </nav>
           </div>
           <div className="flex items-center gap-4 flex-1 justify-end">
@@ -398,23 +382,10 @@ export default function EventCatalog() {
 
         {/* ── All Events Grid ── */}
         <section className="max-w-container-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12">
-          <div className="flex justify-between items-end mb-8 border-b border-outline-variant pb-4">
+          <div className="mb-8 border-b border-outline-variant pb-4">
             <h2 className="text-headline-md text-on-surface">
               {isSearching ? `Results for "${searchQuery}"` : "All Events"}
             </h2>
-            {!isSearching && (
-              <div className="flex gap-4">
-                <button className="text-label-md text-on-surface-variant hover:text-secondary px-2 transition-colors">
-                  Music
-                </button>
-                <button className="text-label-md text-on-surface-variant hover:text-secondary px-2 transition-colors">
-                  Theater
-                </button>
-                <button className="text-label-md text-on-surface-variant hover:text-secondary px-2 transition-colors">
-                  Academic
-                </button>
-              </div>
-            )}
           </div>
 
           {error ? (

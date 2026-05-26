@@ -40,6 +40,7 @@ export default function MemberProfile() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [studentId, setStudentId] = useState("");
+  const [age, setAge] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
   // Loading flags
@@ -74,6 +75,7 @@ export default function MemberProfile() {
         setLastName(parts.slice(1).join(' '));
         setEmail(data.email ?? '');
         setStudentId(data.ID ?? '');
+        setAge(data.age ?? null);
       })
       .finally(() => setProfileLoading(false));
   }, [token]);
@@ -82,16 +84,23 @@ export default function MemberProfile() {
   async function handleSave() {
     setSaveLoading(true);
     try {
-      // Backend uses combined name + ID (studentId) + email
+      // Backend uses combined name + ID (studentId) + email + age
       await axiosClient.put('/users/profile', {
         name: `${firstName} ${lastName}`.trim(),
         ID: studentId,
         email,
+        age,
       });
       setIsEditing(false);
       showToast("success", "Profile saved successfully.");
     } catch (err) {
-      showToast("error", `Could not save profile: ${err.message}`);
+      // Extract the real server-side error message when available
+      const serverMsg =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        err.message;
+      const status = err.response?.status ?? 'Network error';
+      showToast("error", `Could not save profile (${status}): ${serverMsg}`);
     } finally {
       setSaveLoading(false);
     }
@@ -155,24 +164,9 @@ export default function MemberProfile() {
             >
               My Tickets
             </Link>
-            <a
-              href="#"
-              className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200"
-            >
-              Alumni
-            </a>
-            <a
-              href="#"
-              className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200"
-            >
-              Schedule
-            </a>
           </nav>
 
           <div className="flex items-center gap-4">
-            <span className="hidden md:block text-label-md text-on-surface-variant cursor-pointer hover:text-secondary">
-              Support
-            </span>
             <button className="flex items-center text-on-surface-variant hover:text-secondary transition-colors">
               <span className="material-symbols-outlined">notifications</span>
             </button>
@@ -267,9 +261,8 @@ export default function MemberProfile() {
                     <input
                       type="text"
                       value={studentId}
-                      onChange={(e) => setStudentId(e.target.value)}
-                      readOnly={!isEditing}
-                      className={`${inputBase} ${isEditing ? "text-on-surface cursor-text" : "text-on-surface-variant cursor-not-allowed"}`}
+                      readOnly
+                      className={`${inputBase} text-on-surface-variant cursor-not-allowed`}
                     />
                   )}
                 </div>
