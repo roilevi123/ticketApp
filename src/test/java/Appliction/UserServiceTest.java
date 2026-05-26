@@ -30,6 +30,9 @@ class UserServiceTest {
     @Mock
     private IActiveOrderRepository activeOrderRepository;
 
+    @Mock
+    private IPendingNotificationRepository notificationRepository;
+
     @InjectMocks
     private UserService userService;
 
@@ -199,5 +202,89 @@ class UserServiceTest {
 
         assertTrue(result.isError());
         verify(userRepository, times(1)).save(any(User.class));
+    }
+
+    @Test
+    void updateUserProfile_Success_ShouldUpdateProfile() {
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 25, "old@test.com");
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
+
+        com.ticketing.ticketapp.Domain.User.UserDTO dto = new com.ticketing.ticketapp.Domain.User.UserDTO();
+        dto.setName("NewName");
+        dto.setEmail("new@test.com");
+
+        Response<String> result = userService.updateUserProfile(TOKEN, dto);
+
+        assertTrue(result.isSuccess());
+        verify(userRepository, times(1)).save(any(User.class));
+    }
+
+    @Test
+    void updateUserProfile_InvalidToken_ShouldReturnError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(false);
+
+        Response<String> result = userService.updateUserProfile(TOKEN,
+                new com.ticketing.ticketapp.Domain.User.UserDTO());
+
+        assertTrue(result.isError());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void updateUserProfile_UserNotFound_ShouldReturnError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.getUserByID(USERNAME)).thenReturn(null);
+
+        Response<String> result = userService.updateUserProfile(TOKEN,
+                new com.ticketing.ticketapp.Domain.User.UserDTO());
+
+        assertTrue(result.isError());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void submitUserComplaint_Success_ShouldSaveNotification() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+
+        Response<String> result = userService.submitUserComplaint(TOKEN, "Admin", "My complaint");
+
+        assertTrue(result.isSuccess());
+        verify(notificationRepository, times(1)).save(eq("SYSTEM_ADMIN"), contains(USERNAME));
+    }
+
+    @Test
+    void submitUserComplaint_InvalidToken_ShouldReturnError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(false);
+
+        Response<String> result = userService.submitUserComplaint(TOKEN, "Admin", "My complaint");
+
+        assertTrue(result.isError());
+        verify(notificationRepository, never()).save(any(), any());
+    }
+
+    @Test
+    void getUserNotifications_Success_ShouldReturnMessages() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(notificationRepository.retrieveAndDelete(USERNAME)).thenReturn(java.util.List.of("msg1", "msg2"));
+
+        Response<java.util.List<String>> result = userService.getUserNotifications(TOKEN);
+
+        assertTrue(result.isSuccess());
+        assertEquals(2, result.getData().size());
+    }
+
+    @Test
+    void getUserNotifications_InvalidToken_ShouldReturnError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(false);
+
+        Response<java.util.List<String>> result = userService.getUserNotifications(TOKEN);
+
+        assertTrue(result.isError());
+        verify(notificationRepository, never()).retrieveAndDelete(any());
     }
 }

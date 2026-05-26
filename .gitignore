@@ -40,3 +40,4 @@ build/
 UI/node_modules/
 .claude/
 UI/.vite/
+*.log

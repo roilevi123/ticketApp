@@ -435,4 +435,73 @@ public class EventServiceTest {
         assertNotNull(result.getData());
         assertTrue(result.getData().isEmpty());
     }
+
+    @Test
+    void searchEvents_CaseInsensitive_LowercaseQuery_MatchesUppercaseEventName() {
+        eventRepository.store("Rock Concert", "Artist A", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
+        eventRepository.store("Jazz Night", "Artist B", EventType.LIVE_PERFORMANCE, 150.0, new Date(), "Haifa", COMPANY, MAP);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        // Search with all lowercase — event name is mixed-case "Rock Concert"
+        Response<List<EventDTO>> result = eventService.searchEvents(TOKEN, "rock concert", null, null, null, null, null, null, null, null);
+
+        assertTrue(result.isSuccess());
+        assertEquals(1, result.getData().size());
+        assertEquals("Rock Concert", result.getData().get(0).name());
+    }
+
+    @Test
+    void searchEvents_CaseInsensitive_UppercaseQuery_MatchesLowercaseArtistName() {
+        eventRepository.store("Summer Fest", "john doe", EventType.FESTIVAL, 200.0, new Date(), "Tel Aviv", COMPANY, MAP);
+        eventRepository.store("Winter Gala", "jane smith", EventType.FESTIVAL, 250.0, new Date(), "Haifa", COMPANY, MAP);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        // Search with all uppercase — artist name is lowercase "john doe"
+        Response<List<EventDTO>> result = eventService.searchEvents(TOKEN, "JOHN", null, null, null, null, null, null, null, null);
+
+        assertTrue(result.isSuccess());
+        assertEquals(1, result.getData().size());
+        assertEquals("Summer Fest", result.getData().get(0).name());
+    }
+    void getCompanyEvents_Success() {
+        eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "TLV", COMPANY, MAP);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(companyRepository.isCompanyActive(COMPANY)).thenReturn(true);
+
+        Response<List<EventDTO>> result = eventService.getCompanyEvents(TOKEN, COMPANY);
+
+        assertTrue(result.isSuccess());
+        assertFalse(result.getData().isEmpty());
+        assertEquals(EVENT_NAME, result.getData().get(0).name());
+    }
+
+    @Test
+    void getCompanyEvents_Failure_CompanyNotActive() {
+        when(companyRepository.isCompanyActive(COMPANY)).thenReturn(false);
+
+        Response<List<EventDTO>> result = eventService.getCompanyEvents(TOKEN, COMPANY);
+
+        assertTrue(result.isError());
+    }
+
+    @Test
+    void getEvent_Success() {
+        eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "TLV", COMPANY, MAP);
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+
+        Response<EventDTO> result = eventService.getEvent(TOKEN, COMPANY, EVENT_NAME);
+
+        assertTrue(result.isSuccess());
+        assertEquals(EVENT_NAME, result.getData().name());
+    }
+
+    @Test
+    void getEvent_NotFound_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+
+        Response<EventDTO> result = eventService.getEvent(TOKEN, COMPANY, "NonExistentEvent");
+
+        assertTrue(result.isError());
+        assertEquals("Event not found", result.getMessage());
+    }
 }

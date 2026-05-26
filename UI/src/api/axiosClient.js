@@ -12,9 +12,6 @@ axiosClient.interceptors.request.use(
             // Attach Bearer token for authenticated endpoints
             config.headers['Authorization'] = `Bearer ${token}`;
         }
-        else {
-            config.headers['Authorization'] = 'Bearer guest-temporary-token';
-        }
         return config;
     },
     (error) => {
