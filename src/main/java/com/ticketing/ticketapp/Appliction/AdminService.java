@@ -223,4 +223,26 @@ public class AdminService {
             return Response.error(e.getMessage());
         }
     }
+
+    public Response<String> cancelSuspension(String targetUserId, String adminId){
+        try{
+            logger.info("Admin {} is canceling the suspension of the user {}", targetUserId, adminId);
+
+            if(!adminRepository.isAdmin(adminId))
+                throw new Exception("Admin does not exist");
+
+            User user = userRepository.getUserByID(targetUserId);
+            if(user==null)
+                throw new Exception("User does not exist");
+
+            userRepository.cancelSuspension(targetUserId);
+            logger.info("User {} is not suspended anymore", targetUserId);
+            notifier.notifyUser(targetUserId, "Account is no longer suspended", "The suspension of your account was canceled by an adminstrator");
+
+            return Response.success("success");
+        }catch(Exception e){
+            logger.info("Failed to cancel suspension of user: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
 }
