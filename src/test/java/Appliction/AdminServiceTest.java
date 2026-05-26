@@ -30,6 +30,8 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.time.LocalDateTime;
+
 class AdminServiceTest {
 
     @Mock private iCompanyRepository companyRepository;
@@ -252,5 +254,21 @@ class AdminServiceTest {
         assertFalse(response.isSuccess());
         assertEquals("User does not exist", response.getMessage());
         verify(userRepository, never()).cancelSuspension(anyString());
+    }
+
+    @Test
+    void getAllSuspensions_Success() {
+        List<Suspension> mockList = List.of(
+                new Suspension("user1", LocalDateTime.now()),
+                new Suspension("user2", LocalDateTime.now())
+        );
+        when(userRepository.getAllSuspensions()).thenReturn(mockList);
+
+        var response = adminService.getAllSuspensions(ADMIN_NAME);
+
+        assertTrue(response.isSuccess());
+        assertNotNull(response.getData());
+        assertEquals(2, response.getData().size());
+        verify(userRepository).getAllSuspensions();
     }
 }
