@@ -214,4 +214,16 @@ class AdminServiceTest {
         verify(userRepository, never()).addCurrentSuspension(anyString(), any());
     }
 
+    @Test
+    void suspendUser_Fail_UserNotFound() {
+        String targetUser = "missingUser";
+        when(userRepository.getUserByID(targetUser)).thenReturn(null);
+
+        var response = adminService.suspendUser(targetUser, ADMIN_NAME, 5);
+
+        assertFalse(response.isSuccess());
+        assertEquals("User not found", response.getMessage());
+        verify(userRepository, never()).addCurrentSuspension(anyString(), any());
+    }
+
 }
