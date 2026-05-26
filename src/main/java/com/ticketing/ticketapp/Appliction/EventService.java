@@ -158,7 +158,7 @@ public class EventService {
 
     public Response<String> getCompanyInfo(String token, String company) {
         try {
-            boolean isGuest = token != null && token.contains("guest-temporary-token");
+            boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
@@ -177,7 +177,7 @@ public class EventService {
 
     public Response<List<EventDTO>> getCompanyEvents(String token, String company) {
         try {
-            boolean isGuest = token != null && token.contains("guest-temporary-token");
+            boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
@@ -201,7 +201,7 @@ public class EventService {
 
     public Response<MapArea[][]> getMapArea(String token, String company, String eventName) {
         try {
-            boolean isGuest = token != null && token.contains("guest-temporary-token");
+            boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
@@ -218,7 +218,7 @@ public class EventService {
 
     public Response<EventDTO> getEvent(String token, String company, String eventName) {
         try {
-            boolean isGuest = token != null && token.contains("guest-temporary-token");
+            boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
