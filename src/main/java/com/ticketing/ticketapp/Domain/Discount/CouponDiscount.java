@@ -1,9 +1,5 @@
 package com.ticketing.ticketapp.Domain.Discount;
 
-import java.util.Date;
-
-import java.util.Date;
-
 public class CouponDiscount implements DiscountComponent {
     private final String code;
     private final double percentage;

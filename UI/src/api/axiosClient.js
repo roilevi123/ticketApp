@@ -7,11 +7,11 @@ const axiosClient = axios.create({
 // Request interceptor to attach authentication token
 axiosClient.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            // Attach Bearer token for authenticated endpoints
-            config.headers['Authorization'] = `Bearer ${token}`;
-        }
+        // Fall back to the hardcoded guest token if no token is in localStorage yet
+        // (prevents a race condition on first load where AuthContext hasn't fetched
+        // the guest JWT before EventCatalog fires its first request).
+        const token = localStorage.getItem('token') || 'guest-temporary-token';
+        config.headers['Authorization'] = `Bearer ${token}`;
         return config;
     },
     (error) => {

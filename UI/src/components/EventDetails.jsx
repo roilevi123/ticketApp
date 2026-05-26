@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { useAuth } from "../contexts/AuthContext";
@@ -204,15 +204,28 @@ export default function EventDetails() {
 
   // Multi-seat selection state
   const [selectedSeats, setSelectedSeats] = useState([]);
-  const [maxSeats, setMaxSeats] = useState(null);   // null = unlimited
+  const [maxSeats, setMaxSeats] = useState(null); // null = unlimited
 
-  // Reservation state
+  // Reservation state (regular events)
   const [buying, setBuying] = useState(false);
   const [reservation, setReservation] = useState(null); // { orderId, seatCount }
   const [reserveError, setReserveError] = useState(null);
 
+  // ── Lottery state ──────────────────────────────────────────────────────────
+  const [lotteryStatus, setLotteryStatus] = useState(null); // { hasLottery, registered, hasWon, winningCode, … }
+  const [lotteryLoading, setLotteryLoading] = useState(false);
+  const [lotteryActionMsg, setLotteryActionMsg] = useState(null); // { type: 'success'|'error', text }
+
+  // ── Purchase panel state (for lottery winners) ─────────────────────────────
+  const [showPurchasePanel, setShowPurchasePanel] = useState(false);
+  const [purchaseEmail, setPurchaseEmail] = useState("");
+  const [purchaseError, setPurchaseError] = useState(null);
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
+
   const normalizedRole = (role ?? "").toUpperCase();
   const isRegisteredMember = Boolean(token) && normalizedRole !== "GUEST";
+  const isHighDemand = event?.highDemand === true;
 
   // ── Load event ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -224,9 +237,11 @@ export default function EventDetails() {
           `/discovery/companies/${encodeURIComponent(companyName)}/events/${encodeURIComponent(eventName)}`,
           { signal: controller.signal },
         );
-        setEvent({ ...res.data, isHighDemand: true });
+        setEvent(res.data);
       } catch (err) {
-        if (err.code !== "ERR_CANCELED") setError(err.message);
+        if (err.code !== "ERR_CANCELED") {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -246,6 +261,23 @@ export default function EventDetails() {
       .catch(() => setMaxSeats(null)); // graceful fallback: no limit enforced in UI
   }, [companyName, eventName]);
 
+  // ── Load lottery status ────────────────────────────────────────────────────
+  const fetchLotteryStatus = useCallback(async () => {
+    if (!event) return;
+    try {
+      const res = await axiosClient.get(
+        `/lottery/${encodeURIComponent(companyName)}/${encodeURIComponent(eventName)}/status`,
+      );
+      setLotteryStatus(res.data);
+    } catch {
+      // lottery status is best-effort; don't surface errors
+    }
+  }, [companyName, eventName, event]);
+
+  useEffect(() => {
+    fetchLotteryStatus();
+  }, [fetchLotteryStatus]);
+
   // ── Seat toggle with limit enforcement ─────────────────────────────────────
   function handleSeatSelect(seat) {
     setSelectedSeats((prev) => {
@@ -262,7 +294,7 @@ export default function EventDetails() {
     });
   }
 
-  // ── Reserve tickets ─────────────────────────────────────────────────────────
+  // ── Reserve tickets (regular events) ────────────────────────────────────────
   async function handleReserve() {
     if (!isRegisteredMember || selectedSeats.length === 0 || buying) return;
 
@@ -290,6 +322,71 @@ export default function EventDetails() {
     }
   }
 
+  // ── Lottery registration ───────────────────────────────────────────────────
+  const handleEnterLottery = async () => {
+    if (!isRegisteredMember) return;
+    setLotteryLoading(true);
+    setLotteryActionMsg(null);
+    try {
+      await axiosClient.post(
+        `/lottery/${encodeURIComponent(companyName)}/${encodeURIComponent(eventName)}/register`,
+      );
+      setLotteryActionMsg({ type: "success", text: "You're in! We'll notify you if you win." });
+      await fetchLotteryStatus();
+    } catch (err) {
+      const msg =
+        err.response?.data ?? err.response?.data?.message ?? err.message ?? "Registration failed";
+      setLotteryActionMsg({ type: "error", text: String(msg) });
+    } finally {
+      setLotteryLoading(false);
+    }
+  };
+
+  // ── Ticket purchase (lottery winner flow) ──────────────────────────────────
+  const handleLotteryPurchase = async () => {
+    if (selectedSeats.length === 0) {
+      setPurchaseError("Please select a seat first.");
+      return;
+    }
+    if (!purchaseEmail.trim()) {
+      setPurchaseError("Please enter your email address.");
+      return;
+    }
+
+    setPurchaseLoading(true);
+    setPurchaseError(null);
+
+    try {
+      // 1. Reserve the selected seats with the lottery code
+      const reserveRes = await axiosClient.post("/orders/reserve", {
+        company: companyName,
+        event: eventName,
+        requests: selectedSeats.map((s) => [s.rawCol, s.rawRow]),
+        lotteryCode: lotteryStatus.winningCode,
+      });
+      const orderId = reserveRes.data;
+
+      // 2. Purchase the reserved ticket
+      await axiosClient.post("/orders/purchase", {
+        email: purchaseEmail,
+        orderId,
+      });
+
+      setPurchaseSuccess(true);
+      setShowPurchasePanel(false);
+      await fetchLotteryStatus(); // code is now consumed
+    } catch (err) {
+      const msg =
+        err.response?.data?.error ??
+        err.response?.data ??
+        err.message ??
+        "Purchase failed";
+      setPurchaseError(String(msg));
+    } finally {
+      setPurchaseLoading(false);
+    }
+  };
+
   const { gradient, icon } = TYPE_CONFIG[event?.type?.toUpperCase()] ?? DEFAULT_TYPE;
   const seats = event?.map?.length ? parseMapData(event.map) : MOCK_SEATS;
   const minPrice = event?.price ?? 0;
@@ -302,6 +399,13 @@ export default function EventDetails() {
       : maxSeats !== null
       ? `${selectedSeats.length} / ${maxSeats} seat${maxSeats !== 1 ? "s" : ""} selected`
       : `${selectedSeats.length} seat${selectedSeats.length !== 1 ? "s" : ""} selected`;
+
+  // Derived lottery helpers
+  const lotteryIsOpen  = lotteryStatus?.hasLottery && !lotteryStatus?.drawn;
+  const lotteryIsDrawn = lotteryStatus?.hasLottery && lotteryStatus?.drawn;
+  const userRegistered = lotteryStatus?.registered === true;
+  const userWon        = lotteryStatus?.hasWon === true;
+  const winningCode    = lotteryStatus?.winningCode;
 
   return (
     <div className="bg-background text-on-surface min-h-screen pb-32">
@@ -317,9 +421,7 @@ export default function EventDetails() {
         <span className="text-headline-sm font-bold tracking-tight text-on-surface">
           UNIVERSITY EVENTS
         </span>
-        <button className="p-2 -mr-2 text-on-surface-variant hover:text-primary transition-colors">
-          <span className="material-symbols-outlined">share</span>
-        </button>
+        <div className="w-10" />
       </nav>
 
       <main className="pt-16">
@@ -476,40 +578,185 @@ export default function EventDetails() {
             </section>
 
             {/* ── High Demand / Lottery ── */}
-            {event.isHighDemand && (
+            {isHighDemand && (
               <>
                 <div className="mx-margin-mobile h-px bg-outline-variant my-8" />
                 <section className="px-margin-mobile">
+                  {/* ── Winner purchase panel ── */}
+                  {userWon && !purchaseSuccess && (
+                    <div className="mb-4 p-4 rounded-xl bg-secondary/10 border border-secondary/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="material-symbols-outlined text-secondary">
+                          celebration
+                        </span>
+                        <p className="text-label-md font-bold text-secondary">
+                          🎉 You won! Use your code to purchase.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 mb-3 p-2 bg-surface-container rounded-lg border border-outline-variant">
+                        <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
+                          confirmation_number
+                        </span>
+                        <code className="text-label-sm text-on-surface font-mono break-all">
+                          {winningCode}
+                        </code>
+                      </div>
+                      {!showPurchasePanel ? (
+                        <button
+                          onClick={() => setShowPurchasePanel(true)}
+                          className="w-full py-3 rounded-xl font-bold text-label-md uppercase tracking-wider bg-secondary text-on-secondary hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">
+                            shopping_cart
+                          </span>
+                          Use Code to Buy Ticket
+                        </button>
+                      ) : (
+                        <div className="space-y-3">
+                          {selectedSeats.length === 0 && (
+                            <p className="text-label-sm text-on-surface-variant">
+                              ← Select a seat from the map above, then complete purchase.
+                            </p>
+                          )}
+                          {selectedSeats.length > 0 && (
+                            <p className="text-label-sm text-secondary font-medium">
+                              Seat{selectedSeats.length !== 1 ? "s" : ""} selected:{" "}
+                              <strong>{selectedSeats.map((s) => s.id).join(", ")}</strong>
+                            </p>
+                          )}
+                          <input
+                            type="email"
+                            placeholder="Your email address for ticket delivery"
+                            value={purchaseEmail}
+                            onChange={(e) => setPurchaseEmail(e.target.value)}
+                            className="w-full px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant text-on-surface text-body-md focus:outline-none focus:border-secondary"
+                          />
+                          {purchaseError && (
+                            <p className="text-label-sm text-error">{purchaseError}</p>
+                          )}
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => { setShowPurchasePanel(false); setPurchaseError(null); }}
+                              className="flex-1 py-2.5 rounded-xl border border-outline-variant text-on-surface-variant text-label-md font-medium hover:bg-surface-container transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={handleLotteryPurchase}
+                              disabled={purchaseLoading}
+                              className="flex-1 py-2.5 rounded-xl bg-secondary text-on-secondary font-bold text-label-md hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {purchaseLoading ? "Processing…" : "Confirm Purchase"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── Purchase success ── */}
+                  {purchaseSuccess && (
+                    <div className="mb-4 p-4 rounded-xl bg-secondary/10 border border-secondary/30 flex items-center gap-3">
+                      <span className="material-symbols-outlined text-secondary">
+                        check_circle
+                      </span>
+                      <p className="text-label-md text-secondary font-bold">
+                        Purchase complete! Your ticket is on its way.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* ── Main lottery card ── */}
                   <div className="p-4 rounded-xl bg-tertiary-container/20 border border-on-tertiary-container/30">
                     <div className="flex items-start gap-3 mb-4">
                       <span className="material-symbols-outlined text-on-tertiary-container shrink-0">
                         local_fire_department
                       </span>
                       <div>
-                        <h3 className="text-headline-sm text-on-tertiary-container mb-1">High Demand Event</h3>
+                        <h3 className="text-headline-sm text-on-tertiary-container mb-1">
+                          High Demand Event
+                        </h3>
                         <p className="text-label-sm text-on-surface-variant">
-                          Tickets are distributed by lottery. Registered members can enter for a chance to purchase.
+                          Tickets are distributed by lottery. Registered members
+                          can enter for a chance to purchase.
                         </p>
+                        {lotteryStatus?.endDate && (
+                          <p className="text-label-sm text-on-surface-variant mt-1">
+                            Registration closes:{" "}
+                            <span className="text-on-surface font-medium">
+                              {formatDate(lotteryStatus.endDate)}
+                            </span>
+                            {" · "}
+                            {formatTime(lotteryStatus.endDate)}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <div className="relative group">
-                      <button
-                        disabled={!isRegisteredMember}
-                        className={`w-full py-3 rounded-xl font-bold text-label-md uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-                          isRegisteredMember
-                            ? "bg-on-tertiary-container text-on-tertiary active:scale-95 hover:brightness-110"
-                            : "bg-surface-container text-outline cursor-not-allowed border border-outline-variant"
+
+                    {/* State-based button */}
+                    {userRegistered && !userWon && !lotteryIsDrawn && (
+                      <div className="flex items-center gap-2 w-full py-3 px-4 rounded-xl bg-secondary/10 border border-secondary/30 text-label-md text-secondary font-bold">
+                        <span className="material-symbols-outlined text-[18px]">
+                          how_to_reg
+                        </span>
+                        Registered — awaiting draw
+                      </div>
+                    )}
+
+                    {userRegistered && lotteryIsDrawn && !userWon && (
+                      <div className="flex items-center gap-2 w-full py-3 px-4 rounded-xl bg-surface-container border border-outline-variant text-label-md text-on-surface-variant">
+                        <span className="material-symbols-outlined text-[18px]">
+                          sentiment_dissatisfied
+                        </span>
+                        Draw complete — better luck next time
+                      </div>
+                    )}
+
+                    {!userRegistered && lotteryIsDrawn && (
+                      <div className="flex items-center gap-2 w-full py-3 px-4 rounded-xl bg-surface-container border border-outline-variant text-label-md text-on-surface-variant">
+                        <span className="material-symbols-outlined text-[18px]">
+                          lock
+                        </span>
+                        Lottery closed
+                      </div>
+                    )}
+
+                    {!userRegistered && lotteryIsOpen && (
+                      <div className="relative group">
+                        <button
+                          disabled={!isRegisteredMember || lotteryLoading}
+                          onClick={handleEnterLottery}
+                          className={`w-full py-3 rounded-xl font-bold text-label-md uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                            isRegisteredMember
+                              ? "bg-on-tertiary-container text-on-tertiary active:scale-95 hover:brightness-110 disabled:opacity-50"
+                              : "bg-surface-container text-outline cursor-not-allowed border border-outline-variant"
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[18px]">
+                            casino
+                          </span>
+                          {lotteryLoading ? "Registering…" : "Enter Lottery"}
+                        </button>
+                        {!isRegisteredMember && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-surface-container-highest rounded-lg text-label-sm text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-outline-variant z-10">
+                            Members only — register to enter the lottery
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Inline feedback message */}
+                    {lotteryActionMsg && (
+                      <p
+                        className={`mt-3 text-label-sm text-center ${
+                          lotteryActionMsg.type === "success"
+                            ? "text-secondary"
+                            : "text-error"
                         }`}
                       >
-                        <span className="material-symbols-outlined text-[18px]">casino</span>
-                        Enter Lottery
-                      </button>
-                      {!isRegisteredMember && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-surface-container-highest rounded-lg text-label-sm text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-outline-variant z-10">
-                          Members only — register to enter the lottery
-                        </div>
-                      )}
-                    </div>
+                        {lotteryActionMsg.text}
+                      </p>
+                    )}
                   </div>
                 </section>
               </>
@@ -526,7 +773,6 @@ export default function EventDetails() {
       {/* ── Fixed Bottom Action Bar ── */}
       {!loading && !error && event && (
         <footer className="fixed bottom-0 left-0 w-full z-50 bg-surface-container-high shadow-lg border-t border-outline-variant px-margin-mobile py-4 flex items-center justify-between gap-4">
-
           {/* Price + reservation success feedback */}
           <div className="flex flex-col min-w-0">
             {reservation ? (
@@ -548,25 +794,48 @@ export default function EventDetails() {
           </div>
 
           {/* Action button */}
-          {event.isHighDemand ? (
-            <div className="relative group">
+          {isHighDemand ? (
+            // ── Lottery footer button (state-aware) ──────────────────────────
+            userWon ? (
               <button
-                disabled={!isRegisteredMember}
-                className={`font-bold px-8 py-3 rounded-full transition-transform active:scale-95 flex items-center gap-2 ${
-                  isRegisteredMember
-                    ? "bg-on-tertiary-container text-on-tertiary hover:brightness-110"
-                    : "bg-surface-container border border-outline-variant text-outline cursor-not-allowed"
-                }`}
+                onClick={() => setShowPurchasePanel((v) => !v)}
+                className="font-bold px-8 py-3 rounded-full bg-secondary text-on-secondary hover:brightness-110 active:scale-95 transition-transform flex items-center gap-2"
               >
-                <span className="material-symbols-outlined text-[20px]">casino</span>
-                Lottery Registration
+                <span className="material-symbols-outlined text-[20px]">
+                  shopping_cart
+                </span>
+                Buy with Code
               </button>
-              {!isRegisteredMember && (
-                <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-surface-container-highest rounded-lg text-label-sm text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-outline-variant z-10">
-                  Members only — register to enter the lottery
-                </div>
-              )}
-            </div>
+            ) : userRegistered ? (
+              <div className="flex items-center gap-2 px-6 py-3 rounded-full bg-secondary/10 border border-secondary/30 text-secondary font-bold text-label-md">
+                <span className="material-symbols-outlined text-[20px]">
+                  how_to_reg
+                </span>
+                Registered
+              </div>
+            ) : (
+              <div className="relative group">
+                <button
+                  disabled={!isRegisteredMember || lotteryLoading}
+                  onClick={handleEnterLottery}
+                  className={`font-bold px-8 py-3 rounded-full transition-transform active:scale-95 flex items-center gap-2 ${
+                    isRegisteredMember
+                      ? "bg-on-tertiary-container text-on-tertiary hover:brightness-110 disabled:opacity-50"
+                      : "bg-surface-container border border-outline-variant text-outline cursor-not-allowed"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[20px]">
+                    casino
+                  </span>
+                  {lotteryLoading ? "…" : "Lottery Registration"}
+                </button>
+                {!isRegisteredMember && (
+                  <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-surface-container-highest rounded-lg text-label-sm text-on-surface whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-outline-variant z-10">
+                    Members only — register to enter the lottery
+                  </div>
+                )}
+              </div>
+            )
           ) : reservation ? (
             // Post-reservation: offer to reserve more
             <button

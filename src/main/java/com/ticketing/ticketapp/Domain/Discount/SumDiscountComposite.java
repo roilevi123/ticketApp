@@ -2,9 +2,6 @@ package com.ticketing.ticketapp.Domain.Discount;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class SumDiscountComposite implements DiscountComponent {

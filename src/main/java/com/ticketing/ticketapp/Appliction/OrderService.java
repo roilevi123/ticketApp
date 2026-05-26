@@ -1,5 +1,7 @@
 package com.ticketing.ticketapp.Appliction;
 
+import com.ticketing.ticketapp.Domain.Event.Event;
+import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.Order.ActiveOrder;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchasePolicy;
@@ -29,20 +31,33 @@ public class OrderService {
     private IUserRepository userRepository;
     private iPurchasePolicyRepository purchasePolicyRepo;
     private INotifier notifier;
+    private iEventRepository eventRepository;
+    private LotteryService lotteryService;
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
     public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService,
             iTicketRepository ticketRepository, IUserRepository userRepository,
-            iPurchasePolicyRepository purchasePolicyRepo, INotifier notifier) {
+            iPurchasePolicyRepository purchasePolicyRepo, INotifier notifier,
+            iEventRepository eventRepository, LotteryService lotteryService) {
         this.activeOrderRepository = activeOrderRepository;
         this.tokenService = tokenService;
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.purchasePolicyRepo = purchasePolicyRepo;
         this.notifier = notifier;
+        this.eventRepository = eventRepository;
+        this.lotteryService = lotteryService;
     }
 
-    public Response<String> reserveTickets(String token, String company, String event, List<int[]> requests) {
+    /**
+     * Reserves tickets for an event.
+     *
+     * @param lotteryCode Required (non-null / non-blank) when the event is a
+     *                    high-demand lottery event; must be a valid, unused code
+     *                    issued to this user.  Pass {@code null} for normal events.
+     */
+    public Response<String> reserveTickets(String token, String company, String event,
+                                           List<int[]> requests, String lotteryCode) {
         List<String> reservedTicketIds = new ArrayList<>();
 
         try {
@@ -51,6 +66,27 @@ public class OrderService {
             if (tokenService.validateToken(token)) {
                 userID = tokenService.extractUserId(token);
             }
+
+            // ── Lottery gate-check ────────────────────────────────────────────
+            Event eventEntity = eventRepository.getEvent(event, company);
+            if (eventEntity != null && eventEntity.isHighDemand()) {
+                if (lotteryCode == null || lotteryCode.isBlank()) {
+                    throw new RuntimeException(
+                            "This is a high-demand event. A lottery purchase code is required.");
+                }
+                if (userID == null) {
+                    throw new RuntimeException(
+                            "You must be logged in to purchase tickets for a lottery event.");
+                }
+                if (!lotteryService.validateLotteryCode(lotteryCode, userID, event, company)) {
+                    throw new RuntimeException(
+                            "Invalid, expired, or already-used lottery purchase code.");
+                }
+                // Consume the code immediately so it cannot be reused
+                lotteryService.consumeLotteryCode(lotteryCode);
+                logger.info("Lottery code validated and consumed for user '{}', event '{}'", userID, event);
+            }
+            // ── End lottery gate-check ────────────────────────────────────────
 
             int totalRequested = requests.stream().mapToInt(r -> (r.length > 2) ? r[2] : 1).sum();
             validatePurchasePolicies(event, company, userID, totalRequested);
