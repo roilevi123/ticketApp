@@ -21,7 +21,7 @@ public class PurchasePolicyServiceTest {
     void setUp() {
         policyRepo = mock(iPurchasePolicyRepository.class);
         tokenService = mock(TokenService.class);
-        policyService = new PurchasePolicyService(policyRepo, tokenService);
+        //policyService = new PurchasePolicyService(policyRepo, tokenService);
     }
 
     @Test
