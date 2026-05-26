@@ -155,24 +155,9 @@ export default function MemberProfile() {
             >
               My Tickets
             </Link>
-            <a
-              href="#"
-              className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200"
-            >
-              Alumni
-            </a>
-            <a
-              href="#"
-              className="text-label-md text-on-surface-variant hover:text-secondary transition-colors duration-200"
-            >
-              Schedule
-            </a>
           </nav>
 
           <div className="flex items-center gap-4">
-            <span className="hidden md:block text-label-md text-on-surface-variant cursor-pointer hover:text-secondary">
-              Support
-            </span>
             <button className="flex items-center text-on-surface-variant hover:text-secondary transition-colors">
               <span className="material-symbols-outlined">notifications</span>
             </button>
