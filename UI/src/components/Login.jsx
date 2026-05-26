@@ -35,11 +35,8 @@ function Login() {
       const decoded = parseJwt(jwtToken);
       const userId = decoded ? decoded.sub : "unknown";
 
-      // Normalize role to Title Case (e.g. "MEMBER" -> "Member")
-      let role = decoded && decoded.role ? decoded.role : "Member";
-      if (role === role.toUpperCase()) {
-        role = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-      }
+      // Keep role canonical in UPPERCASE
+      let role = decoded && decoded.role ? String(decoded.role).toUpperCase() : "MEMBER";
 
       login(jwtToken, role, userId);
 

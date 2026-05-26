@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
   // Start without restoring any previous member token so the app
   // always loads as a guest session on first open.
   const [token, setToken] = useState(null);
-  const [role, setRole] = useState("Guest");
+  const [role, setRole] = useState("GUEST");
   const [userID, setUserID] = useState(null);
 
   const fetchGuestToken = async () => {
@@ -17,9 +17,9 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         const guestToken = data.token;
         setToken(guestToken);
-        setRole("Guest");
+        setRole("GUEST");
         localStorage.setItem("token", guestToken);
-        localStorage.setItem("role", "Guest");
+        localStorage.setItem("role", "GUEST");
       }
     } catch (e) {
       console.error("Failed to fetch guest token", e);
@@ -37,11 +37,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = (newToken, authRole, authUserID) => {
     localStorage.setItem("token", newToken);
-    localStorage.setItem("role", authRole || "Member");
+    localStorage.setItem("role", (authRole || "MEMBER").toUpperCase());
     localStorage.setItem("userID", authUserID);
 
     setToken(newToken);
-    setRole(authRole || "Member");
+    setRole((authRole || "MEMBER").toUpperCase());
     setUserID(authUserID);
   };
 
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("userID");
 
     setToken(null);
-    setRole("Guest");
+    setRole("GUEST");
     setUserID(null);
 
     fetchGuestToken();
