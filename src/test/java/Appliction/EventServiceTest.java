@@ -462,6 +462,7 @@ public class EventServiceTest {
         assertTrue(result.isSuccess());
         assertEquals(1, result.getData().size());
         assertEquals("Summer Fest", result.getData().get(0).name());
+    }
     void getCompanyEvents_Success() {
         eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "TLV", COMPANY, MAP);
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
