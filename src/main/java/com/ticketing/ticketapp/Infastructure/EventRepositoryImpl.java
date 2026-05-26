@@ -104,8 +104,8 @@ public class EventRepositoryImpl implements iEventRepository {
         return events.values().stream()
                 .filter(e -> company == null || e.getCompany().equalsIgnoreCase(company))
                 .filter(e -> query == null || query.isEmpty() ||
-                        e.getName().contains(query) ||
-                        e.getArtistName().contains(query))
+                        e.getName().toLowerCase().contains(query.toLowerCase()) ||
+                        e.getArtistName().toLowerCase().contains(query.toLowerCase()))
                 .filter(e -> type == null || e.getType() == type)
                 .filter(e -> (minPrice == null || e.getPrice() >= minPrice) &&
                         (maxPrice == null || e.getPrice() <= maxPrice))
