@@ -3,7 +3,9 @@ package Appliction;
 import com.ticketing.ticketapp.Appliction.*;
 
 import com.ticketing.ticketapp.Domain.PurchasePolicy.*;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
+import com.ticketing.ticketapp.Infastructure.UserRepositoryImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,12 +18,14 @@ public class PurchasePolicyServiceTest {
     private PurchasePolicyService policyService;
     private iPurchasePolicyRepository policyRepo;
     private TokenService tokenService;
+    private IUserRepository userRepository;
 
     @BeforeEach
     void setUp() {
         policyRepo = mock(iPurchasePolicyRepository.class);
         tokenService = mock(TokenService.class);
-        policyService = new PurchasePolicyService(policyRepo, tokenService);
+        userRepository=mock(UserRepositoryImpl.class)
+        policyService = new PurchasePolicyService(policyRepo, tokenService, userRepository);
     }
 
     @Test

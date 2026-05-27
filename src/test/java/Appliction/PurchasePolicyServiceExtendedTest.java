@@ -2,6 +2,7 @@ package Appliction;
 
 import com.ticketing.ticketapp.Appliction.*;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.*;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,13 +16,13 @@ class PurchasePolicyServiceExtendedTest {
 
     @Mock private iPurchasePolicyRepository policyRepo;
     @Mock private TokenService tokenService;
-
+    @Mock private IUserRepository userRepository;
     private PurchasePolicyService policyService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        policyService = new PurchasePolicyService(policyRepo, tokenService);
+        policyService = new PurchasePolicyService(policyRepo, tokenService, userRepository);
     }
 
     // ── getMaxSeatsForEvent ───────────────────────────────────────────────────

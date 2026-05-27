@@ -57,7 +57,7 @@ public class PurchasePolicyAcceptanceTests {
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, mock(iDiscountPolicyRepository.class));
         this.reserveService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
-        this.policyService = new PurchasePolicyService(purchasePolicyRepository, tokenService);
+        this.policyService = new PurchasePolicyService(purchasePolicyRepository, tokenService, userRepository);
 
         userRepository.deleteAll();
         eventRepository.deleteAllEvents();

@@ -1,6 +1,7 @@
 package com.ticketing.ticketapp.Appliction;
 
 import com.ticketing.ticketapp.Domain.PurchasePolicy.*;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import java.util.List;
 import java.util.UUID;
@@ -15,15 +16,23 @@ public class PurchasePolicyService {
     private final iPurchasePolicyRepository purchaseRepo;
     private final TokenService tokenService;
     private static final Logger logger = LoggerFactory.getLogger(PurchasePolicyService.class);
+    private IUserRepository userRepository;
 
-    public PurchasePolicyService(iPurchasePolicyRepository purchaseRepo, TokenService tokenService) {
+    public PurchasePolicyService(iPurchasePolicyRepository purchaseRepo, TokenService tokenService, IUserRepository userRepository) {
         this.purchaseRepo = purchaseRepo;
         this.tokenService = tokenService;
+        this.userRepository=userRepository;
     }
 
     public Response<String> createAgeLimitPolicy(String token, String targetId, PurchaseTargetType type, int minAge) {
         try {
             validateToken(token);
+            String userID = tokenService.extractUserId(token);
+            String username = tokenService.extractUsername(token);
+            if ((userID != null && userRepository.isUserSuspendedNow(userID)) ||
+                    (username != null && userRepository.isUserSuspendedNow(username))) {
+                throw new Exception("User is suspended");
+            }
             PurchaseComponent condition = new AgeLimitCondition(minAge);
             return Response.success(saveToRepo(targetId, type, condition));
         } catch (Exception e) {
@@ -35,6 +44,12 @@ public class PurchasePolicyService {
     public Response<String> createQuantityLimitPolicy(String token, String targetId, PurchaseTargetType type, int min, int max) {
         try {
             validateToken(token);
+            String userID = tokenService.extractUserId(token);
+            String username = tokenService.extractUsername(token);
+            if ((userID != null && userRepository.isUserSuspendedNow(userID)) ||
+                    (username != null && userRepository.isUserSuspendedNow(username))) {
+                throw new Exception("User is suspended");
+            }
             PurchaseComponent condition = new QuantityLimitCondition(min, max);
             return Response.success(saveToRepo(targetId, type, condition));
         } catch (Exception e) {
@@ -46,6 +61,12 @@ public class PurchasePolicyService {
     public Response<String> createAndPolicy(String token, String targetId, PurchaseTargetType type, List<String> componentIds) {
         try {
             validateToken(token);
+            String userID = tokenService.extractUserId(token);
+            String username = tokenService.extractUsername(token);
+            if ((userID != null && userRepository.isUserSuspendedNow(userID)) ||
+                    (username != null && userRepository.isUserSuspendedNow(username))) {
+                throw new Exception("User is suspended");
+            }
             AndPurchaseComposite andComposite = new AndPurchaseComposite();
 
             for (String id : componentIds) {
@@ -65,6 +86,12 @@ public class PurchasePolicyService {
     public Response<String> createOrPolicy(String token, String targetId, PurchaseTargetType type, List<String> componentIds) {
         try {
             validateToken(token);
+            String userID = tokenService.extractUserId(token);
+            String username = tokenService.extractUsername(token);
+            if ((userID != null && userRepository.isUserSuspendedNow(userID)) ||
+                    (username != null && userRepository.isUserSuspendedNow(username))) {
+                throw new Exception("User is suspended");
+            }
             OrPurchaseComposite orComposite = new OrPurchaseComposite();
 
             for (String id : componentIds) {
