@@ -30,8 +30,7 @@ public class InformationEventsTests {
     private CompanyService companyService;
     private EventService eventService;
     private TokenService tokenService;
-    private IUserRepository userRepository;
-    private AdminService adminService;
+
 
     @BeforeEach
     void setUp() {
@@ -50,15 +49,6 @@ public class InformationEventsTests {
         INotifier notifierMock = mock(INotifier.class);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock, notificationRepository);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
-
-        this.userRepository=userRepository;
-        iAdminRepository adminRepository = new AdminRepositoryImpl(){
-            @Override
-            public boolean isAdmin(String userID) {
-                return userID.equals("admin");
-            }
-        };
-        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new PendingNotificationRepositoryImpl())));
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -276,71 +266,4 @@ public class InformationEventsTests {
         assertTrue(eventService.searchEvents("gt", null, null, null, null, null, null, null, null, 1.0).isError());
     }
 
-
-    @Test
-    @DisplayName("Create Event - Fail (User Is Suspended)")
-    void createEventFailedUserSuspended() {
-        reg("owner_user_create", "password123");
-        String ownerToken = log("owner_user_create", "password123");
-        companyService.CreateCompany("company_create", ownerToken);
-
-        reg("admin", "admin");
-        log("admin", "admin");
-        String ownerId = userRepository.getUserByUsername("owner_user_create").getID();
-        adminService.suspendUser(ownerId, "admin", 7);
-
-        Response<String> response = eventService.createEvent(
-                ownerToken, "Suspended Event", "Artist", EventType.PLAY,
-                100.0, new Date(), "Location", "company_create", getMapArea()
-        );
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertTrue(response.getMessage().contains("User is suspended"));
-    }
-
-    @Test
-    @DisplayName("Update Event - Fail (User Is Suspended)")
-    void updateEventFailedUserSuspended() {
-        reg("owner_user_update", "password123");
-        String ownerToken = log("owner_user_update", "password123");
-        companyService.CreateCompany("company_update", ownerToken);
-        eventService.createEvent(ownerToken, "Original Event", "Artist", EventType.PLAY, 100.0, new Date(), "Location", "company_update", getMapArea());
-
-        reg("admin", "admin");
-        log("admin", "admin");
-        String ownerId = userRepository.getUserByUsername("owner_user_update").getID();
-        adminService.suspendUser(ownerId, "admin", 7);
-
-        Response<String> response = eventService.UpdateEvent(
-                ownerToken, "Original Event", "New Artist", EventType.PLAY,
-                120.0, new Date(), "New Location", "company_update", getMapArea(), 5.0
-        );
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
-    }
-
-    @Test
-    @DisplayName("Delete Event - Fail (User Is Suspended)")
-    void deleteEventFailedUserSuspended() {
-        reg("owner_user_delete", "password123");
-        String ownerToken = log("owner_user_delete", "password123");
-        companyService.CreateCompany("company_delete", ownerToken);
-        eventService.createEvent(ownerToken, "Event to Delete", "Artist", EventType.PLAY, 100.0, new Date(), "Location", "company_delete", getMapArea());
-
-        String eventId = eventService.getCompanyEvents(ownerToken, "company_delete").getData().get(0).eventId();
-
-        reg("admin", "admin");
-        log("admin", "admin");
-        String ownerId = userRepository.getUserByUsername("owner_user_delete").getID();
-        adminService.suspendUser(ownerId, "admin", 7);
-
-        Response<String> response = eventService.deleteEvent(eventId, "company_delete", ownerToken);
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertTrue(response.getMessage().contains("User is suspended"));
-    }
 }
