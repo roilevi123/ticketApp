@@ -669,4 +669,33 @@ class CompanyServiceTest {
         verify(companyRepository, never()).store(anyString(), anyString());
         verify(treeOfRoleRepository, never()).storeOwner(anyString(), anyString(), anyString());
     }
+
+
+    @Test
+    void appointAManager_Failure_SuspendedUser() {
+        String managerID = "new_manager";
+        String mockUserId = "user-123";
+        User mockUser = mock(User.class);
+        Set<Permission> permissions = new HashSet<>(); // או הסט שאת משתמשת בו בטסטים
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
+        when(userRepository.getUserByID(mockUserId)).thenReturn(mockUser);
+
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+
+        when(userRepository.usernameExists(managerID)).thenReturn(true);
+
+        when(userRepository.isUserSuspendedNow(anyString())).thenReturn(true);
+
+        Response<String> result = companyService.AppointAManager(managerID, COMPANY, permissions, TOKEN);
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+
+        verify(treeOfRoleRepository, never()).storeManager(anyString(), anyString(), any(), anyString());
+        verify(notifier, never()).notifyUser(anyString(), anyString(), anyString());
+    }
 }
