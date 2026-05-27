@@ -66,7 +66,7 @@ public class EventServiceTest {
         MAP[0][2] = MapArea.STAND;
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
 
         Response<String> res = eventService.createEvent(TOKEN, EVENT_NAME, artist, EventType.LIVE_PERFORMANCE, price, date, location, COMPANY, MAP);
@@ -101,7 +101,7 @@ public class EventServiceTest {
         MAP[0][0] = MapArea.SEAT;
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
 
         Manager mockManager = mock(Manager.class);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
@@ -143,7 +143,7 @@ public class EventServiceTest {
     @Test
     void createEvent_Failure_NoPermissions() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
 
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(false);
@@ -157,7 +157,7 @@ public class EventServiceTest {
     @Test
     void createEvent_Failure_ManagerWithoutRequiredPermission() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
 
         Manager mockManager = mock(Manager.class);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
@@ -178,7 +178,7 @@ public class EventServiceTest {
         assertNotNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
 
         Response<String> res = eventService.deleteEvent(event.getId(), COMPANY, TOKEN);
@@ -191,7 +191,7 @@ public class EventServiceTest {
         Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
 
         Manager mockManager = mock(Manager.class);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
@@ -210,7 +210,7 @@ public class EventServiceTest {
         Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
 
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(false);
@@ -231,7 +231,7 @@ public class EventServiceTest {
         double newRating = 4.5;
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
 
         Response<String> res = eventService.UpdateEvent(TOKEN, EVENT_NAME, newArtist, EventType.PLAY, newPrice, new Date(), "New Loc", COMPANY, MAP, newRating);
@@ -250,7 +250,7 @@ public class EventServiceTest {
         eventRepository.store(EVENT_NAME, "Old Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
 
         Manager mockManager = mock(Manager.class);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
@@ -272,7 +272,7 @@ public class EventServiceTest {
         eventRepository.store(EVENT_NAME, oldArtist, EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
-        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
 
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(USERNAME, COMPANY)).thenReturn(false);

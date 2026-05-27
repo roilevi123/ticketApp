@@ -21,14 +21,15 @@ public class LotteryRepositoryImpl implements ILotteryRepository {
     }
 
     @Override
-    public void configure(String eventName, String companyName, Date endDate, int maxWinners) {
+    public void configure(String eventName, String companyName, Date startDate, Date endDate, int maxWinners) {
         lotteries.compute(key(eventName, companyName), (k, existing) -> {
             if (existing != null) {
+                existing.setStartDate(startDate);
                 existing.setEndDate(endDate);
                 existing.setMaxWinners(maxWinners);
                 return existing;
             }
-            return new LotteryRegistration(eventName, companyName, endDate, maxWinners);
+            return new LotteryRegistration(eventName, companyName, startDate, endDate, maxWinners);
         });
     }
 
@@ -41,8 +42,10 @@ public class LotteryRepositoryImpl implements ILotteryRepository {
         if (lr.isDrawn()) {
             throw new RuntimeException("The lottery has already been drawn");
         }
-        if (lr.isClosed()) {
-            throw new RuntimeException("Lottery registration is closed");
+        if (!lr.isOpen()) {
+            throw new RuntimeException(lr.isClosed()
+                    ? "Lottery registration is closed"
+                    : "Lottery registration has not opened yet");
         }
         return lr.addUser(userId);
     }

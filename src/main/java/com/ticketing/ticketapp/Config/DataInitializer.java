@@ -64,6 +64,8 @@ public class DataInitializer implements ApplicationRunner {
             userService.register(guestToken, "admin", "admin123", 30, "admin@bgu.ac.il");
             String guestToken2 = tokenService.generateGuestToken();
             userService.register(guestToken2, "koren_manager", "koren123", 25, "koren@bgu.ac.il");
+            userService.register(tokenService.generateGuestToken(), "s", "s", 25, "s@test.com");
+            userService.register(tokenService.generateGuestToken(), "d", "d", 25, "d@test.com");
             String loginToken = tokenService.generateGuestToken();
             String adminToken = userService.login(loginToken, "admin", "admin123").getData();
             adminRepository.addAdmin(tokenService.extractUserId(adminToken));
@@ -99,7 +101,7 @@ public class DataInitializer implements ApplicationRunner {
                     EventType.LIVE_PERFORMANCE, 149.99, daysFromNow(90), "BGU Arena", map);
             Date lotteryEnd = minutesFromNow(5);
             lotteryService.configureLottery(adminToken, "BGU Events", "Coldplay World Tour",
-                    lotteryEnd, 50);
+                    null, lotteryEnd, 50);
             logger.info("DataInitializer: seeded high-demand lottery event 'Coldplay World Tour' " +
                     "(lottery closes in 5 minutes, 50 winners)");
 

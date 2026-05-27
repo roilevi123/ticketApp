@@ -11,18 +11,24 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class LotteryRegistration {
     private final String eventName;
     private final String companyName;
+    private Date startDate;
     private Date endDate;
     private int maxWinners;
     private final List<String> registeredUserIds;
     private boolean drawn;
 
-    public LotteryRegistration(String eventName, String companyName, Date endDate, int maxWinners) {
+    public LotteryRegistration(String eventName, String companyName, Date startDate, Date endDate, int maxWinners) {
         this.eventName = eventName;
         this.companyName = companyName;
+        this.startDate = startDate;
         this.endDate = endDate;
         this.maxWinners = maxWinners;
         this.registeredUserIds = new CopyOnWriteArrayList<>();
         this.drawn = false;
+    }
+
+    public LotteryRegistration(String eventName, String companyName, Date endDate, int maxWinners) {
+        this(eventName, companyName, null, endDate, maxWinners);
     }
 
     /**
@@ -38,17 +44,21 @@ public class LotteryRegistration {
         return registeredUserIds.contains(userId);
     }
 
-    /**
-     * Returns true when the lottery registration window has closed.
-     */
     public boolean isClosed() {
         return endDate != null && endDate.before(new Date());
+    }
+
+    public boolean isOpen() {
+        Date now = new Date();
+        if (startDate != null && now.before(startDate)) return false;
+        return !isClosed();
     }
 
     // ── Getters ──────────────────────────────────────────────────────────────
 
     public String getEventName()          { return eventName; }
     public String getCompanyName()        { return companyName; }
+    public Date   getStartDate()          { return startDate; }
     public Date   getEndDate()            { return endDate; }
     public int    getMaxWinners()         { return maxWinners; }
     public boolean isDrawn()              { return drawn; }
@@ -59,6 +69,7 @@ public class LotteryRegistration {
     // ── Setters ──────────────────────────────────────────────────────────────
 
     public void setDrawn(boolean drawn)         { this.drawn = drawn; }
+    public void setStartDate(Date startDate)    { this.startDate = startDate; }
     public void setEndDate(Date endDate)        { this.endDate = endDate; }
     public void setMaxWinners(int maxWinners)   { this.maxWinners = maxWinners; }
 }

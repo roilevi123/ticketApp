@@ -4,6 +4,8 @@ import EventCatalog from "./components/EventCatalog";
 import CompanyProfile from "./components/CompanyProfile";
 import EventDetails from "./components/EventDetails";
 import ProducerDashboard from "./components/ProducerDashboard";
+import CompanySelector from "./components/CompanySelector";
+import CreateCompany from "./components/CreateCompany";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -27,6 +29,22 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["OWNER", "MANAGER", "FOUNDER"]}>
                 <ProducerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="select-company"
+            element={
+              <ProtectedRoute allowedRoles={["MEMBER", "ADMIN", "OWNER", "MANAGER", "FOUNDER"]}>
+                <CompanySelector />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="create-company"
+            element={
+              <ProtectedRoute allowedRoles={["MEMBER", "ADMIN", "OWNER", "MANAGER", "FOUNDER"]}>
+                <CreateCompany />
               </ProtectedRoute>
             }
           />

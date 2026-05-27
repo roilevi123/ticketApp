@@ -17,12 +17,12 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
 
     @Override
     public void storeOwner(String ownerID, String company, String appointerID) {
-        Owner o=new Owner(ownerID,company,appointerID);
-        if(appointerID.equals(FOUNDER_APPOINTER))
-        {
-            o.acceptAppointment();
+        managers.remove(ownerID + company);
+        Owner o = new Owner(ownerID, company, appointerID);
+        if (FOUNDER_APPOINTER.equals(appointerID)) {
+            o.acceptAppointment(); // founder auto-accepts their own company creation
         }
-        owners.put(ownerID+company,o);
+        owners.put(ownerID + company, o);
     }
 
     @Override
@@ -33,10 +33,15 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         return false;
     }
     @Override
-    public void storeManager(String managerID, String company, Set<Permission> permissions,String appointerID) {
-        Manager m=new Manager(managerID,company,permissions,appointerID);
-        managers.put(managerID+company,m);
-
+    public void storeManager(String managerID, String company, Set<Permission> permissions, String appointerID) {
+        // Cannot demote a founder to manager
+        Owner existingOwner = owners.get(managerID + company);
+        if (existingOwner != null && FOUNDER_APPOINTER.equals(existingOwner.getAppointerID())) {
+            throw new RuntimeException("Cannot assign a manager role to the company founder");
+        }
+        owners.remove(managerID + company);
+        Manager m = new Manager(managerID, company, permissions, appointerID);
+        managers.put(managerID + company, m);
     }
     @Override
     public void deleteCompanyMangersAndOwners(String company) {
@@ -199,25 +204,60 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
     }
     @Override
     public void deleteUserRoles(String userID) {
-        List<String> names=new ArrayList<>();
-        for(Manager m:managers.values()) {
-            if(m.getUserID().equals(userID)) {
-                names.add(m.getCompanyName());
+        List<String> companyNames = new ArrayList<>();
+        for (Manager m : managers.values()) {
+            if (m.getUserID().equals(userID)) {
+                companyNames.add(m.getCompanyName());
             }
         }
-        for(Owner o:owners.values()) {
-            if(o.getUserID().equals(userID)) {
-                names.add(o.getCompanyName());
+        for (Owner o : owners.values()) {
+            if (o.getUserID().equals(userID)) {
+                companyNames.add(o.getCompanyName());
             }
         }
-        for(String n:names) {
-            if(managers.containsKey(n + userID)) {
-                managers.remove(n + userID);
-            }
-            if(owners.containsKey(n + userID)) {
-                owners.remove(n + userID);
+        for (String companyName : companyNames) {
+            managers.remove(userID + companyName);
+            owners.remove(userID + companyName);
+        }
+    }
+
+    @Override
+    public List<String> getUserCompanies(String userId) {
+        Set<String> companySet = new HashSet<>();
+        for (Owner o : owners.values()) {
+            if (o.getUserID().equals(userId) && o.isAccepted()) {
+                companySet.add(o.getCompanyName());
             }
         }
+        for (Manager m : managers.values()) {
+            if (m.getUserID().equals(userId) && m.isAccepted()) {
+                companySet.add(m.getCompanyName());
+            }
+        }
+        return new ArrayList<>(companySet);
+    }
+
+    @Override
+    public String getRoleInCompany(String userId, String companyName) {
+        String key = userId + companyName;
+        Owner o = owners.get(key);
+        if (o != null && o.isAccepted()) {
+            return FOUNDER_APPOINTER.equals(o.getAppointerID()) ? "FOUNDER" : "OWNER";
+        }
+        Manager m = managers.get(key);
+        if (m != null && m.isAccepted()) return "MANAGER";
+        return "MEMBER";
+    }
+
+    @Override
+    public String getUserHighestRole(String userId) {
+        for (Owner o : owners.values()) {
+            if (o.getUserID().equals(userId) && o.isAccepted()) return "OWNER";
+        }
+        for (Manager m : managers.values()) {
+            if (m.getUserID().equals(userId) && m.isAccepted()) return "MANAGER";
+        }
+        return "MEMBER";
     }
 
 }

@@ -68,7 +68,7 @@ public class AdminJUnitTests {
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
 
         INotifier notifierMock = mock(INotifier.class);
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
 
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
 

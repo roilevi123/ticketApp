@@ -31,7 +31,7 @@ public class DiscountServiceTest {
         discountService = new DiscountService(discountRepo, tokenService, purchasedService);
 
         when(tokenService.validateToken(anyString())).thenReturn(true);
-        when(tokenService.extractUsername(anyString())).thenReturn("user123");
+        when(tokenService.extractUserId(anyString())).thenReturn("user123");
         when(purchasedService.isAuthorized(anyString(), anyString())).thenReturn(true);
     }
 

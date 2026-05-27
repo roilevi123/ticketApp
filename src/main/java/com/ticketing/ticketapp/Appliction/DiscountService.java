@@ -115,7 +115,7 @@ public class DiscountService {
 
     private void validateAuthority(String token, String companyName) throws Exception {
         if (!tokenService.validateToken(token)) throw new Exception("Invalid token");
-        String userId = tokenService.extractUsername(token);
+        String userId = tokenService.extractUserId(token);
         if (!purchasedService.isAuthorized(companyName, userId)) throw new Exception("Unauthorized");
     }
 

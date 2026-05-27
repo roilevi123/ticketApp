@@ -6,6 +6,7 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -70,15 +71,49 @@ public class AuthController {
 
     @GetMapping("/guest")
     public ResponseEntity<?> getGuestToken() {
-        String guestToken = tokenService.generateGuestToken(); 
-        
-        return ResponseEntity.ok(Map.of(
-            "message", "Guest token generated",
-            "token", guestToken
-        ));
+        String guestToken = tokenService.generateGuestToken();
+        return ResponseEntity.ok(Map.of("message", "Guest token generated", "token", guestToken));
     }
 
-    
+    @GetMapping("/my-companies")
+    public ResponseEntity<?> getMyCompanies(@RequestHeader("Authorization") String token) {
+        String cleanToken = token.replace("Bearer ", "");
+        Response<List<String>> response = userService.getUserCompanies(cleanToken);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response.getData());
+        }
+        return ResponseEntity.status(400).body(Map.of("error", response.getMessage()));
+    }
+
+    @PostMapping("/switch-company")
+    public ResponseEntity<?> switchCompanyContext(
+            @RequestHeader("Authorization") String token,
+            @RequestBody Map<String, String> body) {
+        String cleanToken = token.replace("Bearer ", "");
+        String companyName = body.get("companyName");
+        Response<String> response = userService.switchCompanyContext(cleanToken, companyName);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(Map.of("token", response.getData()));
+        }
+        return ResponseEntity.status(401).body(Map.of("error", response.getMessage()));
+    }
+
+    @PostMapping("/exit-company")
+    public ResponseEntity<?> exitCompany(@RequestHeader("Authorization") String token) {
+        try {
+            String cleanToken = token.replace("Bearer ", "");
+            if (!tokenService.validateToken(cleanToken)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Invalid token"));
+            }
+            String userId = tokenService.extractUserId(cleanToken);
+            String username = tokenService.extractUsername(cleanToken);
+            String memberToken = tokenService.generateMemberToken(userId, username);
+            return ResponseEntity.ok(Map.of("token", memberToken));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
+        }
+    }
+
     public static class RegisterRequest {
         private String username;
         private String password;

@@ -1,6 +1,7 @@
 package com.ticketing.ticketapp.Appliction;
 
 import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Domain.User.UserDTO;
@@ -22,17 +23,20 @@ public class UserService implements IAuth {
     private final TokenService tokenService;
     private final INotificationRepository userNotificationRepository;
     private final INotifier notifier;
+    private final iTreeOfRoleRepository roleRepository;
 
     public UserService(IPasswordEncoder passwordEncoder,
                        IUserRepository userRepository,
                        TokenService tokenService,
                        INotificationRepository userNotificationRepository,
-                       INotifier notifier) {
+                       INotifier notifier,
+                       iTreeOfRoleRepository roleRepository) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.userNotificationRepository = userNotificationRepository;
         this.notifier = notifier;
+        this.roleRepository = roleRepository;
     }
 
     @Override
@@ -186,6 +190,46 @@ public class UserService implements IAuth {
             
         } catch (Exception e) {
             logger.error("Failed to submit complaint: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<List<String>> getUserCompanies(String token) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userId = tokenService.extractUserId(token);
+            List<String> companies = roleRepository.getUserCompanies(userId);
+            return Response.success(companies);
+        } catch (Exception e) {
+            logger.error("Failed to fetch user companies", e);
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> switchCompanyContext(String token, String companyName) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userId = tokenService.extractUserId(token);
+            User user = userRepository.getUserByID(userId);
+
+            String roleInCompany = roleRepository.getRoleInCompany(userId, companyName);
+            if (roleInCompany.equals("MEMBER")) {
+                throw new RuntimeException("User is not authorized in this company");
+            }
+
+            String companyToken;
+            if ("MANAGER".equals(roleInCompany)) {
+                List<String> permNames = roleRepository.getManagerPermissions(userId, companyName)
+                        .stream().map(Enum::name).collect(java.util.stream.Collectors.toList());
+                companyToken = tokenService.generateCompanyToken(userId, user.getName(), roleInCompany, companyName, permNames);
+            } else {
+                companyToken = tokenService.generateCompanyToken(userId, user.getName(), roleInCompany, companyName);
+            }
+
+            logger.info("User {} switched context to company {} with role {}", user.getName(), companyName, roleInCompany);
+            return Response.success(companyToken);
+        } catch (Exception e) {
+            logger.error("Failed to switch company context", e);
             return Response.error(e.getMessage());
         }
     }

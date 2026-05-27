@@ -50,9 +50,9 @@ public class EventService {
         this.notifier = notifier;
     }
 
-    public boolean isAuthorized(String company, String username) {
-        boolean o = treeOfRoleRepository.exitsOwner(username, company);
-        boolean m = treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(username, company);
+    public boolean isAuthorized(String company, String userId) {
+        boolean o = treeOfRoleRepository.exitsOwner(userId, company);
+        boolean m = treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete(userId, company);
         return m || (o);
     }
 
@@ -62,8 +62,8 @@ public class EventService {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            String username = tokenService.extractUsername(token);
-            if (username == null || !isAuthorized(company, username)) {
+            String userId = tokenService.extractUserId(token);
+            if (userId == null || !isAuthorized(company, userId)) {
                 logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, company);
                 return Response.error("Unauthorized");
             }
@@ -85,9 +85,9 @@ public class EventService {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            String username = tokenService.extractUsername(token);
+            String userId = tokenService.extractUserId(token);
 
-            if (username == null || !isAuthorized(companyName, username)) {
+            if (userId == null || !isAuthorized(companyName, userId)) {
                 logger.info("Unauthorized attempt to delete event '{}' for company '{}'", eventId, companyName);
                 return Response.error("Unauthorized");
             }
@@ -118,11 +118,11 @@ public class EventService {
             double price, Date date, String location, String company, MapArea[][] map, double rating) {
         try {
             logger.info("trying update event: " + eventName);
-            String username = tokenService.extractUsername(token);
+            String userId = tokenService.extractUserId(token);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            if (username == null || !isAuthorized(company, username)) {
+            if (userId == null || !isAuthorized(company, userId)) {
                 throw new RuntimeException("Unauthorized: User is not an owner or authorized manager");
             }
 

@@ -42,7 +42,7 @@ public class LotteryService {
      * Configures (or updates) the lottery for an event.
      * Only event organizers with a valid token may call this.
      */
-    public Response<String> configureLottery(String token, String companyName, String eventName, Date endDate, int maxWinners) {
+    public Response<String> configureLottery(String token, String companyName, String eventName, Date startDate, Date endDate, int maxWinners) {
         try {
             if (!tokenService.validateToken(token)) {
                 return Response.error("Invalid token");
@@ -59,7 +59,7 @@ public class LotteryService {
             }
 
             // Persist lottery configuration
-            lotteryRepository.configure(eventName, companyName, endDate, maxWinners);
+            lotteryRepository.configure(eventName, companyName, startDate, endDate, maxWinners);
 
             // Mark the event as high-demand so the frontend and EventDTO reflect this
             event.setHighDemand(true);
@@ -122,9 +122,11 @@ public class LotteryService {
 
             Map<String, Object> status = new HashMap<>();
             status.put("hasLottery",  true);
+            status.put("startDate",   lr.getStartDate());
             status.put("endDate",     lr.getEndDate());
             status.put("maxWinners",  lr.getMaxWinners());
             status.put("drawn",       lr.isDrawn());
+            status.put("open",        lr.isOpen());
             status.put("registered",  false);
             status.put("hasWon",      false);
 

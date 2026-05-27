@@ -3,7 +3,10 @@ package com.ticketing.ticketapp.Controllers;
 import org.springframework.web.bind.annotation.*;
 import com.ticketing.ticketapp.Appliction.CompanyService;
 import com.ticketing.ticketapp.Appliction.EventService;
+import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
+import com.ticketing.ticketapp.Infastructure.TokenService;
 import java.util.*;
+import java.util.stream.Collectors;
 import com.ticketing.ticketapp.Appliction.Response;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
@@ -23,13 +26,17 @@ public class CompanyController {
     private final PurchasePolicyService purchasePolicyService;
     private final DiscountService discountService;
     private final PurchasedService purchasedService;
+    private final INotificationRepository notificationRepository;
+    private final TokenService tokenService;
 
-    public CompanyController(EventService eventService, CompanyService companyService, PurchasePolicyService purchasePolicyService, DiscountService discountService, PurchasedService purchasedService) {
+    public CompanyController(EventService eventService, CompanyService companyService, PurchasePolicyService purchasePolicyService, DiscountService discountService, PurchasedService purchasedService, INotificationRepository notificationRepository, TokenService tokenService) {
         this.eventService = eventService;
         this.companyService = companyService;
         this.purchasePolicyService = purchasePolicyService;
         this.discountService = discountService;
         this.purchasedService = purchasedService;
+        this.notificationRepository = notificationRepository;
+        this.tokenService = tokenService;
     }
 
     @PostMapping("/open")
@@ -42,9 +49,9 @@ public class CompanyController {
         Response<?> response = companyService.CreateCompany(companyName, token);
 
         if (response.isSuccess()) {
-            return ResponseEntity.ok(response.getData());
+            return ResponseEntity.ok(Map.of("token", response.getData()));
         }
-        return ResponseEntity.badRequest().body(response.getMessage());
+        return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
 
     }
 
@@ -303,6 +310,23 @@ public class CompanyController {
         return ResponseEntity.badRequest().body(response.getMessage());
     }
 
+    @GetMapping("/messages")
+    public ResponseEntity<?> getCompanyMessages(@RequestAttribute("cleanToken") String token) {
+        token = extractCleanToken(token);
+        try {
+            if (!tokenService.validateToken(token)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Invalid token"));
+            }
+            String userId = tokenService.extractUserId(token);
+            List<String> messages = notificationRepository.getAll(userId).stream()
+                    .map(n -> n.getMessage())
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(messages);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/reply-message")
     public ResponseEntity<?> replyToBuyerMessage(
             @RequestAttribute("cleanToken") String token, 
@@ -364,6 +388,52 @@ public class CompanyController {
         Response<String> response = companyService.RejectAppointmentForOwner(token, companyName);
         if (response.isSuccess()) {
             return ResponseEntity.ok(Map.of("message", "Ownership relinquished successfully"));
+        }
+        return ResponseEntity.badRequest().body(response.getMessage());
+    }
+
+    @DeleteMapping("/member")
+    public ResponseEntity<?> fireMember(
+            @RequestAttribute("cleanToken") String token,
+            @RequestParam("username") String username,
+            @RequestParam("companyName") String companyName) {
+        token = extractCleanToken(token);
+        Response<String> response = companyService.FireMember(token, companyName, username);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(Map.of("message", "Member removed successfully"));
+        }
+        return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
+    }
+
+    @PostMapping("/approve-appointment")
+    public ResponseEntity<?> approveAppointment(
+            @RequestAttribute("cleanToken") String token,
+            @RequestParam("companyName") String companyName,
+            @RequestParam("type") String type) {
+        token = extractCleanToken(token);
+        Response<String> response;
+        if ("MANAGER".equalsIgnoreCase(type)) {
+            response = companyService.ApproveAppointmentForManager(token, companyName);
+        } else if ("OWNER".equalsIgnoreCase(type)) {
+            response = companyService.ApproveAppointmentForOwner(token, companyName);
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid appointment type"));
+        }
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(Map.of("message", "Appointment approved"));
+        }
+        return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
+    }
+
+    @DeleteMapping("/manager/relinquish")
+    public ResponseEntity<?> relinquishManagership(
+            @RequestAttribute("cleanToken") String token,
+            @RequestParam("companyName") String companyName) {
+
+        token = extractCleanToken(token);
+        Response<String> response = companyService.RejectAppointmentForManager(token, companyName);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(Map.of("message", "Manager role relinquished successfully"));
         }
         return ResponseEntity.badRequest().body(response.getMessage());
     }
@@ -446,6 +516,20 @@ public class CompanyController {
         }
         
         return ResponseEntity.badRequest().body(response.getMessage());
+    }
+
+    @DeleteMapping("/close")
+    public ResponseEntity<?> closeCompany(
+            @RequestAttribute("cleanToken") String token,
+            @RequestParam("companyName") String companyName) {
+
+        token = extractCleanToken(token);
+        Response<String> response = companyService.closeCompany(companyName, token);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(Map.of("message", "Company closed successfully"));
+        }
+        return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
     }
 
     @GetMapping("/{companyName}/hierarchy")
