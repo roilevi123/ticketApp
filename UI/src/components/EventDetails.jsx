@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { useAuth } from "../contexts/AuthContext";
+import { useActiveOrder } from "../contexts/ActiveOrderContext";
+import { getOrderErrorMessage } from "../utils/orderErrors";
 
 const TYPE_CONFIG = {
   LIVE_PERFORMANCE: {
@@ -42,6 +44,10 @@ function parseMapData(map) {
       vip: rowIdx === 0,
     })),
   );
+}
+
+function toSeatRequests(seats) {
+  return seats.map((seat) => [seat.rawCol, seat.rawRow]);
 }
 
 // Fallback mock seats used when backend provides no map
@@ -197,19 +203,22 @@ function SeatingMap({ seats, selectedSeats, onSeatSelect, atLimit }) {
 export default function EventDetails() {
   const { companyName, eventName } = useParams();
   const { role, token } = useAuth();
+  const navigate = useNavigate();
+  const { refreshActiveOrder } = useActiveOrder();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [actionError, setActionError] = useState(null);
+  const [isReserving, setIsReserving] = useState(false);
 
   // Multi-seat selection state
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [maxSeats, setMaxSeats] = useState(null); // null = unlimited
 
   // Reservation state (regular events)
-  const [buying, setBuying] = useState(false);
   const [reservation, setReservation] = useState(null); // { orderId, seatCount }
-  const [reserveError, setReserveError] = useState(null);
 
   // ── Lottery state ──────────────────────────────────────────────────────────
   const [lotteryStatus, setLotteryStatus] = useState(null); // { hasLottery, registered, hasWon, winningCode, … }
@@ -296,29 +305,28 @@ export default function EventDetails() {
 
   // ── Reserve tickets (regular events) ────────────────────────────────────────
   async function handleReserve() {
-    if (!isRegisteredMember || selectedSeats.length === 0 || buying) return;
+    if (!isRegisteredMember || selectedSeats.length === 0 || isReserving) return;
 
-    setBuying(true);
-    setReserveError(null);
+    setIsReserving(true);
+    setActionError(null);
 
     try {
       // Backend expects: List<int[]> where each entry is [colIndex, rowIndex] (0-based)
-      const requests = selectedSeats.map((s) => [s.rawCol, s.rawRow]);
+      const requests = toSeatRequests(selectedSeats);
       const res = await axiosClient.post("/orders/reserve", {
         company: companyName,
         event: eventName,
         requests,
       });
+      await refreshActiveOrder();
       setReservation({ orderId: res.data, seatCount: selectedSeats.length });
       setSelectedSeats([]);
     } catch (err) {
-      const msg =
-        err.response?.data?.error ||
-        err.response?.data ||
-        err.message;
-      setReserveError(typeof msg === "string" ? msg : "Reservation failed. Please try again.");
+      setActionError(
+        getOrderErrorMessage(err, "Reservation failed. Please try again."),
+      );
     } finally {
-      setBuying(false);
+      setIsReserving(false);
     }
   }
 
@@ -361,7 +369,7 @@ export default function EventDetails() {
       const reserveRes = await axiosClient.post("/orders/reserve", {
         company: companyName,
         event: eventName,
-        requests: selectedSeats.map((s) => [s.rawCol, s.rawRow]),
+        requests: toSeatRequests(selectedSeats),
         lotteryCode: lotteryStatus.winningCode,
       });
       const orderId = reserveRes.data;
@@ -374,6 +382,7 @@ export default function EventDetails() {
 
       setPurchaseSuccess(true);
       setShowPurchasePanel(false);
+      await refreshActiveOrder();
       await fetchLotteryStatus(); // code is now consumed
     } catch (err) {
       const msg =
@@ -389,7 +398,6 @@ export default function EventDetails() {
 
   const { gradient, icon } = TYPE_CONFIG[event?.type?.toUpperCase()] ?? DEFAULT_TYPE;
   const seats = event?.map?.length ? parseMapData(event.map) : MOCK_SEATS;
-  const minPrice = event?.price ?? 0;
   const atLimit = maxSeats !== null && selectedSeats.length >= maxSeats;
 
   // ── Selection counter label ─────────────────────────────────────────────────
@@ -560,13 +568,6 @@ export default function EventDetails() {
                 </p>
               )}
 
-              {reserveError && (
-                <div className="mb-4 px-4 py-3 rounded-lg bg-error/10 border border-error/30 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-error text-[18px]">error</span>
-                  <p className="text-label-sm text-error">{reserveError}</p>
-                </div>
-              )}
-
               <div className="overflow-x-auto pb-2">
                 <SeatingMap
                   seats={seats}
@@ -576,6 +577,85 @@ export default function EventDetails() {
                 />
               </div>
             </section>
+
+            {/* ── Reserve / Buy Tickets ── */}
+            {!isHighDemand && (
+              <>
+                <div className="mx-margin-mobile h-px bg-outline-variant my-8" />
+                <section className="px-margin-mobile">
+                  <div className="p-4 rounded-xl bg-surface-container border border-outline-variant">
+                    {reservation ? (
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-3">
+                          <span className="material-symbols-outlined text-secondary shrink-0">
+                            check_circle
+                          </span>
+                          <div>
+                            <h3 className="text-headline-sm text-on-surface mb-1">
+                              Seats reserved
+                            </h3>
+                            <p className="text-label-md text-on-surface-variant">
+                              Reservation #{reservation.orderId} for {reservation.seatCount} {reservation.seatCount === 1 ? "seat" : "seats"} is ready for checkout.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => navigate("/checkout")}
+                          className="w-full py-3 rounded-xl font-bold text-label-md uppercase tracking-wider bg-secondary text-on-secondary hover:brightness-110 active:scale-95 transition-all"
+                        >
+                          Go to Checkout
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-3">
+                          <span className="material-symbols-outlined text-secondary shrink-0">
+                            shopping_cart
+                          </span>
+                          <div>
+                            <h3 className="text-headline-sm text-on-surface mb-1">
+                              Reserve your tickets
+                            </h3>
+                            <p className="text-label-md text-on-surface-variant">
+                              Select one or more seats above, then reserve them to continue to checkout.
+                            </p>
+                          </div>
+                        </div>
+
+                        {actionError && (
+                          <div className="px-4 py-3 rounded-lg bg-error/10 border border-error/30 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-error text-[18px]">
+                              error
+                            </span>
+                            <p className="text-label-sm text-error">{actionError}</p>
+                          </div>
+                        )}
+
+                        <button
+                          onClick={handleReserve}
+                          disabled={!isRegisteredMember || selectedSeats.length === 0 || isReserving}
+                          className={`w-full py-3 rounded-xl font-bold text-label-md uppercase tracking-wider transition-all ${
+                            isRegisteredMember && selectedSeats.length > 0
+                              ? "bg-secondary text-on-secondary hover:brightness-110 active:scale-95"
+                              : "bg-surface-container-highest text-outline cursor-not-allowed"
+                          }`}
+                        >
+                          {isReserving
+                            ? "Reserving…"
+                            : `Buy Tickets${selectedSeats.length > 0 ? ` (${selectedSeats.length})` : ""}`}
+                        </button>
+
+                        {!isRegisteredMember && (
+                          <p className="text-label-sm text-on-surface-variant text-center">
+                            Sign in as a member to reserve tickets.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </>
+            )}
 
             {/* ── High Demand / Lottery ── */}
             {isHighDemand && (

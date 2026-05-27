@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { useAuth } from "../contexts/AuthContext";
+import { useActiveOrder } from "../contexts/ActiveOrderContext";
+import { getOrderErrorMessage } from "../utils/orderErrors";
 import { useNotifications } from "../contexts/NotificationContext";
 
 //const API_URL = 'http://localhost:8080/api/discovery/events/search';
@@ -249,6 +251,7 @@ export default function EventCatalog() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { role, logout, token } = useAuth();
+  const { orderCount } = useActiveOrder();
   const { hasUnread } = useNotifications();
   const navigate = useNavigate();
 
@@ -275,7 +278,7 @@ export default function EventCatalog() {
           })
           .catch((err) => {
             if (err.name !== "CanceledError") {
-              setError(err.message);
+              setError(getOrderErrorMessage(err, "Unable to load events."));
               setLoading(false);
             }
           });
@@ -359,12 +362,20 @@ export default function EventCatalog() {
               </span>
             </Link>
             {token && role !== "GUEST" ? (
-              <button
-                onClick={handleLogout}
-                className="text-label-md text-on-surface-variant hover:text-secondary transition-colors font-medium"
-              >
-                Logout
-              </button>
+              <>
+                <Link
+                  to="/checkout"
+                  className="text-label-md text-secondary font-bold border border-secondary/40 px-3 py-1.5 rounded-full hover:bg-secondary/10 transition-colors"
+                >
+                  Cart ({orderCount})
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-label-md text-on-surface-variant hover:text-secondary transition-colors font-medium"
+                >
+                  Logout
+                </button>
+              </>
             ) : (
               <Link
                 to="/login"

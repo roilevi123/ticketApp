@@ -69,7 +69,7 @@ public class EventService {
             }
 
             Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, company, map);
-            ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, event.getDate(),
+            ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, null,
                     event.getPrice());
             iQueueRepository.initQueue(eventName + company);
             logger.info("Event '{}' created successfully for company '{}'", eventName, company);

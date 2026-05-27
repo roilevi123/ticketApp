@@ -49,7 +49,6 @@ public class PurchasePolicyAcceptanceTests {
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         INotifier notifierMock = mock(INotifier.class);
 
-
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 

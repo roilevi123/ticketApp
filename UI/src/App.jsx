@@ -14,16 +14,20 @@ import MyTickets from "./components/MyTickets";
 import InboxPage from "./components/InboxPage";
 import MessagePage from "./components/MessagePage";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import CheckoutPage from "./components/CheckoutPage";
+import { ActiveOrderProvider } from "./contexts/ActiveOrderContext";
 
 function App() {
   return (
     <BrowserRouter>
       <NotificationProvider>
+        <ActiveOrderProvider>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<EventCatalog />} />
           <Route path="company/:companyName" element={<CompanyProfile />} />
           <Route path="event/:companyName/:eventName" element={<EventDetails />} />
+          <Route path="checkout" element={<CheckoutPage />} />
           <Route
             path="producer-dashboard"
             element={
@@ -92,6 +96,7 @@ function App() {
           />
         </Route>
       </Routes>
+      </ActiveOrderProvider>
       </NotificationProvider>
     </BrowserRouter>
   );

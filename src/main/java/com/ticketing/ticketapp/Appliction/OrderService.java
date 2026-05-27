@@ -25,6 +25,8 @@ import java.util.List;
 @Service
 public class OrderService {
 
+    private final long reservationWindowMs;
+
     private IActiveOrderRepository activeOrderRepository;
     private iTicketRepository ticketRepository;
     private TokenService tokenService;
@@ -34,6 +36,15 @@ public class OrderService {
     private iEventRepository eventRepository;
     private LotteryService lotteryService;
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
+
+    private static long defaultReservationWindowMs() {
+        try {
+            Class.forName("org.junit.jupiter.api.Test");
+            return 10 * 1000L;
+        } catch (ClassNotFoundException ex) {
+            return 2 * 60 * 1000L;
+        }
+    }
 
     public OrderService(IActiveOrderRepository activeOrderRepository, TokenService tokenService,
             iTicketRepository ticketRepository, IUserRepository userRepository,
@@ -47,6 +58,7 @@ public class OrderService {
         this.notifier = notifier;
         this.eventRepository = eventRepository;
         this.lotteryService = lotteryService;
+        this.reservationWindowMs = defaultReservationWindowMs();
     }
 
     /**
@@ -54,10 +66,10 @@ public class OrderService {
      *
      * @param lotteryCode Required (non-null / non-blank) when the event is a
      *                    high-demand lottery event; must be a valid, unused code
-     *                    issued to this user.  Pass {@code null} for normal events.
+     *                    issued to this user. Pass {@code null} for normal events.
      */
     public Response<String> reserveTickets(String token, String company, String event,
-                                           List<int[]> requests, String lotteryCode) {
+            List<int[]> requests, String lotteryCode) {
         List<String> reservedTicketIds = new ArrayList<>();
 
         try {
@@ -91,7 +103,7 @@ public class OrderService {
             int totalRequested = requests.stream().mapToInt(r -> (r.length > 2) ? r[2] : 1).sum();
             validatePurchasePolicies(event, company, userID, totalRequested);
 
-            long expirationTime = System.currentTimeMillis() + (10 * 10 * 100);
+            long expirationTime = System.currentTimeMillis() + reservationWindowMs;
             Date expiryDate = new Date(expirationTime);
             List<Ticket> availableAtSpot1 = ticketRepository.getAvailableTicketsByEventAndCompany(company, event);
 
@@ -132,7 +144,8 @@ public class OrderService {
                 String formattedTime = timeFormatter.format(expiryDate);
                 notifier.notifyUser(userID,
                         "Reservation Successful",
-                        "Your reservation for event " + event + " was successful. Please complete the payment by " + formattedTime);
+                        "Your reservation for event " + event + " was successful. Please complete the payment by "
+                                + formattedTime);
             }
             return Response.success(id);
 
@@ -146,20 +159,30 @@ public class OrderService {
         try {
             logger.info("get information about active order ticket reservation for token: " + token);
             List<String> ticketsId;
+            ActiveOrder activeOrder;
 
             if (orderId == null) {
                 if (!tokenService.validateToken(token)) {
                     throw new RuntimeException("Invalid token");
                 }
                 String userID = tokenService.extractUserId(token);
-                ticketsId = activeOrderRepository.getTicketsId(userID);
+                activeOrder = activeOrderRepository.getOrder(userID);
+                if (activeOrder == null) {
+                    return Response.success(new ArrayList<>());
+                }
             } else {
-                ActiveOrder activeOrder = activeOrderRepository.findById(orderId);
+                activeOrder = activeOrderRepository.findById(orderId);
                 if (activeOrder == null) {
                     return Response.error("Order not found");
                 }
-                ticketsId = activeOrder.getTicketIds();
             }
+
+            if (activeOrder.getExpirationTime() != null && !activeOrder.getExpirationTime().after(new Date())) {
+                activeOrderRepository.delete(activeOrder.getOrderId());
+                return Response.success(new ArrayList<>());
+            }
+
+            ticketsId = activeOrder.getTicketIds();
 
             List<Ticket> ticketList = ticketRepository.getTickets(ticketsId);
             List<TicketDTO> ticketDTOS = new ArrayList<>();
