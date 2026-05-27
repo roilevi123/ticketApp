@@ -24,7 +24,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Complete Event Management Acceptance Tests")
-public class dEventManagementTest {
+public class EventManagementTest {
 
     private UserService userService;
     private CompanyService companyService;
