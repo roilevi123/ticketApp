@@ -29,8 +29,11 @@ public class PurchasePolicyService {
         try {
             validateToken(token);
             String userID = tokenService.extractUserId(token);
-            if(userRepository.isUserSuspendedNow(userID))
+            String username = tokenService.extractUsername(token);
+            if ((userID != null && userRepository.isUserSuspendedNow(userID)) ||
+                    (username != null && userRepository.isUserSuspendedNow(username))) {
                 throw new Exception("User is suspended");
+            }
             PurchaseComponent condition = new AgeLimitCondition(minAge);
             return Response.success(saveToRepo(targetId, type, condition));
         } catch (Exception e) {
@@ -43,8 +46,11 @@ public class PurchasePolicyService {
         try {
             validateToken(token);
             String userID = tokenService.extractUserId(token);
-            if(userRepository.isUserSuspendedNow(userID))
+            String username = tokenService.extractUsername(token);
+            if ((userID != null && userRepository.isUserSuspendedNow(userID)) ||
+                    (username != null && userRepository.isUserSuspendedNow(username))) {
                 throw new Exception("User is suspended");
+            }
             PurchaseComponent condition = new QuantityLimitCondition(min, max);
             return Response.success(saveToRepo(targetId, type, condition));
         } catch (Exception e) {
@@ -57,8 +63,11 @@ public class PurchasePolicyService {
         try {
             validateToken(token);
             String userID = tokenService.extractUserId(token);
-            if(userRepository.isUserSuspendedNow(userID))
+            String username = tokenService.extractUsername(token);
+            if ((userID != null && userRepository.isUserSuspendedNow(userID)) ||
+                    (username != null && userRepository.isUserSuspendedNow(username))) {
                 throw new Exception("User is suspended");
+            }
             AndPurchaseComposite andComposite = new AndPurchaseComposite();
 
             for (String id : componentIds) {
@@ -80,8 +89,11 @@ public class PurchasePolicyService {
             validateToken(token);
 
             String userID = tokenService.extractUserId(token);
-            if(userRepository.isUserSuspendedNow(userID))
+            String username = tokenService.extractUsername(token);
+            if ((userID != null && userRepository.isUserSuspendedNow(userID)) ||
+                    (username != null && userRepository.isUserSuspendedNow(username))) {
                 throw new Exception("User is suspended");
+            }
             OrPurchaseComposite orComposite = new OrPurchaseComposite();
 
             for (String id : componentIds) {
