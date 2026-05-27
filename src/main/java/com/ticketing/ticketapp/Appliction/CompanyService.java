@@ -256,6 +256,10 @@ public class CompanyService {
                 throw new RuntimeException("Invalid token");
             }
 
+            String userID=tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
+
             boolean m = treeOfRoleRepository.isAppointerManager(managerID, company, username);
             if (!m) {
                 throw new RuntimeException("you are not allowed to fire owner ");
