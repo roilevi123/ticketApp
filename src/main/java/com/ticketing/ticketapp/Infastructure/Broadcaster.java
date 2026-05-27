@@ -65,6 +65,7 @@ public class Broadcaster {
     }
 
     public void broadcastToAll(String message) {
+        notificationRepository.save("BROADCAST", message);
         activeConnections.forEach((userId, connection) -> {
             executorService.submit(() -> {
                 try {

@@ -181,10 +181,11 @@ public class UserService implements IAuth {
             }
             
             String username = tokenService.extractUsername(token);
+            String senderId = tokenService.extractUserId(token);
 
             logger.info("User {} is submitting a complaint to {}", username, targetRole);
             String targetId = targetRole.equalsIgnoreCase("Admin") ? "SYSTEM_ADMIN" : targetRole;
-            notifier.notifyUser(targetId, "Complaint from " + username, messageContent);
+            notifier.notifyUserWithSender(targetId, senderId, "Complaint from " + username, messageContent);
             logger.info("Successfully submitted complaint from {}", username);
             return Response.success("Complaint sent successfully");
             

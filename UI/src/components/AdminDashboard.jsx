@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import SystemHealthTab from './admin/SystemHealthTab';
 import FinancialsTab from './admin/FinancialsTab';
 import UserManagementTab from './admin/UserManagementTab';
@@ -26,6 +27,22 @@ export default function AdminDashboard() {
 
   return (
     <div className="bg-background min-h-screen">
+      <header className="w-full bg-surface-dim border-b border-outline-variant">
+        <div className="flex items-center justify-between h-16 px-margin-mobile md:px-margin-desktop max-w-container-max-width mx-auto">
+          <Link to="/" className="text-headline-md font-bold text-secondary">UNI-TICKETS</Link>
+          <div className="flex items-center gap-2 text-on-surface-variant">
+            <span className="material-symbols-outlined text-secondary" style={{ fontSize: "20px" }}>admin_panel_settings</span>
+            <span className="text-label-md font-medium text-secondary">Admin Control Center</span>
+          </div>
+          <Link
+            to="/"
+            className="flex items-center gap-1 text-on-surface-variant hover:text-secondary transition-colors text-label-md"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>arrow_back</span>
+            <span className="hidden sm:inline">Back to Events</span>
+          </Link>
+        </div>
+      </header>
     <div className="max-w-container-max-width mx-auto px-margin-mobile md:px-margin-desktop pt-10 pb-16">
       <div className="mb-8">
         <h1 className="text-display-lg-mobile md:text-display-lg font-bold text-on-surface tracking-tight mb-2">

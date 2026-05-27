@@ -100,6 +100,19 @@ public class TokenService {
         bannedUserIds.remove(userId);
     }
 
+    public boolean isBannedToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return bannedUserIds.contains(claims.getSubject());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 //    public boolean isUserBanned(String userId) {
 //        return bannedUserIds.contains(userId);
 //    }

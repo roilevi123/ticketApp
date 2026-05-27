@@ -167,6 +167,28 @@ public class AdminController {
         return ResponseEntity.ok(complaints);
     }
 
+    @PostMapping("/broadcast")
+    public ResponseEntity<?> broadcast(
+            @RequestAttribute("cleanToken") String token,
+            @RequestBody AdminBroadcastRequest request) {
+
+        String adminId = tokenService.extractUserId(token);
+        Response<String> response = adminService.broadcastMessage(adminId, "System Announcement", request.getMessage());
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(Map.of("message", "Broadcast sent successfully"));
+        }
+        return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
+    }
+
+    @GetMapping("/check")
+    public ResponseEntity<?> checkAdmin(
+            @RequestAttribute("cleanToken") String token) {
+
+        String userId = tokenService.extractUserId(token);
+        boolean isAdmin = adminService.isAdmin(userId);
+        return ResponseEntity.ok(Map.of("isAdmin", isAdmin));
+    }
+
     @PostMapping("/users/{userId}/message")
     public ResponseEntity<?> sendMessageToUser(
             @RequestAttribute("cleanToken") String token,
@@ -200,6 +222,13 @@ class QueueAdjustRequest {
 }
 
 class AdminMessageRequest {
+    private String message;
+
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+}
+
+class AdminBroadcastRequest {
     private String message;
 
     public String getMessage() { return message; }

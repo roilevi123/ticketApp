@@ -11,20 +11,40 @@ function formatTimeAgo(createdAt) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+function parseNotifJson(raw) {
+  try { return JSON.parse(raw); } catch { return { title: '', message: raw, senderId: null }; }
+}
+
+function extractUsername(title) {
+  const match = title?.match(/^Complaint from (.+)$/);
+  return match ? match[1] : (title || 'Unknown');
+}
+
+function extractSubjectAndBody(text) {
+  if (!text) return { subject: '', body: '' };
+  const match = text.match(/^\[([^\]]+)\]\s*([\s\S]*)/);
+  if (match) return { subject: match[1].trim(), body: match[2].trim() };
+  return { subject: text, body: '' };
+}
+
 // Maps a Notification { id, userId, message, read, createdAt } to the inbox ticket shape
 function toTicket(n) {
   const time = n.createdAt
     ? new Date(n.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     : '';
+  const parsed = parseNotifJson(n.message);
+  const username = extractUsername(parsed.title);
+  const fullMessage = parsed.message || n.message;
+  const { subject, body } = extractSubjectAndBody(fullMessage);
   return {
     id: n.id,
-    userId: n.userId,
-    subject: n.message.slice(0, 60) + (n.message.length > 60 ? '…' : ''),
-    preview: n.message,
-    fromEmail: n.userId,
+    senderId: parsed.senderId ?? null,
+    username,
+    subject,
+    body,
     priority: 'NORMAL',
     timeAgo: formatTimeAgo(n.createdAt),
-    messages: [{ text: n.message, time, fromAdmin: false }],
+    messages: [{ text: body || subject, time, fromAdmin: false }],
   };
 }
 
@@ -72,7 +92,9 @@ export default function SupportInboxTab() {
   const fetchTickets = useCallback(async () => {
     try {
       const res = await axiosClient.get('/admin/complaints');
-      const mapped = res.data.map(toTicket);
+      const mapped = [...res.data]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map(toTicket);
       setTickets(mapped.length > 0 ? mapped : DUMMY_TICKETS);
       if (mapped.length > 0) setSelectedId(mapped[0].id);
     } catch {
@@ -87,7 +109,7 @@ export default function SupportInboxTab() {
   const selected = tickets.find(t => t.id === selectedId) ?? tickets[0];
 
   const handleReply = async () => {
-    if (!replyText.trim() || !selected) return;
+    if (!replyText.trim() || !selected || !selected.senderId) return;
     setSending(true);
     const newMsg = {
       text: replyText,
@@ -95,15 +117,15 @@ export default function SupportInboxTab() {
       fromAdmin: true,
     };
     try {
-      await axiosClient.post(`/admin/users/${encodeURIComponent(selected.userId)}/message`, {
+      await axiosClient.post(`/admin/users/${encodeURIComponent(selected.senderId)}/message`, {
         message: replyText,
       });
+      setTickets(prev =>
+        prev.map(t => t.id === selected.id ? { ...t, messages: [...t.messages, newMsg] } : t)
+      );
     } catch {
-      // message sent optimistically
+      // silently fail — don't add the message bubble if it didn't send
     }
-    setTickets(prev =>
-      prev.map(t => t.id === selected.id ? { ...t, messages: [...t.messages, newMsg] } : t)
-    );
     setReplyText('');
     setSending(false);
   };
@@ -111,8 +133,11 @@ export default function SupportInboxTab() {
   const handleBroadcast = async () => {
     if (!broadcastMsg.trim()) return;
     setBroadcasting(true);
-    // No broadcast endpoint in backend yet — no-op
-    await new Promise(r => setTimeout(r, 400));
+    try {
+      await axiosClient.post('/admin/broadcast', { message: broadcastMsg });
+    } catch {
+      // best-effort
+    }
     setBroadcastMsg('');
     setBroadcasting(false);
   };
@@ -138,13 +163,10 @@ export default function SupportInboxTab() {
                 }`}
               >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="font-bold text-on-surface text-sm truncate max-w-[60%]">{t.fromEmail}</span>
+                  <span className="font-bold text-on-surface text-sm truncate max-w-[60%]">{t.subject || t.username}</span>
                   <span className="text-[10px] text-on-surface-variant flex-shrink-0">{t.timeAgo}</span>
                 </div>
-                <p className={`text-xs font-semibold truncate ${t.id === selectedId ? 'text-secondary' : 'text-on-surface-variant'}`}>
-                  {t.subject}
-                </p>
-                <p className="text-xs text-on-surface-variant truncate mt-0.5">{t.preview}</p>
+                {t.body && <p className="text-xs text-on-surface-variant truncate mt-0.5">{t.body}</p>}
               </div>
             ))}
           </div>
@@ -154,12 +176,10 @@ export default function SupportInboxTab() {
         {selected && (
           <div className="flex-grow flex flex-col min-w-0">
             <div className="p-4 border-b border-outline-variant flex-shrink-0">
-              <h3 className="text-headline-sm text-on-surface truncate">{selected.subject}</h3>
+              <h3 className="text-headline-sm text-on-surface truncate">{selected.subject || selected.username}</h3>
               <p className="text-xs text-on-surface-variant mt-0.5">
-                From user: <span className="font-mono">{selected.fromEmail}</span> | Priority:{' '}
-                <span className={`font-bold ${PRIORITY_COLOR[selected.priority] ?? 'text-on-surface-variant'}`}>
-                  {selected.priority}
-                </span>
+                From: <span className="font-mono">{selected.username}</span>
+                {!selected.senderId && <span className="text-error ml-2">— cannot reply (legacy complaint)</span>}
               </p>
             </div>
 
@@ -187,7 +207,7 @@ export default function SupportInboxTab() {
               <div className="flex justify-end">
                 <button
                   onClick={handleReply}
-                  disabled={sending || !replyText.trim()}
+                  disabled={sending || !replyText.trim() || !selected?.senderId}
                   className="bg-secondary text-on-secondary px-6 py-2 rounded-lg font-bold flex items-center gap-2 hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>send</span>

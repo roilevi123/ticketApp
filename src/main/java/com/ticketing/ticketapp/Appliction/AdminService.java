@@ -119,6 +119,8 @@ public class AdminService {
             if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
+            notifier.notifyUser(UserID, "FORCE_LOGOUT", "Your account has been removed by an administrator.");
+            tokenService.banUser(UserID);
             userRepository.deleteUser(UserID);
             treeOfRoleRepository.deleteUserRoles(UserID);
             logger.info("Deleted user " + UserID);
@@ -311,6 +313,23 @@ public class AdminService {
             analytics.put("totalPurchases", totalPurchases);
             analytics.put("activeOrders", activeOrders);
             return Response.success(analytics);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public boolean isAdmin(String userId) {
+        return adminRepository.isAdmin(userId);
+    }
+
+    public Response<String> broadcastMessage(String adminId, String title, String message) {
+        try {
+            if (!adminRepository.isAdmin(adminId)) {
+                throw new Exception("Not authorized");
+            }
+            notifier.broadcast(title, message);
+            return Response.success("Broadcast sent");
         } catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());

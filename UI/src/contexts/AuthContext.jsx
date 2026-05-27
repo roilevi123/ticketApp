@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [role, setRole] = useState("GUEST");
   const [userID, setUserID] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchGuestToken = async () => {
     try {
@@ -35,7 +36,7 @@ export const AuthProvider = ({ children }) => {
     fetchGuestToken();
   }, []);
 
-  const login = (newToken, authRole, authUserID) => {
+  const login = async (newToken, authRole, authUserID) => {
     localStorage.setItem("token", newToken);
     localStorage.setItem("role", (authRole || "MEMBER").toUpperCase());
     localStorage.setItem("userID", authUserID);
@@ -43,6 +44,16 @@ export const AuthProvider = ({ children }) => {
     setToken(newToken);
     setRole((authRole || "MEMBER").toUpperCase());
     setUserID(authUserID);
+
+    try {
+      const res = await fetch("http://localhost:8080/api/admin/check", {
+        headers: { Authorization: `Bearer ${newToken}` },
+      });
+      const data = await res.json();
+      setIsAdmin(!!data.isAdmin);
+    } catch {
+      setIsAdmin(false);
+    }
   };
 
   const logout = () => {
@@ -53,12 +64,13 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setRole("GUEST");
     setUserID(null);
+    setIsAdmin(false);
 
     fetchGuestToken();
   };
 
   return (
-    <AuthContext.Provider value={{ token, role, userID, login, logout }}>
+    <AuthContext.Provider value={{ token, role, userID, isAdmin, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
