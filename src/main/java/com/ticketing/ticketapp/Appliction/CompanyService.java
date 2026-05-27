@@ -47,7 +47,7 @@ public class CompanyService {
                 throw new RuntimeException("User not found");
             }
             String username = userObj.getName();
-            if(userRepository.isUserSuspendedNow(username))
+            if(userRepository.isUserSuspendedNow(userID))
                 throw new RuntimeException("User is suspended");
             logger.info("trying create company", username, company);
 

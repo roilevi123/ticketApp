@@ -1,6 +1,7 @@
 package AcceptanceTests;
 
 import com.ticketing.ticketapp.Appliction.*;
+import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
@@ -46,7 +47,13 @@ public class FullCompanyManagementTest {
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, mock(INotifier.class), notificationRepository);
         this.userRepository=userRepository;
-        this.adminService= new AdminService(treeOfRoleRepository,companyRepository,new AdminRepositoryImpl(),userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new PendingNotificationRepositoryImpl())));
+        iAdminRepository adminRepository = new AdminRepositoryImpl(){
+            @Override
+            public boolean isAdmin(String userID) {
+                return userID.equals("admin");
+            }
+        };
+        this.adminService= new AdminService(treeOfRoleRepository,companyRepository,adminRepository,userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new PendingNotificationRepositoryImpl())));
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -595,6 +602,21 @@ public class FullCompanyManagementTest {
         assertTrue(companyService.GetManagerPermissions("null", null, null).isError());
     }
 
+    @Test @DisplayName("Create Company - Fail (User is Suspended)")
+    void createCompanyFailedUserSuspended() {
+        reg("admin", "adminPassword");
+        reg("suspended_user", "password123");
+        String userToken = log("suspended_user", "password123");
 
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+
+        adminService.suspendUser(idA, "admin", 7);
+
+        Response<String> response = companyService.CreateCompany("MyCompany", userToken);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
 
 }
