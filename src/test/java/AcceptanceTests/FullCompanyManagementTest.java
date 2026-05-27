@@ -686,4 +686,26 @@ public class FullCompanyManagementTest {
         assertTrue(response.isError());
         assertEquals("User is suspended", response.getMessage());
     }
+
+    @Test
+    @DisplayName("Appoint Owner - Fail (User Is Suspended)")
+    void appointOwnerFailedUserSuspended(){
+        reg("admin", "adminPassword");
+        reg ("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        companyService.CreateCompany("company", suspendedUserToken);
+
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+
+        adminService.suspendUser(idA, "admin", 7);
+
+        Response<String> response = companyService.AppointOwner(idA, "company", userToken);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
 }
