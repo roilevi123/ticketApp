@@ -518,6 +518,21 @@ public class CompanyController {
         return ResponseEntity.badRequest().body(response.getMessage());
     }
 
+    @DeleteMapping("/events")
+    public ResponseEntity<?> deleteEvent(
+            @RequestAttribute("cleanToken") String token,
+            @RequestParam("eventId") String eventId,
+            @RequestParam("companyName") String companyName) {
+
+        token = extractCleanToken(token);
+        Response<String> response = eventService.deleteEvent(eventId, companyName, token);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(Map.of("message", "Event deleted successfully"));
+        }
+        return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
+    }
+
     @DeleteMapping("/close")
     public ResponseEntity<?> closeCompany(
             @RequestAttribute("cleanToken") String token,

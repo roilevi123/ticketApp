@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axiosClient from '../api/axiosClient';
 
 const EMPTY = {
@@ -7,9 +7,36 @@ const EMPTY = {
   isHighDemand: false, lotteryStartDate: '', lotteryEndDate: '', lotteryMaxWinners: '',
 };
 
+function toDatetimeLocal(isoOrDate) {
+  if (!isoOrDate) return '';
+  const d = new Date(isoOrDate);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function EventInventoryTab({ companyName }) {
   const [eventData, setEventData] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
+
+  const [events, setEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const fetchEvents = useCallback(async () => {
+    if (!companyName) return;
+    setLoadingEvents(true);
+    try {
+      const res = await axiosClient.get(`/discovery/companies/${encodeURIComponent(companyName)}/events`);
+      setEvents(res.data || []);
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  }, [companyName]);
+
+  useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
   const nowStr = (() => {
     const d = new Date();
@@ -115,11 +142,53 @@ export default function EventInventoryTab({ companyName }) {
 
       alert('Event configuration saved successfully!');
       setEventData(EMPTY);
+      fetchEvents();
     } catch (error) {
       const msg = error.response?.data || error.message || 'Network error.';
       alert(`Failed to save event: ${msg}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleLoadIntoForm = () => {
+    const event = events.find(e => e.eventId === selectedEventId);
+    if (!event) return;
+    const isArranged = event.map && event.map.length > 1;
+    setEventData({
+      name: event.name || '',
+      artist: event.artistName || '',
+      type: event.type || '',
+      date: toDatetimeLocal(event.date),
+      location: event.location || '',
+      basePrice: String(event.price ?? ''),
+      seatingType: isArranged ? 'arranged' : 'general',
+      totalTickets: isArranged ? '' : String(event.map?.[0]?.length ?? event.totalTickets ?? ''),
+      rows: isArranged ? String(event.map.length) : '',
+      cols: isArranged ? String(event.map[0]?.length ?? '') : '',
+      isHighDemand: event.highDemand || false,
+      lotteryStartDate: '',
+      lotteryEndDate: toDatetimeLocal(event.lotteryEndDate),
+      lotteryMaxWinners: event.lotteryMaxWinners ? String(event.lotteryMaxWinners) : '',
+    });
+  };
+
+  const handleDelete = async () => {
+    const event = events.find(e => e.eventId === selectedEventId);
+    if (!event) return;
+    if (!window.confirm(`Delete "${event.name}"? This will notify all ticket holders and cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      await axiosClient.delete('/company/events', {
+        params: { eventId: selectedEventId, companyName },
+      });
+      setSelectedEventId('');
+      fetchEvents();
+    } catch (error) {
+      const msg = error.response?.data?.error || error.message || 'Network error.';
+      alert(`Failed to delete event: ${msg}`);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -143,7 +212,7 @@ export default function EventInventoryTab({ companyName }) {
             </h3>
 
             <p className="text-xs text-on-surface-variant mb-4 bg-background p-3 rounded-lg border border-outline-variant/30">
-              <strong>Producer Tip:</strong> Entering an existing event name will update its details. Entering a new name will create a new event.
+              <strong>Producer Tip:</strong> Entering an existing event name will update its details. Entering a new name will create a new event. Use "Load into Form" below to pre-fill from an existing event.
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -362,9 +431,11 @@ export default function EventInventoryTab({ companyName }) {
           </div>
         </div>
 
-        {/* ── Inventory overview ── */}
-        <div className="lg:col-span-5">
-          <div className="bg-surface-container border border-outline-variant rounded-xl p-6 h-full flex flex-col">
+        {/* ── Right column ── */}
+        <div className="lg:col-span-5 flex flex-col gap-6">
+
+          {/* Inventory overview */}
+          <div className="bg-surface-container border border-outline-variant rounded-xl p-6 flex flex-col">
             <h3 className="text-xl font-semibold text-on-surface mb-6 flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary">analytics</span>
               Inventory Overview
@@ -416,6 +487,66 @@ export default function EventInventoryTab({ companyName }) {
               </div>
             )}
           </div>
+
+          {/* Manage existing events */}
+          <div className="bg-surface-container border border-outline-variant rounded-xl p-6">
+            <h3 className="text-xl font-semibold text-on-surface mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-secondary">manage_search</span>
+              Manage Existing Events
+            </h3>
+
+            {loadingEvents ? (
+              <div className="flex items-center gap-2 text-on-surface-variant text-sm">
+                <span className="material-symbols-outlined animate-spin" style={{ fontSize: '18px' }}>progress_activity</span>
+                Loading events…
+              </div>
+            ) : events.length === 0 ? (
+              <p className="text-sm text-on-surface-variant opacity-60">No events found for this company.</p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm text-on-surface-variant uppercase tracking-wider">Select Event</label>
+                  <select
+                    value={selectedEventId}
+                    onChange={e => setSelectedEventId(e.target.value)}
+                    className="w-full bg-background border border-outline-variant text-on-surface rounded-lg py-3 px-4 focus:border-secondary focus:ring-1 focus:outline-none"
+                  >
+                    <option value="">— Choose an event —</option>
+                    {events.map(ev => (
+                      <option key={ev.eventId} value={ev.eventId}>
+                        {ev.name} ({new Date(ev.date).toLocaleDateString()})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedEventId && (
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleLoadIntoForm}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-secondary text-secondary text-label-md font-medium hover:bg-secondary/10 transition-all"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
+                      Load into Form
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-error text-error text-label-md font-medium hover:bg-error/10 transition-all disabled:opacity-60"
+                    >
+                      {deleting
+                        ? <span className="material-symbols-outlined animate-spin" style={{ fontSize: '18px' }}>progress_activity</span>
+                        : <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>}
+                      {deleting ? 'Deleting…' : 'Delete Event'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     </div>
