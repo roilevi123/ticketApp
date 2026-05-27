@@ -862,4 +862,24 @@ class CompanyServiceTest {
 
         verify(treeOfRoleRepository, never()).deleteOwner(ownerToFire, COMPANY);
     }
+
+    @Test
+    void FireManager_Failure_SuspendedUser() {
+        String ownerToFire = "owner_to_fire";
+        String mockUserId = "user-123";
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
+
+        when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
+
+        Response<String> res = companyService.FireManager(TOKEN, COMPANY, ownerToFire);
+
+        assertFalse(res.isSuccess());
+        assertTrue(res.isError());
+        assertEquals("User is suspended", res.getMessage());
+
+        verify(treeOfRoleRepository, never()).deleteOwner(ownerToFire, COMPANY);
+    }
 }
