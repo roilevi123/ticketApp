@@ -1,6 +1,7 @@
 package AcceptanceTests;
 
 import com.ticketing.ticketapp.Appliction.*;
+import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
@@ -34,6 +35,8 @@ public class ReseveTicketTests {
     private EventService eventService;
     private OrderService reserveTicketService;
     private TokenService tokenService;
+    private IUserRepository userRepository;
+    private AdminService adminService;
 
     @BeforeEach
     void setUp() {
@@ -57,6 +60,15 @@ public class ReseveTicketTests {
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,
                 userRepository, purchasePolicyRepository, notifierMock,
                 eventRepository, lotteryServiceMock);
+
+        this.userRepository = userRepository;
+        iAdminRepository adminRepository = new AdminRepositoryImpl(){
+            @Override
+            public boolean isAdmin(String userID) {
+                return userID.equals("admin");
+            }
+        };
+        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -331,5 +343,30 @@ public class ReseveTicketTests {
     @Test
     void InValidToken() {
         assertTrue(reserveTicketService.getActiveOrderTickets("", null).isError());
+    }
+
+    @Test
+    @DisplayName("17. Fail - Reserve Ticket When User Is Suspended")
+    void reserveTicketFailedUserSuspended17() {
+        reg("owner_user", "password123");
+        String ownerToken = log("owner_user", "password123");
+        companyService.CreateCompany("company1", ownerToken);
+        eventService.createEvent(ownerToken, "event1", "artist1", EventType.PLAY, 100, new Date(), "location1", "company1", getMapArea());
+
+        reg("buyer_user", "password456");
+        String buyerToken = log("buyer_user", "password456");
+
+        reg("admin", "admin");
+        log("admin", "admin");
+
+        String buyerId = tokenService.extractUserId(buyerToken);
+        adminService.suspendUser(buyerId, "admin", 7);
+
+        List<int[]> requests = List.of(new int[]{0, 0, 1});
+        Response<String> response = reserveTicketService.reserveTickets(buyerToken, "company1", "event1", requests, null);
+
+        assertFalse(response.isSuccess(), "Reservation should not be successful for suspended user");
+        assertFalse(isNumeric(response.getData()), "Expected error message instead of numeric order ID");
+        assertEquals("User is suspended", response.getMessage());
     }
 }
