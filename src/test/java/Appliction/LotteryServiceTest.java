@@ -11,7 +11,9 @@ import com.ticketing.ticketapp.Domain.Lottery.ILotteryCodeRepository;
 import com.ticketing.ticketapp.Domain.Lottery.ILotteryRepository;
 import com.ticketing.ticketapp.Domain.Lottery.LotteryCode;
 import com.ticketing.ticketapp.Domain.Lottery.LotteryRegistration;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
+import com.ticketing.ticketapp.Infastructure.UserRepositoryImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,6 +34,7 @@ class LotteryServiceTest {
     private TokenService tokenService;
     private INotifier notifier;
     private LotteryService lotteryService;
+    private IUserRepository userRepository;
 
     private static final String TOKEN = "valid-token";
     private static final String COMPANY = "AcmeCorp";
@@ -44,7 +47,8 @@ class LotteryServiceTest {
         eventRepo = mock(iEventRepository.class);
         tokenService = mock(TokenService.class);
         notifier = mock(INotifier.class);
-        lotteryService = new LotteryService(lotteryRepo, codeRepo, eventRepo, tokenService, notifier);
+        userRepository = mock(UserRepositoryImpl.class);
+        lotteryService = new LotteryService(lotteryRepo, codeRepo, eventRepo, tokenService, notifier, userRepository);
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn("user1");
@@ -377,5 +381,43 @@ class LotteryServiceTest {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_YEAR, -daysAgo);
         return cal.getTime();
+    }
+
+    @Test
+    void configureLottery_Failure_UserSuspended() {
+        String mockUserId = "user-123";
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
+
+        when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
+
+        Response<String> res = lotteryService.configureLottery(TOKEN, COMPANY, EVENT, new Date(), new Date(System.currentTimeMillis() + 100000), 10);
+
+        assertFalse(res.isSuccess());
+        assertTrue(res.isError());
+        assertEquals("User is suspended", res.getMessage());
+
+        verify(eventRepo, never()).getEvent(anyString(), anyString());
+        verify(lotteryRepo, never()).configure(anyString(), anyString(), any(), any(), anyInt());
+    }
+
+    @Test
+    void registerForLottery_Failure_UserSuspended() {
+        String mockUserId = "user-123";
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
+
+        when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
+
+        Response<String> res = lotteryService.registerForLottery(TOKEN, COMPANY, EVENT);
+
+        assertFalse(res.isSuccess());
+        assertTrue(res.isError());
+        assertEquals("User is suspended", res.getMessage());
+
+        verify(lotteryRepo, never()).exists(anyString(), anyString());
+        verify(lotteryRepo, never()).register(anyString(), anyString(), anyString());
     }
 }
