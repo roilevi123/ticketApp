@@ -53,7 +53,6 @@ public class PurchaseOrderTests {
 
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-
         ISupplyService supplyService = new SupplyServiceMock();
         IPaymentService paymentService = new PaymentServiceMock();
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();

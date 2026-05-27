@@ -57,7 +57,6 @@ public class DiscountPaymentTests {
 
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-
         ISupplyService supplyService = new SupplyServiceMock();
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
         this.paymentServiceSpy = spy(new PaymentServiceMock());

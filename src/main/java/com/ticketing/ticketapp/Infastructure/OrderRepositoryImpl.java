@@ -13,15 +13,21 @@ public class OrderRepositoryImpl  implements IActiveOrderRepository {
     ConcurrentHashMap<String, ActiveOrder> orders = new ConcurrentHashMap<>();
     private  AtomicLong idCounter = new AtomicLong(1);
 
+    private boolean isExpired(ActiveOrder order) {
+        return order != null
+                && order.getExpirationTime() != null
+                && !order.getExpirationTime().after(new Date());
+    }
+
     @Override
     public String store(String company, String event, List<String> ticketsId, String buyerID, Date expiration) {
         for(ActiveOrder order : orders.values()) {
             if (order.getUserId() != null && order.getUserId().equals(buyerID)) {
-                if (order.getExpirationTime().after(new Date())) {
+                if (!isExpired(order)) {
                     throw new RuntimeException("you have already order");
                 }
                 else {
-                    delete(buyerID);
+                    delete(order.getOrderId());
                     break;
                 }
             }
