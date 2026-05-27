@@ -833,36 +833,49 @@ public class FullCompanyManagementTest {
     @Test
     @DisplayName("Change Manager Permissions - Success (Acceptance)")
     void changeManagerPermissionsAcceptanceSuccess() {
-        // 1. רישום המשתמשים וקבלת טוקנים
         reg("owner_user", "password123");
         reg("manager_user", "password456");
         String ownerToken = log("owner_user", "password123");
         String managerToken = log("manager_user", "password456");
 
-        // 2. תזרים קבלה מלא: הקמת חברה, מינוי מנהל ואישור המינוי על ידי המנהל
         companyService.CreateCompany("test_company", ownerToken);
         companyService.AppointAManager("manager_user", "test_company", new HashSet<>(), ownerToken);
         companyService.ApproveAppointmentForManager(managerToken, "test_company");
 
-        // 3. הגדרת ההרשאות החדשות שברצוננו להעניק
         Set<Permission> newPerms = new HashSet<>();
         newPerms.add(Permission.MANAGE_INVENTORY);
         newPerms.add(Permission.VIEW_PURCHASE_HISTORY);
 
-        // 4. ביצוע שינוי ההרשאות מקצה לקצה דרך ה-Service
         Response<String> response = companyService.ChangeManagerPermissions(ownerToken, "test_company", "manager_user", newPerms);
 
-        // 5. וידאו הצלחת הפעולה
         assertTrue(response.isSuccess());
         assertEquals("success", response.getData());
 
-        // 6. וידאו שההרשאות אכן התעדכנו במערכת על ידי שליפתן מחדש
         Response<Set<Permission>> fetchedPerms = companyService.GetManagerPermissions(ownerToken, "test_company", "manager_user");
         assertTrue(fetchedPerms.isSuccess());
         assertNotNull(fetchedPerms.getData());
         assertEquals(2, fetchedPerms.getData().size());
         assertTrue(fetchedPerms.getData().contains(Permission.MANAGE_INVENTORY));
         assertTrue(fetchedPerms.getData().contains(Permission.VIEW_PURCHASE_HISTORY));
+    }
+
+    @Test
+    @DisplayName("Freeze Company - Fail (User Is Suspended)")
+    void freezeCompanyFailedUserSuspended() {
+        reg("admin", "adminPassword");
+        reg("founder_user", "password123");
+        String founderToken = log("founder_user", "password123");
+
+        companyService.CreateCompany("company_to_freeze", founderToken);
+
+        String founderId = userRepository.getUserByUsername("founder_user").getID();
+        adminService.suspendUser(founderId, "admin", 7);
+
+        Response<String> response = companyService.freezeCompany("company_to_freeze", founderToken);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
     }
 
 }
