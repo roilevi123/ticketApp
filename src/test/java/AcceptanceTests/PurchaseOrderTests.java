@@ -1,6 +1,7 @@
 package AcceptanceTests;
 
 import com.ticketing.ticketapp.Appliction.*;
+import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.Event.EventType;
@@ -36,6 +37,8 @@ public class PurchaseOrderTests {
     private OrderService reserveTicketService;
     private PurchasedService purchasedService;
     private TokenService tokenService;
+    private IUserRepository userRepository;
+    private AdminService adminService;
 
     @BeforeEach
     void setUp() {
@@ -62,6 +65,15 @@ public class PurchaseOrderTests {
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, discountPolicyRepository    );
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentService, barcodeGenerator, tokenService, treeOfRoleRepository, discountPolicyRepository, userRepository, notifierMock);
+
+        this.userRepository = userRepository;
+        iAdminRepository adminRepository = new AdminRepositoryImpl(){
+            @Override
+            public boolean isAdmin(String userID) {
+                return userID.equals("admin");
+            }
+        };
+        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -495,4 +507,42 @@ public class PurchaseOrderTests {
         Response<List<PurchaseOrderDTO>> t = purchasedService.getCompanyTransaction("q", "tO");
         assertTrue(t.isError());
     }
+
+    @Test @DisplayName("17. Fail - Purchase Ticket When User Is Suspended")
+    void purchaseTicketFailedUserSuspended17() {
+        reg("owner_user", "password123");
+        String ownerToken = log("owner_user", "password123");
+        companyService.CreateCompany("company1", ownerToken);
+        eventService.createEvent(ownerToken, "event1", "artist1", EventType.PLAY, 100, new Date(), "location1", "company1", getMapArea());
+
+        reg("suspended_buyer", "password456");
+        String buyerToken = log("suspended_buyer", "password456");
+
+        List<int[]> requests = List.of(new int[]{0, 0, 1});
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "company1", "event1", requests, null).getData();
+        assertTrue(isNumeric(orderId), "Reservation should succeed initially");
+
+        reg("admin", "admin");
+        log("admin", "admin");
+
+        String realBuyerId = tokenService.extractUserId(buyerToken);
+
+        adminService.suspendUser(realBuyerId, "admin", 7);
+
+        Response<String> purchaseResponse = purchasedService.PurchaseTicket("buyer@gmail.com", orderId, buyerToken, "none");
+
+        assertTrue(purchaseResponse.isError(), "Purchase should fail for suspended user");
+        assertEquals("User is suspended", purchaseResponse.getMessage());
+    }
+
+    private boolean isNumeric(String str) {
+        if (str == null) return false;
+        try {
+            Double.parseDouble(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 }
+
