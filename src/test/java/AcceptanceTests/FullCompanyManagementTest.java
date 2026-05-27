@@ -602,7 +602,8 @@ public class FullCompanyManagementTest {
         assertTrue(companyService.GetManagerPermissions("null", null, null).isError());
     }
 
-    @Test @DisplayName("Create Company - Fail (User is Suspended)")
+    @Test
+    @DisplayName("Create Company - Fail (User is Suspended)")
     void createCompanyFailedUserSuspended() {
         reg("admin", "adminPassword");
         reg("suspended_user", "password123");
@@ -619,4 +620,25 @@ public class FullCompanyManagementTest {
         assertEquals("User is suspended", response.getMessage());
     }
 
+    @Test
+    @DisplayName("Appoint Manager - Fail (User Is Suspended)")
+    void appointManagerFailedUserSuspended(){
+        reg("admin", "adminPassword");
+        reg ("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        companyService.CreateCompany("company", suspendedUserToken);
+
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+
+        adminService.suspendUser(idA, "admin", 7);
+
+        Response<String> response = companyService.AppointAManager(idA, "company", new HashSet<>(), userToken);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
 }
