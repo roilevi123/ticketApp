@@ -201,6 +201,11 @@ public class CompanyService {
                 throw new RuntimeException("Invalid token");
             }
 
+            String userID = tokenService.extractUserId(token);
+
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
+
             boolean m = treeOfRoleRepository.isOwner(username, company);
             if (!m) {
                 throw new RuntimeException("User not found2");
