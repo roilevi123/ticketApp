@@ -1,10 +1,7 @@
 package AcceptanceTests;
 
-import com.ticketing.ticketapp.Appliction.CompanyService;
-import com.ticketing.ticketapp.Appliction.INotifier;
-import com.ticketing.ticketapp.Appliction.IPasswordEncoder;
-import com.ticketing.ticketapp.Appliction.Response;
-import com.ticketing.ticketapp.Appliction.UserService;
+import com.ticketing.ticketapp.Appliction.*;
+import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
@@ -14,6 +11,7 @@ import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRep
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +29,8 @@ public class FullCompanyManagementTest {
     private CompanyService companyService;
     private UserService userService;
     private TokenService tokenService;
+    private IUserRepository userRepository;
+    private AdminService adminService;
 
     @BeforeEach
     void setUp() {
@@ -48,6 +48,15 @@ public class FullCompanyManagementTest {
         INotifier notifierMock = mock(INotifier.class);
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
+
+        this.userRepository=userRepository;
+        iAdminRepository adminRepository = new AdminRepositoryImpl(){
+            @Override
+            public boolean isAdmin(String userID) {
+                return userID.equals("admin");
+            }
+        };
+        this.adminService= new AdminService(treeOfRoleRepository,companyRepository,adminRepository,userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -594,5 +603,344 @@ public class FullCompanyManagementTest {
     @Test
     void GetManagerPermissionsInvalidToken() {
         assertTrue(companyService.GetManagerPermissions("null", null, null).isError());
+    }
+
+    @Test
+    @DisplayName("Create Company - Fail (User is Suspended)")
+    void createCompanyFailedUserSuspended() {
+        reg("admin", "adminPassword");
+        reg("suspended_user", "password123");
+        String userToken = log("suspended_user", "password123");
+
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+
+        adminService.suspendUser(idA, "admin", 7);
+
+        Response<String> response = companyService.CreateCompany("MyCompany", userToken);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Appoint Manager - Fail (User Is Suspended)")
+    void appointManagerFailedUserSuspended(){
+        reg("admin", "adminPassword");
+        reg ("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        companyService.CreateCompany("company", suspendedUserToken);
+
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+
+        adminService.suspendUser(idA, "admin", 7);
+
+        Response<String> response = companyService.AppointAManager(userToken, "company", new HashSet<>(), suspendedUserToken);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Approve Management Appointment - Fail (User Suspended)")
+    void approveAppointmentAsManagerFailedUserSuspended(){
+        reg("admin", "adminPassword");
+        reg ("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        adminService.suspendUser(tokenService.extractUserId(suspendedUserToken), "admin", 0);
+        companyService.CreateCompany("company", userToken);
+        companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
+
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+
+        Response<String> response = companyService.ApproveAppointmentForManager(suspendedUserToken, "company");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+
+    }
+
+    @Test
+    @DisplayName("Regect Appointment For Manager - Fail (User Is Suspended)")
+    void rejectAppointemntForManagerFailUserSuspended(){
+        reg("admin", "adminPassword");
+        reg ("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        adminService.suspendUser(tokenService.extractUserId(suspendedUserToken), "admin", 0);
+        companyService.CreateCompany("company", userToken);
+        companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
+
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+
+        Response<String> response = companyService.RejectAppointmentForManager(suspendedUserToken, "company");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Appoint Owner - Fail (User Is Suspended)")
+    void appointOwnerFailedUserSuspended(){
+        reg("admin", "adminPassword");
+        reg ("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        companyService.CreateCompany("company", suspendedUserToken);
+        String  suspendedUserID = tokenService.extractUserId(suspendedUserToken);
+
+        adminService.suspendUser(suspendedUserID, "admin", 7);
+
+        Response<String> response = companyService.AppointOwner(userToken, "company", suspendedUserToken);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Approve Ownership Appointment - Fail (User Suspended)")
+    void approveAppointmentAsOwnerFailedUserSuspended(){
+        reg("admin", "adminPassword");
+        reg ("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        adminService.suspendUser(tokenService.extractUserId(suspendedUserToken), "admin", 0);
+        companyService.CreateCompany("company", userToken);
+        companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
+
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+
+        Response<String> response = companyService.ApproveAppointmentForOwner(suspendedUserToken, "company");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+
+    }
+
+    @Test
+    @DisplayName("Regect Appointment For Owner - Fail (User Is Suspended)")
+    void rejectAppointemntForOwnerFailUserSuspended(){
+        reg("admin", "adminPassword");
+        reg ("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        adminService.suspendUser(tokenService.extractUserId(suspendedUserToken), "admin", 0);
+        companyService.CreateCompany("company", userToken);
+        companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
+
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+
+        Response<String> response = companyService.RejectAppointmentForOwner(suspendedUserToken, "company");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Fire Owner - Fail (User Is Suspended)")
+    void FireOwnerFailedUserSuspended(){
+        reg("admin", "adminPassword");
+        reg ("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        companyService.CreateCompany("company", suspendedUserToken);
+
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+        String idB = userRepository.getUserByUsername("user2").getID();
+        companyService.AppointOwner(idA, "company", userToken);
+        adminService.suspendUser(idA, "admin", 7);
+        companyService.ApproveAppointmentForOwner(userToken, "company");
+        Response<String> response=companyService.FireOwner(suspendedUserToken, "company", idB);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Fire Manager - Fail (User Is Suspended)")
+    void FireManagerFailedUserSuspended(){
+        reg("admin", "adminPassword");
+        reg ("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        companyService.CreateCompany("company", suspendedUserToken);
+
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+        String idB = userRepository.getUserByUsername("user2").getID();
+        companyService.AppointAManager(idA, "company", new HashSet<>(),userToken);
+        adminService.suspendUser(idA, "admin", 7);
+        companyService.ApproveAppointmentForManager(userToken, "company");
+        Response<String> response=companyService.FireManager(suspendedUserToken, "company", idB);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Change Manager Permissions - Fail (User Is Suspended)")
+    void changeManagerPermissionsFailedUserSuspended() {
+        // 1. רישום המשתמשים וקבלת טוקן עבור המשתמש שמבצע את הפעולה
+        reg("admin", "adminPassword");
+        reg("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        // 2. יצירת חברה ומינוי מנהל לפני ביצוע החסימה
+        companyService.CreateCompany("company", suspendedUserToken);
+        companyService.AppointAManager("user2", "company", new HashSet<>(), suspendedUserToken);
+        companyService.ApproveAppointmentForManager(userToken, "company");
+
+        // 3. השעיית המשתמש הממנה (suspended_user) על ידי האדמין
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+        adminService.suspendUser(idA, "admin", 7);
+
+        // 4. ניסיון לשינוי הרשאות על ידי המשתמש המושהה
+        Set<Permission> newPerms = new HashSet<>();
+        newPerms.add(Permission.MANAGE_INVENTORY);
+        Response<String> response = companyService.ChangeManagerPermissions(suspendedUserToken, "company", "user2", newPerms);
+
+        // 5. וידאו שהפעולה נחסמה עם הודעת השגיאה המתאימה
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Change Manager Permissions - Success (Acceptance)")
+    void changeManagerPermissionsAcceptanceSuccess() {
+        reg("owner_user", "password123");
+        reg("manager_user", "password456");
+        String ownerToken = log("owner_user", "password123");
+        String managerToken = log("manager_user", "password456");
+
+        companyService.CreateCompany("test_company", ownerToken);
+        companyService.AppointAManager("manager_user", "test_company", new HashSet<>(), ownerToken);
+        companyService.ApproveAppointmentForManager(managerToken, "test_company");
+
+        Set<Permission> newPerms = new HashSet<>();
+        newPerms.add(Permission.MANAGE_INVENTORY);
+        newPerms.add(Permission.VIEW_PURCHASE_HISTORY);
+
+        Response<String> response = companyService.ChangeManagerPermissions(ownerToken, "test_company", "manager_user", newPerms);
+
+        assertTrue(response.isSuccess());
+        assertEquals("success", response.getData());
+
+        Response<Set<Permission>> fetchedPerms = companyService.GetManagerPermissions(ownerToken, "test_company", "manager_user");
+        assertTrue(fetchedPerms.isSuccess());
+        assertNotNull(fetchedPerms.getData());
+        assertEquals(2, fetchedPerms.getData().size());
+        assertTrue(fetchedPerms.getData().contains(Permission.MANAGE_INVENTORY));
+        assertTrue(fetchedPerms.getData().contains(Permission.VIEW_PURCHASE_HISTORY));
+    }
+
+    @Test
+    @DisplayName("Freeze Company - Fail (User Is Suspended)")
+    void freezeCompanyFailedUserSuspended() {
+        reg("admin", "adminPassword");
+        reg("founder_user", "password123");
+        String founderToken = log("founder_user", "password123");
+
+        companyService.CreateCompany("company_to_freeze", founderToken);
+
+        String founderId = userRepository.getUserByUsername("founder_user").getID();
+        adminService.suspendUser(founderId, "admin", 7);
+
+        Response<String> response = companyService.freezeCompany("company_to_freeze", founderToken);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Unfreeze Company - Fail (User Is Suspended)")
+    void unfreezeCompanyFailedUserSuspended() {
+        reg("admin", "adminPassword");
+        reg("founder_user", "password123");
+        String founderToken = log("founder_user", "password123");
+
+        companyService.CreateCompany("company_to_unfreeze", founderToken);
+        companyService.freezeCompany("company_to_unfreeze", founderToken);
+
+        String founderId = userRepository.getUserByUsername("founder_user").getID();
+        adminService.suspendUser(founderId, "admin", 7);
+
+        Response<String> response = companyService.unfreezeCompany("company_to_unfreeze", founderToken);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Reply To Buyer - Fail (User Is Suspended)")
+    void replyToBuyerFailedUserSuspended() {
+        reg("admin", "adminPassword");
+        reg("owner_user", "password123");
+        reg("buyer_user", "buyerPassword");
+
+        String ownerToken = log("owner_user", "password123");
+        String buyerId = userRepository.getUserByUsername("buyer_user").getID();
+
+        companyService.CreateCompany("my_company", ownerToken);
+
+        String ownerId = userRepository.getUserByUsername("owner_user").getID();
+        adminService.suspendUser(ownerId, "admin", 7);
+
+        Response<String> response = companyService.replyToBuyer(ownerToken, "my_company", buyerId, "Hello?");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Send Message To User - Fail (User Is Suspended)")
+    void sendMessageToUserFailedUserSuspended() {
+        reg("admin", "adminPassword");
+        reg("owner_user", "password123");
+        reg("target_user", "password789");
+
+        String ownerToken = log("owner_user", "password123");
+        String targetUserId = userRepository.getUserByUsername("target_user").getID();
+
+        companyService.CreateCompany("messaging_company", ownerToken);
+
+        String ownerId = userRepository.getUserByUsername("owner_user").getID();
+        adminService.suspendUser(ownerId, "admin", 7);
+
+        Response<String> response = companyService.sendMessageToUser(ownerToken, "messaging_company", targetUserId, "Hello user");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
     }
 }
