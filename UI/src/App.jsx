@@ -11,6 +11,7 @@ import Register from "./components/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MemberProfile from "./components/MemberProfile";
 import MyTickets from "./components/MyTickets";
+import AdminDashboard from "./components/AdminDashboard";
 import InboxPage from "./components/InboxPage";
 import MessagePage from "./components/MessagePage";
 import { NotificationProvider } from "./contexts/NotificationContext";
@@ -49,6 +50,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["MEMBER", "ADMIN", "OWNER", "MANAGER", "FOUNDER"]}>
                 <CreateCompany />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminDashboard />
               </ProtectedRoute>
             }
           />
