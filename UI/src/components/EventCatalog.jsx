@@ -6,9 +6,6 @@ import { useActiveOrder } from "../contexts/ActiveOrderContext";
 import { getOrderErrorMessage } from "../utils/orderErrors";
 import { useNotifications } from "../contexts/NotificationContext";
 
-//const API_URL = 'http://localhost:8080/api/discovery/events/search';
-//const AUTH_HEADER = 'Bearer guest-temporary-token';
-
 const TYPE_CONFIG = {
   LIVE_PERFORMANCE: {
     gradient: "from-blue-950 via-indigo-900 to-blue-800",
@@ -47,9 +44,24 @@ function formatDate(dateStr) {
   }
 }
 
-function formatPrice(price) {
-  if (price == null || price === 0) return "Free";
-  return `From $${price}`;
+// קומפוננטה חדשה שמטפלת בתצוגת מחירי מבצע לעומת מחיר רגיל
+function PriceDisplay({ price, discountedPrice }) {
+  if (price == null || price === 0) return <span className="text-headline-sm text-secondary">Free</span>;
+  
+  if (discountedPrice != null && discountedPrice < price) {
+    return (
+      <div className="flex flex-col items-end">
+        <span className="text-label-sm text-on-surface-variant line-through opacity-70">
+          ${Number(price).toFixed(2)}
+        </span>
+        <span className="text-headline-sm text-secondary">
+          From ${Number(discountedPrice).toFixed(2)}
+        </span>
+      </div>
+    );
+  }
+  
+  return <span className="text-headline-sm text-secondary">From ${Number(price).toFixed(2)}</span>;
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -76,8 +88,7 @@ function EventCardSkeleton() {
 }
 
 function EventCard({ event }) {
-  const { gradient, icon } =
-    TYPE_CONFIG[event.type?.toUpperCase()] || DEFAULT_TYPE;
+  const { gradient, icon } = TYPE_CONFIG[event.type?.toUpperCase()] || DEFAULT_TYPE;
   const navigate = useNavigate();
   const path = toEventPath(event);
 
@@ -86,18 +97,19 @@ function EventCard({ event }) {
       onClick={() => navigate(path)}
       className="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden group hover:border-secondary transition-all duration-300 flex flex-col cursor-pointer"
     >
-      <div
-        className={`aspect-video relative overflow-hidden bg-gradient-to-br ${gradient} flex items-center justify-center`}
-      >
-        <span
-          className="material-symbols-outlined text-white/10"
-          style={{ fontSize: "72px" }}
-        >
+      <div className={`aspect-video relative overflow-hidden bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+        <span className="material-symbols-outlined text-white/10" style={{ fontSize: "72px" }}>
           {icon}
         </span>
         <div className="absolute top-2 left-2 px-2 py-1 bg-surface-dim/80 backdrop-blur-sm rounded text-label-sm text-tertiary">
           {formatDate(event.date)}
         </div>
+        {/* תגית הנחה בולטת בתמונה אם קיימת הנחה */}
+        {event.discountedPrice != null && event.discountedPrice < event.price && (
+          <div className="absolute top-2 right-2 px-2 py-1 bg-error text-on-error font-bold rounded shadow-lg text-label-sm animate-pulse">
+            SALE
+          </div>
+        )}
       </div>
       <div className="p-5 flex flex-col flex-1">
         <p className="text-label-sm text-on-tertiary-container/80 mb-1 tracking-wider">
@@ -110,18 +122,14 @@ function EventCard({ event }) {
           {event.artistName}
         </p>
         <div className="flex items-center gap-2 text-on-surface-variant mb-6">
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: "18px" }}
-          >
+          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
             location_on
           </span>
           <span className="text-label-md truncate">{event.location}</span>
         </div>
         <div className="flex items-center justify-between mt-auto">
-          <span className="text-headline-sm text-secondary">
-            {formatPrice(event.price)}
-          </span>
+          <PriceDisplay price={event.price} discountedPrice={event.discountedPrice} />
+          
           <div className="flex items-center gap-2">
             {event.companyName && (
               <Link
@@ -208,11 +216,12 @@ function SideCard({ event }) {
         <h4 className="text-headline-sm text-on-surface">
           {event?.name || <span className="opacity-30">Coming Soon</span>}
         </h4>
-        <p className="text-label-md text-secondary">
-          {event
-            ? `${formatPrice(event.price)} · ${formatDate(event.date)}`
-            : " "}
-        </p>
+        <div className="flex items-center gap-2 mt-1">
+          {event && <PriceDisplay price={event.price} discountedPrice={event.discountedPrice} />}
+          <span className="text-label-md text-secondary">
+            {event ? ` · ${formatDate(event.date)}` : " "}
+          </span>
+        </div>
       </div>
     </>
   );
@@ -260,10 +269,8 @@ export default function EventCatalog() {
     setError(null);
 
     const controller = new AbortController();
-    // Debounce search input; fetch immediately on mount
     const timer = setTimeout(
       () => {
-        // Use relative path since axiosClient has baseURL is /api
         const endpoint = searchQuery
           ? `/discovery/events/search?query=${searchQuery}`
           : "/discovery/events/search";
@@ -273,7 +280,7 @@ export default function EventCatalog() {
             signal: controller.signal,
           })
           .then((response) => {
-            setEvents(response.data); // Axios automatically parses JSON into response.data
+            setEvents(response.data);
             setLoading(false);
           })
           .catch((err) => {
@@ -397,7 +404,6 @@ export default function EventCatalog() {
       </header>
 
       <main className="flex-grow">
-        {/* ── Featured Bento Grid (hidden while searching) ── */}
         {!isSearching && (
           <section className="max-w-container-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12">
             <h2 className="text-headline-md mb-8 text-on-surface">
@@ -423,7 +429,6 @@ export default function EventCatalog() {
           </section>
         )}
 
-        {/* ── All Events Grid ── */}
         <section className="max-w-container-max-width mx-auto px-margin-mobile md:px-margin-desktop py-12">
           <div className="mb-8 border-b border-outline-variant pb-4">
             <h2 className="text-headline-md text-on-surface">
@@ -433,10 +438,7 @@ export default function EventCatalog() {
 
           {error ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <span
-                className="material-symbols-outlined text-error mb-4"
-                style={{ fontSize: "48px" }}
-              >
+              <span className="material-symbols-outlined text-error mb-4" style={{ fontSize: "48px" }}>
                 error_outline
               </span>
               <p className="text-headline-sm text-on-surface mb-2">
@@ -447,15 +449,10 @@ export default function EventCatalog() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
               {loading ? (
-                Array.from({ length: 8 }, (_, i) => (
-                  <EventCardSkeleton key={i} />
-                ))
+                Array.from({ length: 8 }, (_, i) => <EventCardSkeleton key={i} />)
               ) : events.length === 0 ? (
                 <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
-                  <span
-                    className="material-symbols-outlined text-on-surface-variant mb-4"
-                    style={{ fontSize: "48px" }}
-                  >
+                  <span className="material-symbols-outlined text-on-surface-variant mb-4" style={{ fontSize: "48px" }}>
                     {isSearching ? "search_off" : "event_busy"}
                   </span>
                   <p className="text-headline-sm text-on-surface mb-2">
@@ -480,7 +477,6 @@ export default function EventCatalog() {
         </section>
       </main>
 
-      {/* ── Footer ── */}
       <footer className="w-full mt-auto bg-surface-dim border-t border-outline-variant">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter px-margin-mobile md:px-margin-desktop py-8 max-w-container-max-width mx-auto">
           <div className="flex flex-col gap-4">
@@ -492,12 +488,7 @@ export default function EventCatalog() {
             </p>
           </div>
           <div className="flex flex-wrap gap-x-8 gap-y-4 md:justify-end items-center">
-            {[
-              "Contact Us",
-              "Privacy Policy",
-              "Terms of Service",
-              "Campus Map",
-            ].map((link) => (
+            {["Contact Us", "Privacy Policy", "Terms of Service", "Campus Map"].map((link) => (
               <a
                 key={link}
                 className="text-label-md text-on-surface-variant hover:text-primary transition-colors opacity-80 hover:opacity-100"

@@ -6,7 +6,10 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import com.ticketing.ticketapp.Domain.Discount.DiscountPolicy;
+import com.ticketing.ticketapp.Domain.Discount.MaxDiscountComposite;
+import com.ticketing.ticketapp.Domain.Discount.PurchaseContext;
+import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.Event;
 import com.ticketing.ticketapp.Domain.Event.EventDTO;
@@ -32,13 +35,14 @@ public class EventService {
     private iQueueRepository iQueueRepository;
     private iPurchasedOrderRepository purchasedOrderRepository;
     private IUserRepository userRepository;
+    private iDiscountPolicyRepository discountRepo;
     private INotifier notifier;
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
     public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository,
             TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository, iTicketRepository ticketRepository,
             iQueueRepository iQueueRepository, iPurchasedOrderRepository purchasedOrderRepository,
-            IUserRepository userRepository, INotifier notifier) {
+            IUserRepository userRepository, INotifier notifier, iDiscountPolicyRepository discountRepo) {
         this.companyRepository = companyRepository;
         this.eventRepository = eventRepository;
         this.tokenService = tokenService;
@@ -48,6 +52,7 @@ public class EventService {
         this.purchasedOrderRepository = purchasedOrderRepository;
         this.userRepository = userRepository;
         this.notifier = notifier;
+        this.discountRepo = discountRepo;
     }
 
     public boolean isAuthorized(String company, String userId) {
@@ -188,7 +193,7 @@ public class EventService {
             List<Event> events = eventRepository.getEventsByCompany(company);
             List<EventDTO> eventDTOs = new ArrayList<>();
             for (Event event : events) {
-                eventDTOs.add(EventDTO.fromEntity(event));
+                eventDTOs.add(getEventWithDiscount(event));
             }
             logger.info("Successfully Getting company events: " + company);
             return Response.success(eventDTOs);
@@ -226,7 +231,7 @@ public class EventService {
                 return Response.error("Event not found");
             }
             logger.info("Retrieved event '{}' for company '{}'", eventName, company);
-            return Response.success(EventDTO.fromEntity(event));
+            return Response.success(getEventWithDiscount(event));
         } catch (Exception e) {
             logger.error("Failed to retrieve event '{}': {}", eventName, e.getMessage());
             return Response.error(e.getMessage());
@@ -238,7 +243,6 @@ public class EventService {
             Date startDate, Date endDate,
             String location, Double minRating) {
         try {
-            // נבדוק את הטוקן רק אם הוא נשלח בבקשה. אם הוא null, נאפשר חיפוש חופשי ציבורי.
             if (token != null && !token.trim().isEmpty()) {
                 boolean isGuest = token.contains("guest-temporary-token");
                 if (!isGuest && !tokenService.validateToken(token)) {
@@ -247,13 +251,40 @@ public class EventService {
             }
 
             logger.info("Initiating search with parameters - Query: {}, Company: {}", query, company);
-            List<EventDTO> results = eventRepository.searchEvents(
+            List<Event> rawEvents = eventRepository.searchEvents(
                     query, company, type, minPrice, maxPrice, startDate, endDate, location, minRating);
+            List<EventDTO> results = new ArrayList<>();
+            for (Event event : rawEvents) {
+                results.add(getEventWithDiscount(event));
+            }
             logger.info("Search completed successfully. Found {} events", results.size());
             return Response.success(results);
         } catch (Exception e) {
             logger.error("Error occurred during event search: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
+    }
+
+    private EventDTO getEventWithDiscount(Event event) {
+        Double discountedPrice = null;
+        try {
+            DiscountPolicy eventPolicy = discountRepo.findByEvent(event.getName());
+            DiscountPolicy companyPolicy = discountRepo.findByCompany(event.getCompany());
+
+            MaxDiscountComposite combinedRoot = new MaxDiscountComposite();
+            if (eventPolicy != null) combinedRoot.add(eventPolicy.getRoot());
+            if (companyPolicy != null) combinedRoot.add(companyPolicy.getRoot());
+
+            PurchaseContext context = new PurchaseContext(1, null, new Date());
+            double discountAmount = combinedRoot.calculateDiscount(event.getPrice(), context);
+
+            if (discountAmount > 0) {
+                discountedPrice = event.getPrice() - discountAmount;
+            }
+        } catch (Exception e) {
+            logger.error("Error calculating discount for event '{}': {}", event.getName(), e.getMessage());
+        }
+        
+        return EventDTO.fromEntity(event, discountedPrice); 
     }
 }
