@@ -943,4 +943,27 @@ class CompanyServiceTest {
         verify(companyRepository, never()).getCompany(anyString());
         verify(companyRepository, never()).save(any(Company.class));
     }
+
+    @Test
+    void replyToBuyer_Failure_SuspendedUser() {
+        String buyerId = "buyer-789";
+        String mockUserId = "user-123";
+        String message = "Hello from support";
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
+
+        when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
+
+        Response<String> res = companyService.replyToBuyer(TOKEN, COMPANY, buyerId, message);
+
+        assertFalse(res.isSuccess());
+        assertTrue(res.isError());
+        assertEquals("User is suspended", res.getMessage());
+
+        verify(treeOfRoleRepository, never()).exitsOwner(anyString(), anyString());
+        verify(treeOfRoleRepository, never()).isManager(anyString(), anyString());
+        verify(notificationRepository, never()).save(anyString(), anyString());
+    }
 }
