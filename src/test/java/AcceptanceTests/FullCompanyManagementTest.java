@@ -943,4 +943,49 @@ public class FullCompanyManagementTest {
         assertTrue(response.isError());
         assertEquals("User is suspended", response.getMessage());
     }
+
+    @Test
+    @DisplayName("Fire Member - Fail (User Is Suspended)")
+    void fireMemberFailedUserSuspended() {
+        reg("admin", "adminPassword");
+        reg("owner_user", "password123");
+        reg("member_user", "password789");
+
+        String ownerToken = log("owner_user", "password123");
+        String memberUsername = "member_user";
+
+        companyService.CreateCompany("firing_company", ownerToken);
+
+        java.util.Set<Permission> permissions = java.util.Set.of();
+        companyService.AppointAManager(memberUsername, "firing_company", permissions, ownerToken);
+
+        String ownerId = userRepository.getUserByUsername("owner_user").getID();
+        adminService.suspendUser(ownerId, "admin", 7);
+
+        Response<String> response = companyService.FireMember(ownerToken, "firing_company", memberUsername);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Close Company - Fail (User Is Suspended)")
+    void closeCompanyFailedUserSuspended() {
+        reg("admin", "adminPassword");
+        reg("founder_user", "password123");
+
+        String founderToken = log("founder_user", "password123");
+
+        companyService.CreateCompany("closing_company", founderToken);
+
+        String founderId = userRepository.getUserByUsername("founder_user").getID();
+        adminService.suspendUser(founderId, "admin", 7);
+
+        Response<String> response = companyService.closeCompany("closing_company", founderToken);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
 }
