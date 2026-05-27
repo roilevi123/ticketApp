@@ -966,4 +966,27 @@ class CompanyServiceTest {
         verify(treeOfRoleRepository, never()).isManager(anyString(), anyString());
         verify(notificationRepository, never()).save(anyString(), anyString());
     }
+
+    @Test
+    void sendMessageToUser_Failure_SuspendedUser() {
+        String targetUserId = "target-user-456";
+        String mockUserId = "user-123";
+        String message = "Important update";
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+
+        when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
+
+        Response<String> res = companyService.sendMessageToUser(TOKEN, COMPANY, targetUserId, message);
+
+        assertFalse(res.isSuccess());
+        assertTrue(res.isError());
+        assertEquals("User is suspended", res.getMessage());
+
+        verify(treeOfRoleRepository, never()).exitsOwner(anyString(), anyString());
+        verify(treeOfRoleRepository, never()).isManager(anyString(), anyString());
+        verify(notifier, never()).notifyUser(anyString(), anyString(), anyString());
+    }
 }
