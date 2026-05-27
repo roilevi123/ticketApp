@@ -201,4 +201,24 @@ class OrderServiceTest {
         assertTrue(isNumeric(response.getData()));
         assertNotNull(orderRepository.findById(response.getData()));
     }
+
+    @Test
+    void reserveTickets_Failure_UserSuspended() {
+        ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
+
+        List<int[]> requests = List.of(new int[]{0, 0});
+
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests, null);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+
+        verify(orderRepository, never()).store(any(), any(), any(), any(), any());
+    }
 }
