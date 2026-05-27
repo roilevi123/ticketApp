@@ -72,7 +72,7 @@ public class DiscountPaymentTests {
                 tokenService, treeOfRoleRepository, discountRepo, userRepository, notifierMock
         );
 
-        this.discountService = new DiscountService(discountRepo, tokenService, purchasedService);
+        this.discountService = new DiscountService(discountRepo, tokenService, purchasedService, userRepository);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();

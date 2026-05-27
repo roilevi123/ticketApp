@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.ticketing.ticketapp.Domain.Discount.*;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
+import com.ticketing.ticketapp.Infastructure.UserRepositoryImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -22,13 +24,15 @@ public class DiscountServiceTest {
     private TokenService tokenService;
     private PurchasedService purchasedService;
     private DiscountService discountService;
+    private IUserRepository userRepository;
 
     @BeforeEach
     void setUp() {
         discountRepo = mock(iDiscountPolicyRepository.class);
         tokenService = mock(TokenService.class);
         purchasedService = mock(PurchasedService.class);
-        discountService = new DiscountService(discountRepo, tokenService, purchasedService);
+        userRepository = mock(UserRepositoryImpl.class);
+        discountService = new DiscountService(discountRepo, tokenService, purchasedService, userRepository);
 
         when(tokenService.validateToken(anyString())).thenReturn(true);
         when(tokenService.extractUserId(anyString())).thenReturn("user123");

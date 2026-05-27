@@ -2,6 +2,7 @@ package Appliction;
 
 import com.ticketing.ticketapp.Appliction.*;
 import com.ticketing.ticketapp.Domain.Discount.*;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ class DiscountServiceExtendedTest {
     @Mock private iDiscountPolicyRepository discountRepo;
     @Mock private TokenService tokenService;
     @Mock private PurchasedService purchasedService;
+    @Mock private IUserRepository userRepository;
 
     private DiscountService discountService;
 
@@ -29,7 +31,7 @@ class DiscountServiceExtendedTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        discountService = new DiscountService(discountRepo, tokenService, purchasedService);
+        discountService = new DiscountService(discountRepo, tokenService, purchasedService, userRepository);
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn("uid");
         when(purchasedService.isAuthorized(anyString(), anyString())).thenReturn(true);
