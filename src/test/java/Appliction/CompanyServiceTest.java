@@ -892,7 +892,7 @@ class CompanyServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
 
-[]       when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
+        when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
         Response<String> res = companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerID, newPermissions);
 

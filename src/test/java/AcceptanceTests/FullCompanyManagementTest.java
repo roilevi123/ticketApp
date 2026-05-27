@@ -799,4 +799,70 @@ public class FullCompanyManagementTest {
         assertTrue(response.isError());
         assertEquals("User is suspended", response.getMessage());
     }
+
+    @Test
+    @DisplayName("Change Manager Permissions - Fail (User Is Suspended)")
+    void changeManagerPermissionsFailedUserSuspended() {
+        // 1. רישום המשתמשים וקבלת טוקן עבור המשתמש שמבצע את הפעולה
+        reg("admin", "adminPassword");
+        reg("user2", "password345");
+        reg("suspended_user", "password123");
+        String suspendedUserToken = log("suspended_user", "password123");
+        String userToken = log("user2", "password345");
+
+        // 2. יצירת חברה ומינוי מנהל לפני ביצוע החסימה
+        companyService.CreateCompany("company", suspendedUserToken);
+        companyService.AppointAManager("user2", "company", new HashSet<>(), suspendedUserToken);
+        companyService.ApproveAppointmentForManager(userToken, "company");
+
+        // 3. השעיית המשתמש הממנה (suspended_user) על ידי האדמין
+        String idA = userRepository.getUserByUsername("suspended_user").getID();
+        adminService.suspendUser(idA, "admin", 7);
+
+        // 4. ניסיון לשינוי הרשאות על ידי המשתמש המושהה
+        Set<Permission> newPerms = new HashSet<>();
+        newPerms.add(Permission.MANAGE_INVENTORY);
+        Response<String> response = companyService.ChangeManagerPermissions(suspendedUserToken, "company", "user2", newPerms);
+
+        // 5. וידאו שהפעולה נחסמה עם הודעת השגיאה המתאימה
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Change Manager Permissions - Success (Acceptance)")
+    void changeManagerPermissionsAcceptanceSuccess() {
+        // 1. רישום המשתמשים וקבלת טוקנים
+        reg("owner_user", "password123");
+        reg("manager_user", "password456");
+        String ownerToken = log("owner_user", "password123");
+        String managerToken = log("manager_user", "password456");
+
+        // 2. תזרים קבלה מלא: הקמת חברה, מינוי מנהל ואישור המינוי על ידי המנהל
+        companyService.CreateCompany("test_company", ownerToken);
+        companyService.AppointAManager("manager_user", "test_company", new HashSet<>(), ownerToken);
+        companyService.ApproveAppointmentForManager(managerToken, "test_company");
+
+        // 3. הגדרת ההרשאות החדשות שברצוננו להעניק
+        Set<Permission> newPerms = new HashSet<>();
+        newPerms.add(Permission.MANAGE_INVENTORY);
+        newPerms.add(Permission.VIEW_PURCHASE_HISTORY);
+
+        // 4. ביצוע שינוי ההרשאות מקצה לקצה דרך ה-Service
+        Response<String> response = companyService.ChangeManagerPermissions(ownerToken, "test_company", "manager_user", newPerms);
+
+        // 5. וידאו הצלחת הפעולה
+        assertTrue(response.isSuccess());
+        assertEquals("success", response.getData());
+
+        // 6. וידאו שההרשאות אכן התעדכנו במערכת על ידי שליפתן מחדש
+        Response<Set<Permission>> fetchedPerms = companyService.GetManagerPermissions(ownerToken, "test_company", "manager_user");
+        assertTrue(fetchedPerms.isSuccess());
+        assertNotNull(fetchedPerms.getData());
+        assertEquals(2, fetchedPerms.getData().size());
+        assertTrue(fetchedPerms.getData().contains(Permission.MANAGE_INVENTORY));
+        assertTrue(fetchedPerms.getData().contains(Permission.VIEW_PURCHASE_HISTORY));
+    }
+
 }
