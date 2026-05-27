@@ -1,6 +1,7 @@
 package AcceptanceTests;
 
 import com.ticketing.ticketapp.Appliction.*;
+import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
@@ -36,6 +37,8 @@ public class PurchasePolicyAcceptanceTests {
     private OrderService reserveService;
     private PurchasePolicyService policyService;
     private TokenService tokenService;
+    private IUserRepository userRepository;
+    private AdminService adminService;
 
     @BeforeEach
     void setUp() {
@@ -58,6 +61,15 @@ public class PurchasePolicyAcceptanceTests {
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, mock(iDiscountPolicyRepository.class));
         this.reserveService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
         this.policyService = new PurchasePolicyService(purchasePolicyRepository, tokenService, userRepository);
+
+        this.userRepository = userRepository;
+        iAdminRepository adminRepository = new AdminRepositoryImpl(){
+            @Override
+            public boolean isAdmin(String userID) {
+                return userID.equals("admin");
+            }
+        };
+        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
 
         userRepository.deleteAll();
         eventRepository.deleteAllEvents();
@@ -339,4 +351,64 @@ public class PurchasePolicyAcceptanceTests {
         Response<String> a = policyService.createOrPolicy("a", "C1", PurchaseTargetType.EVENT, new ArrayList<>());
         assertTrue(a.isError());
     }
+
+
+    @Test @DisplayName("31. Fail - Create Age Limit Policy When User Is Suspended")
+    void createAgeLimitPolicy_SuspendedUser_ReturnsError() {
+        String adminToken = regAndSetup("admin_policy", "C1", "E1", 0);
+        String adminUserId = tokenService.extractUserId(adminToken);
+
+        adminService.suspendUser(adminUserId, "admin", 7);
+
+        Response<String> response = policyService.createAgeLimitPolicy(adminToken, "E1", PurchaseTargetType.EVENT, 18);
+
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test @DisplayName("32. Fail - Create Quantity Limit Policy When User Is Suspended")
+    void createQuantityLimitPolicy_SuspendedUser_ReturnsError() {
+        String adminToken = regAndSetup("admin_policy2", "C1", "E1", 0);
+        String adminUserId = tokenService.extractUserId(adminToken);
+
+        adminService.suspendUser(adminUserId, "admin", 7);
+
+        Response<String> response = policyService.createQuantityLimitPolicy(adminToken, "E1", PurchaseTargetType.EVENT, 1, 10);
+
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test @DisplayName("33. Fail - Create AND Policy When User Is Suspended")
+    void createAndPolicy_SuspendedUser_ReturnsError() {
+        String adminToken = regAndSetup("admin_policy3", "C1", "E1", 0);
+
+        String p1 = policyService.createAgeLimitPolicy(adminToken, "E1", PurchaseTargetType.EVENT, 18).getData();
+        String p2 = policyService.createQuantityLimitPolicy(adminToken, "E1", PurchaseTargetType.EVENT, 1, 5).getData();
+
+        String adminUserId = tokenService.extractUserId(adminToken);
+        adminService.suspendUser(adminUserId, "admin", 7);
+
+        Response<String> response = policyService.createAndPolicy(adminToken, "E1", PurchaseTargetType.EVENT, Arrays.asList(p1, p2));
+
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test @DisplayName("34. Fail - Create OR Policy When User Is Suspended")
+    void createOrPolicy_SuspendedUser_ReturnsError() {
+        String adminToken = regAndSetup("admin_policy4", "C1", "E1", 0);
+
+        String p1 = policyService.createAgeLimitPolicy(adminToken, "E1", PurchaseTargetType.EVENT, 18).getData();
+        String p2 = policyService.createQuantityLimitPolicy(adminToken, "E1", PurchaseTargetType.EVENT, 1, 5).getData();
+
+        String adminUserId = tokenService.extractUserId(adminToken);
+        adminService.suspendUser(adminUserId, "admin", 7);
+
+        Response<String> response = policyService.createOrPolicy(adminToken, "E1", PurchaseTargetType.EVENT, Arrays.asList(p1, p2));
+
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
 }
