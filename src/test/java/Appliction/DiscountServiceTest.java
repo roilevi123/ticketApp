@@ -248,4 +248,93 @@ public class DiscountServiceTest {
 
         assertTrue(result.isError());
     }
+
+
+    @Test
+    void test18_CreateSimpleDiscount_UserSuspended_Failure() {
+        when(userRepository.isUserSuspendedNow("user123")).thenReturn(true);
+
+        Response<String> result = discountService.createSimpleDiscount("token", "e1", DiscountTargetType.EVENT, 10.0, "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test19_CreateQuantityDiscount_UserSuspended_Failure() {
+        when(userRepository.isUserSuspendedNow("user123")).thenReturn(true);
+
+        Response<String> result = discountService.createQuantityDiscount("token", "e1", DiscountTargetType.EVENT, 20.0, 5, "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test20_CreateTimeLimitedDiscount_UserSuspended_Failure() {
+        when(userRepository.isUserSuspendedNow("user123")).thenReturn(true);
+
+        Response<String> result = discountService.createTimeLimitedDiscount("token", "e1", DiscountTargetType.EVENT, 15.0, new Date(), "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test21_CreateCouponDiscount_UserSuspended_Failure() {
+        when(userRepository.isUserSuspendedNow("user123")).thenReturn(true);
+
+        Response<String> result = discountService.createCouponDiscount("token", "e1", DiscountTargetType.EVENT, "PROMO", 25.0, "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test22_CreateSumDiscountPolicy_UserSuspended_Failure() {
+        when(userRepository.isUserSuspendedNow("user123")).thenReturn(true);
+
+        String p1Id = "p1";
+
+        Response<String> result = discountService.createSumDiscountPolicy("token", "e1", DiscountTargetType.EVENT, Arrays.asList(p1Id), "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(discountRepo, never()).getPolicy(anyString());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test23_CreateMaxDiscountPolicy_UserSuspended_Failure() {
+        String mockUserId = "user-123";
+        String p1Id = "p1";
+
+        when(tokenService.validateToken("token")).thenReturn(true);
+        when(tokenService.extractUserId("token")).thenReturn(mockUserId);
+        when(purchasedService.isAuthorized("Comp", mockUserId)).thenReturn(true);
+
+        when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
+
+        Response<String> result = discountService.createMaxDiscountPolicy("token", "e1", DiscountTargetType.EVENT, Arrays.asList(p1Id), "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+
+        verify(discountRepo, never()).getPolicy(anyString());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test24_CalculatePriceAfterDiscounts_UserSuspended_Failure() {
+        when(userRepository.isUserSuspendedNow("user123")).thenReturn(true);
+
+        Response<Double> result = discountService.calculatePriceAfterDiscounts("token", "e1", "Comp", 100.0, 1, "none");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+    }
 }
