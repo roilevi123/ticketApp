@@ -81,6 +81,7 @@ public class NotificationController {
         if (adminRepository.isAdmin(userId)) {
             notifications.addAll(notificationRepository.getAll("SYSTEM_ADMIN"));
         }
+        notifications.addAll(notificationRepository.getAll("BROADCAST"));
         notifications.sort(Comparator.comparing(Notification::getCreatedAt).reversed());
         return ResponseEntity.ok(notifications);
     }

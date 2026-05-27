@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import EventCatalog from "./components/EventCatalog";
 import CompanyProfile from "./components/CompanyProfile";
@@ -11,11 +11,21 @@ import Register from "./components/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MemberProfile from "./components/MemberProfile";
 import MyTickets from "./components/MyTickets";
+import AdminDashboard from "./components/AdminDashboard";
 import InboxPage from "./components/InboxPage";
 import MessagePage from "./components/MessagePage";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import CheckoutPage from "./components/CheckoutPage";
 import { ActiveOrderProvider } from "./contexts/ActiveOrderContext";
+import { useAuth } from "./contexts/AuthContext";
+import RemovedAccountPage from "./components/RemovedAccountPage";
+
+function AdminRoute({ children }) {
+  const { token, role, isAdmin } = useAuth();
+  if (!token || role === "GUEST") return <Navigate to="/login" replace />;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return children;
+}
 
 function App() {
   return (
@@ -52,6 +62,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route
@@ -86,6 +104,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="account-removed" element={<RemovedAccountPage />} />
           <Route
             path="*"
             element={

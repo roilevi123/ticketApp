@@ -35,6 +35,10 @@ public class TokenInterceptor implements HandlerInterceptor {
         
         if (!tokenService.validateToken(token)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            if (tokenService.isBannedToken(token)) {
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"ACCOUNT_REMOVED\"}");
+            }
             return false;
         }
 

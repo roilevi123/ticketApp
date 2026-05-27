@@ -18,12 +18,21 @@ public class NotifierImpl implements INotifier {
     }
 
     @Override
+    public void notifyUserWithSender(String userId, String senderId, String title, String message) {
+        broadcaster.broadcast(userId, buildJsonWithSender(title, message, senderId));
+    }
+
+    @Override
     public void broadcast(String title, String message) {
         broadcaster.broadcastToAll(buildJson(title, message));
     }
 
     private String buildJson(String title, String message) {
         return "{\"title\":" + jsonString(title) + ",\"message\":" + jsonString(message) + "}";
+    }
+
+    private String buildJsonWithSender(String title, String message, String senderId) {
+        return "{\"title\":" + jsonString(title) + ",\"message\":" + jsonString(message) + ",\"senderId\":" + jsonString(senderId) + "}";
     }
 
     private String jsonString(String value) {

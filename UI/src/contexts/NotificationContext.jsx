@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "./AuthContext";
+import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 
 const NotificationContext = createContext();
@@ -16,7 +17,8 @@ function extractTitle(raw) {
 }
 
 export const NotificationProvider = ({ children }) => {
-  const { token, role } = useAuth();
+  const { token, role, logout } = useAuth();
+  const navigate = useNavigate();
   const [hasUnread, setHasUnread] = useState(false);
   const [popup, setPopup] = useState(null);
   const [inboxRefreshTick, setInboxRefreshTick] = useState(0);
@@ -91,6 +93,15 @@ export const NotificationProvider = ({ children }) => {
           for (const line of text.split("\n")) {
             if (line.startsWith("data:")) {
               const data = line.slice(5).trim();
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.title === "FORCE_LOGOUT") {
+                  clearTimeout(replayTimer);
+                  logout();
+                  navigate("/account-removed", { replace: true });
+                  return;
+                }
+              } catch { /* not JSON, continue normally */ }
               setHasUnread(true);
               if (replayWindowOpen) {
                 replayCount++;

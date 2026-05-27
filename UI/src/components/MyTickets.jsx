@@ -265,7 +265,7 @@ export default function MyTickets() {
       </div>
 
       {/* ── Header ── */}
-      <header className="w-full bg-surface-dim border-b border-outline-variant">
+      <header className="w-full sticky top-0 z-50 bg-surface-dim border-b border-outline-variant">
         <div className="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-container-max-width mx-auto">
           <div className="flex items-center gap-4">
             <button

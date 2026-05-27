@@ -250,7 +250,7 @@ export default function EventCatalog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const { role, logout, token } = useAuth();
+  const { role, logout, token, isAdmin } = useAuth();
   const { orderCount } = useActiveOrder();
   const { hasUnread } = useNotifications();
   const navigate = useNavigate();
@@ -303,22 +303,20 @@ export default function EventCatalog() {
   return (
     <div className="bg-background text-on-background min-h-screen flex flex-col">
       {/* ── Top Nav ── */}
-      <header className="w-full bg-surface-dim border-b border-outline-variant">
-        <div className="flex justify-between items-center h-16 px-margin-mobile md:px-margin-desktop max-w-container-max-width mx-auto">
-          <div className="flex items-center gap-8">
-            <span className="text-headline-md font-bold text-secondary">
-              UNI-TICKETS
-            </span>
-            <nav className="hidden md:flex items-center gap-6">
-              <a className="text-secondary border-b-2 border-secondary pb-1 font-bold text-body-md" href="#">Events</a>
-              <Link className="text-on-surface-variant hover:text-on-surface transition-colors text-body-md" to="/my-tickets">My Tickets</Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4 flex-1 justify-end">
-            <div className="relative max-w-md w-full hidden sm:block">
+      <header className="w-full sticky top-0 z-50 bg-surface-dim border-b border-outline-variant">
+        <div className="flex items-center h-16 px-margin-mobile md:px-margin-desktop max-w-container-max-width mx-auto gap-4">
+          <span className="text-headline-md font-bold text-secondary flex-shrink-0">
+            UNI-TICKETS
+          </span>
+          <nav className="hidden md:flex items-center gap-4 flex-shrink-0">
+            <a className="text-secondary border-b-2 border-secondary pb-1 font-bold text-body-md" href="#">Events</a>
+            <Link className="text-on-surface-variant hover:text-on-surface transition-colors text-body-md" to="/my-tickets">My Tickets</Link>
+          </nav>
+          <div className="flex items-center gap-3 ml-auto">
+            <div className="relative w-48 hidden sm:block">
               <span
                 className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
-                style={{ fontSize: "20px" }}
+                style={{ fontSize: "18px" }}
               >
                 search
               </span>
@@ -326,10 +324,20 @@ export default function EventCatalog() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search events, artists, venues..."
-                className="w-full bg-surface-container-lowest border border-outline text-on-surface py-2 pl-10 pr-4 rounded-xl focus:border-secondary outline-none text-body-md placeholder:text-on-surface-variant"
+                placeholder="Search..."
+                className="w-full bg-surface-container-lowest border border-outline text-on-surface py-1.5 pl-9 pr-3 rounded-lg focus:border-secondary outline-none text-label-md placeholder:text-on-surface-variant"
               />
             </div>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="flex items-center gap-1 text-label-md font-medium px-3 py-1.5 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors flex-shrink-0"
+                title="Admin Dashboard"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>admin_panel_settings</span>
+                <span className="hidden sm:inline">Admin</span>
+              </Link>
+            )}
             {token && role !== "GUEST" && (
               <button
                 onClick={() => navigate("/select-company")}

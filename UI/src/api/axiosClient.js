@@ -4,7 +4,6 @@ const axiosClient = axios.create({
     baseURL: 'http://localhost:8080/api',
 });
 
-// Request interceptor to attach authentication token
 axiosClient.interceptors.request.use(
     (config) => {
         // Fall back to the hardcoded guest token if no token is in localStorage yet
@@ -15,7 +14,19 @@ axiosClient.interceptors.request.use(
         return config;
     },
     (error) => {
-        // Forward any request setup errors to be handled by callers
+        return Promise.reject(error);
+    }
+);
+
+axiosClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401 && error.response?.data?.error === 'ACCOUNT_REMOVED') {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('userID');
+            window.location.replace('/account-removed');
+        }
         return Promise.reject(error);
     }
 );

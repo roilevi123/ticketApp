@@ -4,12 +4,10 @@ import { useNotifications } from "../contexts/NotificationContext";
 export default function Layout() {
   const { popup, dismissPopup } = useNotifications();
   const location = useLocation();
-
   const isProducerDashboard = location.pathname.includes("/producer-dashboard");
 
   return (
     <div className={`min-h-screen ${isProducerDashboard ? "bg-[#101415]" : "bg-background"}`}>
-      {/* Sliding notification popup */}
       {popup && (
         <div className="fixed top-16 right-4 z-50 animate-slide-in">
           <div className="flex items-start gap-3 bg-[#1d2022] border border-[#e9c349] text-white px-4 py-3 rounded-lg shadow-2xl min-w-[260px] max-w-xs">
@@ -36,7 +34,6 @@ export default function Layout() {
           </div>
         </div>
       )}
-
       <Outlet />
     </div>
   );

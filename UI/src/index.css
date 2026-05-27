@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .glass-card {
+    background: rgba(29, 32, 34, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(69, 70, 77, 0.5);
+  }
+}
+
 @keyframes slideInFromRight {
   from { opacity: 0; transform: translateX(120%); }
   to   { opacity: 1; transform: translateX(0); }

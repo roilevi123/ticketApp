@@ -250,11 +250,12 @@ class UserServiceTest {
     void submitUserComplaint_Success_ShouldSaveNotification() {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
 
         Response<String> result = userService.submitUserComplaint(TOKEN, "Admin", "My complaint");
 
         assertTrue(result.isSuccess());
-        verify(notifier, times(1)).notifyUser(eq("SYSTEM_ADMIN"), contains("Complaint from"), any());
+        verify(notifier, times(1)).notifyUserWithSender(eq("SYSTEM_ADMIN"), eq(USERNAME), contains("Complaint from"), any());
     }
 
     @Test
@@ -264,7 +265,7 @@ class UserServiceTest {
         Response<String> result = userService.submitUserComplaint(TOKEN, "Admin", "My complaint");
 
         assertTrue(result.isError());
-        verify(notifier, never()).notifyUser(any(), any(), any());
+        verify(notifier, never()).notifyUserWithSender(any(), any(), any(), any());
     }
 
     @Test
