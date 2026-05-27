@@ -81,6 +81,11 @@ public class PurchasedService {
             ActiveOrder order = repository.findById(orderId);
             if (tokenService.validateToken(token)) {
                 String userID = tokenService.extractUserId(token);
+                String username = tokenService.extractUsername(token);
+                if (username != null && userRepository.isUserSuspendedNow(username) ||
+                        (userID != null && userRepository.isUserSuspendedNow(userID))) {
+                    throw new Exception("User is suspended");
+                }
                 order = repository.getOrder(userID);
             }
             if (order == null || order.getExpirationTime().before(new Date())) {
