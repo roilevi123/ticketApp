@@ -78,6 +78,9 @@ public class OrderService {
             if (tokenService.validateToken(token)) {
                 userID = tokenService.extractUserId(token);
             }
+            if(userID!=null)
+                if(userRepository.isUserSuspendedNow(userID))
+                    throw new Exception("User is suspended");
 
             // ── Lottery gate-check ────────────────────────────────────────────
             Event eventEntity = eventRepository.getEvent(event, company);
