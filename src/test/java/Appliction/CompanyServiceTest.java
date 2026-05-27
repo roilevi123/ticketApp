@@ -882,4 +882,25 @@ class CompanyServiceTest {
 
         verify(treeOfRoleRepository, never()).deleteOwner(ownerToFire, COMPANY);
     }
+
+    @Test
+    void changeManagerPermissions_Failure_SuspendedUser() {
+        String managerID = "sub_manager";
+        String mockUserId = "user-123";
+        Set<Permission> newPermissions = Set.of(Permission.MANAGE_INVENTORY);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
+
+[]       when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
+
+        Response<String> res = companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerID, newPermissions);
+
+        assertFalse(res.isSuccess());
+        assertTrue(res.isError());
+        assertEquals("User is suspended", res.getMessage());
+
+        verify(treeOfRoleRepository, never()).getManager(anyString(), anyString());
+        verify(treeOfRoleRepository, never()).save(any(Manager.class));
+    }
 }
