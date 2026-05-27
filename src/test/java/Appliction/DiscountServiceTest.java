@@ -248,4 +248,105 @@ public class DiscountServiceTest {
 
         assertTrue(result.isError());
     }
+
+
+    @Test
+    void test18_CreateSimpleDiscount_UserSuspended_Failure() {
+        com.ticketing.ticketapp.Domain.User.User suspendedUser = mock(com.ticketing.ticketapp.Domain.User.User.class);
+        when(userRepository.isUserSuspendedNow(suspendedUser.getName())).thenReturn(true);
+        when(userRepository.getUserByUsername("user123")).thenReturn(suspendedUser);
+
+        Response<String> result = discountService.createSimpleDiscount("token", "e1", DiscountTargetType.EVENT, 10.0, "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test19_CreateQuantityDiscount_UserSuspended_Failure() {
+        com.ticketing.ticketapp.Domain.User.User suspendedUser = mock(com.ticketing.ticketapp.Domain.User.User.class);
+        when(userRepository.isUserSuspendedNow(suspendedUser.getName())).thenReturn(true);
+        when(userRepository.getUserByUsername("user123")).thenReturn(suspendedUser);
+
+        Response<String> result = discountService.createQuantityDiscount("token", "e1", DiscountTargetType.EVENT, 20.0, 5, "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test20_CreateTimeLimitedDiscount_UserSuspended_Failure() {
+        com.ticketing.ticketapp.Domain.User.User suspendedUser = mock(com.ticketing.ticketapp.Domain.User.User.class);
+        when(userRepository.isUserSuspendedNow(suspendedUser.getName())).thenReturn(true);
+        when(userRepository.getUserByUsername("user123")).thenReturn(suspendedUser);
+
+        Response<String> result = discountService.createTimeLimitedDiscount("token", "e1", DiscountTargetType.EVENT, 15.0, new Date(), "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test21_CreateCouponDiscount_UserSuspended_Failure() {
+        com.ticketing.ticketapp.Domain.User.User suspendedUser = mock(com.ticketing.ticketapp.Domain.User.User.class);
+        when(userRepository.isUserSuspendedNow(suspendedUser.getName())).thenReturn(true);
+        when(userRepository.getUserByUsername("user123")).thenReturn(suspendedUser);
+
+        Response<String> result = discountService.createCouponDiscount("token", "e1", DiscountTargetType.EVENT, "PROMO", 25.0, "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test22_CreateSumDiscountPolicy_UserSuspended_Failure() {
+        com.ticketing.ticketapp.Domain.User.User suspendedUser = mock(com.ticketing.ticketapp.Domain.User.User.class);
+        when(userRepository.isUserSuspendedNow(suspendedUser.getName())).thenReturn(true);
+        when(userRepository.getUserByUsername("user123")).thenReturn(suspendedUser);
+
+        // גם אם ה-Policies קיימים ב-Repo, בדיקת ההשעיה צריכה לחסום את התהליך
+        String p1Id = "p1";
+        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, ""));
+        when(discountRepo.getPolicy(p1Id)).thenReturn(p1);
+
+        Response<String> result = discountService.createSumDiscountPolicy("token", "e1", DiscountTargetType.EVENT, Arrays.asList(p1Id), "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test23_CreateMaxDiscountPolicy_UserSuspended_Failure() {
+        com.ticketing.ticketapp.Domain.User.User suspendedUser = mock(com.ticketing.ticketapp.Domain.User.User.class);
+        when(userRepository.isUserSuspendedNow(suspendedUser.getName())).thenReturn(true);
+        when(userRepository.getUserByUsername("user123")).thenReturn(suspendedUser);
+
+        String p1Id = "p1";
+        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, ""));
+        when(discountRepo.getPolicy(p1Id)).thenReturn(p1);
+
+        Response<String> result = discountService.createMaxDiscountPolicy("token", "e1", DiscountTargetType.EVENT, Arrays.asList(p1Id), "Comp");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(discountRepo, never()).save(any());
+    }
+
+    @Test
+    void test24_CalculatePriceAfterDiscounts_UserSuspended_Failure() {
+        // מדמים שהקונה שמנסה לחשב מחיר בעת רכישה הוא משתמש מושהה
+        com.ticketing.ticketapp.Domain.User.User suspendedUser = mock(com.ticketing.ticketapp.Domain.User.User.class);
+        when(userRepository.isUserSuspendedNow(suspendedUser.getName())).thenReturn(true);
+        when(userRepository.getUserByUsername("user123")).thenReturn(suspendedUser);
+
+        Response<Double> result = discountService.calculatePriceAfterDiscounts("token", "e1", "Comp", 100.0, 1, "none");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+    }
 }
