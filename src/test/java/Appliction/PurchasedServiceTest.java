@@ -422,4 +422,48 @@ class PurchasedServiceTest {
         assertEquals(0.0, result.getData().getTotalRevenue(), 0.001);
         assertEquals(0, result.getData().getTotalTicketsSold());
     }
+
+    @Test
+    void purchaseTicket_Failure_UserSuspended() throws Exception {
+        iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
+        IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
+
+        purchasedService = new PurchasedService(
+                orderRepoSpy,
+                ticketRepoSpy,
+                purchasedOrderRepository,
+                supplyService,
+                paymentService,
+                barcodeGenerator,
+                tokenService,
+                treeOfRoleRepository,
+                discountPolicyRepository,
+                userRepository,
+                notifier
+        );
+
+        String validToken = "valid_suspended_user_token";
+        Date futureDate = new Date(System.currentTimeMillis() + 1000000);
+
+        ticketRepoSpy.storeTicket(0, 0, EVENT, COMPANY, 100);
+        String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
+        String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
+
+        when(tokenService.validateToken(validToken)).thenReturn(true);
+        when(tokenService.extractUserId(validToken)).thenReturn(USERNAME);
+        when(tokenService.extractUsername(validToken)).thenReturn(USERNAME);
+
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
+
+        Response<String> response = purchasedService.PurchaseTicket(EMAIL, orderId, validToken, "none");
+
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+
+        verify(paymentService, never()).processPayment(anyString(), anyDouble());
+        verify(supplyService, never()).supplyToEmail(anyString(), anyString());
+
+        assertNotNull(orderRepoSpy.findById(orderId));
+    }
 }

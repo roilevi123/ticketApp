@@ -511,35 +511,27 @@ public class PurchaseOrderTests {
 
     @Test @DisplayName("17. Fail - Purchase Ticket When User Is Suspended")
     void purchaseTicketFailedUserSuspended17() {
-        // 1. יצירת חברה ואירוע על ידי מנהל המערכת
         reg("owner_user", "password123");
         String ownerToken = log("owner_user", "password123");
         companyService.CreateCompany("company1", ownerToken);
         eventService.createEvent(ownerToken, "event1", "artist1", EventType.PLAY, 100, new Date(), "location1", "company1", getMapArea());
 
-        // 2. רישום והתחברות של המשתמש שרוצה לבצע את הרכישה
         reg("suspended_buyer", "password456");
         String buyerToken = log("suspended_buyer", "password456");
 
-        // 3. שריון הכרטיס מראש (השריון מצליח לפני ההשהיה)
         List<int[]> requests = List.of(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(buyerToken, "company1", "event1", requests).getData();
         assertTrue(isNumeric(orderId), "Reservation should succeed initially");
 
-        // 4. רישום אדמין
         reg("admin", "admin");
         log("admin", "admin");
 
-        // --- התיקון כאן: שליפת ה-userID המדויק מתוך ה-Token של הקונה ---
         String realBuyerId = tokenService.extractUserId(buyerToken);
 
-        // שליחת ה-ID האמיתי ל-AdminService (אם ה-AdminService עדיין דורש username, נסי להחליף חזרה ל-"suspended_buyer")
         adminService.suspendUser(realBuyerId, "admin", 7);
 
-        // 5. ניסיון ביצוע הרכישה (Purchase) על ידי המשתמש המושהה
         Response<String> purchaseResponse = purchasedService.PurchaseTicket("buyer@gmail.com", orderId, buyerToken, "none");
 
-        // 6. אימות שהרכישה נחסמה והחזירה את שגיאת ההשהיה המצופה
         assertTrue(purchaseResponse.isError(), "Purchase should fail for suspended user");
         assertEquals("User is suspended", purchaseResponse.getMessage());
     }
