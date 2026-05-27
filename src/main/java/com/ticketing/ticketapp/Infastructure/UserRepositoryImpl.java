@@ -124,6 +124,8 @@ public class UserRepositoryImpl implements IUserRepository {
 
     @Override
     public boolean isUserSuspendedNow(String userID){
+        if(userID==null)
+            throw new NullPointerException("userID is null");
         if(currentSuspensions.containsKey(userID)){
             Suspension suspension = currentSuspensions.get(userID);
             if(suspension.isPermanent()==true)

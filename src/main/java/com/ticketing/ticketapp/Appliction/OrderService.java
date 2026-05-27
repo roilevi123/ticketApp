@@ -52,8 +52,9 @@ public class OrderService {
                 userID = tokenService.extractUserId(token);
             }
 
-            if(userRepository.isUserSuspendedNow(userID))
-                throw new Exception("User is suspended");
+            if(userID!=null)
+                if(userRepository.isUserSuspendedNow(userID))
+                    throw new Exception("User is suspended");
 
             int totalRequested = requests.stream().mapToInt(r -> (r.length > 2) ? r[2] : 1).sum();
             validatePurchasePolicies(event, company, userID, totalRequested);

@@ -28,6 +28,7 @@ class OrderServiceTest {
     private OrderRepositoryImpl orderRepository;
     private InMemoryPurchasePolicyRepository purchasePolicyRepository;
 
+
     @Mock
     private TokenService tokenService;
     @Mock
@@ -196,5 +197,30 @@ class OrderServiceTest {
         assertTrue(response.isSuccess());
         assertTrue(isNumeric(response.getData()));
         assertNotNull(orderRepository.findById(response.getData()));
+    }
+
+    @Test
+    void reserveTickets_Failure_UserSuspended() {
+        ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+
+        com.ticketing.ticketapp.Domain.User.User suspendedUser = mock(com.ticketing.ticketapp.Domain.User.User.class);
+        when(suspendedUser.getName()).thenReturn(USERNAME);
+
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
+
+        doReturn(suspendedUser).when(userRepository).getUserByID(USERNAME);
+
+        List<int[]> requests = new ArrayList<>();
+        requests.add(new int[]{0, 0});
+
+        Response<String> response = reserveTicketService.reserveTickets(TOKEN, COMPANY, EVENT, requests);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+        verify(orderRepository, never()).store(any(), any(), any(), any(), any());
     }
 }
