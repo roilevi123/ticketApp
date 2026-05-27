@@ -923,4 +923,24 @@ class CompanyServiceTest {
         verify(companyRepository, never()).getCompany(anyString());
         verify(companyRepository, never()).save(any(Company.class));
     }
+
+    @Test
+    void unfreezeCompany_Failure_SuspendedUser() {
+        String mockUserId = "user-123";
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
+
+        when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
+
+        Response<String> res = companyService.unfreezeCompany(COMPANY, TOKEN);
+
+        assertFalse(res.isSuccess());
+        assertTrue(res.isError());
+        assertEquals("User is suspended", res.getMessage());
+
+        verify(companyRepository, never()).getCompany(anyString());
+        verify(companyRepository, never()).save(any(Company.class));
+    }
 }
