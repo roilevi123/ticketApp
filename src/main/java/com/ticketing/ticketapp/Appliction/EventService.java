@@ -72,6 +72,9 @@ public class EventService {
                 logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, company);
                 return Response.error("Unauthorized");
             }
+            String userID =tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new Exception("User is suspended");
 
             Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, company, map);
             ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, null,
@@ -96,6 +99,9 @@ public class EventService {
                 logger.info("Unauthorized attempt to delete event '{}' for company '{}'", eventId, companyName);
                 return Response.error("Unauthorized");
             }
+            String userID =tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new Exception("User is suspended");
 
             Event event = eventRepository.getEventById(eventId, companyName);
             if (event == null) {
@@ -130,6 +136,9 @@ public class EventService {
             if (userId == null || !isAuthorized(company, userId)) {
                 throw new RuntimeException("Unauthorized: User is not an owner or authorized manager");
             }
+            String userID =tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new Exception("User is suspended");
 
             Event event = eventRepository.getEvent(eventName, company);
             if (event == null) {
