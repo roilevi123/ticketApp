@@ -649,4 +649,24 @@ class CompanyServiceTest {
         assertTrue(result.isError());
         verify(notifier, never()).notifyUser(any(), any(), any());
     }
+
+    @Test
+    void createCompany_Failure_SuspendedUser() {
+        User mockUser = mock(User.class);
+        when(mockUser.getName()).thenReturn(USERNAME);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
+
+        Response<String> status = companyService.CreateCompany(COMPANY, TOKEN);
+
+        assertFalse(status.isSuccess());
+        assertTrue(status.isError());
+        assertEquals("User is suspended", status.getMessage());
+
+        verify(companyRepository, never()).store(anyString(), anyString());
+        verify(treeOfRoleRepository, never()).storeOwner(anyString(), anyString(), anyString());
+    }
 }
