@@ -32,6 +32,7 @@ public class FullCompanyManagementTest {
     private CompanyService companyService;
     private UserService userService;
     private TokenService tokenService;
+    private IUserRepository userRepository;
 
     @BeforeEach
     void setUp() {
@@ -48,6 +49,7 @@ public class FullCompanyManagementTest {
         IPendingNotificationRepository notificationRepository = new PendingNotificationRepositoryImpl();
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, mock(INotifier.class), notificationRepository);
+        this.userRepository=userRepository;
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -595,4 +597,6 @@ public class FullCompanyManagementTest {
     void GetManagerPermissionsInvalidToken() {
         assertTrue(companyService.GetManagerPermissions("null", null, null).isError());
     }
+
+
 }
