@@ -1,10 +1,6 @@
 package AcceptanceTests;
 
-import com.ticketing.ticketapp.Appliction.CompanyService;
-import com.ticketing.ticketapp.Appliction.INotifier;
-import com.ticketing.ticketapp.Appliction.IPasswordEncoder;
-import com.ticketing.ticketapp.Appliction.Response;
-import com.ticketing.ticketapp.Appliction.UserService;
+import com.ticketing.ticketapp.Appliction.*;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
@@ -14,7 +10,6 @@ import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRep
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
-import com.ticketing.ticketapp.Appliction.IPendingNotificationRepository;
 import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,6 +28,7 @@ public class FullCompanyManagementTest {
     private UserService userService;
     private TokenService tokenService;
     private IUserRepository userRepository;
+    private AdminService adminService;
 
     @BeforeEach
     void setUp() {
@@ -50,6 +46,7 @@ public class FullCompanyManagementTest {
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, notificationRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, mock(INotifier.class), notificationRepository);
         this.userRepository=userRepository;
+        this.adminService= new AdminService(treeOfRoleRepository,companyRepository,new AdminRepositoryImpl(),userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new PendingNotificationRepositoryImpl())));
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -597,6 +594,7 @@ public class FullCompanyManagementTest {
     void GetManagerPermissionsInvalidToken() {
         assertTrue(companyService.GetManagerPermissions("null", null, null).isError());
     }
+
 
 
 }
