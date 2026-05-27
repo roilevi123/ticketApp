@@ -277,6 +277,31 @@ public class CompanyController {
         return ResponseEntity.badRequest().body(response.getMessage());
     }
 
+
+    @PostMapping("/policies/discount/calculate")
+    public ResponseEntity<?> calculateDiscount(
+            @RequestAttribute("cleanToken") String token, 
+            @RequestBody CalculateDiscountRequestDTO request) {
+
+        token = extractCleanToken(token);
+        
+        // קריאה לשירות החישוב שכבר קיים אצלך ב-DiscountService
+        Response<Double> response = discountService.calculatePriceAfterDiscounts(
+                token, 
+                request.getEventId(), 
+                request.getCompanyName(), 
+                request.getOriginalPrice(), 
+                request.getQuantity(), 
+                request.getCoupon()
+        );
+
+        if (response.isSuccess()) {
+            // מחזירים ל-React את המחיר החדש
+            return ResponseEntity.ok(Map.of("finalPrice", response.getData()));
+        }
+        return ResponseEntity.badRequest().body(response.getMessage());
+    }
+
     @PostMapping("/assign-role")
     public ResponseEntity<?> assignRole(
             @RequestAttribute("cleanToken") String token, 
@@ -896,4 +921,27 @@ class ConditionDTO {
     public void setOperator(String operator) { this.operator = operator; }
     public Object getValue() { return value; }
     public void setValue(Object value) { this.value = value; }
+}
+
+class CalculateDiscountRequestDTO {
+    private String eventId;
+    private String companyName;
+    private double originalPrice;
+    private int quantity;
+    private String coupon;
+
+    public String getEventId() { return eventId; }
+    public void setEventId(String eventId) { this.eventId = eventId; }
+    
+    public String getCompanyName() { return companyName; }
+    public void setCompanyName(String companyName) { this.companyName = companyName; }
+    
+    public double getOriginalPrice() { return originalPrice; }
+    public void setOriginalPrice(double originalPrice) { this.originalPrice = originalPrice; }
+    
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
+    
+    public String getCoupon() { return coupon; }
+    public void setCoupon(String coupon) { this.coupon = coupon; }
 }

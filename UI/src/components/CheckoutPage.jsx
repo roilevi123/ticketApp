@@ -3,29 +3,22 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useActiveOrder } from "../contexts/ActiveOrderContext";
 import { getOrderErrorMessage } from "../utils/orderErrors";
+import axiosClient from "../api/axiosClient";
 
 function formatMoney(value) {
   return `$${Number(value ?? 0).toFixed(2)}`;
 }
 
 function formatRemaining(ms) {
-  if (ms <= 0) {
-    return "Expired";
-  }
-
+  if (ms <= 0) return "Expired";
   const totalSeconds = Math.ceil(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60)
-    .toString()
-    .padStart(2, "0");
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
   const seconds = (totalSeconds % 60).toString().padStart(2, "0");
   return `${minutes}:${seconds}`;
 }
 
 function ticketLabel(ticket) {
-  if (ticket.row === 0 && ticket.col === 0) {
-    return "General Admission";
-  }
-
+  if (ticket.row === 0 && ticket.col === 0) return "General Admission";
   return `Row ${ticket.row}, Seat ${ticket.col}`;
 }
 
@@ -43,11 +36,17 @@ export default function CheckoutPage() {
     purchaseActiveOrder,
     refreshActiveOrder,
   } = useActiveOrder();
+  
   const [email, setEmail] = useState("");
   const [coupon, setCoupon] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+
+  // States for Coupon Logic
+  const [discountedTotal, setDiscountedTotal] = useState(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [couponMsg, setCouponMsg] = useState(null);
 
   useEffect(() => {
     if (typeof userID === "string" && userID.includes("@")) {
@@ -55,10 +54,44 @@ export default function CheckoutPage() {
     }
   }, [userID]);
 
-  const total = useMemo(
+  const originalTotal = useMemo(
     () => tickets.reduce((sum, ticket) => sum + Number(ticket.price ?? 0), 0),
     [tickets],
   );
+
+  // החישוב הדינמי מול השרת
+  const handleApplyCoupon = async () => {
+    if (!coupon.trim()) return;
+    setIsCalculating(true);
+    setCouponMsg(null);
+    try {
+      const firstTicket = tickets[0];
+      if (!firstTicket) return;
+
+      // קריאה לשרת כדי לחשב את ההנחה (יש לוודא שיש Endpoint כזה ב-Java)
+      const res = await axiosClient.post('/company/policies/discount/calculate', {
+        eventId: firstTicket.event, 
+        companyName: firstTicket.company,
+        originalPrice: originalTotal,
+        quantity: tickets.length,
+        coupon: coupon.trim()
+      });
+
+      // מניח שהשרת יחזיר את המחיר החדש
+      const newTotal = res.data.finalPrice ?? res.data;
+      setDiscountedTotal(newTotal);
+
+      if (newTotal < originalTotal) {
+        setCouponMsg({ type: 'success', text: 'Coupon applied successfully!' });
+      } else {
+        setCouponMsg({ type: 'error', text: 'Coupon is invalid or not applicable.' });
+      }
+    } catch (err) {
+      setCouponMsg({ type: 'error', text: 'Failed to verify coupon.' });
+    } finally {
+      setIsCalculating(false);
+    }
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -69,9 +102,7 @@ export default function CheckoutPage() {
     }
 
     if (!email.trim()) {
-      setSubmitError(
-        "Enter the email address for the receipt before checkout.",
-      );
+      setSubmitError("Enter the email address for the receipt before checkout.");
       return;
     }
 
@@ -80,17 +111,16 @@ export default function CheckoutPage() {
       setSubmitError(null);
       setSuccessMessage(null);
 
+      // מעבירים גם את הקופון כדי שברגע החיוב בשרת, הוא יחיל את ההנחה
       await purchaseActiveOrder({ email: email.trim(), coupon: coupon.trim() });
       await refreshActiveOrder();
 
       setSuccessMessage("Purchase completed successfully.");
       setCoupon("");
+      setDiscountedTotal(null);
     } catch (err) {
       setSubmitError(
-        getOrderErrorMessage(
-          err,
-          "Checkout failed. Please review your details and try again.",
-        ),
+        getOrderErrorMessage(err, "Checkout failed. Please review your details and try again."),
       );
     } finally {
       setSubmitting(false);
@@ -110,8 +140,7 @@ export default function CheckoutPage() {
                 Cart & Checkout
               </h1>
               <p className="text-body-md text-on-surface-variant mt-2">
-                Review your reserved tickets, watch the countdown, and finalize
-                the purchase.
+                Review your reserved tickets, watch the countdown, and finalize the purchase.
               </p>
             </div>
 
@@ -202,13 +231,20 @@ export default function CheckoutPage() {
                     </div>
                   ))}
 
-                  <div className="flex items-center justify-between rounded-2xl bg-surface-container-high px-4 py-3">
+                  <div className="flex items-center justify-between rounded-2xl bg-surface-container-high px-4 py-3 mt-4">
                     <span className="text-label-md text-on-surface-variant">
-                      Estimated total
+                      Total to pay
                     </span>
-                    <span className="text-headline-sm text-on-surface font-bold">
-                      {formatMoney(total)}
-                    </span>
+                    <div className="flex flex-col items-end">
+                      {discountedTotal !== null && discountedTotal < originalTotal && (
+                        <span className="text-label-sm text-on-surface-variant line-through opacity-70">
+                          {formatMoney(originalTotal)}
+                        </span>
+                      )}
+                      <span className="text-headline-sm text-on-surface font-bold">
+                        {formatMoney(discountedTotal !== null ? discountedTotal : originalTotal)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -271,18 +307,37 @@ export default function CheckoutPage() {
                   />
                 </label>
 
-                <label className="block space-y-2">
+                <div className="block space-y-2">
                   <span className="text-label-md text-on-surface-variant">
                     Coupon code
                   </span>
-                  <input
-                    type="text"
-                    value={coupon}
-                    onChange={(e) => setCoupon(e.target.value)}
-                    placeholder="Optional"
-                    className="w-full rounded-2xl border border-outline-variant bg-surface-container px-4 py-3 text-body-md text-on-surface outline-none focus:border-secondary"
-                  />
-                </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={coupon}
+                      onChange={(e) => {
+                        setCoupon(e.target.value);
+                        setDiscountedTotal(null); // איפוס ההנחה אם המשתמש משנה את הטקסט
+                        setCouponMsg(null);
+                      }}
+                      placeholder="Optional"
+                      className="flex-1 rounded-2xl border border-outline-variant bg-surface-container px-4 py-3 text-body-md text-on-surface outline-none focus:border-secondary"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={isCalculating || !coupon.trim() || !hasActiveOrder}
+                      className="px-4 py-3 rounded-2xl bg-surface-container-highest text-on-surface font-bold text-label-md hover:bg-secondary/20 transition-colors disabled:opacity-50"
+                    >
+                      {isCalculating ? "..." : "Apply"}
+                    </button>
+                  </div>
+                  {couponMsg && (
+                    <p className={`text-label-sm ${couponMsg.type === 'success' ? 'text-secondary' : 'text-error'}`}>
+                      {couponMsg.text}
+                    </p>
+                  )}
+                </div>
 
                 {submitError && (
                   <div className="rounded-2xl border border-error bg-error/10 px-4 py-3 text-error text-body-md">

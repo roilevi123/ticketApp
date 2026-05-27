@@ -138,29 +138,29 @@ class EventRepositoryImplTest {
     void searchEvents_ByQuery_ReturnsMatch() {
         storeTestEvent("Rock Concert", COMPANY);
         storeTestEvent("Jazz Night", COMPANY);
-        List<EventDTO> results = repo.searchEvents("Rock", null, null, null, null, null, null, null, null);
+        List<Event> results = repo.searchEvents("Rock", null, null, null, null, null, null, null, null);
         assertEquals(1, results.size());
-        assertEquals("Rock Concert", results.get(0).name());
+        assertEquals("Rock Concert", results.get(0).getName());
     }
 
     @Test
     void searchEvents_ByType_ReturnsMatch() {
         storeTestEvent("Concert", COMPANY);
-        List<EventDTO> results = repo.searchEvents(null, null, EventType.LIVE_PERFORMANCE, null, null, null, null, null, null);
+        List<Event> results = repo.searchEvents(null, null, EventType.LIVE_PERFORMANCE, null, null, null, null, null, null);
         assertEquals(1, results.size());
     }
 
     @Test
     void searchEvents_ByPriceRange_ReturnsMatch() {
         storeTestEvent("Concert", COMPANY);
-        List<EventDTO> results = repo.searchEvents(null, null, null, 10.0, 100.0, null, null, null, null);
+        List<Event> results = repo.searchEvents(null, null, null, 10.0, 100.0, null, null, null, null);
         assertEquals(1, results.size());
     }
 
     @Test
     void searchEvents_ByPriceRange_NoMatch() {
         storeTestEvent("Concert", COMPANY);
-        List<EventDTO> results = repo.searchEvents(null, null, null, 200.0, 300.0, null, null, null, null);
+        List<Event> results = repo.searchEvents(null, null, null, 200.0, 300.0, null, null, null, null);
         assertTrue(results.isEmpty());
     }
 
@@ -168,7 +168,7 @@ class EventRepositoryImplTest {
     void searchEvents_ByCompany_FiltersToCompany() {
         storeTestEvent("Event1", COMPANY);
         storeTestEvent("Event2", "OtherCompany");
-        List<EventDTO> results = repo.searchEvents(null, COMPANY, null, null, null, null, null, null, null);
+        List<Event> results = repo.searchEvents(null, COMPANY, null, null, null, null, null, null, null);
         assertEquals(1, results.size());
     }
 }
