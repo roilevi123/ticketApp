@@ -340,6 +340,10 @@ public class CompanyService {
             String username = tokenService.extractUsername(token);
             logger.info("trying unfreeze company", username, company);
 
+            String userID=tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
+
             Company companyObj = companyRepository.getCompany(company);
             companyObj.unfreezeCompany(username);
             companyRepository.save(companyObj);
