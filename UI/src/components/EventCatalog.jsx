@@ -329,6 +329,16 @@ export default function EventCatalog() {
             </div>
             {token && role !== "GUEST" && (
               <button
+                onClick={() => navigate("/select-company")}
+                className="flex items-center gap-1 text-on-surface-variant hover:text-secondary transition-colors text-label-md font-medium flex-shrink-0"
+                title="Producer Dashboard"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>dashboard</span>
+                <span className="hidden sm:inline">Dashboard</span>
+              </button>
+            )}
+            {token && role !== "GUEST" && (
+              <button
                 onClick={() => navigate("/inbox")}
                 className="relative flex items-center p-2 rounded-full text-on-surface-variant hover:text-secondary transition-colors flex-shrink-0"
                 title="Notifications"

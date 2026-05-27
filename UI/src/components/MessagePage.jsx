@@ -3,6 +3,16 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { useNotifications } from "../contexts/NotificationContext";
 
+function parseAppointment(displayTitle, body) {
+  if (!displayTitle.toLowerCase().includes("appointment")) return null;
+  const isManager = displayTitle.toLowerCase().includes("manager");
+  const isOwner = displayTitle.toLowerCase().includes("owner");
+  if (!isManager && !isOwner) return null;
+  const match = body.match(/of '([^']+)'/);
+  const companyName = match ? match[1] : null;
+  return { type: isManager ? "MANAGER" : "OWNER", companyName };
+}
+
 function parseNotification(raw) {
   if (!raw) return { displayTitle: "", body: "", from: null };
   try {
@@ -62,6 +72,8 @@ export default function MessagePage() {
 
   const [notif, setNotif] = useState(location.state?.notif ?? null);
   const [loading, setLoading] = useState(!location.state?.notif);
+  const [appointmentStatus, setAppointmentStatus] = useState(null); // null | "approved" | "rejected"
+  const [appointmentLoading, setAppointmentLoading] = useState(false);
 
   useEffect(() => {
     if (notif) return;
@@ -83,6 +95,35 @@ export default function MessagePage() {
       .then(() => refreshUnread())
       .catch(() => {});
   }, [notif?.id, notif?.read]);
+
+  const handleApprove = async (appointment) => {
+    setAppointmentLoading(true);
+    try {
+      await axiosClient.post(
+        `/company/approve-appointment?companyName=${encodeURIComponent(appointment.companyName)}&type=${appointment.type}`
+      );
+      setAppointmentStatus("approved");
+    } catch (err) {
+      alert(err.response?.data?.error || err.response?.data || "Failed to approve appointment.");
+    } finally {
+      setAppointmentLoading(false);
+    }
+  };
+
+  const handleReject = async (appointment) => {
+    setAppointmentLoading(true);
+    try {
+      const endpoint = appointment.type === "MANAGER"
+        ? `/company/manager/relinquish?companyName=${encodeURIComponent(appointment.companyName)}`
+        : `/company/owner/relinquish?companyName=${encodeURIComponent(appointment.companyName)}`;
+      await axiosClient.delete(endpoint);
+      setAppointmentStatus("rejected");
+    } catch (err) {
+      alert(err.response?.data?.error || err.response?.data || "Failed to reject appointment.");
+    } finally {
+      setAppointmentLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -175,6 +216,53 @@ export default function MessagePage() {
             {body || displayTitle}
           </p>
         </div>
+
+        {/* Appointment approve / reject */}
+        {(() => {
+          const appointment = parseAppointment(displayTitle, body || displayTitle);
+          if (!appointment || !appointment.companyName) return null;
+          if (appointmentStatus === "approved") {
+            return (
+              <div className="mt-6 flex items-center gap-2 text-green-400 text-body-md">
+                <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>check_circle</span>
+                You are now a {appointment.type.toLowerCase()} of <strong>{appointment.companyName}</strong>.
+              </div>
+            );
+          }
+          if (appointmentStatus === "rejected") {
+            return (
+              <div className="mt-6 flex items-center gap-2 text-on-surface-variant text-body-md">
+                <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>cancel</span>
+                You have declined the {appointment.type.toLowerCase()} appointment for <strong>{appointment.companyName}</strong>.
+              </div>
+            );
+          }
+          return (
+            <div className="mt-6 flex gap-4 items-center">
+              <p className="text-label-sm text-on-surface-variant mr-2">Respond to appointment:</p>
+              <button
+                onClick={() => handleApprove(appointment)}
+                disabled={appointmentLoading}
+                className="px-5 py-2 bg-secondary text-on-secondary text-label-md font-bold rounded hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+              >
+                {appointmentLoading
+                  ? <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                  : <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>check</span>}
+                Approve
+              </button>
+              <button
+                onClick={() => handleReject(appointment)}
+                disabled={appointmentLoading}
+                className="px-5 py-2 border border-error text-error text-label-md font-bold rounded hover:bg-error hover:text-on-error transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {appointmentLoading
+                  ? <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                  : <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>close</span>}
+                Reject
+              </button>
+            </div>
+          );
+        })()}
       </main>
     </div>
   );

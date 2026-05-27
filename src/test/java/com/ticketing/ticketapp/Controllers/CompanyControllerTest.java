@@ -53,7 +53,7 @@ class CompanyControllerTest {
         ResponseEntity<?> response = companyController.openCompany(TOKEN, dto);
 
         assertEquals(400, response.getStatusCode().value());
-        assertEquals("Name taken", response.getBody());
+        assertEquals("Name taken", ((Map<?,?>)response.getBody()).get("error"));
     }
 
     // --- assignRole ---

@@ -168,7 +168,7 @@ public class PurchasedService {
             if (!tokenService.validateToken(token)) {
                 throw new Exception("Invalid token");
             }
-            String username = tokenService.extractUsername(token);
+            String username = tokenService.extractUserId(token);
             if (username == null || !isAuthorized(company, username)) {
                 throw new Exception("User not authorized");
             }
@@ -246,7 +246,7 @@ public class PurchasedService {
                 throw new Exception("Invalid token");
             }
             
-            String currentUsername = tokenService.extractUsername(token);
+            String currentUsername = tokenService.extractUserId(token);
             boolean isOwner = treeOfRoleRepository.exitsOwner(currentUsername, companyName);
             boolean isAuthorizedManager = treeOfRoleRepository.ManagerPermitToSeeTransactions(currentUsername, companyName);
             

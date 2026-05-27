@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
 
-export default function SalesAnalyticsTab() {
+export default function SalesAnalyticsTab({ companyName }) {
   const [transactions, setTransactions] = useState([]);
   const [report, setReport] = useState({ totalRevenue: 0, ticketsSold: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -9,20 +9,16 @@ export default function SalesAnalyticsTab() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const companyName = encodeURIComponent("BGU Events"); // מקודד את הרווח ב-URL
-
+        const encodedName = encodeURIComponent(companyName);
         const [reportRes, historyRes] = await Promise.all([
-          axiosClient.get(`/company/${companyName}/sales-report`),
-          axiosClient.get(`/company/${companyName}/purchase-history`),
+          axiosClient.get(`/company/${encodedName}/sales-report`),
+          axiosClient.get(`/company/${encodedName}/purchase-history`),
         ]);
 
-        const reportData = reportRes.data;
         const historyData = historyRes.data;
-
-        // אם חזרו נתונים אמיתיים, נשתמש בהם. אחרת נטען נתוני דמה לתצוגה
         if (historyData && historyData.length > 0) {
           setTransactions(historyData);
-          setReport(reportData);
+          setReport(reportRes.data);
         } else {
           loadDummyData();
         }
@@ -35,9 +31,8 @@ export default function SalesAnalyticsTab() {
     };
 
     fetchAnalytics();
-  }, []);
+  }, [companyName]);
 
-  // נתוני דמה כדי שנוכל לראות איך המסך נראה גם כשה-DB ריק
   const loadDummyData = () => {
     setReport({ totalRevenue: 12450.00, ticketsSold: 342, pendingOrders: 12 });
     setTransactions([
@@ -54,10 +49,8 @@ export default function SalesAnalyticsTab() {
 
   return (
     <div className="w-full flex flex-col gap-8">
-      
-      {/* אזור 1: ה"תמונה הגדולה" - כרטיסיות מידע (KPIs) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[#191c1e] border border-outline-variant rounded-xl p-6 flex flex-col gap-2">
+        <div className="bg-surface-container border border-outline-variant rounded-xl p-6 flex flex-col gap-2">
           <span className="text-on-surface-variant text-sm uppercase tracking-wider font-semibold">Total Revenue</span>
           <span className="text-4xl font-bold text-secondary">${report.totalRevenue.toLocaleString()}</span>
           <span className="text-xs text-green-400 mt-2 flex items-center gap-1">
@@ -65,24 +58,23 @@ export default function SalesAnalyticsTab() {
           </span>
         </div>
 
-        <div className="bg-[#191c1e] border border-outline-variant rounded-xl p-6 flex flex-col gap-2">
+        <div className="bg-surface-container border border-outline-variant rounded-xl p-6 flex flex-col gap-2">
           <span className="text-on-surface-variant text-sm uppercase tracking-wider font-semibold">Tickets Sold</span>
           <span className="text-4xl font-bold text-on-surface">{report.ticketsSold}</span>
           <span className="text-xs text-on-surface-variant mt-2">Across all active events</span>
         </div>
 
-        <div className="bg-[#191c1e] border border-outline-variant rounded-xl p-6 flex flex-col gap-2">
+        <div className="bg-surface-container border border-outline-variant rounded-xl p-6 flex flex-col gap-2">
           <span className="text-on-surface-variant text-sm uppercase tracking-wider font-semibold">Pending Orders</span>
           <span className="text-4xl font-bold text-error">{report.pendingOrders || 0}</span>
           <span className="text-xs text-on-surface-variant mt-2">Awaiting payment confirmation</span>
         </div>
       </div>
 
-      {/* אזור 2: טבלת הנתונים - ירידה לפרטים */}
-      <div className="bg-[#191c1e] border border-outline-variant rounded-xl overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-[#1d2022]">
+      <div className="bg-surface-container border border-outline-variant rounded-xl overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface-container-high">
           <h3 className="text-xl font-semibold text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary-fixed">receipt_long</span>
+            <span className="material-symbols-outlined text-secondary">receipt_long</span>
             Recent Transactions
           </h3>
           <button className="px-4 py-2 border border-outline-variant text-on-surface rounded-lg text-sm hover:bg-surface-container-highest transition-colors flex items-center gap-2">
@@ -90,11 +82,11 @@ export default function SalesAnalyticsTab() {
             Export CSV
           </button>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#101415] text-on-surface-variant text-sm uppercase tracking-wider">
+              <tr className="bg-background text-on-surface-variant text-sm uppercase tracking-wider">
                 <th className="p-4 font-semibold border-b border-outline-variant">Transaction ID</th>
                 <th className="p-4 font-semibold border-b border-outline-variant">Date & Time</th>
                 <th className="p-4 font-semibold border-b border-outline-variant">Event</th>
@@ -106,8 +98,8 @@ export default function SalesAnalyticsTab() {
             </thead>
             <tbody className="text-on-surface text-sm">
               {transactions.map((trx, index) => (
-                <tr key={index} className="hover:bg-[#1d2022] transition-colors border-b border-outline-variant/50 last:border-0">
-                  <td className="p-4 font-mono text-primary-fixed">{trx.id}</td>
+                <tr key={index} className="hover:bg-surface-container-high transition-colors border-b border-outline-variant/50 last:border-0">
+                  <td className="p-4 font-mono text-secondary">{trx.id}</td>
                   <td className="p-4 text-on-surface-variant">{trx.date}</td>
                   <td className="p-4 font-semibold">{trx.event}</td>
                   <td className="p-4">{trx.buyer}</td>
@@ -115,7 +107,7 @@ export default function SalesAnalyticsTab() {
                   <td className="p-4 font-bold text-secondary">${trx.amount.toFixed(2)}</td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded text-xs font-bold ${
-                      trx.status === 'COMPLETED' ? 'bg-green-900/50 text-green-400 border border-green-800' : 
+                      trx.status === 'COMPLETED' ? 'bg-green-900/50 text-green-400 border border-green-800' :
                       'bg-yellow-900/50 text-yellow-400 border border-yellow-800'
                     }`}>
                       {trx.status}
@@ -127,7 +119,6 @@ export default function SalesAnalyticsTab() {
           </table>
         </div>
       </div>
-
     </div>
   );
 }

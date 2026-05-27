@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,6 +27,33 @@ public class TokenService {
                 .setSubject(userId)
                 .claim("role", "MEMBER")
                 .claim("username", username)
+                .setId(UUID.randomUUID().toString())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateCompanyToken(String userId, String username, String role, String companyName) {
+        return Jwts.builder()
+                .setSubject(userId)
+                .claim("role", role)
+                .claim("username", username)
+                .claim("company", companyName)
+                .setId(UUID.randomUUID().toString())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateCompanyToken(String userId, String username, String role, String companyName, List<String> permissions) {
+        return Jwts.builder()
+                .setSubject(userId)
+                .claim("role", role)
+                .claim("username", username)
+                .claim("company", companyName)
+                .claim("permissions", permissions)
                 .setId(UUID.randomUUID().toString())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))

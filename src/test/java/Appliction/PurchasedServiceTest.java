@@ -331,7 +331,7 @@ class PurchasedServiceTest {
         PurchaseOrder po = new PurchaseOrder(COMPANY, EVENT, List.of("T1"), USERNAME, ORDER_ID);
 
         when(tokenService.validateToken(token)).thenReturn(true);
-        when(tokenService.extractUsername(token)).thenReturn(manager);
+        when(tokenService.extractUserId(token)).thenReturn(manager);
         when(treeOfRoleRepository.exitsOwner(manager, COMPANY)).thenReturn(true);
         when(purchasedOrderRepository.getPurchasedOrdersForCompany(COMPANY)).thenReturn(List.of(po));
         when(ticketRepository.getTicketsDescription(anyList())).thenReturn("Ticket Info");
@@ -348,7 +348,7 @@ class PurchasedServiceTest {
         String user = "user_without_perms";
 
         when(tokenService.validateToken(token)).thenReturn(true);
-        when(tokenService.extractUsername(token)).thenReturn(user);
+        when(tokenService.extractUserId(token)).thenReturn(user);
         when(treeOfRoleRepository.exitsOwner(user, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitToSeeTransactions(user, COMPANY)).thenReturn(false);
 
@@ -398,7 +398,7 @@ class PurchasedServiceTest {
     @Test
     void getSubTreeSalesReport_NotAuthorized_ReturnsError() {
         when(tokenService.validateToken(USERNAME)).thenReturn(true);
-        when(tokenService.extractUsername(USERNAME)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(USERNAME)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.ManagerPermitToSeeTransactions(USERNAME, COMPANY)).thenReturn(false);
 
@@ -410,7 +410,7 @@ class PurchasedServiceTest {
     @Test
     void getSubTreeSalesReport_AsOwner_ReturnsReport() {
         when(tokenService.validateToken(USERNAME)).thenReturn(true);
-        when(tokenService.extractUsername(USERNAME)).thenReturn(USERNAME);
+        when(tokenService.extractUserId(USERNAME)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
         when(treeOfRoleRepository.getAllOwnersByCompany(COMPANY)).thenReturn(List.of());
         when(treeOfRoleRepository.getAllManagersByCompany(COMPANY)).thenReturn(List.of());

@@ -44,7 +44,7 @@ public class InformationEventsTests {
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
         INotifier notifierMock = mock(INotifier.class);
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
 
@@ -108,9 +108,10 @@ public class InformationEventsTests {
         companyService.CreateCompany("1", token);
         Response<String> companyInfo = eventService.getCompanyInfo(token, "1");
         assertTrue(companyInfo.isSuccess());
+        String founderID = tokenService.extractUserId(token);
         String expectedInfo = "Company Summary:" +
                 "\nName: 1" +
-                "\nFounder/Owner ID: 1" +
+                "\nFounder/Owner ID: " + founderID +
                 "\nStatus: Active" +
                 "\nRating: 0.0";
         assertEquals(expectedInfo, companyInfo.getData());

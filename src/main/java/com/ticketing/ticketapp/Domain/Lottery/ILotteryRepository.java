@@ -9,7 +9,7 @@ import java.util.List;
 public interface ILotteryRepository {
 
     /** Create or update the lottery configuration for an event. */
-    void configure(String eventName, String companyName, Date endDate, int maxWinners);
+    void configure(String eventName, String companyName, Date startDate, Date endDate, int maxWinners);
 
     /**
      * Registers a user for the lottery.

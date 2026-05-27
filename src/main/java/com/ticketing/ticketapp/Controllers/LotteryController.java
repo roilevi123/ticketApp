@@ -74,7 +74,7 @@ public class LotteryController {
             @RequestBody LotteryConfigRequestDTO config) {
 
         Response<String> response = lotteryService.configureLottery(
-                token, companyName, eventName, config.getEndDate(), config.getMaxWinners());
+                token, companyName, eventName, config.getStartDate(), config.getEndDate(), config.getMaxWinners());
         if (response.isSuccess()) {
             return ResponseEntity.ok(Map.of("message", response.getData()));
         }
@@ -85,8 +85,11 @@ public class LotteryController {
 // ── Request DTOs ──────────────────────────────────────────────────────────────
 
 class LotteryConfigRequestDTO {
+    private Date startDate;
     private Date endDate;
     private int  maxWinners;
+    public Date getStartDate()         { return startDate; }
+    public void setStartDate(Date d)   { this.startDate = d; }
     public Date getEndDate()           { return endDate; }
     public void setEndDate(Date d)     { this.endDate = d; }
     public int  getMaxWinners()        { return maxWinners; }

@@ -56,7 +56,7 @@ public class WaitingQueueTests {
 
 
         INotifier notifierMock = mock(INotifier.class);
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock);
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock);
         com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository adminRepositoryMock = mock(com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository.class);
