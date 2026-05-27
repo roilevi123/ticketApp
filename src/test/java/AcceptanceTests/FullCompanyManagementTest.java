@@ -878,4 +878,24 @@ public class FullCompanyManagementTest {
         assertEquals("User is suspended", response.getMessage());
     }
 
+    @Test
+    @DisplayName("Unfreeze Company - Fail (User Is Suspended)")
+    void unfreezeCompanyFailedUserSuspended() {
+        reg("admin", "adminPassword");
+        reg("founder_user", "password123");
+        String founderToken = log("founder_user", "password123");
+
+        companyService.CreateCompany("company_to_unfreeze", founderToken);
+        companyService.freezeCompany("company_to_unfreeze", founderToken);
+
+        String founderId = userRepository.getUserByUsername("founder_user").getID();
+        adminService.suspendUser(founderId, "admin", 7);
+
+        Response<String> response = companyService.unfreezeCompany("company_to_unfreeze", founderToken);
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
 }
