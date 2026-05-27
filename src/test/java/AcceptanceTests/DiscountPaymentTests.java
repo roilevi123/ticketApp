@@ -40,6 +40,7 @@ public class DiscountPaymentTests {
     private IPaymentService paymentServiceSpy;
     private DiscountService discountService;
     private iDiscountPolicyRepository discountRepo;
+    private IUserRepository userRepository;
 
     @BeforeEach
     void setUp() {
@@ -72,8 +73,8 @@ public class DiscountPaymentTests {
                 supplyService, paymentServiceSpy, barcodeGenerator,
                 tokenService, treeOfRoleRepository, discountRepo, userRepository, notifierMock
         );
-
-        this.discountService = new DiscountService(discountRepo, tokenService, purchasedService);
+        this.discountService = new DiscountService(discountRepo, tokenService, purchasedService, userRepository);
+        this.userRepository=userRepository;
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
