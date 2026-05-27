@@ -504,4 +504,65 @@ public class EventServiceTest {
         assertTrue(result.isError());
         assertEquals("Event not found", result.getMessage());
     }
+
+    @Test
+    void createEvent_Failure_UserSuspended() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+
+        com.ticketing.ticketapp.Domain.User.User suspendedUser = mock(com.ticketing.ticketapp.Domain.User.User.class);
+        when(userRepository.isUserSuspendedNow(suspendedUser.getName())).thenReturn(true);
+        when(userRepository.getUserByUsername(USERNAME)).thenReturn(suspendedUser);
+
+        Response<String> res = eventService.createEvent(TOKEN, EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
+
+        assertFalse(res.isSuccess());
+        assertTrue(res.isError());
+        assertTrue(res.getMessage().contains("User is suspended"));
+        assertNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
+    }
+
+    @Test
+    void deleteEvent_Failure_UserSuspended() {
+        Event event = eventRepository.store(EVENT_NAME, "Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
+        assertNotNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+
+        com.ticketing.ticketapp.Domain.User.User suspendedUser = mock(com.ticketing.ticketapp.Domain.User.User.class);
+        when(userRepository.isUserSuspendedNow(suspendedUser.getName())).thenReturn(true);
+        when(userRepository.getUserByUsername(USERNAME)).thenReturn(suspendedUser);
+
+        Response<String> res = eventService.deleteEvent(event.getId(), COMPANY, TOKEN);
+
+        assertFalse(res.isSuccess());
+        assertTrue(res.isError());
+        assertTrue(res.getMessage().contains("User is suspended"));
+        assertNotNull(eventRepository.getEvent(EVENT_NAME, COMPANY));
+    }
+
+    @Test
+    void updateEvent_Failure_UserSuspended() {
+        eventRepository.store(EVENT_NAME, "Old Artist", EventType.LIVE_PERFORMANCE, 100.0, new Date(), "Tel Aviv", COMPANY, MAP);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
+        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(true);
+
+        com.ticketing.ticketapp.Domain.User.User suspendedUser = mock(com.ticketing.ticketapp.Domain.User.User.class);
+        when(userRepository.isUserSuspendedNow(suspendedUser.getName())).thenReturn(true);
+        when(userRepository.getUserByUsername(USERNAME)).thenReturn(suspendedUser);
+
+        Response<String> res = eventService.UpdateEvent(TOKEN, EVENT_NAME, "New Artist", EventType.PLAY, 200.0, new Date(), "New Loc", COMPANY, MAP, 5.0);
+
+        assertFalse(res.isSuccess());
+        assertTrue(res.isError());
+        assertEquals("User is suspended", res.getMessage());
+        Event notUpdated = eventRepository.getEvent(EVENT_NAME, COMPANY);
+        assertEquals("Old Artist", notUpdated.getArtistName());
+        assertEquals(100.0, notUpdated.getPrice());
+    }
 }
