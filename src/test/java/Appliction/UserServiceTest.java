@@ -292,4 +292,55 @@ class UserServiceTest {
         assertTrue(result.isError());
         verify(userNotificationRepository, never()).getAll(any());
     }
+
+
+    @Test
+    void updateUserProfile_UserIsSuspended_ShouldReturnErrorMessage() {
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 25, "old@test.com");
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
+
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
+
+        com.ticketing.ticketapp.Domain.User.UserDTO dto = new com.ticketing.ticketapp.Domain.User.UserDTO();
+        dto.setName("NewName");
+        dto.setEmail("new@test.com");
+
+        Response<String> result = userService.updateUserProfile(TOKEN, dto);
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void updateUserPassword_UserIsSuspended_ShouldReturnErrorMessage() {
+        User mockUser = new User(USERNAME, ENCODED_PASSWORD, 10, "roy_user@test.com");
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
+
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
+
+        Response<String> result = userService.updateUserPassword(TOKEN, "new_password");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void submitUserComplaint_UserIsSuspended_ShouldReturnErrorMessage() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
+
+        Response<String> result = userService.submitUserComplaint(TOKEN, "Admin", "My complaint");
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(userNotificationRepository, never()).save(any(), any());
+    }
 }
