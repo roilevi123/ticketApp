@@ -37,11 +37,11 @@ public class LotteryCode {
     }
 
 
-    public String  getCode() { return code; }
-    public String  getUserId() { return userId; }
-    public String  getEventName() { return eventName; }
-    public String  getCompanyName() { return companyName; }
-    public Date    getExpiryDate() { return expiryDate; }
+    public String getCode() { return code; }
+    public String getUserId() { return userId; }
+    public String getEventName() { return eventName; }
+    public String getCompanyName() { return companyName; }
+    public Date getExpiryDate() { return expiryDate; }
     public boolean isUsed() { return used; }
 
 

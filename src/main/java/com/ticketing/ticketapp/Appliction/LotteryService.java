@@ -227,7 +227,6 @@ public class LotteryService {
         lotteryRepository.markDrawn(lr.getEventName(), lr.getCompanyName());
         logger.info("=== Lottery draw completed for event '{}' ===", lr.getEventName());
 
-        // TODO: Integrate email/SMS notification service here once implemented by the team.
     }
 
 }

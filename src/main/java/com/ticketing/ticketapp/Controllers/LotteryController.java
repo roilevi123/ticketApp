@@ -82,7 +82,6 @@ public class LotteryController {
     }
 }
 
-// ── Request DTOs ──────────────────────────────────────────────────────────────
 
 class LotteryConfigRequestDTO {
     private Date startDate;
