@@ -36,6 +36,11 @@ export default function UserManagementTab() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [actionMsg, setActionMsg] = useState(null);
 
+  // Close Company state
+  const [closeCompanyName, setCloseCompanyName] = useState('');
+  const [confirmingClose, setConfirmingClose] = useState(false);
+  const [closing, setClosing] = useState(false);
+
   const fetchSuspended = useCallback(async () => {
     try {
       const res = await axiosClient.get('/admin/suspensions');
@@ -52,6 +57,23 @@ export default function UserManagementTab() {
   const showMsg = (msg, type = 'success') => {
     setActionMsg({ msg, type });
     setTimeout(() => setActionMsg(null), 3000);
+  };
+
+  const handleCloseCompany = async (e) => {
+    e.preventDefault();
+    if (!closeCompanyName.trim() || !confirmingClose) return;
+    setClosing(true);
+    try {
+      await axiosClient.delete(`/admin/companies/${encodeURIComponent(closeCompanyName)}`);
+      showMsg(`Company "${closeCompanyName}" has been closed.`);
+      setCloseCompanyName('');
+      setConfirmingClose(false);
+    } catch (err) {
+      const msg = err.response?.data?.error ?? err.message;
+      showMsg(`Close failed: ${msg}`, 'error');
+    } finally {
+      setClosing(false);
+    }
   };
 
   const handleSuspend = async (e) => {
@@ -112,6 +134,49 @@ export default function UserManagementTab() {
           {actionMsg.msg}
         </div>
       )}
+
+      {/* Close Company */}
+      <div className="glass-card p-6 rounded-xl">
+        <h2 className="text-headline-sm text-on-surface mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-secondary" style={{ fontSize: '20px' }}>domain_disabled</span>
+          Force Close Company
+        </h2>
+        <form onSubmit={handleCloseCompany} className="space-y-4">
+          <div>
+            <label className="text-label-sm text-on-surface-variant block mb-2">Company Name</label>
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant" style={{ fontSize: '18px' }}>
+                domain
+              </span>
+              <input
+                type="text"
+                value={closeCompanyName}
+                onChange={e => { setCloseCompanyName(e.target.value); setConfirmingClose(false); }}
+                placeholder="Enter company name"
+                className="w-full bg-background border border-outline-variant rounded px-10 py-2.5 focus:border-secondary focus:outline-none transition-all text-body-md"
+              />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={confirmingClose}
+              onChange={e => setConfirmingClose(e.target.checked)}
+              className="accent-secondary"
+            />
+            <span className="text-label-sm text-on-surface-variant">
+              I understand this permanently closes the company and cancels all its events
+            </span>
+          </label>
+          <button
+            type="submit"
+            disabled={closing || !closeCompanyName.trim() || !confirmingClose}
+            className="w-full bg-on-surface text-background font-bold py-3 rounded hover:bg-secondary transition-all disabled:opacity-50"
+          >
+            {closing ? 'Closing…' : 'Force Close Company'}
+          </button>
+        </form>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
         {/* Suspend User Form */}

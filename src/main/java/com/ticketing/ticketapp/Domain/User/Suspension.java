@@ -1,11 +1,13 @@
 package com.ticketing.ticketapp.Domain.User;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 
 public class Suspension {
     String userID;
     final LocalDateTime startTime;
     LocalDateTime endTime;
+    @JsonProperty("isPermanent")
     boolean isPermanent;
 
     public Suspension(String userID, LocalDateTime startTime, LocalDateTime endTime){

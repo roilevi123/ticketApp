@@ -4,7 +4,9 @@ import com.ticketing.ticketapp.Domain.Company.Company;
 import com.ticketing.ticketapp.Domain.Company.CompanyDTO;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
+import com.ticketing.ticketapp.Domain.Lottery.ILotteryRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.*;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.TokenService;
@@ -25,6 +27,8 @@ public class CompanyService {
     private TokenService tokenService;
     private INotifier notifier;
     @Autowired private iEventRepository eventRepository;
+    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
+    @Autowired(required = false) private ILotteryRepository lotteryRepository;
     private static final Logger logger = LoggerFactory.getLogger(CompanyService.class);
 
     public CompanyService(iCompanyRepository companyRepository, IUserRepository userRepository,
@@ -373,6 +377,15 @@ public class CompanyService {
             List<Owner> owners = treeOfRoleRepository.getAllOwnersByCompany(company);
             List<Manager> managers = treeOfRoleRepository.getAllManagersByCompany(company);
 
+            // Notify ticket holders before deleting data
+            purchasedOrderRepository.getPurchasedOrdersForCompany(company).forEach(order ->
+                notifyMember(order.getBuyerID(), "Event Cancelled",
+                    "The event '" + order.getEvent() + "' by " + company
+                        + " has been cancelled. Your tickets are no longer valid."));
+
+            if (lotteryRepository != null) {
+                lotteryRepository.deleteAllForCompany(company);
+            }
             companyRepository.deleteCompany(company);
             eventRepository.deleteCompanyEvent(company);
             treeOfRoleRepository.deleteCompanyMangersAndOwners(company);

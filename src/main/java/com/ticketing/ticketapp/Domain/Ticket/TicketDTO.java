@@ -1,5 +1,6 @@
 package com.ticketing.ticketapp.Domain.Ticket;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
 
 public record TicketDTO(
@@ -10,7 +11,8 @@ public record TicketDTO(
         String company,
         double price,
         Date date,
-        boolean isPurchased
+        @JsonProperty("isPurchased") boolean isPurchased,
+        @JsonProperty("isGA") boolean isGA
 ) {
     public static TicketDTO fromEntity(Ticket ticket) {
         return new TicketDTO(
@@ -21,7 +23,8 @@ public record TicketDTO(
                 ticket.getCompany(),
                 ticket.getPrice(),
                 ticket.getDate(),
-                ticket.isPurchased()
+                ticket.isPurchased(),
+                ticket.isGA()
         );
     }
 }

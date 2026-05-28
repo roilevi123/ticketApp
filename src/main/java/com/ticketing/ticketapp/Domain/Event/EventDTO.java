@@ -22,9 +22,10 @@ public record EventDTO(
         // ── Lottery fields ────────────────────────────────────────────────────
         boolean highDemand,
         Date lotteryEndDate,
-        int lotteryMaxWinners
+        int lotteryMaxWinners,
+        boolean soldOut
 ) {
-    public static EventDTO fromEntity(Event event, Double calculatedDiscountedPrice) {
+    public static EventDTO fromEntity(Event event, Double calculatedDiscountedPrice, boolean soldOut) {
         if (event == null) return null;
 
         MapArea[][] mapCopy = null;
@@ -50,17 +51,22 @@ public record EventDTO(
                 event.getArtistName(),
                 event.getDate(),
                 event.getPrice(),
-                calculatedDiscountedPrice, 
+                calculatedDiscountedPrice,
                 event.getTotalTickets(),
                 event.getAvailableTickets(),
                 mapCopy,
                 event.isHighDemand(),
                 event.getLotteryEndDate(),
-                event.getLotteryMaxWinners()
+                event.getLotteryMaxWinners(),
+                soldOut
         );
     }
 
+    public static EventDTO fromEntity(Event event, Double calculatedDiscountedPrice) {
+        return fromEntity(event, calculatedDiscountedPrice, false);
+    }
+
     public static EventDTO fromEntity(Event event) {
-        return fromEntity(event, null);
+        return fromEntity(event, null, false);
     }
 }

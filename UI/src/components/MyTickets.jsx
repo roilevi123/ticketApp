@@ -29,7 +29,7 @@ function Toast({ toast }) {
 
 function QRModal({ ticket, eventName, onClose }) {
   if (!ticket) return null;
-  const isGA = ticket.row === 0 && ticket.col === 0;
+  const isGA = ticket.isGA === true;
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
@@ -43,7 +43,7 @@ function QRModal({ ticket, eventName, onClose }) {
           <div>
             <h3 className="text-headline-sm text-on-surface font-bold">{eventName}</h3>
             <p className="text-label-md text-on-surface-variant mt-0.5">
-              {isGA ? 'General Admission' : `Row ${ticket.row}, Seat ${ticket.col}`}
+              {seatLabel(ticket)}
             </p>
           </div>
           <button
@@ -105,6 +105,20 @@ function SkeletonGroup() {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const ROW_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+function seatLabel(ticket) {
+  if (ticket.isGA) return "General Admission";
+  const row = ROW_LABELS[ticket.row] ?? String(ticket.row + 1);
+  const seat = ticket.col + 1;
+  return `${row}, Seat ${seat}`;
+}
+
+function rowLabel(ticket) {
+  if (ticket.isGA) return "General Admission";
+  return `Row ${ROW_LABELS[ticket.row] ?? ticket.row + 1}`;
+}
+
 function formatDate(dateVal) {
   if (!dateVal) return null;
   const d = new Date(dateVal);
@@ -120,7 +134,7 @@ function getGroupLatestDate(tickets) {
 // ─── TicketRow ────────────────────────────────────────────────────────────────
 
 function TicketRow({ ticket, onViewQR }) {
-  const isGA = ticket.row === 0 && ticket.col === 0;
+  const isGA = ticket.isGA === true;
   return (
     <div
       style={{ background: 'linear-gradient(135deg, #1d2022 0%, #101415 100%)' }}
@@ -134,11 +148,13 @@ function TicketRow({ ticket, onViewQR }) {
         </div>
         <div>
           <p className="text-label-sm text-secondary uppercase font-bold">
-            {isGA ? 'General Admission' : `Row ${ticket.row}`}
+            {rowLabel(ticket)}
           </p>
-          <p className="text-body-md text-on-surface">
-            {isGA ? 'Unassigned Seating' : `Row ${ticket.row}, Seat ${ticket.col}`}
-          </p>
+          {!isGA && (
+            <p className="text-body-md text-on-surface">
+              {seatLabel(ticket)}
+            </p>
+          )}
         </div>
       </div>
       <div>

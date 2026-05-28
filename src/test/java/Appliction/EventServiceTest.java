@@ -12,6 +12,7 @@ import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
+import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +38,7 @@ public class EventServiceTest {
     @Mock private iQueueRepository queueRepository;
     @Mock private iPurchasedOrderRepository purchasedOrderRepository;
     @Mock private INotifier notifier;
+    @Mock private IActiveOrderRepository activeOrderRepository;
 
     private final String TOKEN = "valid_token";
     private final String USERNAME = "test_user";
@@ -54,7 +56,7 @@ public class EventServiceTest {
         }
         eventRepository = new EventRepositoryImpl();
         ticketRepository = spy(new TicketRepositoryImpl());
-        eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifier, mock(iDiscountPolicyRepository.class));
+        eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifier, mock(iDiscountPolicyRepository.class), activeOrderRepository);
     }
 
     @Test

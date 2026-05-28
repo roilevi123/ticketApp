@@ -82,6 +82,16 @@ public class LotteryRepositoryImpl implements ILotteryRepository {
     }
 
     @Override
+    public void delete(String eventName, String companyName) {
+        lotteries.remove(key(eventName, companyName));
+    }
+
+    @Override
+    public void deleteAllForCompany(String companyName) {
+        lotteries.entrySet().removeIf(e -> e.getValue().getCompanyName().equals(companyName));
+    }
+
+    @Override
     public void deleteAll() {
         lotteries.clear();
     }

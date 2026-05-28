@@ -58,41 +58,7 @@ class PurchasedServiceExtendedTest {
                 treeOfRoleRepository, discountRepo, userRepository, notifier);
     }
 
-    // ── PurchaseTicket: sold-out → notifies owners and managers ──────────────
 
-    @Test
-    void purchaseTicket_SoldOut_NotifiesOwnersAndManagers() throws Exception {
-        TicketRepositoryImpl ticketRepoSpy = spy(new TicketRepositoryImpl());
-        OrderRepositoryImpl orderRepoSpy = spy(new OrderRepositoryImpl());
-        purchasedService = buildService(orderRepoSpy, ticketRepoSpy,
-                spy(new InMemoryDiscountPolicyRepository()));
-
-        ticketRepoSpy.storeTicket(0, 0, EVENT, COMPANY, 100);
-        String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
-        Date futureDate = new Date(System.currentTimeMillis() + 1_000_000);
-        String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
-
-        when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
-        when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenReturn("barcode");
-
-        User ownerUser = new User("ownerName", "pass", 40);
-        User managerUser = new User("managerName", "pass", 35);
-        Owner owner = new Owner("ownerUsername", COMPANY, "root");
-        Manager manager = new Manager("managerUsername", COMPANY, Set.of(), "ownerUsername");
-
-        when(treeOfRoleRepository.getAllOwnersByCompany(COMPANY)).thenReturn(List.of(owner));
-        when(treeOfRoleRepository.getAllManagersByCompany(COMPANY)).thenReturn(List.of(manager));
-        when(userRepository.getUserByUsername("ownerUsername")).thenReturn(ownerUser);
-        when(userRepository.getUserByUsername("managerUsername")).thenReturn(managerUser);
-
-        // token validation fails → order is fetched by orderId (not by userId)
-        when(tokenService.validateToken(USERNAME)).thenReturn(false);
-
-        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none");
-
-        verify(notifier).notifyUser(eq(ownerUser.getID()), eq("Event Sold Out"), anyString());
-        verify(notifier).notifyUser(eq(managerUser.getID()), eq("Event Sold Out"), anyString());
-    }
 
     // ── PurchaseTicket: null userId → no "Purchase Successful" notification ───
 

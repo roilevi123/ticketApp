@@ -11,7 +11,6 @@ import com.ticketing.ticketapp.Domain.OwnerManagerTree.Owner;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
-import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.SalesReportDTO;
@@ -147,17 +146,15 @@ public class PurchasedService {
                         "Your purchase for event '" + order.getEventId() + "' is confirmed. " + purchasedTickets.size() + " ticket(s) sent to " + email + ".");
             }
 
-            boolean soldOut = ticketRepository.getAvailableTicketsByEventAndCompany(order.getCompanyId(), order.getEventId()).isEmpty();
+            List<Ticket> allTickets = ticketRepository.getAllTicketsByEventAndCompany(order.getEventId(), order.getCompanyId());
+            boolean soldOut = allTickets != null && !allTickets.isEmpty()
+                    && ticketRepository.getAvailableTicketsByEventAndCompany(order.getCompanyId(), order.getEventId()).isEmpty();
             if (soldOut) {
                 String soldOutMsg = "Your event '" + order.getEventId() + "' is now sold out!";
-                treeOfRoleRepository.getAllOwnersByCompany(order.getCompanyId()).forEach(o -> {
-                    User u = userRepository.getUserByUsername(o.getUserID());
-                    if (u != null) notifier.notifyUser(u.getID(), "Event Sold Out", soldOutMsg);
-                });
-                treeOfRoleRepository.getAllManagersByCompany(order.getCompanyId()).forEach(m -> {
-                    User u = userRepository.getUserByUsername(m.getUserID());
-                    if (u != null) notifier.notifyUser(u.getID(), "Event Sold Out", soldOutMsg);
-                });
+                treeOfRoleRepository.getAllOwnersByCompany(order.getCompanyId())
+                        .forEach(o -> notifier.notifyUser(o.getUserID(), "Event Sold Out", soldOutMsg));
+                treeOfRoleRepository.getAllManagersByCompany(order.getCompanyId())
+                        .forEach(m -> notifier.notifyUser(m.getUserID(), "Event Sold Out", soldOutMsg));
             }
 
             return Response.success("success");

@@ -8,7 +8,7 @@ import SupportInboxTab from './admin/SupportInboxTab';
 const TABS = [
   { id: 'system-health',   label: 'System Health' },
   { id: 'financials',      label: 'Financials' },
-  { id: 'user-management', label: 'User Management' },
+  { id: 'user-management', label: 'Site Management' },
   { id: 'support-inbox',   label: 'Support Inbox' },
 ];
 

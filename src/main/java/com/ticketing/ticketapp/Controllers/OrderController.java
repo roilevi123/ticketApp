@@ -62,6 +62,21 @@ public class OrderController {
         }
     }
 
+    @DeleteMapping("/active")
+    public ResponseEntity<?> cancelActiveOrder(
+            @RequestAttribute("cleanToken") String token) {
+        try {
+            Response<String> result = orderService.cancelActiveOrder(token);
+            if (result.isSuccess()) {
+                return ResponseEntity.ok(Map.of("message", "Order cancelled"));
+            }
+            return ResponseEntity.badRequest().body(Map.of("error", result.getMessage()));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
     @PostMapping("/purchase")
     public ResponseEntity<?> purchaseTicket(
             @RequestAttribute("cleanToken") String token,

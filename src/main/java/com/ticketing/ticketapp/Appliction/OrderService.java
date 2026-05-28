@@ -7,6 +7,7 @@ import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchasePolicy;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchaseValidationData;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
@@ -35,6 +36,8 @@ public class OrderService {
     private INotifier notifier;
     private iEventRepository eventRepository;
     private LotteryService lotteryService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private iTreeOfRoleRepository treeOfRoleRepository;
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
     private static long defaultReservationWindowMs() {
@@ -59,6 +62,20 @@ public class OrderService {
         this.eventRepository = eventRepository;
         this.lotteryService = lotteryService;
         this.reservationWindowMs = defaultReservationWindowMs();
+    }
+
+    public Response<String> cancelActiveOrder(String token) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String userId = tokenService.extractUserId(token);
+            ActiveOrder order = activeOrderRepository.getOrder(userId);
+            if (order == null) return Response.error("No active order found");
+            activeOrderRepository.delete(order.getOrderId());
+            return Response.success("Order cancelled");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
     }
 
     /**
@@ -142,6 +159,26 @@ public class OrderService {
 
             String id = activeOrderRepository.store(company, event, reservedTicketIds, userID, expiryDate);
             logger.info("Successfully reserved " + reservedTicketIds.size() + " tickets");
+
+            // Notify producers if all slots are now fully booked (purchased or in active reservations)
+            if (treeOfRoleRepository != null) {
+                List<Ticket> allEventTickets = ticketRepository.getAllTicketsByEventAndCompany(event, company);
+                if (allEventTickets != null && !allEventTickets.isEmpty()) {
+                    Date now = new Date();
+                    boolean allTaken = allEventTickets.stream().allMatch(t ->
+                            t.isPurchased()
+                            || reservedTicketIds.contains(t.getId())
+                            || (t.getDate() != null && t.getDate().after(now)));
+                    if (allTaken) {
+                        String soldOutMsg = "Your event '" + event + "' is now fully booked!";
+                        treeOfRoleRepository.getAllOwnersByCompany(company)
+                                .forEach(o -> notifier.notifyUser(o.getUserID(), "Event Sold Out", soldOutMsg));
+                        treeOfRoleRepository.getAllManagersByCompany(company)
+                                .forEach(m -> notifier.notifyUser(m.getUserID(), "Event Sold Out", soldOutMsg));
+                    }
+                }
+            }
+
             if (userID != null) {
                 SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
                 String formattedTime = timeFormatter.format(expiryDate);

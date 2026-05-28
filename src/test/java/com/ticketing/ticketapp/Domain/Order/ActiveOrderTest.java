@@ -67,7 +67,7 @@ class ActiveOrderDTOTest {
     void create_MapsAllFieldsFromActiveOrder() {
         Date expiry = new Date(System.currentTimeMillis() + 60000);
         ActiveOrder order = new ActiveOrder("CompanyA", "EventX", List.of("T1"), "user1", "order-1", expiry);
-        List<TicketDTO> tickets = List.of(new TicketDTO("T1", 0, 0, "EventX", "CompanyA", 50.0, new Date(), false));
+        List<TicketDTO> tickets = List.of(new TicketDTO("T1", 0, 0, "EventX", "CompanyA", 50.0, new Date(), false, false));
 
         ActiveOrderDTO dto = ActiveOrderDTO.create(order, tickets);
 

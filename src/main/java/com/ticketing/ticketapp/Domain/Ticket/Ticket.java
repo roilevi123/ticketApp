@@ -11,7 +11,8 @@ public class Ticket {
     private int version;
     private Date date;
     private String id;
-    private double price; 
+    private double price;
+    private boolean isGA;
 
     public Ticket(int row, int col, String event, String company, String id, double price) {
         this.row = row;
@@ -22,6 +23,7 @@ public class Ticket {
         this.price = price;
         this.isPurchased = false;
         this.version = 1;
+        this.isGA = false;
     }
 
     public Ticket(Ticket ticket) {
@@ -34,7 +36,11 @@ public class Ticket {
         this.date = ticket.getDate();
         this.id = ticket.getId();
         this.price = ticket.getPrice();
+        this.isGA = ticket.isGA();
     }
+
+    public boolean isGA() { return isGA; }
+    public void setGA(boolean isGA) { this.isGA = isGA; }
 
     public int getRow() {
         return row;

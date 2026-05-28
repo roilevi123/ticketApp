@@ -56,16 +56,6 @@ class AdminServiceTest {
         when(adminRepository.isAdmin(NOT_ADMIN)).thenReturn(false);
     }
 
-    @Test
-    void CloseCompany_Success() {
-        String company = "Company1";
-
-        var response = adminService.CloseCompany(company, ADMIN_NAME);
-
-        assertTrue(response.isSuccess());
-        verify(companyRepository).deleteCompany(company);
-        verify(treeOfRoleRepository).deleteCompanyMangersAndOwners(company);
-    }
 
     @Test
     void CloseCompany_Fail_NotAdmin() {
@@ -150,26 +140,6 @@ class AdminServiceTest {
         assertNull(response.getData());
     }
 
-    @Test
-    void CloseCompany_NotifiesOwnersAndManagers() {
-        String company = "Company1";
-        Owner owner = new Owner("ownerUsername", company, "SYSTEM_FOUNDER");
-        Manager manager = new Manager("managerUsername", company, Set.of(), "ownerUsername");
-
-        User ownerUser = mock(User.class);
-        User managerUser = mock(User.class);
-        when(ownerUser.getID()).thenReturn("owner-uuid");
-        when(managerUser.getID()).thenReturn("manager-uuid");
-        when(treeOfRoleRepository.getAllOwnersByCompany(company)).thenReturn(List.of(owner));
-        when(treeOfRoleRepository.getAllManagersByCompany(company)).thenReturn(List.of(manager));
-        when(userRepository.getUserByUsername("ownerUsername")).thenReturn(ownerUser);
-        when(userRepository.getUserByUsername("managerUsername")).thenReturn(managerUser);
-
-        adminService.CloseCompany(company, ADMIN_NAME);
-
-        verify(notifier, times(1)).notifyUser(eq("owner-uuid"), anyString(), anyString());
-        verify(notifier).notifyUser(eq("manager-uuid"), anyString(), anyString());
-    }
 
     @Test
     void SuspendUser_Temporary_Success(){

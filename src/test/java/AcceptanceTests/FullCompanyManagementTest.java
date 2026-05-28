@@ -658,7 +658,6 @@ public class FullCompanyManagementTest {
         companyService.CreateCompany("company", userToken);
         companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
 
-        String idA = userRepository.getUserByUsername("suspended_user").getID();
 
         Response<String> response = companyService.ApproveAppointmentForManager(suspendedUserToken, "company");
 
@@ -681,7 +680,6 @@ public class FullCompanyManagementTest {
         companyService.CreateCompany("company", userToken);
         companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
 
-        String idA = userRepository.getUserByUsername("suspended_user").getID();
 
         Response<String> response = companyService.RejectAppointmentForManager(suspendedUserToken, "company");
 
@@ -724,7 +722,6 @@ public class FullCompanyManagementTest {
         companyService.CreateCompany("company", userToken);
         companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
 
-        String idA = userRepository.getUserByUsername("suspended_user").getID();
 
         Response<String> response = companyService.ApproveAppointmentForOwner(suspendedUserToken, "company");
 
@@ -747,7 +744,6 @@ public class FullCompanyManagementTest {
         companyService.CreateCompany("company", userToken);
         companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
 
-        String idA = userRepository.getUserByUsername("suspended_user").getID();
 
         Response<String> response = companyService.RejectAppointmentForOwner(suspendedUserToken, "company");
 

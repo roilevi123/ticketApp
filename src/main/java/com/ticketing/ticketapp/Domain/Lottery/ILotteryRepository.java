@@ -33,6 +33,12 @@ public interface ILotteryRepository {
     /** Returns {@code true} iff a lottery is configured for this event. */
     boolean exists(String eventName, String companyName);
 
+    /** Removes the lottery for a specific event. */
+    void delete(String eventName, String companyName);
+
+    /** Removes all lotteries belonging to a company. */
+    void deleteAllForCompany(String companyName);
+
     /** Clears all data (for tests). */
     void deleteAll();
 }

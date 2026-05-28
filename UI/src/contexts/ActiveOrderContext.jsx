@@ -121,6 +121,11 @@ export function ActiveOrderProvider({ children }) {
     [refreshActiveOrder],
   );
 
+  const clearCart = useCallback(async () => {
+    await axiosClient.delete("/orders/active");
+    await refreshActiveOrder();
+  }, [refreshActiveOrder]);
+
   const value = useMemo(
     () => ({
       tickets,
@@ -133,6 +138,7 @@ export function ActiveOrderProvider({ children }) {
       refreshActiveOrder,
       reserveTickets,
       purchaseActiveOrder,
+      clearCart,
     }),
     [
       tickets,
@@ -143,6 +149,7 @@ export function ActiveOrderProvider({ children }) {
       refreshActiveOrder,
       reserveTickets,
       purchaseActiveOrder,
+      clearCart,
     ],
   );
 

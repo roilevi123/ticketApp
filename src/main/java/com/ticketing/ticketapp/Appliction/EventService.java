@@ -10,15 +10,19 @@ import com.ticketing.ticketapp.Domain.Discount.DiscountPolicy;
 import com.ticketing.ticketapp.Domain.Discount.MaxDiscountComposite;
 import com.ticketing.ticketapp.Domain.Discount.PurchaseContext;
 import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
+import com.ticketing.ticketapp.Domain.Lottery.ILotteryRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.Event;
 import com.ticketing.ticketapp.Domain.Event.EventDTO;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
+import com.ticketing.ticketapp.Domain.Order.ActiveOrder;
+import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
+import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
@@ -37,12 +41,16 @@ public class EventService {
     private IUserRepository userRepository;
     private iDiscountPolicyRepository discountRepo;
     private INotifier notifier;
+    private IActiveOrderRepository activeOrderRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ILotteryRepository lotteryRepository;
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
     public EventService(iCompanyRepository companyRepository, iEventRepository eventRepository,
             TokenService tokenService, iTreeOfRoleRepository treeOfRoleRepository, iTicketRepository ticketRepository,
             iQueueRepository iQueueRepository, iPurchasedOrderRepository purchasedOrderRepository,
-            IUserRepository userRepository, INotifier notifier, iDiscountPolicyRepository discountRepo) {
+            IUserRepository userRepository, INotifier notifier, iDiscountPolicyRepository discountRepo,
+            IActiveOrderRepository activeOrderRepository) {
         this.companyRepository = companyRepository;
         this.eventRepository = eventRepository;
         this.tokenService = tokenService;
@@ -53,6 +61,7 @@ public class EventService {
         this.userRepository = userRepository;
         this.notifier = notifier;
         this.discountRepo = discountRepo;
+        this.activeOrderRepository = activeOrderRepository;
     }
 
     public boolean isAuthorized(String company, String userId) {
@@ -115,6 +124,9 @@ public class EventService {
                             "The event '" + event.getName() + "' by " + companyName
                                     + " has been cancelled. Your tickets are no longer valid."));
 
+            if (lotteryRepository != null) {
+                lotteryRepository.delete(eventId, companyName);
+            }
             eventRepository.deleteEvent(eventId, companyName);
             logger.info("Event '{}' deleted successfully for company '{}'", eventId, companyName);
             return Response.success("success");
@@ -155,6 +167,27 @@ public class EventService {
             event.setMap(map);
             event.setRating(rating);
             eventRepository.save(event);
+
+            // Sync isGA on all tickets if the seating type changed (SEAT↔GA)
+            boolean newIsGA = true;
+            outer:
+            for (MapArea[] row : map) {
+                for (MapArea cell : row) {
+                    if (cell != MapArea.STAND) { newIsGA = false; break outer; }
+                }
+            }
+            List<Ticket> existingTickets = ticketRepository.getAllTicketsByEventAndCompany(eventName, company);
+            if (existingTickets != null) {
+                final boolean isGAFlag = newIsGA;
+                existingTickets.stream()
+                        .filter(t -> t.isGA() != isGAFlag)
+                        .forEach(t -> {
+                            Ticket updated = new Ticket(t);
+                            updated.setGA(isGAFlag);
+                            ticketRepository.save(updated);
+                        });
+            }
+
             if (oldDate != null && !oldDate.equals(date)) {
                 purchasedOrderRepository.getPurchasedOrdersForCompany(company).stream()
                         .filter(o -> o.getEvent().equals(eventName))
@@ -221,6 +254,23 @@ public class EventService {
             logger.info("trying Getting map area: " + eventName);
             MapArea[][] map = eventRepository.getMapArea(company, eventName);
             MapArea[][] mapArea = ticketRepository.getMapAreas(company, eventName, map);
+
+            // Overlay seats currently held in active (non-expired) reservations as RESERVED
+            Date now = new Date();
+            for (ActiveOrder order : activeOrderRepository.getAllActiveOrders()) {
+                if (order.getExpirationTime().before(now)) continue;
+                if (!eventName.equals(order.getEventId()) || !company.equals(order.getCompanyId())) continue;
+                for (String ticketId : order.getTicketIds()) {
+                    Ticket ticket = ticketRepository.getTicketById(ticketId);
+                    if (ticket == null || ticket.isPurchased()) continue;
+                    int r = ticket.getRow();
+                    int c = ticket.getCol();
+                    if (r >= 0 && r < mapArea.length && c >= 0 && c < mapArea[r].length) {
+                        mapArea[r][c] = MapArea.RESERVED;
+                    }
+                }
+            }
+
             logger.info("Successfully Getting map area: " + eventName);
             return Response.success(mapArea);
         } catch (Exception e) {
@@ -293,7 +343,12 @@ public class EventService {
         } catch (Exception e) {
             logger.error("Error calculating discount for event '{}': {}", event.getName(), e.getMessage());
         }
-        
-        return EventDTO.fromEntity(event, discountedPrice); 
+
+        List<com.ticketing.ticketapp.Domain.Ticket.Ticket> allTickets =
+                ticketRepository.getAllTicketsByEventAndCompany(event.getName(), event.getCompany());
+        boolean soldOut = allTickets != null && !allTickets.isEmpty()
+                && ticketRepository.getAvailableTicketsByEventAndCompany(event.getCompany(), event.getName()).isEmpty();
+
+        return EventDTO.fromEntity(event, discountedPrice, soldOut);
     }
 }

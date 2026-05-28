@@ -104,8 +104,11 @@ function EventCard({ event }) {
         <div className="absolute top-2 left-2 px-2 py-1 bg-surface-dim/80 backdrop-blur-sm rounded text-label-sm text-tertiary">
           {formatDate(event.date)}
         </div>
-        {/* תגית הנחה בולטת בתמונה אם קיימת הנחה */}
-        {event.discountedPrice != null && event.discountedPrice < event.price && (
+        {event.soldOut ? (
+          <div className="absolute top-2 right-2 px-2 py-1 bg-surface-container-highest text-outline font-bold rounded shadow-lg text-label-sm">
+            SOLD OUT
+          </div>
+        ) : event.discountedPrice != null && event.discountedPrice < event.price && (
           <div className="absolute top-2 right-2 px-2 py-1 bg-error text-on-error font-bold rounded shadow-lg text-label-sm animate-pulse">
             SALE
           </div>
@@ -140,15 +143,22 @@ function EventCard({ event }) {
                 {event.companyName}
               </Link>
             )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(path);
-              }}
-              className="bg-secondary text-on-secondary px-4 py-2 text-label-md font-bold rounded hover:brightness-110 active:scale-95 transition-all"
-            >
-              Buy Tickets
-            </button>
+            {event.soldOut ? (
+              <div className="flex items-center gap-1 px-4 py-2 text-label-md font-bold rounded bg-surface-container-highest text-outline border border-outline-variant cursor-not-allowed">
+                <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>block</span>
+                Sold Out
+              </div>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(path);
+                }}
+                className="bg-secondary text-on-secondary px-4 py-2 text-label-md font-bold rounded hover:brightness-110 active:scale-95 transition-all"
+              >
+                Buy Tickets
+              </button>
+            )}
           </div>
         </div>
       </div>

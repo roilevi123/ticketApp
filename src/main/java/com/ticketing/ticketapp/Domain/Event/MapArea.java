@@ -7,4 +7,5 @@ public enum MapArea {
     STAGE,
     ENTRANCE,
     TAKEN,
+    RESERVED,
 }

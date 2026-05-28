@@ -72,7 +72,7 @@ public class AdminJUnitTests {
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
 
         this.eventService = new EventService(companyRepository, eventRepository, tokenService,
-                treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, discountPolicyRepository);
+                treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, discountPolicyRepository, activeOrderRepository);
 
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
 

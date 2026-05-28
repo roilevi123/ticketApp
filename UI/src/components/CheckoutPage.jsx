@@ -17,9 +17,12 @@ function formatRemaining(ms) {
   return `${minutes}:${seconds}`;
 }
 
+const ROW_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
 function ticketLabel(ticket) {
-  if (ticket.row === 0 && ticket.col === 0) return "General Admission";
-  return `Row ${ticket.row}, Seat ${ticket.col}`;
+  if (ticket.isGA) return "General Admission";
+  const row = ROW_LABELS[ticket.row] ?? String(ticket.row + 1);
+  return `${row}, Seat ${ticket.col + 1}`;
 }
 
 export default function CheckoutPage() {
@@ -35,7 +38,10 @@ export default function CheckoutPage() {
     hasActiveOrder,
     purchaseActiveOrder,
     refreshActiveOrder,
+    clearCart,
   } = useActiveOrder();
+
+  const [clearing, setClearing] = useState(false);
   
   const [email, setEmail] = useState("");
   const [coupon, setCoupon] = useState("");
@@ -177,9 +183,24 @@ export default function CheckoutPage() {
                   <h2 className="text-headline-sm text-on-surface font-bold">
                     Cart
                   </h2>
-                  <p className="text-label-md text-on-surface-variant">
-                    {orderCount} {orderCount === 1 ? "ticket" : "tickets"}
-                  </p>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    <p className="text-label-md text-on-surface-variant">
+                      {orderCount} {orderCount === 1 ? "ticket" : "tickets"}
+                    </p>
+                    {hasActiveOrder && (
+                      <button
+                        disabled={clearing}
+                        onClick={async () => {
+                          setClearing(true);
+                          try { await clearCart(); } finally { setClearing(false); }
+                        }}
+                        className="text-label-sm text-error hover:text-error/80 transition-colors disabled:opacity-40 flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>delete</span>
+                        {clearing ? "Clearing…" : "Clear cart"}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="text-right">
                   <p className="text-label-sm text-on-surface-variant uppercase tracking-wide">

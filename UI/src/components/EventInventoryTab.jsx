@@ -80,7 +80,7 @@ export default function EventInventoryTab({ companyName }) {
       const c = parseInt(eventData.cols) || 1;
       return Array.from({ length: r }, () => Array(c).fill('SEAT'));
     }
-    return [Array(parseInt(eventData.totalTickets) || 10).fill('SEAT')];
+    return [Array(parseInt(eventData.totalTickets) || 10).fill('STAND')];
   };
 
   const handleSubmit = async (e) => {

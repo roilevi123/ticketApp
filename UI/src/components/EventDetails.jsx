@@ -41,6 +41,8 @@ function parseMapData(map) {
       col: colIdx + 1,
       rawCol: colIdx,
       available: cell === "SEAT",
+      reserved: cell === "RESERVED",
+      gaSlot: cell === "STAND",
       vip: rowIdx === 0,
     })),
   );
@@ -145,7 +147,9 @@ function SeatingMap({ seats, selectedSeats, onSeatSelect, atLimit }) {
                   const isDisabled = !seat.available || blockedByLimit;
 
                   let cls;
-                  if (!seat.available) {
+                  if (seat.reserved) {
+                    cls = "bg-secondary-container/50 border border-secondary/40 text-secondary/60 cursor-not-allowed";
+                  } else if (!seat.available) {
                     cls = "bg-surface-container-highest text-outline cursor-not-allowed opacity-40";
                   } else if (isSelected) {
                     cls = "bg-secondary text-on-secondary scale-110 shadow-lg ring-2 ring-secondary/50";
@@ -157,7 +161,9 @@ function SeatingMap({ seats, selectedSeats, onSeatSelect, atLimit }) {
                     cls = "bg-surface-container border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary active:scale-95";
                   }
 
-                  const title = !seat.available
+                  const title = seat.reserved
+                    ? `Seat ${seat.id} — Reserved by another user`
+                    : !seat.available
                     ? `Seat ${seat.id} — Unavailable`
                     : isSelected
                     ? `Seat ${seat.id} — Click to deselect`
@@ -187,6 +193,7 @@ function SeatingMap({ seats, selectedSeats, onSeatSelect, atLimit }) {
           { cls: "bg-surface-container border border-outline-variant", label: "Available" },
           { cls: "bg-primary-container border border-primary/40", label: "VIP" },
           { cls: "bg-secondary ring-2 ring-secondary/50", label: "Selected" },
+          { cls: "bg-secondary-container/50 border border-secondary/40", label: "Reserved" },
           { cls: "bg-surface-container-highest opacity-40", label: "Taken" },
         ].map(({ cls, label }) => (
           <div key={label} className="flex items-center gap-2">
@@ -219,6 +226,7 @@ export default function EventDetails() {
 
   // Reservation state (regular events)
   const [reservation, setReservation] = useState(null); // { orderId, seatCount }
+  const [gaQuantity, setGaQuantity] = useState(1);
 
   // ── Lottery state ──────────────────────────────────────────────────────────
   const [lotteryStatus, setLotteryStatus] = useState(null); // { hasLottery, registered, hasWon, winningCode, … }
@@ -235,6 +243,20 @@ export default function EventDetails() {
   const normalizedRole = (role ?? "").toUpperCase();
   const isRegisteredMember = Boolean(token) && normalizedRole !== "GUEST";
   const isHighDemand = event?.highDemand === true;
+
+  // ── Live seating map (includes RESERVED overlay from active orders) ─────────
+  const [liveMap, setLiveMap] = useState(null);
+
+  const fetchMap = useCallback(async () => {
+    try {
+      const res = await axiosClient.get(
+        `/discovery/companies/${encodeURIComponent(companyName)}/events/${encodeURIComponent(eventName)}/map`,
+      );
+      setLiveMap(res.data);
+    } catch {
+      // silent — fall back to static map from event DTO
+    }
+  }, [companyName, eventName]);
 
   // ── Load event ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -259,6 +281,10 @@ export default function EventDetails() {
     loadEvent();
     return () => controller.abort();
   }, [companyName, eventName]);
+
+  useEffect(() => {
+    if (event) fetchMap();
+  }, [event, fetchMap]);
 
   // ── Load seat limit from policy ─────────────────────────────────────────────
   useEffect(() => {
@@ -305,21 +331,35 @@ export default function EventDetails() {
 
   // ── Reserve tickets (regular events) ────────────────────────────────────────
   async function handleReserve() {
-    if (!isRegisteredMember || selectedSeats.length === 0 || isReserving) return;
+    const canProceed = isGA
+      ? gaQuantity > 0 && gaAvailableCount > 0
+      : selectedSeats.length > 0;
+    if (!isRegisteredMember || !canProceed || isReserving) return;
 
     setIsReserving(true);
     setActionError(null);
 
     try {
-      // Backend expects: List<int[]> where each entry is [colIndex, rowIndex] (0-based)
-      const requests = toSeatRequests(selectedSeats);
+      let requests;
+      if (isGA) {
+        const toReserve = seats.filter(s => s.gaSlot).slice(0, gaQuantity);
+        if (toReserve.length < gaQuantity) {
+          setActionError(`Only ${toReserve.length} ticket${toReserve.length !== 1 ? "s" : ""} available.`);
+          return;
+        }
+        requests = toReserve.map(s => [s.rawCol, s.rawRow]);
+      } else {
+        // Backend expects: List<int[]> where each entry is [colIndex, rowIndex] (0-based)
+        requests = toSeatRequests(selectedSeats);
+      }
       const res = await axiosClient.post("/orders/reserve", {
         company: companyName,
         event: eventName,
         requests,
       });
       await refreshActiveOrder();
-      setReservation({ orderId: res.data, seatCount: selectedSeats.length });
+      await fetchMap();
+      setReservation({ orderId: res.data, seatCount: isGA ? gaQuantity : selectedSeats.length });
       setSelectedSeats([]);
     } catch (err) {
       setActionError(
@@ -397,16 +437,25 @@ export default function EventDetails() {
   };
 
   const { gradient, icon } = TYPE_CONFIG[event?.type?.toUpperCase()] ?? DEFAULT_TYPE;
-  const seats = event?.map?.length ? parseMapData(event.map) : MOCK_SEATS;
-  const atLimit = maxSeats !== null && selectedSeats.length >= maxSeats;
+  const rawMap = liveMap ?? event?.map;
+  // GA type detection uses the original EventDTO map, never the live overlay
+  // (live map may replace all STAND with TAKEN/RESERVED when fully sold/reserved)
+  const staticFlat = event?.map?.flat() ?? [];
+  const isGA = (event?.map?.length ?? 0) > 0 && !staticFlat.includes("SEAT") && staticFlat.includes("STAND");
+  const seats = rawMap?.length ? parseMapData(rawMap) : MOCK_SEATS;
+  const gaAvailableCount = isGA ? seats.filter(s => s.gaSlot).length : 0;
+  // Sold out: backend confirmed all purchased, OR GA event with live map loaded and 0 slots left
+  const isSoldOut = event?.soldOut === true || (isGA && liveMap !== null && gaAvailableCount === 0);
+  const atLimit = !isGA && maxSeats !== null && selectedSeats.length >= maxSeats;
 
   // ── Selection counter label ─────────────────────────────────────────────────
-  const selectionLabel =
-    selectedSeats.length === 0
-      ? null
-      : maxSeats !== null
-      ? `${selectedSeats.length} / ${maxSeats} seat${maxSeats !== 1 ? "s" : ""} selected`
-      : `${selectedSeats.length} seat${selectedSeats.length !== 1 ? "s" : ""} selected`;
+  const selectionLabel = isGA
+    ? null
+    : selectedSeats.length === 0
+    ? null
+    : maxSeats !== null
+    ? `${selectedSeats.length} / ${maxSeats} seat${maxSeats !== 1 ? "s" : ""} selected`
+    : `${selectedSeats.length} seat${selectedSeats.length !== 1 ? "s" : ""} selected`;
 
   // Derived lottery helpers
   const lotteryIsOpen  = lotteryStatus?.hasLottery && !lotteryStatus?.drawn;
@@ -543,43 +592,88 @@ export default function EventDetails() {
               </>
             )}
 
-            {/* ── Seating Map ── */}
+            {/* ── Seating Map or GA Ticket Quantity ── */}
             <div className="mx-margin-mobile h-px bg-outline-variant my-8" />
             <section className="px-margin-mobile">
-              <div className="flex items-center justify-between mb-1">
-                <h2 className="text-headline-sm text-on-surface">Seating Map</h2>
-                {selectionLabel && (
-                  <span className={`text-label-sm font-bold ${atLimit ? "text-error" : "text-secondary"}`}>
-                    {selectionLabel}
-                  </span>
-                )}
-              </div>
+              {isGA ? (
+                <div>
+                  <h2 className="text-headline-sm text-on-surface mb-1">Ticket Quantity</h2>
+                  <p className="text-label-sm text-on-surface-variant mb-5">
+                    General Admission · {gaAvailableCount} ticket{gaAvailableCount !== 1 ? "s" : ""} available
+                    {maxSeats !== null && ` · max ${maxSeats} per order`}
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setGaQuantity(q => Math.max(1, q - 1))}
+                      disabled={gaQuantity <= 1}
+                      className="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant text-on-surface font-bold text-xl hover:border-secondary transition-colors disabled:opacity-40"
+                    >
+                      −
+                    </button>
+                    <span className="text-headline-sm text-on-surface font-bold w-12 text-center">{gaQuantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setGaQuantity(q => Math.min(maxSeats !== null ? Math.min(gaAvailableCount, maxSeats) : gaAvailableCount, q + 1))}
+                      disabled={gaQuantity >= gaAvailableCount || (maxSeats !== null && gaQuantity >= maxSeats)}
+                      className="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant text-on-surface font-bold text-xl hover:border-secondary transition-colors disabled:opacity-40"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <h2 className="text-headline-sm text-on-surface">Seating Map</h2>
+                    {selectionLabel && (
+                      <span className={`text-label-sm font-bold ${atLimit ? "text-error" : "text-secondary"}`}>
+                        {selectionLabel}
+                      </span>
+                    )}
+                  </div>
 
-              <p className="text-label-sm text-on-surface-variant mb-1">
-                {maxSeats !== null
-                  ? `Select up to ${maxSeats} seat${maxSeats !== 1 ? "s" : ""} — policy limit applies.`
-                  : "Select one or more seats."}
-                {!event.map?.length && " (Preview — map data pending)"}
-              </p>
+                  <p className="text-label-sm text-on-surface-variant mb-1">
+                    {maxSeats !== null
+                      ? `Select up to ${maxSeats} seat${maxSeats !== 1 ? "s" : ""} — policy limit applies.`
+                      : "Select one or more seats."}
+                    {!event.map?.length && " (Preview — map data pending)"}
+                  </p>
 
-              {atLimit && (
-                <p className="text-label-sm text-error mb-4">
-                  Limit reached. Deselect a seat to choose a different one.
-                </p>
+                  {atLimit && (
+                    <p className="text-label-sm text-error mb-4">
+                      Limit reached. Deselect a seat to choose a different one.
+                    </p>
+                  )}
+
+                  <div className="overflow-x-auto pb-2">
+                    <SeatingMap
+                      seats={seats}
+                      selectedSeats={selectedSeats}
+                      onSeatSelect={handleSeatSelect}
+                      atLimit={atLimit}
+                    />
+                  </div>
+                </div>
               )}
-
-              <div className="overflow-x-auto pb-2">
-                <SeatingMap
-                  seats={seats}
-                  selectedSeats={selectedSeats}
-                  onSeatSelect={handleSeatSelect}
-                  atLimit={atLimit}
-                />
-              </div>
             </section>
 
             {/* ── Reserve / Buy Tickets ── */}
-            {!isHighDemand && (
+            {isSoldOut && !isHighDemand && (
+              <>
+                <div className="mx-margin-mobile h-px bg-outline-variant my-8" />
+                <section className="px-margin-mobile">
+                  <div className="p-4 rounded-xl bg-surface-container border border-outline-variant flex items-center gap-3">
+                    <span className="material-symbols-outlined text-outline" style={{ fontSize: "28px" }}>block</span>
+                    <div>
+                      <h3 className="text-headline-sm text-on-surface mb-0.5">Sold Out</h3>
+                      <p className="text-label-md text-on-surface-variant">All tickets for this event have been sold.</p>
+                    </div>
+                  </div>
+                </section>
+              </>
+            )}
+            {!isHighDemand && !isSoldOut && (
               <>
                 <div className="mx-margin-mobile h-px bg-outline-variant my-8" />
                 <section className="px-margin-mobile">
@@ -617,7 +711,9 @@ export default function EventDetails() {
                               Reserve your tickets
                             </h3>
                             <p className="text-label-md text-on-surface-variant">
-                              Select one or more seats above, then reserve them to continue to checkout.
+                              {isGA
+                                ? "Choose the number of tickets above, then reserve them to continue to checkout."
+                                : "Select one or more seats above, then reserve them to continue to checkout."}
                             </p>
                           </div>
                         </div>
@@ -633,15 +729,17 @@ export default function EventDetails() {
 
                         <button
                           onClick={handleReserve}
-                          disabled={!isRegisteredMember || selectedSeats.length === 0 || isReserving}
+                          disabled={!isRegisteredMember || (isGA ? gaQuantity <= 0 || gaAvailableCount === 0 : selectedSeats.length === 0) || isReserving}
                           className={`w-full py-3 rounded-xl font-bold text-label-md uppercase tracking-wider transition-all ${
-                            isRegisteredMember && selectedSeats.length > 0
+                            isRegisteredMember && (isGA ? gaQuantity > 0 && gaAvailableCount > 0 : selectedSeats.length > 0)
                               ? "bg-secondary text-on-secondary hover:brightness-110 active:scale-95"
                               : "bg-surface-container-highest text-outline cursor-not-allowed"
                           }`}
                         >
                           {isReserving
                             ? "Reserving…"
+                            : isGA
+                            ? `Reserve ${gaQuantity} Ticket${gaQuantity !== 1 ? "s" : ""}`
                             : `Buy Tickets${selectedSeats.length > 0 ? ` (${selectedSeats.length})` : ""}`}
                         </button>
 

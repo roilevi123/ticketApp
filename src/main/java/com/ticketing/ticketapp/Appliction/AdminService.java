@@ -11,6 +11,7 @@ import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 
+import com.ticketing.ticketapp.Domain.Lottery.ILotteryRepository;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
@@ -43,6 +44,8 @@ public class AdminService {
     private TokenService tokenService;
     private INotifier notifier;
     private IActiveOrderRepository activeOrderRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private ILotteryRepository lotteryRepository;
     private static final Logger logger = LoggerFactory.getLogger(AdminService.class);
 
     public AdminService(
@@ -74,16 +77,26 @@ public class AdminService {
             if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
+            if (companyRepository.getCompany(companyName) == null) {
+                return Response.error("Company '" + companyName + "' not found");
+            }
             List<Owner> owners = treeOfRoleRepository.getAllOwnersByCompany(companyName);
             List<Manager> managers = treeOfRoleRepository.getAllManagersByCompany(companyName);
+            purchasedOrderRepository.getPurchasedOrdersForCompany(companyName).forEach(order ->
+                notifier.notifyUser(order.getBuyerID(), "Event Cancelled",
+                    "The event '" + order.getEvent() + "' by " + companyName
+                        + " has been cancelled by an administrator. Your tickets are no longer valid."));
+            if (lotteryRepository != null) {
+                lotteryRepository.deleteAllForCompany(companyName);
+            }
             companyRepository.deleteCompany(companyName);
             eventRepository.deleteCompanyEvent(companyName);
             treeOfRoleRepository.deleteCompanyMangersAndOwners(companyName);
             logger.info("Deleted company " + companyName);
             String title = "Company Closed";
             String message = "Company '" + companyName + "' has been permanently closed by an administrator.";
-            owners.forEach(o -> notifyMember(o.getUserID(), title, message));
-            managers.forEach(m -> notifyMember(m.getUserID(), title, message));
+            owners.forEach(o -> notifier.notifyUser(o.getUserID(), title, message));
+            managers.forEach(m -> notifier.notifyUser(m.getUserID(), title, message));
             return Response.success("success");
         }catch (Exception e) {
             logger.error(e.getMessage());
@@ -105,14 +118,6 @@ public class AdminService {
         }
     }
 
-    private void notifyMember(String username, String title, String message) {
-        try {
-            User u = userRepository.getUserByUsername(username);
-            if (u != null) notifier.notifyUser(u.getID(), title, message);
-        } catch (Exception e) {
-            logger.warn("Failed to notify user {}: {}", username, e.getMessage());
-        }
-    }
     public Response<String> removeUser(String UserID,String adminID) {
         try {
             logger.info("Deleting user " + UserID);
