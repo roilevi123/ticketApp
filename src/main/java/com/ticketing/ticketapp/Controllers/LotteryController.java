@@ -82,16 +82,15 @@ public class LotteryController {
     }
 }
 
-// ── Request DTOs ──────────────────────────────────────────────────────────────
 
 class LotteryConfigRequestDTO {
     private Date startDate;
     private Date endDate;
     private int  maxWinners;
-    public Date getStartDate()         { return startDate; }
-    public void setStartDate(Date d)   { this.startDate = d; }
-    public Date getEndDate()           { return endDate; }
-    public void setEndDate(Date d)     { this.endDate = d; }
-    public int  getMaxWinners()        { return maxWinners; }
-    public void setMaxWinners(int n)   { this.maxWinners = n; }
+    public Date getStartDate() { return startDate; }
+    public void setStartDate(Date d) { this.startDate = d; }
+    public Date getEndDate() { return endDate; }
+    public void setEndDate(Date d) { this.endDate = d; }
+    public int  getMaxWinners() { return maxWinners; }
+    public void setMaxWinners(int n) { this.maxWinners = n; }
 }

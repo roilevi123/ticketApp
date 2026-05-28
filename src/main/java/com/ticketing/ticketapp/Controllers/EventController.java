@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
-
 import java.util.Date;
 
 @RestController
@@ -23,8 +22,7 @@ public class EventController {
     private final CompanyService companyService;
     private final PurchasePolicyService purchasePolicyService;
 
-    public EventController(EventService eventService, CompanyService companyService,
-                           PurchasePolicyService purchasePolicyService) {
+    public EventController(EventService eventService, CompanyService companyService, PurchasePolicyService purchasePolicyService) {
         this.eventService = eventService;
         this.companyService = companyService;
         this.purchasePolicyService = purchasePolicyService;

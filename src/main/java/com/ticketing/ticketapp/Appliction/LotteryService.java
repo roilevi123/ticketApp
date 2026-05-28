@@ -25,15 +25,15 @@ public class LotteryService {
     /** Winners have 48 hours to use their purchase code. */
     private static final long CODE_VALIDITY_MS = 48L * 60 * 60 * 1000;
 
-    private final ILotteryRepository      lotteryRepository;
-    private final ILotteryCodeRepository  lotteryCodeRepository;
-    private final iEventRepository        eventRepository;
-    private final TokenService            tokenService;
-    private final INotifier               notifier;
+    private final ILotteryRepository lotteryRepository;
+    private final ILotteryCodeRepository lotteryCodeRepository;
+    private final iEventRepository eventRepository;
+    private final TokenService tokenService;
+    private final INotifier notifier;
     private final IUserRepository userRepository;
 
     public LotteryService(ILotteryRepository lotteryRepository,ILotteryCodeRepository lotteryCodeRepository,iEventRepository eventRepository,TokenService tokenService,INotifier notifier, IUserRepository userRepository) {
-        this.lotteryRepository  = lotteryRepository;
+        this.lotteryRepository = lotteryRepository;
         this.lotteryCodeRepository = lotteryCodeRepository;
         this.eventRepository = eventRepository;
         this.tokenService = tokenService;
@@ -129,14 +129,14 @@ public class LotteryService {
             }
 
             Map<String, Object> status = new HashMap<>();
-            status.put("hasLottery",  true);
-            status.put("startDate",   lr.getStartDate());
-            status.put("endDate",     lr.getEndDate());
-            status.put("maxWinners",  lr.getMaxWinners());
-            status.put("drawn",       lr.isDrawn());
-            status.put("open",        lr.isOpen());
-            status.put("registered",  false);
-            status.put("hasWon",      false);
+            status.put("hasLottery", true);
+            status.put("startDate", lr.getStartDate());
+            status.put("endDate", lr.getEndDate());
+            status.put("maxWinners", lr.getMaxWinners());
+            status.put("drawn", lr.isDrawn());
+            status.put("open", lr.isOpen());
+            status.put("registered", false);
+            status.put("hasWon", false);
 
             // Enrich with per-user information if we have a valid member token
             if (token != null && tokenService.validateToken(token)) {
@@ -227,7 +227,6 @@ public class LotteryService {
         lotteryRepository.markDrawn(lr.getEventName(), lr.getCompanyName());
         logger.info("=== Lottery draw completed for event '{}' ===", lr.getEventName());
 
-        // TODO: Integrate email/SMS notification service here once implemented by the team.
     }
 
 }

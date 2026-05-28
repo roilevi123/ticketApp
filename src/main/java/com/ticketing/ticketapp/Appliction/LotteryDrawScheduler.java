@@ -22,7 +22,7 @@ public class LotteryDrawScheduler {
     private static final Logger logger = LoggerFactory.getLogger(LotteryDrawScheduler.class);
 
     private final ILotteryRepository lotteryRepository;
-    private final LotteryService     lotteryService;
+    private final LotteryService lotteryService;
 
     public LotteryDrawScheduler(ILotteryRepository lotteryRepository, LotteryService lotteryService) {
         this.lotteryRepository = lotteryRepository;

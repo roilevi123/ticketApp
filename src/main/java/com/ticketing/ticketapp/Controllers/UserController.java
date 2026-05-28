@@ -17,10 +17,6 @@ public class UserController {
     private QueueService queueService;
     private PurchasedService purchasedService;
     private UserService userService;
-    // In-memory mock profile (survives for the lifetime of the Spring context)
-    //private String name  = "Alexander Hamilton";
-    //private String id    = "U88102934";
-    //private String email = "a.hamilton@university.edu";
 
     public UserController(QueueService queueService, PurchasedService purchasedService, UserService userService) {
         this.queueService = queueService;
