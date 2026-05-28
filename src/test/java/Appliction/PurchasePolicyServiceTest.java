@@ -3,7 +3,9 @@ package Appliction;
 import com.ticketing.ticketapp.Appliction.*;
 
 import com.ticketing.ticketapp.Domain.PurchasePolicy.*;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
+import com.ticketing.ticketapp.Infastructure.UserRepositoryImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,12 +18,14 @@ public class PurchasePolicyServiceTest {
     private PurchasePolicyService policyService;
     private iPurchasePolicyRepository policyRepo;
     private TokenService tokenService;
+    private IUserRepository userRepository;
 
     @BeforeEach
     void setUp() {
         policyRepo = mock(iPurchasePolicyRepository.class);
         tokenService = mock(TokenService.class);
-        policyService = new PurchasePolicyService(policyRepo, tokenService);
+        userRepository=mock(UserRepositoryImpl.class);
+        policyService = new PurchasePolicyService(policyRepo, tokenService, userRepository);
     }
 
     @Test
@@ -281,5 +285,62 @@ public class PurchasePolicyServiceTest {
         verify(policyRepo).save(argThat(policy ->
                 policy.getRoot() instanceof OrPurchaseComposite && policy.getTargetId().equals("E1")
         ));
+    }
+
+
+    @Test
+    void testCreateAgeLimitPolicy_UserSuspended_Failure() {
+        when(tokenService.validateToken("token")).thenReturn(true);
+        when(tokenService.extractUserId("token")).thenReturn("user123");
+        when(tokenService.extractUsername("token")).thenReturn("user123");
+        when(userRepository.isUserSuspendedNow("user123")).thenReturn(true);
+
+        Response<String> result = policyService.createAgeLimitPolicy("token", "E1", PurchaseTargetType.EVENT, 18);
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(policyRepo, never()).save(any());
+    }
+
+    @Test
+    void testCreateQuantityLimitPolicy_UserSuspended_Failure() {
+        when(tokenService.validateToken("token")).thenReturn(true);
+        when(tokenService.extractUserId("token")).thenReturn("user123");
+        when(tokenService.extractUsername("token")).thenReturn("user123");
+        when(userRepository.isUserSuspendedNow("user123")).thenReturn(true);
+
+        Response<String> result = policyService.createQuantityLimitPolicy("token", "E1", PurchaseTargetType.EVENT, 1, 5);
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(policyRepo, never()).save(any());
+    }
+
+    @Test
+    void testCreateAndPolicy_UserSuspended_Failure() {
+        when(tokenService.validateToken("token")).thenReturn(true);
+        when(tokenService.extractUserId("token")).thenReturn("user123");
+        when(tokenService.extractUsername("token")).thenReturn("user123");
+        when(userRepository.isUserSuspendedNow("user123")).thenReturn(true);
+
+        Response<String> result = policyService.createAndPolicy("token", "E1", PurchaseTargetType.EVENT, List.of("id1"));
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(policyRepo, never()).save(any());
+    }
+
+    @Test
+    void testCreateOrPolicy_UserSuspended_Failure() {
+        when(tokenService.validateToken("token")).thenReturn(true);
+        when(tokenService.extractUserId("token")).thenReturn("user123");
+        when(tokenService.extractUsername("token")).thenReturn("user123");
+        when(userRepository.isUserSuspendedNow("user123")).thenReturn(true);
+
+        Response<String> result = policyService.createOrPolicy("token", "E1", PurchaseTargetType.EVENT, List.of("id1"));
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+        verify(policyRepo, never()).save(any());
     }
 }

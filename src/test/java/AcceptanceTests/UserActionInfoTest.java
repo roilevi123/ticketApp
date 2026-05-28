@@ -1,15 +1,10 @@
 package AcceptanceTests;
 
-import com.ticketing.ticketapp.Appliction.UserService;
-import com.ticketing.ticketapp.Appliction.Response;
+import com.ticketing.ticketapp.Appliction.*;
+import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.UserDTO;
-import com.ticketing.ticketapp.Infastructure.PasswordEncoderImpl;
-import com.ticketing.ticketapp.Infastructure.NotificationRepositoryImpl;
-import com.ticketing.ticketapp.Infastructure.TokenService;
-import com.ticketing.ticketapp.Infastructure.UserRepositoryImpl;
-import com.ticketing.ticketapp.Appliction.INotifier;
-import com.ticketing.ticketapp.Appliction.IPasswordEncoder;
+import com.ticketing.ticketapp.Infastructure.*;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +20,7 @@ public class UserActionInfoTest {
     private IUserRepository userRepository;
     private IPasswordEncoder passwordEncoder;
     private TokenService tokenService;
+    private AdminService adminService;
 
     @BeforeEach
     void setUp() {
@@ -32,6 +28,14 @@ public class UserActionInfoTest {
         this.passwordEncoder = new PasswordEncoderImpl();
         this.tokenService = new TokenService();
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), mock(INotifier.class), mock(iTreeOfRoleRepository.class));
+
+        iAdminRepository adminRepository = new AdminRepositoryImpl(){
+            @Override
+            public boolean isAdmin(String userID) {
+                return userID.equals("admin");
+            }
+        };
+        this.adminService = new AdminService(new TreeOfRoleRepositoryImpl(), new CompanyRepositoryImpl(), adminRepository, userRepository, new PurchasedOrderRepositoryImpl(), new TicketRepositoryImpl(), new EventRepositoryImpl(), tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
 
         userRepository.deleteAll();
         tokenService.clearAllData();
@@ -180,5 +184,52 @@ public class UserActionInfoTest {
     @Test
     void testLoginInvalidToken() {
         assertTrue(userService.login("", "eventId", "").isError());
+    }
+
+
+    @Test
+    @DisplayName("16. Update User Profile Fail - User Is Suspended")
+    void updateUserProfileFailedUserSuspended() {
+        userService.register(gt(), "suspended_user", "password123", 20, "suspended@test.com");
+        String token = userService.login(gt(), "suspended_user", "password123").getData();
+        String userId = userRepository.getUserByUsername("suspended_user").getID();
+
+        adminService.suspendUser(userId, "admin", 7);
+
+        UserDTO updateRequest = new UserDTO();
+        updateRequest.setName("newName");
+        updateRequest.setEmail("new@test.com");
+
+        Response<String> result = userService.updateUserProfile(token, updateRequest);
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+    }
+
+    @Test
+    @DisplayName("17. Update User Password Fail - User Is Suspended")
+    void updateUserPasswordFailedUserSuspended() {
+        userService.register(gt(), "suspended_user", "password123", 20, "suspended@test.com");
+        String token = userService.login(gt(), "suspended_user", "password123").getData();
+        String userId = userRepository.getUserByUsername("suspended_user").getID();
+
+        adminService.suspendUser(userId, "admin", 7);
+
+        Response<String> result = userService.updateUserPassword(token, "newPassword123");
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+    }
+
+    @Test
+    @DisplayName("18. Submit Complaint Fail - User Is Suspended")
+    void submitComplaintFailedUserSuspended() {
+        userService.register(gt(), "suspended_user", "password123", 20, "suspended@test.com");
+        String token = userService.login(gt(), "suspended_user", "password123").getData();
+        String userId = userRepository.getUserByUsername("suspended_user").getID();
+
+        adminService.suspendUser(userId, "admin", 7);
+
+        Response<String> result = userService.submitUserComplaint(token, "Admin", "This is a complaint");
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
     }
 }

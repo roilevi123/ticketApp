@@ -1,6 +1,7 @@
 package AcceptanceTests;
 
 import com.ticketing.ticketapp.Appliction.*;
+import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Discount.ConditionalDiscount;
 import com.ticketing.ticketapp.Domain.Discount.DiscountPolicyDTO;
@@ -9,6 +10,7 @@ import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
+import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
@@ -40,6 +42,8 @@ public class DiscountPaymentTests {
     private IPaymentService paymentServiceSpy;
     private DiscountService discountService;
     private iDiscountPolicyRepository discountRepo;
+    private IUserRepository userRepository;
+    private AdminService adminService;
 
     @BeforeEach
     void setUp() {
@@ -72,7 +76,16 @@ public class DiscountPaymentTests {
                 tokenService, treeOfRoleRepository, discountRepo, userRepository, notifierMock
         );
 
-        this.discountService = new DiscountService(discountRepo, tokenService, purchasedService);
+        this.discountService = new DiscountService(discountRepo, tokenService, purchasedService, userRepository);
+
+        this.userRepository = userRepository;
+        iAdminRepository adminRepository = new AdminRepositoryImpl(){
+            @Override
+            public boolean isAdmin(String userID) {
+                return userID.equals("admin");
+            }
+        };
+        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -362,5 +375,131 @@ public class DiscountPaymentTests {
         String ownerToken = setupEventAndGetToken("o10", "C10", "E10", 100.0);
         Response<List<DiscountPolicyDTO>> a = discountService.getDiscountsForEventAndCompany(ownerToken, "1", "1");
         assertTrue(a.isError());
+    }
+
+
+    @Test
+    @DisplayName("Create Simple Discount - Fail (User Is Suspended)")
+    void createSimpleDiscountSuspendedUser() {
+        String ownerToken = setupEventAndGetToken("owner_user_simple", "C_SIMPLE", "E_SIMPLE", 100.0);
+
+        userService.register(tokenService.generateGuestToken(), "admin", "admin", 20, "admin@gmail.com");
+        userService.login(tokenService.generateGuestToken(),"admin","admin");
+        String ownerId = userRepository.getUserByUsername("owner_user_simple").getID();
+        adminService.suspendUser(ownerId, "admin", 7);
+
+        Response<String> response = discountService.createSimpleDiscount(ownerToken, "E_SIMPLE", DiscountTargetType.EVENT, 10.0, "C_SIMPLE");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Create Quantity Discount - Fail (User Is Suspended)")
+    void createQuantityDiscountSuspendedUser() {
+        String ownerToken = setupEventAndGetToken("owner_user_qty", "C_QTY", "E_QTY", 100.0);
+
+        userService.register(tokenService.generateGuestToken(), "admin", "admin", 20, "admin@gmail.com");
+        userService.login(tokenService.generateGuestToken(), "admin", "admin");
+        String ownerId = userRepository.getUserByUsername("owner_user_qty").getID();
+        adminService.suspendUser(ownerId, "admin", 7);
+
+        Response<String> response = discountService.createQuantityDiscount(ownerToken, "E_QTY", DiscountTargetType.EVENT, 20.0, 3, "C_QTY");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Create Time Limited Discount - Fail (User Is Suspended)")
+    void createTimeLimitedDiscountSuspendedUser() {
+        String ownerToken = setupEventAndGetToken("owner_user_time", "C_TIME", "E_TIME", 100.0);
+
+        userService.register(tokenService.generateGuestToken(), "admin", "admin", 20, "admin@gmail.com");
+        userService.login(tokenService.generateGuestToken(), "admin", "admin");
+        String ownerId = userRepository.getUserByUsername("owner_user_time").getID();
+        adminService.suspendUser(ownerId, "admin", 7);
+
+        Response<String> response = discountService.createTimeLimitedDiscount(ownerToken, "E_TIME", DiscountTargetType.EVENT, 15.0, new Date(), "C_TIME");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Create Coupon Discount - Fail (User Is Suspended)")
+    void createCouponDiscountSuspendedUser() {
+        String ownerToken = setupEventAndGetToken("owner_user_coupon", "C_COUPON", "E_COUPON", 100.0);
+
+        userService.register(tokenService.generateGuestToken(), "admin", "admin", 20, "admin@gmail.com");
+        userService.login(tokenService.generateGuestToken(), "admin", "admin");
+        String ownerId = userRepository.getUserByUsername("owner_user_coupon").getID();
+        adminService.suspendUser(ownerId, "admin", 7);
+
+        Response<String> response = discountService.createCouponDiscount(ownerToken, "E_COUPON", DiscountTargetType.EVENT, "SUSPENDED_PROMO", 25.0, "C_COUPON");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Create Sum Discount Policy - Fail (User Is Suspended)")
+    void createSumDiscountPolicySuspendedUser() {
+        String ownerToken = setupEventAndGetToken("owner_user_sum", "C_SUM", "E_SUM", 100.0);
+
+        String realPolicyId = discountService.createSimpleDiscount(ownerToken, "E_SUM", DiscountTargetType.EVENT, 10.0, "C_SUM").getData();
+
+        userService.register(tokenService.generateGuestToken(), "admin", "admin", 20, "admin@gmail.com");
+        userService.login(tokenService.generateGuestToken(), "admin", "admin");
+        String ownerId = userRepository.getUserByUsername("owner_user_sum").getID();
+        adminService.suspendUser(ownerId, "admin", 7);
+
+        Response<String> response = discountService.createSumDiscountPolicy(ownerToken, "E_SUM", DiscountTargetType.EVENT, List.of(realPolicyId), "C_SUM");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Create Max Discount Policy - Fail (User Is Suspended)")
+    void createMaxDiscountPolicySuspendedUser() {
+        String ownerToken = setupEventAndGetToken("owner_user_max", "C_MAX", "E_MAX", 100.0);
+
+        String realPolicyId = discountService.createSimpleDiscount(ownerToken, "E_MAX", DiscountTargetType.EVENT, 10.0, "C_MAX").getData();
+
+        userService.register(tokenService.generateGuestToken(), "admin", "admin", 20, "admin@gmail.com");
+        userService.login(tokenService.generateGuestToken(), "admin", "admin");
+        String ownerId = userRepository.getUserByUsername("owner_user_max").getID();
+        adminService.suspendUser(ownerId, "admin", 7);
+
+        Response<String> response = discountService.createMaxDiscountPolicy(ownerToken, "E_MAX", DiscountTargetType.EVENT, List.of(realPolicyId), "C_MAX");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
+    }
+
+    @Test
+    @DisplayName("Calculate Price After Discounts - Fail (User Is Suspended)")
+    void calculatePriceAfterDiscountsSuspendedUser() {
+        setupEventAndGetToken("normal_owner", "C_CALC", "E_CALC", 100.0);
+
+        String buyerToken = registerAndLoginBuyer("suspended_buyer");
+
+        userService.register(tokenService.generateGuestToken(), "admin", "admin", 20, "admin@gmail.com");
+        userService.login(tokenService.generateGuestToken(), "admin", "admin");
+        String buyerId = userRepository.getUserByUsername("suspended_buyer").getID();
+        adminService.suspendUser(buyerId, "admin", 7);
+
+        Response<Double> response = discountService.calculatePriceAfterDiscounts(buyerToken, "E_CALC", "C_CALC", 100.0, 1, "none");
+
+        assertFalse(response.isSuccess());
+        assertTrue(response.isError());
+        assertEquals("User is suspended", response.getMessage());
     }
 }

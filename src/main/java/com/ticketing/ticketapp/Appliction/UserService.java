@@ -112,7 +112,11 @@ public class UserService implements IAuth {
                 logger.error("User {} not found while updating profile", userId);
                 throw new RuntimeException("User not found");
             }
-            
+
+            if(userRepository.isUserSuspendedNow(userId))
+                throw new Exception("User is suspended");
+
+
             user.setName(request.getName());
             user.setEmail(request.getEmail());
             
@@ -162,6 +166,10 @@ public class UserService implements IAuth {
                 logger.error("User {} not found while updating password", userId);
                 throw new RuntimeException("User not found");
             }
+
+            if(userRepository.isUserSuspendedNow(userId))
+                throw new Exception("User is suspended");
+
             String encodedPassword = passwordEncoder.encode(newPassword);
             user.setPassword(encodedPassword);
             userRepository.save(user);
@@ -181,6 +189,11 @@ public class UserService implements IAuth {
             }
             
             String username = tokenService.extractUsername(token);
+            String userID = tokenService.extractUserId(token);
+
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
+
             String senderId = tokenService.extractUserId(token);
 
             logger.info("User {} is submitting a complaint to {}", username, targetRole);

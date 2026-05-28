@@ -41,6 +41,8 @@ public class CompanyService {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
 
             String userID = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
             logger.info("User {} is creating company {}", userID, company);
 
             companyRepository.store(company, userID);
@@ -63,6 +65,8 @@ public class CompanyService {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
 
             String appointerID = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(appointerID))
+                throw new RuntimeException("User is suspended");
             if (!treeOfRoleRepository.exitsOwner(appointerID, company)) {
                 throw new RuntimeException("Only an owner can appoint a manager");
             }
@@ -85,7 +89,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String userID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
             Manager m = treeOfRoleRepository.getManager(userID, company);
             m.acceptAppointment();
             treeOfRoleRepository.save(m);
@@ -100,7 +105,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String userID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
             if (!treeOfRoleRepository.isManager(userID, company)) {
                 throw new RuntimeException("User is not a manager");
             }
@@ -116,7 +122,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(appointerID))
+                throw new RuntimeException("User is suspended");
             if (!treeOfRoleRepository.exitsOwner(appointerID, company)) {
                 throw new RuntimeException("Only an owner can appoint another owner");
             }
@@ -140,7 +147,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String userID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
             Owner o = treeOfRoleRepository.getOwner(userID, company);
             o.acceptAppointment();
             treeOfRoleRepository.save(o);
@@ -155,7 +163,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String userID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
             if (!treeOfRoleRepository.isOwner(userID, company)) {
                 throw new RuntimeException("User is not an owner");
             }
@@ -177,7 +186,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(appointerID))
+                throw new RuntimeException("User is suspended");
             User targetUser = userRepository.getUserByUsername(ownerUsername);
             if (targetUser == null) throw new RuntimeException("Target user not found");
             String targetUserID = targetUser.getID();
@@ -198,7 +208,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(appointerID))
+                throw new RuntimeException("User is suspended");
             User targetUser = userRepository.getUserByUsername(managerUsername);
             if (targetUser == null) throw new RuntimeException("Target user not found");
             String targetUserID = targetUser.getID();
@@ -219,7 +230,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(appointerID))
+                throw new RuntimeException("User is suspended");
             User targetUser = userRepository.getUserByUsername(memberUsername);
             if (targetUser == null) throw new RuntimeException("User not found");
             String targetUserID = targetUser.getID();
@@ -283,7 +295,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(appointerID))
+                throw new RuntimeException("User is suspended");
             User targetUser = userRepository.getUserByUsername(managerUsername);
             if (targetUser == null) throw new RuntimeException("Target user not found");
             String targetUserID = targetUser.getID();
@@ -308,7 +321,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String userID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
             Company companyObj = companyRepository.getCompany(company);
             companyObj.freezeCompany(userID);
             companyRepository.save(companyObj);
@@ -332,7 +346,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String userID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
             Company companyObj = companyRepository.getCompany(company);
             companyObj.unfreezeCompany(userID);
             companyRepository.save(companyObj);
@@ -348,7 +363,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String userId = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(userId))
+                throw new RuntimeException("User is suspended");
             Owner o = treeOfRoleRepository.getOwner(userId, company);
             if (o == null || !iTreeOfRoleRepository.FOUNDER_APPOINTER.equals(o.getAppointerID())) {
                 throw new RuntimeException("Only the founder can close the company");
@@ -378,7 +394,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String userID = tokenService.extractUserId(token);
-
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
             boolean isOwner = treeOfRoleRepository.exitsOwner(userID, companyName);
             boolean isManager = treeOfRoleRepository.isManager(userID, companyName);
 
@@ -483,6 +500,8 @@ public class CompanyService {
         try {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String userID = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
             boolean isOwner = treeOfRoleRepository.exitsOwner(userID, companyName);
             boolean isManager = treeOfRoleRepository.isManager(userID, companyName);
             if (!isOwner && !isManager)

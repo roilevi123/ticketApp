@@ -5,6 +5,7 @@ import com.ticketing.ticketapp.Domain.Lottery.ILotteryCodeRepository;
 import com.ticketing.ticketapp.Domain.Lottery.ILotteryRepository;
 import com.ticketing.ticketapp.Domain.Lottery.LotteryCode;
 import com.ticketing.ticketapp.Domain.Lottery.LotteryRegistration;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,13 +30,15 @@ public class LotteryService {
     private final iEventRepository        eventRepository;
     private final TokenService            tokenService;
     private final INotifier               notifier;
+    private final IUserRepository userRepository;
 
-    public LotteryService(ILotteryRepository lotteryRepository,ILotteryCodeRepository lotteryCodeRepository,iEventRepository eventRepository,TokenService tokenService,INotifier notifier) {
+    public LotteryService(ILotteryRepository lotteryRepository,ILotteryCodeRepository lotteryCodeRepository,iEventRepository eventRepository,TokenService tokenService,INotifier notifier, IUserRepository userRepository) {
         this.lotteryRepository  = lotteryRepository;
         this.lotteryCodeRepository = lotteryCodeRepository;
         this.eventRepository = eventRepository;
         this.tokenService = tokenService;
         this.notifier = notifier;
+        this.userRepository=userRepository;
     }
 
     /**
@@ -47,6 +50,9 @@ public class LotteryService {
             if (!tokenService.validateToken(token)) {
                 return Response.error("Invalid token");
             }
+            String userID = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new RuntimeException("User is suspended");
             Event event = eventRepository.getEvent(eventName, companyName);
             if (event == null) {
                 return Response.error("Event not found: " + eventName);
@@ -86,6 +92,8 @@ public class LotteryService {
                 return Response.error("Invalid token - please log in");
             }
             String userId = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userId))
+                throw new RuntimeException("User is suspended");
             if (userId == null) {
                 return Response.error("Could not resolve user from token");
             }
@@ -221,4 +229,5 @@ public class LotteryService {
 
         // TODO: Integrate email/SMS notification service here once implemented by the team.
     }
+
 }

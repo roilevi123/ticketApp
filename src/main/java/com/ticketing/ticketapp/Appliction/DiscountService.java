@@ -1,6 +1,7 @@
 package com.ticketing.ticketapp.Appliction;
 
 import com.ticketing.ticketapp.Domain.Discount.*;
+import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,16 +17,23 @@ public class DiscountService {
     private final TokenService tokenService;
     private final PurchasedService purchasedService;
     private static final Logger logger = LoggerFactory.getLogger(DiscountService.class);
+    private IUserRepository userRepository;
 
-    public DiscountService(iDiscountPolicyRepository discountRepo, TokenService tokenService, PurchasedService purchasedService) {
+
+    public DiscountService(iDiscountPolicyRepository discountRepo, TokenService tokenService, PurchasedService purchasedService, IUserRepository userRepository) {
         this.discountRepo = discountRepo;
         this.tokenService = tokenService;
         this.purchasedService = purchasedService;
+        this.userRepository = userRepository;
+
     }
 
     public Response<String> createSimpleDiscount(String token, String targetId, DiscountTargetType type, double percentage, String companyName) {
         try {
             validateAuthority(token, companyName);
+            String userID = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new Exception("User is suspended");
             DiscountComponent simple = new ConditionalDiscount(percentage, null, "no conditions");
             return Response.success(savePolicy(targetId, type, simple));
         } catch (Exception e) {
@@ -37,6 +45,9 @@ public class DiscountService {
     public Response<String> createQuantityDiscount(String token, String targetId, DiscountTargetType type, double percentage, int minQuantity, String companyName) {
         try {
             validateAuthority(token, companyName);
+            String userID = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new Exception("User is suspended");
             String conditionDesc = "quantity >= " + minQuantity;
             DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getQuantity() >= minQuantity, conditionDesc);
             return Response.success(savePolicy(targetId, type, discount));
@@ -49,6 +60,9 @@ public class DiscountService {
     public Response<String> createTimeLimitedDiscount(String token, String targetId, DiscountTargetType type, double percentage, Date deadline, String companyName) {
         try {
             validateAuthority(token, companyName);
+            String userID = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new Exception("User is suspended");
             String conditionDesc = "purchase date before " + deadline.toString();
             DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getPurchaseDate().before(deadline), conditionDesc);
             return Response.success(savePolicy(targetId, type, discount));
@@ -61,6 +75,9 @@ public class DiscountService {
     public Response<String> createCouponDiscount(String token, String targetId, DiscountTargetType type, String code, double percentage, String companyName) {
         try {
             validateAuthority(token, companyName);
+            String userID = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new Exception("User is suspended");
             DiscountComponent coupon = new CouponDiscount(code, percentage);
             return Response.success(savePolicy(targetId, type, coupon));
         } catch (Exception e) {
@@ -72,6 +89,9 @@ public class DiscountService {
     public Response<String> createSumDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
         try {
             validateAuthority(token, companyName);
+            String userID = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new Exception("User is suspended");
             SumDiscountComposite sumComposite = new SumDiscountComposite();
 
             for (String id : existingPolicyIds) {
@@ -94,6 +114,9 @@ public class DiscountService {
     public Response<String> createMaxDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
         try {
             validateAuthority(token, companyName);
+            String userID = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new Exception("User is suspended");
             MaxDiscountComposite maxComposite = new MaxDiscountComposite();
 
             for (String id : existingPolicyIds) {
@@ -151,6 +174,10 @@ public class DiscountService {
             if (!tokenService.validateToken(token)) {
                 return Response.error("Invalid token");
             }
+
+            String userID = tokenService.extractUserId(token);
+            if(userRepository.isUserSuspendedNow(userID))
+                throw new Exception("User is suspended");
 
             PurchaseContext context = new PurchaseContext(quantity, coupon, new Date());
 
