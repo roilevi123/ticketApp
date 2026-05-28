@@ -8,7 +8,6 @@ import java.util.List;
  */
 public interface ILotteryCodeRepository {
 
-    /** Generates and persists a new lottery code for the given winner. */
     LotteryCode generate(String userId, String eventName, String companyName, Date expiryDate);
 
     /** Retrieves a code by its UUID string, or {@code null} if not found. */

@@ -54,22 +54,20 @@ public class LotteryRegistration {
         return !isClosed();
     }
 
-    // ── Getters ──────────────────────────────────────────────────────────────
 
-    public String getEventName()          { return eventName; }
-    public String getCompanyName()        { return companyName; }
-    public Date   getStartDate()          { return startDate; }
-    public Date   getEndDate()            { return endDate; }
-    public int    getMaxWinners()         { return maxWinners; }
-    public boolean isDrawn()              { return drawn; }
+    public String getEventName() { return eventName; }
+    public String getCompanyName() { return companyName; }
+    public Date getStartDate() { return startDate; }
+    public Date getEndDate() { return endDate; }
+    public int getMaxWinners() { return maxWinners; }
+    public boolean isDrawn() { return drawn; }
 
     /** Returns a snapshot copy so callers cannot mutate the list. */
     public List<String> getRegisteredUserIds() { return new ArrayList<>(registeredUserIds); }
 
-    // ── Setters ──────────────────────────────────────────────────────────────
 
-    public void setDrawn(boolean drawn)         { this.drawn = drawn; }
-    public void setStartDate(Date startDate)    { this.startDate = startDate; }
-    public void setEndDate(Date endDate)        { this.endDate = endDate; }
-    public void setMaxWinners(int maxWinners)   { this.maxWinners = maxWinners; }
+    public void setDrawn(boolean drawn) { this.drawn = drawn; }
+    public void setStartDate(Date startDate) { this.startDate = startDate; }
+    public void setEndDate(Date endDate) { this.endDate = endDate; }
+    public void setMaxWinners(int maxWinners) { this.maxWinners = maxWinners; }
 }

@@ -36,16 +36,14 @@ public class LotteryCode {
                 && this.companyName.equals(companyName);
     }
 
-    // ── Getters ──────────────────────────────────────────────────────────────
 
-    public String  getCode()        { return code; }
-    public String  getUserId()      { return userId; }
-    public String  getEventName()   { return eventName; }
+    public String  getCode() { return code; }
+    public String  getUserId() { return userId; }
+    public String  getEventName() { return eventName; }
     public String  getCompanyName() { return companyName; }
-    public Date    getExpiryDate()  { return expiryDate; }
-    public boolean isUsed()         { return used; }
+    public Date    getExpiryDate() { return expiryDate; }
+    public boolean isUsed() { return used; }
 
-    // ── Setters ──────────────────────────────────────────────────────────────
 
     public void setUsed(boolean used) { this.used = used; }
 }
