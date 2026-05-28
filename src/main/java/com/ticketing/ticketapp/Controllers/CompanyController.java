@@ -335,6 +335,24 @@ public class CompanyController {
         return ResponseEntity.badRequest().body(response.getMessage());
     }
 
+    @GetMapping("/{companyName}/complaints")
+    public ResponseEntity<?> getCompanyComplaints(
+            @RequestAttribute("cleanToken") String token,
+            @PathVariable("companyName") String companyName) {
+        String cleanToken = extractCleanToken(token);
+        try {
+            if (!tokenService.validateToken(cleanToken)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Invalid token"));
+            }
+            String inboxKey = "COMPANY_COMPLAINT::" + companyName;
+            List<com.ticketing.ticketapp.Domain.Notification.Notification> complaints =
+                    notificationRepository.getAll(inboxKey);
+            return ResponseEntity.ok(complaints);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/messages")
     public ResponseEntity<?> getCompanyMessages(@RequestAttribute("cleanToken") String token) {
         token = extractCleanToken(token);

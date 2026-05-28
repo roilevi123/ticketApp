@@ -65,10 +65,29 @@ public class UserController {
     public ResponseEntity<?> sendMessage(
             @RequestAttribute("cleanToken") String token,
             @RequestBody MessageRequest request) {
-        
+
         Response<String> response = userService.submitUserComplaint(
-                token, 
-                request.getRecipientRole(), 
+                token,
+                request.getRecipientRole(),
+                request.getContent()
+        );
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(Map.of("message", response.getData()));
+        }
+        return ResponseEntity.status(400).body(Map.of("error", response.getMessage()));
+    }
+
+    @PostMapping("/support/producer-complaint")
+    public ResponseEntity<?> sendProducerComplaint(
+            @RequestAttribute("cleanToken") String token,
+            @RequestBody ProducerComplaintRequest request) {
+
+        Response<String> response = userService.submitProducerComplaint(
+                token,
+                request.getCompanyName(),
+                request.getEventName(),
+                request.getSubject(),
                 request.getContent()
         );
 
@@ -106,11 +125,30 @@ public class UserController {
 
 
 class MessageRequest {
-        private String recipientRole; 
+        private String recipientRole;
         private String content;
 
         public String getRecipientRole() { return recipientRole; }
         public void setRecipientRole(String recipientRole) { this.recipientRole = recipientRole; }
+
+        public String getContent() { return content; }
+        public void setContent(String content) { this.content = content; }
+}
+
+class ProducerComplaintRequest {
+        private String companyName;
+        private String eventName;
+        private String subject;
+        private String content;
+
+        public String getCompanyName() { return companyName; }
+        public void setCompanyName(String companyName) { this.companyName = companyName; }
+
+        public String getEventName() { return eventName; }
+        public void setEventName(String eventName) { this.eventName = eventName; }
+
+        public String getSubject() { return subject; }
+        public void setSubject(String subject) { this.subject = subject; }
 
         public String getContent() { return content; }
         public void setContent(String content) { this.content = content; }

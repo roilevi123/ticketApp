@@ -54,6 +54,14 @@ export default function MemberProfile() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
+  // Producer complaint extras
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState("");
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState("");
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [eventsLoading, setEventsLoading] = useState(false);
+
   // Toast: { type: 'success' | 'error', message: string } | null
   const [toast, setToast] = useState(null);
 
@@ -65,6 +73,30 @@ export default function MemberProfile() {
     setToast({ type, message: msg });
     setTimeout(() => setToast(null), 3500);
   }
+
+  // ── Fetch company list when PRODUCER tab is chosen ─────────────────────────
+  useEffect(() => {
+    if (supportType !== "PRODUCER") return;
+    setCompaniesLoading(true);
+    axiosClient.get('/discovery/companies')
+      .then(res => setCompanies(res.data ?? []))
+      .catch(() => setCompanies([]))
+      .finally(() => setCompaniesLoading(false));
+    setSelectedCompany("");
+    setSelectedEvent("");
+    setEvents([]);
+  }, [supportType]);
+
+  // ── Fetch events for selected company ──────────────────────────────────────
+  useEffect(() => {
+    if (!selectedCompany) { setEvents([]); setSelectedEvent(""); return; }
+    setEventsLoading(true);
+    axiosClient.get(`/discovery/companies/${encodeURIComponent(selectedCompany)}/events`)
+      .then(res => setEvents(res.data ?? []))
+      .catch(() => setEvents([]))
+      .finally(() => setEventsLoading(false));
+    setSelectedEvent("");
+  }, [selectedCompany]);
 
   // ── Fetch profile on mount ──────────────────────────────────────────────────
   useEffect(() => {
@@ -113,13 +145,24 @@ export default function MemberProfile() {
     e.preventDefault();
     setSubmitLoading(true);
     try {
-      await axiosClient.post('/users/support/message', {
-        recipientRole: supportType,
-        content: subject ? `[${subject}] ${message}` : message,
-      });
+      if (supportType === "PRODUCER") {
+        await axiosClient.post('/users/support/producer-complaint', {
+          companyName: selectedCompany,
+          eventName: selectedEvent,
+          subject,
+          content: message,
+        });
+      } else {
+        await axiosClient.post('/users/support/message', {
+          recipientRole: supportType,
+          content: subject ? `[${subject}] ${message}` : message,
+        });
+      }
       setSubject('');
       setMessage('');
       setSupportType('ADMIN');
+      setSelectedCompany('');
+      setSelectedEvent('');
       showToast('success', "Message sent successfully.");
     } catch (err) {
       showToast("error", `Could not send message: ${err.message}`);
@@ -333,6 +376,7 @@ export default function MemberProfile() {
                 onSubmit={handleSupportSubmit}
                 className="space-y-6 flex-grow flex flex-col"
               >
+                {/* ── Recipient selector ── */}
                 <div className="space-y-2">
                   <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">
                     Send message to:
@@ -347,12 +391,66 @@ export default function MemberProfile() {
                       <option value="PRODUCER">Event Producer</option>
                     </select>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <span className="material-symbols-outlined text-on-surface-variant">
-                        expand_more
-                      </span>
+                      <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
                     </div>
                   </div>
                 </div>
+
+                {/* ── Producer: company selector ── */}
+                {supportType === "PRODUCER" && (
+                  <div className="space-y-2">
+                    <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">
+                      Select Company
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedCompany}
+                        onChange={(e) => setSelectedCompany(e.target.value)}
+                        disabled={companiesLoading}
+                        required
+                        className="w-full bg-background border border-outline-variant text-on-surface text-body-md px-4 py-3 rounded appearance-none focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all disabled:opacity-50"
+                      >
+                        <option value="">
+                          {companiesLoading ? "Loading companies…" : "— choose a company —"}
+                        </option>
+                        {companies.map(c => (
+                          <option key={c.companyName} value={c.companyName}>{c.companyName}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Producer: event selector (shown only after company chosen) ── */}
+                {supportType === "PRODUCER" && selectedCompany && (
+                  <div className="space-y-2">
+                    <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">
+                      Select Event
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedEvent}
+                        onChange={(e) => setSelectedEvent(e.target.value)}
+                        disabled={eventsLoading}
+                        required
+                        className="w-full bg-background border border-outline-variant text-on-surface text-body-md px-4 py-3 rounded appearance-none focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all disabled:opacity-50"
+                      >
+                        <option value="">
+                          {eventsLoading ? "Loading events…" : "— choose an event —"}
+                        </option>
+                        {events.map(ev => (
+                          <option key={ev.name} value={ev.name}>{ev.name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <span className="material-symbols-outlined text-on-surface-variant">expand_more</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="block text-label-sm text-on-surface-variant uppercase tracking-wider">
@@ -384,7 +482,10 @@ export default function MemberProfile() {
                 <div className="pt-6">
                   <button
                     type="submit"
-                    disabled={submitLoading}
+                    disabled={
+                      submitLoading ||
+                      (supportType === "PRODUCER" && (!selectedCompany || !selectedEvent))
+                    }
                     className="w-full bg-secondary text-on-secondary text-label-md py-4 px-8 rounded hover:opacity-90 transition-opacity uppercase font-bold flex items-center justify-center gap-3 disabled:opacity-50"
                   >
                     {submitLoading ? (
