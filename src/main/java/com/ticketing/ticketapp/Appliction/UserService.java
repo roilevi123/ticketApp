@@ -187,7 +187,7 @@ public class UserService implements IAuth {
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            
+
             String username = tokenService.extractUsername(token);
             String userID = tokenService.extractUserId(token);
 
@@ -201,9 +201,41 @@ public class UserService implements IAuth {
             notifier.notifyUserWithSender(targetId, senderId, "Complaint from " + username, messageContent);
             logger.info("Successfully submitted complaint from {}", username);
             return Response.success("Complaint sent successfully");
-            
+
         } catch (Exception e) {
             logger.error("Failed to submit complaint: {}", e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> submitProducerComplaint(String token, String companyName, String eventName,
+                                                     String subject, String content) {
+        try {
+            if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
+            String username = tokenService.extractUsername(token);
+            String userId = tokenService.extractUserId(token);
+            if (userRepository.isUserSuspendedNow(userId)) throw new RuntimeException("User is suspended");
+
+            String title = "Complaint about " + eventName;
+            String body = (subject == null || subject.isBlank()) ? content : "[" + subject + "] " + content;
+
+            // Notify each owner individually (real-time + personal inbox)
+            roleRepository.getAllOwnersByCompany(companyName).forEach(owner ->
+                    notifier.notifyUserWithSender(owner.getUserID(), userId, title, body));
+
+            // Notify each manager individually
+            roleRepository.getAllManagersByCompany(companyName).forEach(manager ->
+                    notifier.notifyUserWithSender(manager.getUserID(), userId, title, body));
+
+            // Store in company-shared complaint inbox
+            String companyInboxKey = "COMPANY_COMPLAINT::" + companyName;
+            notifier.notifyUserWithSender(companyInboxKey, userId, title, body);
+
+            logger.info("Producer complaint submitted by '{}' for event '{}' / company '{}'",
+                    username, eventName, companyName);
+            return Response.success("Complaint sent to the producer successfully");
+        } catch (Exception e) {
+            logger.error("Failed to submit producer complaint: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
     }
