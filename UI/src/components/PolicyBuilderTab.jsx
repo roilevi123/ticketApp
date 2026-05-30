@@ -44,6 +44,7 @@ export default function PolicyBuilderTab({ companyName }) {
     switch (type) {
       case 'min_age': return { field: 'user.age', operator: 'gte' };
       case 'max_tickets': return { field: 'cart.ticket_count', operator: 'lte' };
+      case 'min_tickets': return { field: 'cart.ticket_count', operator: 'gte' };
       case 'date_range': return { field: 'event.date', operator: 'between' };
       case 'alumni_status': return { field: 'user.is_alumni', operator: 'eq' };
       default: return { field: 'unknown', operator: 'eq' };
@@ -54,6 +55,7 @@ export default function PolicyBuilderTab({ companyName }) {
     switch (rule.type) {
       case 'min_age': return <>Min Age <strong className="text-secondary">&gt;= {rule.value}</strong></>;
       case 'max_tickets': return <>Max Tickets <strong className="text-secondary">&lt;= {rule.value}</strong></>;
+      case 'min_tickets': return <>Min Tickets <strong className="text-secondary">&gt;= {rule.value}</strong></>;
       case 'alumni_status': return <>Alumni Status <strong className="text-secondary">== {rule.value}</strong></>;
       default: return <>{rule.type} <strong className="text-secondary">{rule.value}</strong></>;
     }
@@ -235,16 +237,18 @@ export default function PolicyBuilderTab({ companyName }) {
                   <label className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Condition Type</label>
                   <div className="relative">
                     <select
-                      className="w-full bg-surface-container-highest border border-outline-variant text-on-surface rounded-lg py-3 px-4 appearance-none focus:border-secondary focus:ring-1 focus:outline-none"
-                      value={conditionType}
-                      onChange={(e) => setConditionType(e.target.value)}
+                        className="w-full bg-surface-container-highest border border-outline-variant text-on-surface rounded-lg py-3 px-4 appearance-none focus:border-secondary focus:ring-1 focus:outline-none"
+                        value={conditionType}
+                        onChange={(e) => setConditionType(e.target.value)}
                     >
                       <option value="min_age">Minimum Age</option>
                       <option value="max_tickets">Max Tickets Per User</option>
+                      <option value="min_tickets">Min Tickets Per Purchase</option>
                       <option value="date_range">Valid Date Range</option>
                       <option value="alumni_status">Alumni Status Required</option>
                     </select>
-                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+                    <span
+                        className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
                   </div>
                 </div>
 
