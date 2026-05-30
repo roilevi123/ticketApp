@@ -209,6 +209,8 @@ public class CompanyController {
         return ResponseEntity.badRequest().body(response.getMessage());
     }
 
+
+
     @PostMapping("/policies/discount/time-limited")
     public ResponseEntity<?> createTimeLimitedDiscount(
             @RequestAttribute("cleanToken") String token, 
@@ -629,11 +631,19 @@ public class CompanyController {
                     int minAge = Integer.parseInt(condition.getValue().toString());
                     res = purchasePolicyService.createAgeLimitPolicy(
                         token, request.getTargetId(), targetTypeEnum, minAge);
-                } 
+                }
                 else if ("cart.ticket_count".equals(condition.getField())) {
-                    int maxTickets = Integer.parseInt(condition.getValue().toString());
-                    res = purchasePolicyService.createQuantityLimitPolicy(
-                        token, request.getTargetId(), targetTypeEnum, 1, maxTickets);
+                    int tickets = Integer.parseInt(condition.getValue().toString());
+
+                    if ("gte".equalsIgnoreCase(condition.getOperator())) {
+                        res = purchasePolicyService.createQuantityLimitPolicy(
+                                token, request.getTargetId(), targetTypeEnum, tickets, 999999);
+                    } else if ("lte".equalsIgnoreCase(condition.getOperator())) {
+                        res = purchasePolicyService.createQuantityLimitPolicy(
+                                token, request.getTargetId(), targetTypeEnum, 1, tickets);
+                    } else {
+                        return ResponseEntity.badRequest().body("Invalid operator for ticket count");
+                    }
                 }
 
                 if (res != null && res.isSuccess()) {
