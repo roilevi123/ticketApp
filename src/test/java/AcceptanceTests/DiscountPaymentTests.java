@@ -22,14 +22,19 @@ import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
+@DataJpaTest
+@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
 @DisplayName("Discount & Payment Price Acceptance Tests")
 public class DiscountPaymentTests {
 
@@ -44,7 +49,8 @@ public class DiscountPaymentTests {
     private iDiscountPolicyRepository discountRepo;
     private IUserRepository userRepository;
     private AdminService adminService;
-
+    @Autowired
+    private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @BeforeEach
     void setUp() {
         IUserRepository userRepository = new UserRepositoryImpl();
@@ -56,7 +62,7 @@ public class DiscountPaymentTests {
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.discountRepo = new InMemoryDiscountPolicyRepository();
-        iPurchasePolicyRepository purchasePolicyRepository = new InMemoryPurchasePolicyRepository();
+        iPurchasePolicyRepository purchasePolicyRepository = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
         INotifier notifierMock = mock(INotifier.class);
 
         this.tokenService = new TokenService();
@@ -91,6 +97,7 @@ public class DiscountPaymentTests {
         eventRepository.deleteAllEvents();
         userRepository.deleteAll();
         discountRepo.deleteAll();
+        purchasePolicyRepository.deleteAll();
     }
 
     private String setupEventAndGetToken(String owner, String company, String event, double price) {

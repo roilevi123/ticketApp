@@ -24,13 +24,14 @@ class OrderServiceTest {
     private OrderService reserveTicketService;
     private TicketRepositoryImpl ticketRepository;
     private OrderRepositoryImpl orderRepository;
-    private InMemoryPurchasePolicyRepository purchasePolicyRepository;
+    private PurchasePolicyRepositoryAdapter purchasePolicyRepository;
 
     @Mock
     private TokenService tokenService;
     @Mock
     private IUserRepository userRepository;
-
+    @Mock
+    private com.ticketing.ticketapp.Infastructure.JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     private final String TOKEN = "valid_token";
     private final String USERNAME = "test_user";
     private final String COMPANY = "test_company";
@@ -42,7 +43,8 @@ class OrderServiceTest {
         ticketRepository = spy(new TicketRepositoryImpl());
         orderRepository = spy(new OrderRepositoryImpl());
         userRepository = spy(new UserRepositoryImpl());
-        purchasePolicyRepository = spy(new InMemoryPurchasePolicyRepository());
+        var realAdapter = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
+        purchasePolicyRepository = spy(realAdapter);
 
         INotifier notifierMock = mock(INotifier.class);
         iEventRepository eventRepositoryMock = mock(iEventRepository.class);

@@ -22,11 +22,18 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 import com.ticketing.ticketapp.Appliction.INotifier;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+
 import java.util.*;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DataJpaTest
+@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
 @DisplayName("Complete Reserve Ticket Acceptance Tests")
 public class ReseveTicketTests {
 
@@ -37,7 +44,8 @@ public class ReseveTicketTests {
     private TokenService tokenService;
     private IUserRepository userRepository;
     private AdminService adminService;
-
+    @Autowired
+    private com.ticketing.ticketapp.Infastructure.JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @BeforeEach
     void setUp() {
         IUserRepository userRepository = new UserRepositoryImpl();
@@ -50,8 +58,7 @@ public class ReseveTicketTests {
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-        iPurchasePolicyRepository purchasePolicyRepository = new InMemoryPurchasePolicyRepository();
-
+        iPurchasePolicyRepository purchasePolicyRepository = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
         INotifier notifierMock = mock(INotifier.class);
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
@@ -79,6 +86,7 @@ public class ReseveTicketTests {
         ticketRepository.deleteAllTickets();
         userRepository.deleteAll();
         tokenService.clearAllData();
+        purchasePolicyRepository.deleteAll();
     }
 
     private String gt() {

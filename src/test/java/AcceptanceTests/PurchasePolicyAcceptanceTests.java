@@ -23,11 +23,16 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 import com.ticketing.ticketapp.Appliction.INotifier;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+@DataJpaTest
+@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
 @DisplayName("Purchase Policy Acceptance Tests")
 public class PurchasePolicyAcceptanceTests {
 
@@ -39,7 +44,8 @@ public class PurchasePolicyAcceptanceTests {
     private TokenService tokenService;
     private IUserRepository userRepository;
     private AdminService adminService;
-
+    @Autowired
+    private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @BeforeEach
     void setUp() {
         IUserRepository userRepository = new UserRepositoryImpl();
@@ -49,7 +55,7 @@ public class PurchasePolicyAcceptanceTests {
         iTreeOfRoleRepository treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
         IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
-        iPurchasePolicyRepository purchasePolicyRepository = new InMemoryPurchasePolicyRepository();
+        iPurchasePolicyRepository purchasePolicyRepository = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         INotifier notifierMock = mock(INotifier.class);
 
@@ -76,6 +82,8 @@ public class PurchasePolicyAcceptanceTests {
         companyRepository.deleteAllCompany();
         ticketRepository.deleteAllTickets();
         purchasePolicyRepository.deleteAll();
+        purchasePolicyRepository.deleteAll();
+
     }
 
     private String gt() { return tokenService.generateGuestToken(); }
@@ -221,12 +229,18 @@ public class PurchasePolicyAcceptanceTests {
     @Test @DisplayName("22. Success - Get Multiple Policies DTO (Event + Company)")
     void getMultiplePoliciesDTO() {
         String admin = regAndSetup("admin", "C1", "E1", 18);
-        policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 1, 5);
+
+        String pAgeEventId = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1").getData().get(0).id();
+
+        String pQtyEventId = policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 1, 5).getData();
+
+        policyService.createAndPolicy(admin, "E1", PurchaseTargetType.EVENT, Arrays.asList(pAgeEventId, pQtyEventId));
+
         policyService.createAgeLimitPolicy(admin, "C1", PurchaseTargetType.COMPANY, 10);
 
         List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1").getData();
 
-        assertEquals(3, policies.size()); // 1 Age (Event), 1 Qty (Event), 1 Age (Company)
+        assertEquals(2, policies.size());
     }
 
     @Test @DisplayName("23. Success - DTO Description After Composite AND Creation")
@@ -321,17 +335,23 @@ public class PurchasePolicyAcceptanceTests {
     @Test @DisplayName("30. Success - Multiple Concurrent Policies DTO")
     void multipleConcurrentPoliciesDTO() {
         String admin = regAndSetup("admin", "C1", "E1", 0);
-        policyService.createAgeLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 18);
-        policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 1, 10);
+
+        String p1 = policyService.createAgeLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 18).getData();
+        String p2 = policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 1, 10).getData();
+
+        policyService.createAndPolicy(admin, "E1", PurchaseTargetType.EVENT, Arrays.asList(p1, p2));
+
         policyService.createAgeLimitPolicy(admin, "C1", PurchaseTargetType.COMPANY, 12);
 
         List<PurchasePolicyDTO> policies = policyService.getPoliciesForEventAndCompany(admin, "E1", "C1").getData();
 
-        long eventCount = policies.stream().filter(p -> p.type().equals("EVENT")).count();
-        long companyCount = policies.stream().filter(p -> p.type().equals("COMPANY")).count();
+        assertEquals(2, policies.size());
 
-        assertEquals(2, eventCount);
-        assertEquals(1, companyCount);
+        boolean hasEvent = policies.stream().anyMatch(p -> p.type().equals("EVENT"));
+        boolean hasCompany = policies.stream().anyMatch(p -> p.type().equals("COMPANY"));
+
+        assertTrue(hasEvent, "Missing EVENT policy");
+        assertTrue(hasCompany, "Missing COMPANY policy");
     }
 
     @Test

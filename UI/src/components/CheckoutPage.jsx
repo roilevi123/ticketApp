@@ -238,7 +238,7 @@ export default function CheckoutPage() {
                     <div className="flex flex-col items-end">
                       {discountedTotal !== null && discountedTotal < originalTotal && (
                         <span className="text-label-sm text-on-surface-variant line-through opacity-70">
-                          {formatMoney(originalTotal)}
+                          {formatMoney(discountedTotal)}
                         </span>
                       )}
                       <span className="text-headline-sm text-on-surface font-bold">
