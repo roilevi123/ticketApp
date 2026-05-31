@@ -47,64 +47,84 @@ export default function PolicyBuilderTab({ companyName }) {
         policiesArray = [response.data];
       }
 
-      if (policiesArray.length > 0) {
-        const formattedPolicies = policiesArray.map(p => ({
-          id: p.id,
-          description: p.description || p.type || (p.operator ? `Composite (${p.operator}) Rule` : 'Active Policy Logic')
-        }));
-        setExistingPolicies(formattedPolicies);
-      }
+      const formattedPolicies = policiesArray
+          .map(p => ({
+            id: p.policyId || p.id,
+            description: p.description || p.type || (p.operator ? `Composite (${p.operator}) Rule` : 'Active Policy Logic')
+          }))
+          .filter(p => Boolean(p.id));
+
+      setExistingPolicies(formattedPolicies);
     } catch (error) {
       console.error("Fetch failed, keeping local sandbox state:", error);
     }
   };
 
-  // שליפת הנחות קיימות מהשרת עבור האירוע והחברה הנוכחיים
+  // שליפת הנחות קיימות מהשרת לפי היעד הנוכחי של ההנחה
   const fetchExistingDiscounts = async () => {
-    if (!targetEvent) return;
+    if (!discountTargetId || !companyName) {
+      setExistingDiscounts([]);
+      return;
+    }
+
     try {
-      // קריאה חזרה לשרת לפי המבנה של getDiscountsForEventAndCompany במנוע ה-Java
-      const response = await axiosClient.get(`/company/policies/discount/by-event?eventId=${targetEvent}&companyName=${companyName}`);
+      const response = await axiosClient.get(
+          `/company/policies/discount/by-event?eventId=${encodeURIComponent(discountTargetId)}&companyName=${encodeURIComponent(companyName)}`
+      );
 
       let discountsArray = [];
       if (Array.isArray(response.data)) {
         discountsArray = response.data;
       } else if (response.data?.data && Array.isArray(response.data.data)) {
         discountsArray = response.data.data;
+      } else if (response.data && typeof response.data === 'object' && (response.data.id || response.data.policyId)) {
+        discountsArray = [response.data];
       }
 
-      const formattedDiscounts = discountsArray.map(d => ({
-        id: d.policyId || d.id,
-        targetId: d.targetId,
-        targetType: d.targetType,
-        description: d.description || 'Active Discount Logic'
-      }));
+      const formattedDiscounts = discountsArray
+          .map(d => ({
+            id: d.policyId || d.id,
+            targetId: d.targetId,
+            targetType: d.targetType || d.type,
+            description: d.description || d.type || 'Active Discount Logic'
+          }))
+          .filter(d => Boolean(d.id));
+
       setExistingDiscounts(formattedDiscounts);
     } catch (error) {
       console.error("Fetch discounts failed:", error);
+      setExistingDiscounts([]);
     }
   };
 
-  // בעת שינוי שם האירוע - נתאפס או נמשוך מידע קיים
+  // שינוי אירוע משפיע על מדיניות רכישה בלבד
   useEffect(() => {
     if (targetEvent) {
       fetchExistingPolicies();
-      fetchExistingDiscounts();
     } else {
       setExistingPolicies([]);
-      setExistingDiscounts([]);
     }
     setSelectedPolicyIds([]);
-    setSelectedDiscountIds([]);
   }, [targetEvent]);
 
+  // סנכרון יעד ההנחה לפי סוג היעד
   useEffect(() => {
     if (discountTargetType === 'COMPANY') {
-      setDiscountTargetId(companyName);
+      setDiscountTargetId(companyName || '');
     } else {
       setDiscountTargetId(targetEvent || '');
     }
   }, [discountTargetType, companyName, targetEvent]);
+
+  // שינוי יעד הנחה משפיע על רשימת ההנחות בלבד
+  useEffect(() => {
+    if (discountTargetId) {
+      fetchExistingDiscounts();
+    } else {
+      setExistingDiscounts([]);
+    }
+    setSelectedDiscountIds([]);
+  }, [discountTargetId, companyName]);
 
   // ==========================================
   // PURCHASE RULES HANDLERS (LOCK - DO NOT TOUCH)
@@ -173,7 +193,7 @@ export default function PolicyBuilderTab({ companyName }) {
   };
 
   // ==========================================
-  // DISCOUNT POLICY HANDLERS (UPDATED TO MATCH JAVA SERVICE)
+  // DISCOUNT POLICY HANDLERS (ALIGNED WITH SERVER)
   // ==========================================
   const toggleDiscountSelection = (id) => {
     if (selectedDiscountIds.includes(id)) {
@@ -209,7 +229,6 @@ export default function PolicyBuilderTab({ companyName }) {
         case 'time-limited':
           endpoint = '/company/policies/discount/time-limited';
           payload.percentage = Number(discountPercentage);
-          // שליחת תאריך בפורמט ISO כפי שנדרש ב-Java (מצפה ל-Date)
           payload.deadline = new Date(discountDeadline).toISOString();
           break;
         case 'coupon':
@@ -218,12 +237,12 @@ export default function PolicyBuilderTab({ companyName }) {
           payload.code = discountCode;
           break;
         case 'combine-sum':
-          if (selectedDiscountIds.length < 2) return alert("Please select at least 2 discount policies from the list below to combine");
+          if (selectedDiscountIds.length < 2) return alert("Please select at least 2 discount policies to combine");
           endpoint = '/company/policies/discount/combine-sum';
           payload.existingPolicyIds = selectedDiscountIds;
           break;
         case 'combine-max':
-          if (selectedDiscountIds.length < 2) return alert("Please select at least 2 discount policies from the list below to combine");
+          if (selectedDiscountIds.length < 2) return alert("Please select at least 2 discount policies to combine");
           endpoint = '/company/policies/discount/combine-max';
           payload.existingPolicyIds = selectedDiscountIds;
           break;
@@ -231,7 +250,9 @@ export default function PolicyBuilderTab({ companyName }) {
       }
 
       const response = await axiosClient.post(endpoint, payload);
-      const serverGeneratedId = response.data || `disc-${Date.now()}`;
+
+      // חילוץ ה-ID בהתאם ל-Controller המחזיר: Map.of("message", "...", "policyId", "...")
+      const serverGeneratedId = response.data?.policyId || response.data?.id || `disc-${Date.now()}`;
 
       alert(`Discount policy created successfully! ID: ${serverGeneratedId}`);
 
@@ -241,7 +262,7 @@ export default function PolicyBuilderTab({ companyName }) {
       setDiscountDeadline('');
       setDiscountCode('');
       setSelectedDiscountIds([]);
-      fetchExistingDiscounts();
+      await fetchExistingDiscounts();
     } catch (error) {
       alert(`Failed: ${error.response?.data?.message || error.response?.data || error.message}`);
     }
@@ -438,7 +459,6 @@ export default function PolicyBuilderTab({ companyName }) {
 
                   {/* Dynamic inputs based on selected logic type */}
                   <div className="bg-black border border-gray-800 p-4 rounded-xl mb-6">
-                    {/* Percentage field required for simple, quantity, time-limited, and coupon */}
                     {['simple', 'quantity', 'time-limited', 'coupon'].includes(discountLogicType) && (
                         <div className="mb-4">
                           <label className="text-xs text-gray-400 block mb-1">Discount Percentage (%)</label>
@@ -492,10 +512,10 @@ export default function PolicyBuilderTab({ companyName }) {
                     <button onClick={fetchExistingDiscounts} className="text-xs text-blue-400 hover:underline">Refresh Discounts</button>
                   </div>
 
-                  {!targetEvent ? (
-                      <p className="text-gray-500 text-center my-auto py-8 text-sm">Enter an Event Name above to pull its active discount schemas.</p>
+                  {!discountTargetId ? (
+                      <p className="text-gray-500 text-center my-auto py-8 text-sm">Enter a Target ID or Event Name to pull its active discount schemas.</p>
                   ) : existingDiscounts.length === 0 ? (
-                      <p className="text-gray-500 text-center my-auto py-8 text-sm">No active discount policies configured for this event scope.</p>
+                      <p className="text-gray-500 text-center my-auto py-8 text-sm">No active discount policies configured for this target scope.</p>
                   ) : (
                       <div className="flex flex-col gap-3 overflow-y-auto max-h-[450px]">
                         {existingDiscounts.map((d) => {
@@ -525,7 +545,6 @@ export default function PolicyBuilderTab({ companyName }) {
                   )}
                 </div>
               </div>
-
             </div>
         )}
       </div>
