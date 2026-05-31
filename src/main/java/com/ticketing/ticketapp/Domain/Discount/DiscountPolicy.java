@@ -1,10 +1,27 @@
 package com.ticketing.ticketapp.Domain.Discount;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "discount_policies")
 public class DiscountPolicy {
-    private final String policyId;
-    private final String targetId;
-    private final DiscountTargetType targetType;
-    private final DiscountComponent root;
+
+    @Id
+    @Column(name = "policy_id")
+    private String policyId;
+
+    @Column(name = "target_id")
+    private String targetId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_type")
+    private DiscountTargetType targetType;
+
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumn(name = "root_discount_id")
+    private DiscountComponent root;
+
+    protected DiscountPolicy() {}
 
     public DiscountPolicy(String policyId, String targetId, DiscountTargetType targetType, DiscountComponent root) {
         this.policyId = policyId;
@@ -18,7 +35,6 @@ public class DiscountPolicy {
         return Math.max(0, originalPrice - discountAmount);
     }
 
-    // Getters
     public String getPolicyId() { return policyId; }
     public String getTargetId() { return targetId; }
     public DiscountTargetType getTargetType() { return targetType; }

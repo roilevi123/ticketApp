@@ -27,7 +27,11 @@ import com.ticketing.ticketapp.Appliction.INotifier;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+@org.springframework.boot.test.context.SpringBootTest
+@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
+@org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("Complete Purchase Order Acceptance Tests")
 public class PurchaseOrderTests {
 
@@ -39,7 +43,8 @@ public class PurchaseOrderTests {
     private TokenService tokenService;
     private IUserRepository userRepository;
     private AdminService adminService;
-
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
     @BeforeEach
     void setUp() {
         IUserRepository userRepository = new UserRepositoryImpl();
@@ -50,7 +55,7 @@ public class PurchaseOrderTests {
         IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        iDiscountPolicyRepository discountPolicyRepository = new InMemoryDiscountPolicyRepository();
+        iDiscountPolicyRepository discountPolicyRepository = new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
         iPurchasePolicyRepository purchasePolicyRepository = new InMemoryPurchasePolicyRepository();
         INotifier notifierMock = mock(INotifier.class);
 
@@ -84,6 +89,7 @@ public class PurchaseOrderTests {
         ticketRepository.deleteAllTickets();
         userRepository.deleteAll();
         tokenService.clearAllData();
+//        jpaDiscountPolicyRepository.deleteAll();
     }
 
     private String gt() {

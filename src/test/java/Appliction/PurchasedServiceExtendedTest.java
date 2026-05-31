@@ -27,6 +27,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@org.springframework.boot.test.context.SpringBootTest
+@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
+@org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
 class PurchasedServiceExtendedTest {
 
     @Mock private iPurchasedOrderRepository purchasedOrderRepository;
@@ -38,6 +43,9 @@ class PurchasedServiceExtendedTest {
     @Mock private IUserRepository userRepository;
     @Mock private INotifier notifier;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
+
     private PurchasedService purchasedService;
 
     private final String EMAIL = "test@example.com";
@@ -48,6 +56,7 @@ class PurchasedServiceExtendedTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        jpaDiscountPolicyRepository.deleteAll();
     }
 
     private PurchasedService buildService(IActiveOrderRepository orderRepo,
@@ -64,8 +73,7 @@ class PurchasedServiceExtendedTest {
     void purchaseTicket_SoldOut_NotifiesOwnersAndManagers() throws Exception {
         TicketRepositoryImpl ticketRepoSpy = spy(new TicketRepositoryImpl());
         OrderRepositoryImpl orderRepoSpy = spy(new OrderRepositoryImpl());
-        purchasedService = buildService(orderRepoSpy, ticketRepoSpy,
-                spy(new InMemoryDiscountPolicyRepository()));
+        purchasedService = buildService(orderRepoSpy, ticketRepoSpy, spy(new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository)));
 
         ticketRepoSpy.storeTicket(0, 0, EVENT, COMPANY, 100);
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
@@ -100,8 +108,7 @@ class PurchasedServiceExtendedTest {
     void purchaseTicket_NullUserId_NoPurchaseNotification() throws Exception {
         TicketRepositoryImpl ticketRepoSpy = spy(new TicketRepositoryImpl());
         OrderRepositoryImpl orderRepoSpy = spy(new OrderRepositoryImpl());
-        purchasedService = buildService(orderRepoSpy, ticketRepoSpy,
-                spy(new InMemoryDiscountPolicyRepository()));
+        purchasedService = buildService(orderRepoSpy, ticketRepoSpy, spy(new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository)));
 
         ticketRepoSpy.storeTicket(0, 0, EVENT, COMPANY, 100);
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
@@ -122,8 +129,7 @@ class PurchasedServiceExtendedTest {
 
     @Test
     void getPriceAfterDiscounts_NoPolicies_ReturnsOriginalPrice() {
-        purchasedService = buildService(new OrderRepositoryImpl(), new TicketRepositoryImpl(),
-                new InMemoryDiscountPolicyRepository());
+        purchasedService = buildService(new OrderRepositoryImpl(), new TicketRepositoryImpl(), new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository));
 
         PurchaseContext ctx = new PurchaseContext(1, "NONE", new Date());
         double result = purchasedService.getPriceAfterDiscounts(EVENT, COMPANY, 100.0, ctx);
@@ -133,9 +139,9 @@ class PurchasedServiceExtendedTest {
 
     @Test
     void getPriceAfterDiscounts_EventPolicyOnly_AppliesDiscount() {
-        InMemoryDiscountPolicyRepository discountRepo = new InMemoryDiscountPolicyRepository();
+        com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter discountRepo = new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
         discountRepo.save(new DiscountPolicy("p1", EVENT, DiscountTargetType.EVENT,
-                new CouponDiscount("SAVE10", 10.0)));
+                new CouponDiscount("1","SAVE10", 10.0)));
         purchasedService = buildService(new OrderRepositoryImpl(), new TicketRepositoryImpl(), discountRepo);
 
         PurchaseContext ctx = new PurchaseContext(1, "SAVE10", new Date());
@@ -146,9 +152,9 @@ class PurchasedServiceExtendedTest {
 
     @Test
     void getPriceAfterDiscounts_CompanyPolicyOnly_AppliesDiscount() {
-        InMemoryDiscountPolicyRepository discountRepo = new InMemoryDiscountPolicyRepository();
+        com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter discountRepo = new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
         discountRepo.save(new DiscountPolicy("p2", COMPANY, DiscountTargetType.COMPANY,
-                new CouponDiscount("CORP20", 20.0)));
+                new CouponDiscount("1","CORP20", 20.0)));
         purchasedService = buildService(new OrderRepositoryImpl(), new TicketRepositoryImpl(), discountRepo);
 
         PurchaseContext ctx = new PurchaseContext(1, "CORP20", new Date());
@@ -159,11 +165,11 @@ class PurchasedServiceExtendedTest {
 
     @Test
     void getPriceAfterDiscounts_BothPolicies_MaxDiscountApplied() {
-        InMemoryDiscountPolicyRepository discountRepo = new InMemoryDiscountPolicyRepository();
+        com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter discountRepo = new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
         discountRepo.save(new DiscountPolicy("p1", EVENT, DiscountTargetType.EVENT,
-                new CouponDiscount("COUPON10", 10.0)));
+                new CouponDiscount("1","COUPON10", 10.0)));
         discountRepo.save(new DiscountPolicy("p2", COMPANY, DiscountTargetType.COMPANY,
-                new CouponDiscount("CORP30", 30.0)));
+                new CouponDiscount("2","CORP30", 30.0)));
         purchasedService = buildService(new OrderRepositoryImpl(), new TicketRepositoryImpl(), discountRepo);
 
         PurchaseContext ctx = new PurchaseContext(1, "CORP30", new Date());
@@ -177,8 +183,7 @@ class PurchasedServiceExtendedTest {
     @Test
     void getSubTreeSalesReport_WithSubtreeOrders_ReturnsCorrectReport() {
         TicketRepositoryImpl ticketRepoSpy = spy(new TicketRepositoryImpl());
-        purchasedService = buildService(new OrderRepositoryImpl(), ticketRepoSpy,
-                new InMemoryDiscountPolicyRepository());
+        purchasedService = buildService(new OrderRepositoryImpl(), ticketRepoSpy, new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository));
 
         when(tokenService.validateToken(USERNAME)).thenReturn(true);
         when(tokenService.extractUserId(USERNAME)).thenReturn(USERNAME);
@@ -214,8 +219,7 @@ class PurchasedServiceExtendedTest {
     @Test
     void getSubTreeSalesReport_AuthorizedManager_WithDownlineOrders_ReturnsReport() {
         TicketRepositoryImpl ticketRepoSpy = spy(new TicketRepositoryImpl());
-        purchasedService = buildService(new OrderRepositoryImpl(), ticketRepoSpy,
-                new InMemoryDiscountPolicyRepository());
+        purchasedService = buildService(new OrderRepositoryImpl(), ticketRepoSpy, new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository));
 
         when(tokenService.validateToken(USERNAME)).thenReturn(true);
         when(tokenService.extractUserId(USERNAME)).thenReturn(USERNAME);

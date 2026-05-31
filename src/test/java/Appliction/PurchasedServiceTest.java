@@ -12,7 +12,6 @@ import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRep
 
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
-import com.ticketing.ticketapp.Infastructure.InMemoryDiscountPolicyRepository;
 import com.ticketing.ticketapp.Infastructure.OrderRepositoryImpl;
 import com.ticketing.ticketapp.Infastructure.TicketRepositoryImpl;
 import com.ticketing.ticketapp.Infastructure.TokenService;
@@ -29,6 +28,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@org.springframework.boot.test.context.SpringBootTest
+@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
+@org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
 class PurchasedServiceTest {
 
     @Mock
@@ -51,6 +55,10 @@ class PurchasedServiceTest {
     private com.ticketing.ticketapp.Domain.User.IUserRepository userRepository;
     @Mock
     private INotifier notifier;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
+
     @InjectMocks
     private PurchasedService purchasedService;
 
@@ -63,13 +71,14 @@ class PurchasedServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        jpaDiscountPolicyRepository.deleteAll();
     }
 
     @Test
     void purchaseTicket_Success_WithSpyAndStateCheck() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository));
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -122,7 +131,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Failure_PaymentDeclined() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository));
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -160,7 +169,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Failure_OrderExpired() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository));
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -192,7 +201,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Failure_OrderNotExist() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository));
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -224,7 +233,7 @@ class PurchasedServiceTest {
     void purchaseTicket_RefundOnSupplyFailure() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository));
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -259,7 +268,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Success_WithSpyAndStateCheckAsLogoutUser() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository));
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,
@@ -427,7 +436,7 @@ class PurchasedServiceTest {
     void purchaseTicket_Failure_UserSuspended() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
         IActiveOrderRepository orderRepoSpy = spy(new OrderRepositoryImpl());
-        iDiscountPolicyRepository discountPolicyRepository = spy(new InMemoryDiscountPolicyRepository());
+        iDiscountPolicyRepository discountPolicyRepository = spy(new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository));
 
         purchasedService = new PurchasedService(
                 orderRepoSpy,

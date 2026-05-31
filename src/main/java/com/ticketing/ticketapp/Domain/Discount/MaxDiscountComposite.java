@@ -1,13 +1,29 @@
 package com.ticketing.ticketapp.Domain.Discount;
 
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class MaxDiscountComposite implements DiscountComponent {
-    private final List<DiscountComponent> children = new ArrayList<>();
+@Entity
+@DiscriminatorValue("MAX_COMPOSITE")
+public class MaxDiscountComposite extends DiscountComponent {
 
-    public void add(DiscountComponent child) { children.add(child); }
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "parent_id")
+    private List<DiscountComponent> children = new ArrayList<>();
+
+    protected MaxDiscountComposite() {
+        super();
+    }
+
+    public MaxDiscountComposite(String id) {
+        super(id);
+    }
+
+    public void add(DiscountComponent child) {
+        children.add(child);
+    }
 
     @Override
     public double calculateDiscount(double price, PurchaseContext context) {
@@ -16,11 +32,16 @@ public class MaxDiscountComposite implements DiscountComponent {
                 .max()
                 .orElse(0);
     }
+
     @Override
     public String getDescription() {
         String childrenDesc = children.stream()
                 .map(DiscountComponent::getDescription)
                 .collect(Collectors.joining(", "));
         return "Best of: [" + childrenDesc + "]";
+    }
+
+    public List<DiscountComponent> getChildren() {
+        return children;
     }
 }

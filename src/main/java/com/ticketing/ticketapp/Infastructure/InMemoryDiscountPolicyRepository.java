@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-@Repository
+//@Repository
 public class InMemoryDiscountPolicyRepository implements iDiscountPolicyRepository {
 
     private final Map<String, DiscountPolicy> allPolicies = new ConcurrentHashMap<>();
