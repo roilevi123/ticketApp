@@ -26,7 +26,8 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.mockito.Mockito.mock;
-
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Date;
 import java.util.List;
 
@@ -51,6 +52,8 @@ public class AdminJUnitTests {
     @Autowired
     private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
 
+
+    private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @BeforeEach
     void setUp() {
         this.userRepository = new UserRepositoryImpl();
@@ -62,7 +65,7 @@ public class AdminJUnitTests {
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         iDiscountPolicyRepository discountPolicyRepository = new DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
-        iPurchasePolicyRepository purchasePolicyRepository=new InMemoryPurchasePolicyRepository();
+        iPurchasePolicyRepository purchasePolicyRepository = new PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
             public boolean isAdmin(String userID) {
@@ -113,6 +116,7 @@ public class AdminJUnitTests {
         queueRepository.deleteAll();
         tokenService.clearAllData();
         adminRepository.deleteAll();
+        purchasePolicyRepository.deleteAll();
     }
 
     private String gt() {

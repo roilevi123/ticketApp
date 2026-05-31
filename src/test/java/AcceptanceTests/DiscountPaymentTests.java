@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
+import com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -30,11 +31,14 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@org.springframework.boot.test.context.SpringBootTest // <-- החלפה של @DataJpaTest
+@org.springframework.boot.test.context.SpringBootTest 
 @org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
 @org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
-@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
 @org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
+
+@DataJpaTest
+@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
 @DisplayName("Discount & Payment Price Acceptance Tests")
 public class DiscountPaymentTests {
 
@@ -53,6 +57,7 @@ public class DiscountPaymentTests {
     private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
 //    @jakarta.persistence.PersistenceContext
 //    private jakarta.persistence.EntityManager entityManager;
+    private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @BeforeEach
     void setUp() {
         IUserRepository userRepository = new UserRepositoryImpl();
@@ -64,7 +69,7 @@ public class DiscountPaymentTests {
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.discountRepo = new DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
-        iPurchasePolicyRepository purchasePolicyRepository = new InMemoryPurchasePolicyRepository();
+        iPurchasePolicyRepository purchasePolicyRepository = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
         INotifier notifierMock = mock(INotifier.class);
 
         this.tokenService = new TokenService();
@@ -100,6 +105,8 @@ public class DiscountPaymentTests {
         userRepository.deleteAll();
         jpaDiscountPolicyRepository.deleteAll();
 //        discountRepo.deleteAll();
+        discountRepo.deleteAll();
+
     }
 
     private String setupEventAndGetToken(String owner, String company, String event, double price) {

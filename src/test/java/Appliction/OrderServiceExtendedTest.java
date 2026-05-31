@@ -27,13 +27,14 @@ class OrderServiceExtendedTest {
     private OrderService orderService;
     private TicketRepositoryImpl ticketRepository;
     private OrderRepositoryImpl orderRepository;
-    private InMemoryPurchasePolicyRepository policyRepository;
+    private PurchasePolicyRepositoryAdapter policyRepository;
     private UserRepositoryImpl userRepository;
 
     @Mock private TokenService tokenService;
     @Mock private INotifier notifier;
     @Mock private iEventRepository eventRepository;
     @Mock private LotteryService lotteryService;
+    @Mock private com.ticketing.ticketapp.Infastructure.JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
 
     private final String TOKEN = "token";
     private final String USERNAME = "user1";
@@ -46,7 +47,10 @@ class OrderServiceExtendedTest {
         ticketRepository = spy(new TicketRepositoryImpl());
         orderRepository = spy(new OrderRepositoryImpl());
         userRepository = spy(new UserRepositoryImpl());
-        policyRepository = spy(new InMemoryPurchasePolicyRepository());
+
+        // שימוש באדפטר האמיתי שמקבל את ה-Mock של ה-JPA
+        var realAdapter = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
+        policyRepository = spy(realAdapter);
 
         when(eventRepository.getEvent(any(), any())).thenReturn(null);
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
@@ -166,8 +170,12 @@ class OrderServiceExtendedTest {
 
     @Test
     void reserveTickets_EventPolicyFails_ReturnsError() {
-        policyRepository.save(new PurchasePolicy("p1", EVENT, PurchaseTargetType.EVENT,
-                new QuantityLimitCondition(0, 0)));
+        PurchasePolicy policy = new PurchasePolicy("p1", EVENT, PurchaseTargetType.EVENT, new QuantityLimitCondition(0, 0));
+        policyRepository.save(policy);
+
+        // תיקון: הגדרת ה-Mock של ה-JPA שיחזיר את הפוליסה של האירוע
+        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(EVENT, PurchaseTargetType.EVENT)).thenReturn(policy);
+
         ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
 
         var result = orderService.reserveTickets(TOKEN, COMPANY, EVENT, List.of(new int[]{0, 0}), null);
@@ -178,8 +186,12 @@ class OrderServiceExtendedTest {
 
     @Test
     void reserveTickets_CompanyPolicyFails_ReturnsError() {
-        policyRepository.save(new PurchasePolicy("p2", COMPANY, PurchaseTargetType.COMPANY,
-                new QuantityLimitCondition(0, 0)));
+        PurchasePolicy policy = new PurchasePolicy("p2", COMPANY, PurchaseTargetType.COMPANY, new QuantityLimitCondition(0, 0));
+        policyRepository.save(policy);
+
+        // תיקון: הגדרת ה-Mock של ה-JPA שיחזיר את הפוליסה של החברה
+        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(COMPANY, PurchaseTargetType.COMPANY)).thenReturn(policy);
+
         ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
 
         var result = orderService.reserveTickets(TOKEN, COMPANY, EVENT, List.of(new int[]{0, 0}), null);
@@ -190,10 +202,16 @@ class OrderServiceExtendedTest {
 
     @Test
     void reserveTickets_BothPoliciesPass_Succeeds() {
-        policyRepository.save(new PurchasePolicy("p1", EVENT, PurchaseTargetType.EVENT,
-                new QuantityLimitCondition(1, 10)));
-        policyRepository.save(new PurchasePolicy("p2", COMPANY, PurchaseTargetType.COMPANY,
-                new QuantityLimitCondition(1, 10)));
+        PurchasePolicy eventPolicy = new PurchasePolicy("p1", EVENT, PurchaseTargetType.EVENT, new QuantityLimitCondition(1, 10));
+        PurchasePolicy companyPolicy = new PurchasePolicy("p2", COMPANY, PurchaseTargetType.COMPANY, new QuantityLimitCondition(1, 10));
+
+        policyRepository.save(eventPolicy);
+        policyRepository.save(companyPolicy);
+
+        // תיקון: הגדרת ה-Mock של ה-JPA לשני המקרים
+        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(EVENT, PurchaseTargetType.EVENT)).thenReturn(eventPolicy);
+        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(COMPANY, PurchaseTargetType.COMPANY)).thenReturn(companyPolicy);
+
         ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
 
         var result = orderService.reserveTickets(TOKEN, COMPANY, EVENT, List.of(new int[]{0, 0}), null);
@@ -203,9 +221,12 @@ class OrderServiceExtendedTest {
 
     @Test
     void reserveTickets_NullUser_DefaultsAge10000_AgePolicyPasses() {
-        // getUserByID returns null → age = 10000 → satisfies minAge 9999
-        policyRepository.save(new PurchasePolicy("p1", EVENT, PurchaseTargetType.EVENT,
-                new AgeLimitCondition(9999)));
+        PurchasePolicy policy = new PurchasePolicy("p1", EVENT, PurchaseTargetType.EVENT, new AgeLimitCondition(9999));
+        policyRepository.save(policy);
+
+        // תיקון: הגדרת ה-Mock של ה-JPA שיחזיר את הפוליסה
+        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(EVENT, PurchaseTargetType.EVENT)).thenReturn(policy);
+
         ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
 
         var result = orderService.reserveTickets(TOKEN, COMPANY, EVENT, List.of(new int[]{0, 0}), null);
@@ -218,8 +239,12 @@ class OrderServiceExtendedTest {
         User stored = userRepository.Store("realuser", "pass", 16, "u@test.com");
         when(tokenService.extractUserId(TOKEN)).thenReturn(stored.getID());
 
-        policyRepository.save(new PurchasePolicy("p1", EVENT, PurchaseTargetType.EVENT,
-                new AgeLimitCondition(18)));
+        PurchasePolicy policy = new PurchasePolicy("p1", EVENT, PurchaseTargetType.EVENT, new AgeLimitCondition(18));
+        policyRepository.save(policy);
+
+        // תיקון: הגדרת ה-Mock של ה-JPA שיחזיר את הפוליסה
+        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(EVENT, PurchaseTargetType.EVENT)).thenReturn(policy);
+
         ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
 
         var result = orderService.reserveTickets(TOKEN, COMPANY, EVENT, List.of(new int[]{0, 0}), null);
@@ -228,3 +253,4 @@ class OrderServiceExtendedTest {
         assertTrue(result.getMessage().contains("Event Purchase Policy"));
     }
 }
+

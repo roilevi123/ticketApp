@@ -1,4 +1,5 @@
-package Infastructure;
+
+        package Infastructure;
 
 import com.ticketing.ticketapp.Domain.Discount.*;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.*;
@@ -190,3 +191,4 @@ class MiscInfrastructureTest {
         assertTrue(svc.supplyToEmail("user@test.com", "Your ticket content"));
     }
 }
+
