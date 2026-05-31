@@ -3,6 +3,7 @@ package com.ticketing.ticketapp.Appliction;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -279,8 +280,9 @@ public class EventService {
         try {
             DiscountPolicy eventPolicy = discountRepo.findByEvent(event.getName());
             DiscountPolicy companyPolicy = discountRepo.findByCompany(event.getCompany());
+            String policyId = UUID.randomUUID().toString();
 
-            MaxDiscountComposite combinedRoot = new MaxDiscountComposite();
+            MaxDiscountComposite combinedRoot = new MaxDiscountComposite(policyId);
             if (eventPolicy != null) combinedRoot.add(eventPolicy.getRoot());
             if (companyPolicy != null) combinedRoot.add(companyPolicy.getRoot());
 

@@ -118,8 +118,8 @@ public class DiscountServiceTest {
     @Test
     void test8_MaxDiscountPolicy_Success() {
         String p1Id = "p1", p2Id = "p2";
-        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, ""));
-        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(30.0, null, ""));
+        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount("1",10.0, null, ""));
+        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount("1",30.0, null, ""));
 
         when(discountRepo.getPolicy(p1Id)).thenReturn(p1);
         when(discountRepo.getPolicy(p2Id)).thenReturn(p2);
@@ -138,8 +138,8 @@ public class DiscountServiceTest {
     @Test
     void test9_SumDiscountPolicy_Success() {
         String p1Id = "p1", p2Id = "p2";
-        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, ""));
-        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(5.0, null, ""));
+        DiscountPolicy p1 = new DiscountPolicy(p1Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount("1",10.0, null, ""));
+        DiscountPolicy p2 = new DiscountPolicy(p2Id, "e1", DiscountTargetType.EVENT, new ConditionalDiscount("1",5.0, null, ""));
 
         when(discountRepo.getPolicy(p1Id)).thenReturn(p1);
         when(discountRepo.getPolicy(p2Id)).thenReturn(p2);
@@ -166,7 +166,7 @@ public class DiscountServiceTest {
     @Test
     void test11_GetDiscountsForEventAndCompany_Success() {
         String eventId = "e1", company = "Comp";
-        DiscountPolicy p1 = new DiscountPolicy("p1", eventId, DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, "desc1"));
+        DiscountPolicy p1 = new DiscountPolicy("p1", eventId, DiscountTargetType.EVENT, new ConditionalDiscount("1",10.0, null, "desc1"));
 
         when(discountRepo.findByEventAndCompany(eventId, company)).thenReturn(Arrays.asList(p1));
 
@@ -181,7 +181,7 @@ public class DiscountServiceTest {
     @Test
     void test12_CreateSumDiscount_PolicyNotFound() {
         String existingId = "valid", missingId = "invalid";
-        when(discountRepo.getPolicy(existingId)).thenReturn(new DiscountPolicy(existingId, "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, "")));
+        when(discountRepo.getPolicy(existingId)).thenReturn(new DiscountPolicy(existingId, "e1", DiscountTargetType.EVENT, new ConditionalDiscount("1",10.0, null, "")));
         when(discountRepo.getPolicy(missingId)).thenReturn(null);
 
         Response<String> result = discountService.createSumDiscountPolicy("token", "e1", DiscountTargetType.EVENT, Arrays.asList(existingId, missingId), "Comp");
@@ -192,13 +192,13 @@ public class DiscountServiceTest {
 
     @Test
     void test13_RecursiveCompositeDescription() {
-        SumDiscountComposite sum = new SumDiscountComposite();
-        sum.add(new ConditionalDiscount(10.0, null, "cond1"));
-        sum.add(new CouponDiscount("C1", 5.0));
+        SumDiscountComposite sum = new SumDiscountComposite("1");
+        sum.add(new ConditionalDiscount("1",10.0, null, "cond1"));
+        sum.add(new CouponDiscount("1","C1", 5.0));
 
-        MaxDiscountComposite max = new MaxDiscountComposite();
+        MaxDiscountComposite max = new MaxDiscountComposite("1");
         max.add(sum);
-        max.add(new ConditionalDiscount(20.0, null, "cond2"));
+        max.add(new ConditionalDiscount("1",20.0, null, "cond2"));
 
         String desc = max.getDescription();
 

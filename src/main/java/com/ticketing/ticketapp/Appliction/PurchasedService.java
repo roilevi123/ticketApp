@@ -22,12 +22,10 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
+
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.Manager;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
 
 @Service
 public class PurchasedService {
@@ -234,8 +232,9 @@ public class PurchasedService {
     public double getPriceAfterDiscounts(String eventId, String companyName, double originalPrice, PurchaseContext context) {
         DiscountPolicy eventPolicy = discountRepo.findByEvent(eventId);
         DiscountPolicy companyPolicy = discountRepo.findByCompany(companyName);
+        String policyId = UUID.randomUUID().toString();
 
-        MaxDiscountComposite combinedRoot = new MaxDiscountComposite();
+        MaxDiscountComposite combinedRoot = new MaxDiscountComposite(policyId);
 
         if (eventPolicy != null) combinedRoot.add(eventPolicy.getRoot());
         if (companyPolicy != null) combinedRoot.add(companyPolicy.getRoot());

@@ -3,6 +3,7 @@ package AcceptanceTests;
 import com.ticketing.ticketapp.Appliction.*;
 import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
+import com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
@@ -17,9 +18,12 @@ import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.*;
 import com.ticketing.ticketapp.Infastructure.*;
+import com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.mockito.Mockito.mock;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -46,6 +50,9 @@ public class AdminJUnitTests {
     private IUserRepository userRepository;
     private TokenService tokenService;
     @Autowired
+    private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
+
+
     private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @BeforeEach
     void setUp() {
@@ -57,7 +64,7 @@ public class AdminJUnitTests {
         IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        iDiscountPolicyRepository discountPolicyRepository=new InMemoryDiscountPolicyRepository();
+        iDiscountPolicyRepository discountPolicyRepository = new DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
         iPurchasePolicyRepository purchasePolicyRepository = new PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
