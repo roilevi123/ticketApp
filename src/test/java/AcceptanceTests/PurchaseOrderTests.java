@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
 @org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
 @DataJpaTest
-@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
 @DisplayName("Complete Purchase Order Acceptance Tests")
 public class PurchaseOrderTests {
 

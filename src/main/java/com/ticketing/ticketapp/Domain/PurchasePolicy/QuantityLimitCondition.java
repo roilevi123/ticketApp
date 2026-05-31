@@ -1,9 +1,11 @@
 package com.ticketing.ticketapp.Domain.PurchasePolicy;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
 @Entity
+@DiscriminatorValue("QUANTITY_LIMIT") // <-- הורדנו את ההערה!
 public class QuantityLimitCondition extends PurchaseComponent {
 
     @Column(name = "min_quantity")
@@ -12,9 +14,12 @@ public class QuantityLimitCondition extends PurchaseComponent {
     @Column(name = "max_quantity")
     private int maxQuantity;
 
-    protected QuantityLimitCondition() {} // חובה עבור JPA
+    protected QuantityLimitCondition() {
+        super();
+    } // חובה עבור JPA
 
     public QuantityLimitCondition(int min, int max) {
+        super();
         this.minQuantity = min;
         this.maxQuantity = max;
     }

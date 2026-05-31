@@ -32,6 +32,9 @@ public class PurchasePolicy {
     }
 
     public boolean validate(PurchaseValidationData data) {
+        if (this.rootCondition == null) {
+            return true;
+        }
         return rootCondition.isSatisfied(data);
     }
 

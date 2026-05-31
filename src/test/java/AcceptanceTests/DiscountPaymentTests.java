@@ -37,7 +37,6 @@ import static org.mockito.Mockito.*;
 @org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
 
 @DataJpaTest
-@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
 @org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
 @DisplayName("Discount & Payment Price Acceptance Tests")
 public class DiscountPaymentTests {

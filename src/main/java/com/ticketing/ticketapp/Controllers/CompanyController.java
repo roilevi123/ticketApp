@@ -1,5 +1,6 @@
 package com.ticketing.ticketapp.Controllers;
 
+import lombok.Setter;
 import org.springframework.web.bind.annotation.*;
 import com.ticketing.ticketapp.Appliction.CompanyService;
 import com.ticketing.ticketapp.Appliction.EventService;
@@ -261,7 +262,20 @@ public class CompanyController {
         }
         return ResponseEntity.badRequest().body(response.getMessage());
     }
+    @GetMapping("/policies/discount/by-event")
+    public ResponseEntity<?> getDiscountsByEvent(
+            @RequestAttribute("cleanToken") String token,
+            @RequestParam("eventId") String eventId,
+            @RequestParam("companyName") String companyName) {
 
+        token = extractCleanToken(token);
+        Response<List<DiscountPolicyDTO>> response = discountService.getDiscountsForEventAndCompany(token, eventId, companyName);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response.getData());
+        }
+        return ResponseEntity.badRequest().body(response.getMessage());
+    }
     @PostMapping("/policies/discount/combine-max")
     public ResponseEntity<?> createMaxDiscountPolicy(
             @RequestAttribute("cleanToken") String token, 
@@ -628,19 +642,27 @@ public class CompanyController {
                 Response<String> res = null;
 
                 if ("user.age".equals(condition.getField())) {
-                    int minAge = Integer.parseInt(condition.getValue().toString());
+                    int minAge = Integer.parseInt(condition.getAge().toString());
                     res = purchasePolicyService.createAgeLimitPolicy(
                         token, request.getTargetId(), targetTypeEnum, minAge);
                 }
                 else if ("cart.ticket_count".equals(condition.getField())) {
-                    int tickets = Integer.parseInt(condition.getValue().toString());
+                    if("gte".equalsIgnoreCase(condition.getOperator())&&"lte".equalsIgnoreCase(condition.getOperator())){
+                        int max = Integer.parseInt(condition.getMax().toString());
+                        int min = Integer.parseInt(condition.getMin().toString());
+                        res = purchasePolicyService.createQuantityLimitPolicy(
+                                token, request.getTargetId(), targetTypeEnum, min, max);
+                    }
+                    else if ("gte".equalsIgnoreCase(condition.getOperator())) {
+                        int min = Integer.parseInt(condition.getMin().toString());
 
-                    if ("gte".equalsIgnoreCase(condition.getOperator())) {
                         res = purchasePolicyService.createQuantityLimitPolicy(
-                                token, request.getTargetId(), targetTypeEnum, tickets, 999999);
+                                token, request.getTargetId(), targetTypeEnum, min, 999999);
                     } else if ("lte".equalsIgnoreCase(condition.getOperator())) {
+                        int max = Integer.parseInt(condition.getMax().toString());
+
                         res = purchasePolicyService.createQuantityLimitPolicy(
-                                token, request.getTargetId(), targetTypeEnum, 1, tickets);
+                                token, request.getTargetId(), targetTypeEnum, 1, max);
                     } else {
                         return ResponseEntity.badRequest().body("Invalid operator for ticket count");
                     }
@@ -680,8 +702,24 @@ public class CompanyController {
             return ResponseEntity.badRequest().body("Invalid policy data format: " + e.getMessage());
         }
     }
+    @GetMapping("/policies/purchase/by-event")
+    public ResponseEntity<?> getPoliciesByEvent(
+            @RequestAttribute("cleanToken") String token,
+            @RequestParam("eventId") String eventId) {
+
+        token = extractCleanToken(token);
+        // שימוש בשירות הקיים אצלך כדי לשלוף את החוקים
+        Response<List<PurchasePolicyDTO>> response = purchasePolicyService.getPoliciesForEventAndCompany(token, eventId, "");
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response.getData());
+        }
+        return ResponseEntity.badRequest().body(response.getMessage());
+    }
+
 
 }
+
 
 class CompanyRequestDTO {
     private String companyName;
@@ -916,7 +954,8 @@ class ChangePermissionsRequestDTO {
 }
 
 class BulkPolicyRequestDTO {
-    private String targetId;      
+    private String targetId;
+
     private String type;
     private RuleSetDTO ruleset;
 
@@ -940,15 +979,23 @@ class RuleSetDTO {
 
 class ConditionDTO {
     private String field;
+    @Setter
     private String operator;
-    private Object value; 
+    @Setter
+    private Object min;
+    private Object max;
+    private Object age;
+
 
     public String getField() { return field; }
-    public void setField(String field) { this.field = field; }
+
     public String getOperator() { return operator; }
-    public void setOperator(String operator) { this.operator = operator; }
-    public Object getValue() { return value; }
-    public void setValue(Object value) { this.value = value; }
+
+    public Object getMin() { return min; }
+
+    public Object getMax() { return max; }
+
+    public Object getAge() { return age; }
 }
 
 class CalculateDiscountRequestDTO {

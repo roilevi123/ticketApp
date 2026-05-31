@@ -7,17 +7,16 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Entity
+@DiscriminatorValue("AND_COMPOSITE")
 public class AndPurchaseComposite extends PurchaseComponent {
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "and_components",
-            joinColumns = @JoinColumn(name = "composite_id"),
-            inverseJoinColumns = @JoinColumn(name = "component_id")
-    )
+    @JoinColumn(name = "parent_composite_id") // קישור ישיר ללא טבלת ביניים!
     private List<PurchaseComponent> components = new ArrayList<>();
 
-    public AndPurchaseComposite() {} // חובה עבור JPA
+    public AndPurchaseComposite() {
+        super();
+    }
 
     public void add(PurchaseComponent component) {
         components.add(component);
