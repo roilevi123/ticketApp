@@ -22,14 +22,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
-
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDateTime;
-
+@DataJpaTest
+@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
 @DisplayName("Admin Management Acceptance Tests")
 public class AdminJUnitTests {
 
@@ -41,7 +45,8 @@ public class AdminJUnitTests {
     private AdminService adminService;
     private IUserRepository userRepository;
     private TokenService tokenService;
-
+    @Autowired
+    private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @BeforeEach
     void setUp() {
         this.userRepository = new UserRepositoryImpl();
@@ -53,7 +58,7 @@ public class AdminJUnitTests {
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         iDiscountPolicyRepository discountPolicyRepository=new InMemoryDiscountPolicyRepository();
-        iPurchasePolicyRepository purchasePolicyRepository=new InMemoryPurchasePolicyRepository();
+        iPurchasePolicyRepository purchasePolicyRepository = new PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
             public boolean isAdmin(String userID) {
@@ -104,6 +109,7 @@ public class AdminJUnitTests {
         queueRepository.deleteAll();
         tokenService.clearAllData();
         adminRepository.deleteAll();
+        purchasePolicyRepository.deleteAll();
     }
 
     private String gt() {

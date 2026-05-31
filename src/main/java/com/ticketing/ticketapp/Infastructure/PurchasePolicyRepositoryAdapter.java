@@ -4,10 +4,12 @@ import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchasePolicy;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchaseTargetType;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
+
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
+@Repository
 public class PurchasePolicyRepositoryAdapter implements iPurchasePolicyRepository {
 
     private final JpaPurchasePolicyRepository jpaRepository;
@@ -18,7 +20,7 @@ public class PurchasePolicyRepositoryAdapter implements iPurchasePolicyRepositor
 
     @Override
     public void save(PurchasePolicy policy) {
-        jpaRepository.save(policy);
+        jpaRepository.saveAndFlush(policy);
     }
 
     @Override
@@ -39,11 +41,13 @@ public class PurchasePolicyRepositoryAdapter implements iPurchasePolicyRepositor
     @Override
     public void delete(String policyId) {
         jpaRepository.deleteById(policyId);
+        jpaRepository.flush();
     }
 
     @Override
     public void deleteAll() {
         jpaRepository.deleteAll();
+        jpaRepository.flush();
     }
 
     @Override

@@ -10,13 +10,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-@Repository
 public class InMemoryPurchasePolicyRepository implements iPurchasePolicyRepository {
 
     private final Map<String, PurchasePolicy> allPolicies = new ConcurrentHashMap<>();
 
     private final Map<String, PurchasePolicy> eventPolicies = new ConcurrentHashMap<>();
     private final Map<String, PurchasePolicy> companyPolicies = new ConcurrentHashMap<>();
+
 
     @Override
     public void save(PurchasePolicy policy) {
