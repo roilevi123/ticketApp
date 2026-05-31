@@ -154,7 +154,7 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
-        when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(100);
+        when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(1);
 
         purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
 
@@ -194,7 +194,7 @@ class PurchasedServiceTest {
 
         purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
 
-        verify(paymentService, never()).processPayment(any(), anyDouble(),"USD");
+        verify(paymentService, never()).processPayment(any(CreditCardDetails.class), anyDouble(),eq("USD"));
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
         verify(orderRepoSpy, never()).delete(anyString());
     }
@@ -226,7 +226,7 @@ class PurchasedServiceTest {
 
         purchasedService.PurchaseTicket(EMAIL, "orderId", USERNAME, "none",createCreditCardDetails());
 
-        verify(paymentService, never()).processPayment(any(), anyDouble(),"USD");
+        verify(paymentService, never()).processPayment(any(CreditCardDetails.class), anyDouble(),eq("USD"));
         assertNotNull(orderRepoSpy.findById(orderId));
         verify(orderRepoSpy, never()).delete(anyString());
     }
@@ -472,7 +472,7 @@ class PurchasedServiceTest {
         assertTrue(response.isError());
         assertEquals("User is suspended", response.getMessage());
 
-        verify(paymentService, never()).processPayment(any(), anyDouble(),"USD");
+        verify(paymentService, never()).processPayment(any(CreditCardDetails.class), anyDouble(),eq("USD"));
         verify(supplyService, never()).supplyToEmail(anyString(), anyString());
 
         assertNotNull(orderRepoSpy.findById(orderId));
