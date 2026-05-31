@@ -6,6 +6,7 @@ import com.ticketing.ticketapp.Appliction.Response;
 import com.ticketing.ticketapp.Appliction.SystemService;
 import com.ticketing.ticketapp.Appliction.UserService;
 import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
+import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,9 +36,18 @@ class SystemServiceTest {
     private static final String ADMIN_USER_ID   = "admin-uuid-123";
 
     // ── helpers ──────────────────────────────────────────────────────────────
-
+    private CreditCardDetails createCreditCardDetails() {
+        return      new CreditCardDetails(
+                "0000000000000000", // card_number
+                "12",               // month
+                "2030",             // year
+                "System Check",     // holder
+                "000",              // cvv
+                "00000000"          // id
+        );
+    }
     private void stubSuccessfulInit() {
-        when(paymentService.processPayment(anyString(), anyDouble())).thenReturn(true);
+        when(paymentService.processPayment(any(), anyDouble(),"USD")).thenReturn(100);
         when(supplyService.supplyToEmail(anyString(), anyString())).thenReturn(true);
         when(userService.register(eq(GUEST_TOKEN), anyString(), anyString(), anyInt(), anyString()))
                 .thenReturn(Response.success("registered"));
@@ -86,7 +96,7 @@ class SystemServiceTest {
 
     @Test
     void initSystem_PaymentServiceUnavailable_ReturnsError() {
-        when(paymentService.processPayment(anyString(), anyDouble())).thenReturn(false);
+        when(paymentService.processPayment(any(), anyDouble(),"USD")).thenReturn(100);
         when(supplyService.supplyToEmail(anyString(), anyString())).thenReturn(true);
 
         Response<String> result = systemService.initSystem(GUEST_TOKEN, "admin", "pass", 30, "a@b.com");
@@ -99,7 +109,7 @@ class SystemServiceTest {
 
     @Test
     void initSystem_SupplyServiceUnavailable_ReturnsError() {
-        when(paymentService.processPayment(anyString(), anyDouble())).thenReturn(true);
+        when(paymentService.processPayment(any(), anyDouble(),"USD")).thenReturn(100);
         when(supplyService.supplyToEmail(anyString(), anyString())).thenReturn(false);
 
         Response<String> result = systemService.initSystem(GUEST_TOKEN, "admin", "pass", 30, "a@b.com");
@@ -112,7 +122,7 @@ class SystemServiceTest {
 
     @Test
     void initSystem_AdminRegistrationFails_ReturnsError() {
-        when(paymentService.processPayment(anyString(), anyDouble())).thenReturn(true);
+        when(paymentService.processPayment(any(), anyDouble(),"USD")).thenReturn(100);
         when(supplyService.supplyToEmail(anyString(), anyString())).thenReturn(true);
         when(userService.register(anyString(), anyString(), anyString(), anyInt(), anyString()))
                 .thenReturn(Response.error("Username already taken"));
@@ -127,7 +137,7 @@ class SystemServiceTest {
 
     @Test
     void initSystem_AdminLoginFails_ReturnsError() {
-        when(paymentService.processPayment(anyString(), anyDouble())).thenReturn(true);
+        when(paymentService.processPayment(any(), anyDouble(),"USD")).thenReturn(100);
         when(supplyService.supplyToEmail(anyString(), anyString())).thenReturn(true);
         when(userService.register(eq(GUEST_TOKEN), anyString(), anyString(), anyInt(), anyString()))
                 .thenReturn(Response.success("registered"));

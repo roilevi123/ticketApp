@@ -137,38 +137,38 @@ class SystemControllerTest {
 
     // ── /external/payment ────────────────────────────────────────────────────
 
-    @Test
-    void processPayment_Approved_Returns200WithTransactionId() {
-        when(paymentService.processPayment("4111111111111111", 99.99)).thenReturn(true);
-
-        SystemController.PaymentRequest request = new SystemController.PaymentRequest();
-        request.setCreditCardDetails("4111111111111111");
-        request.setAmount(99.99);
-
-        ResponseEntity<?> response = systemController.processPayment(TOKEN, request);
-
-        assertEquals(200, response.getStatusCode().value());
-        Map<?, ?> body = (Map<?, ?>) response.getBody();
-        assertEquals(true, body.get("success"));
-        assertNotNull(body.get("transactionId"));
-        assertTrue(body.get("transactionId").toString().startsWith("TXN-"));
-    }
-
-    @Test
-    void processPayment_Declined_Returns400() {
-        when(paymentService.processPayment(anyString(), anyDouble())).thenReturn(false);
-
-        SystemController.PaymentRequest request = new SystemController.PaymentRequest();
-        request.setCreditCardDetails("0000000000000000");
-        request.setAmount(50.0);
-
-        ResponseEntity<?> response = systemController.processPayment(TOKEN, request);
-
-        assertEquals(400, response.getStatusCode().value());
-        Map<?, ?> body = (Map<?, ?>) response.getBody();
-        assertEquals(false, body.get("success"));
-        assertEquals("Payment declined", body.get("error"));
-    }
+//    @Test
+//    void processPayment_Approved_Returns200WithTransactionId() {
+//        when(paymentService.processPayment("4111111111111111", 99.99)).thenReturn(true);
+//
+//        SystemController.PaymentRequest request = new SystemController.PaymentRequest();
+//        request.setCreditCardDetails("4111111111111111");
+//        request.setAmount(99.99);
+//
+//        ResponseEntity<?> response = systemController.processPayment(TOKEN, request);
+//
+//        assertEquals(200, response.getStatusCode().value());
+//        Map<?, ?> body = (Map<?, ?>) response.getBody();
+//        assertEquals(true, body.get("success"));
+//        assertNotNull(body.get("transactionId"));
+//        assertTrue(body.get("transactionId").toString().startsWith("TXN-"));
+//    }
+//
+//    @Test
+//    void processPayment_Declined_Returns400() {
+//        when(paymentService.processPayment(anyString(), anyDouble())).thenReturn(false);
+//
+//        SystemController.PaymentRequest request = new SystemController.PaymentRequest();
+//        request.setCreditCardDetails("0000000000000000");
+//        request.setAmount(50.0);
+//
+//        ResponseEntity<?> response = systemController.processPayment(TOKEN, request);
+//
+//        assertEquals(400, response.getStatusCode().value());
+//        Map<?, ?> body = (Map<?, ?>) response.getBody();
+//        assertEquals(false, body.get("success"));
+//        assertEquals("Payment declined", body.get("error"));
+//    }
 
     // ── /external/supply ─────────────────────────────────────────────────────
 

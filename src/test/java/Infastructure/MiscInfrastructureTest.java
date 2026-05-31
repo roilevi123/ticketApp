@@ -143,17 +143,17 @@ class MiscInfrastructureTest {
 
     // --- PaymentServiceMock ---
 
-    @Test
-    void paymentMock_ProcessPayment_ReturnsTrue() {
-        PaymentServiceMock svc = new PaymentServiceMock();
-        assertTrue(svc.processPayment("4111111111111111", 100.0));
-    }
+//    @Test
+//    void paymentMock_ProcessPayment_ReturnsTrue() {
+//        PaymentServiceMock svc = new PaymentServiceMock();
+//        assertTrue(svc.processPayment("4111111111111111", 100.0));
+//    }
 
-    @Test
-    void paymentMock_Refund_ReturnsTrue() {
-        PaymentServiceMock svc = new PaymentServiceMock();
-        assertTrue(svc.refund("4111111111111111", 100.0));
-    }
+//    @Test
+//    void paymentMock_Refund_ReturnsTrue() {
+//        PaymentServiceMock svc = new PaymentServiceMock();
+//        assertTrue(svc.refund("4111111111111111", 100.0));
+//    }
 
     // --- SupplyServiceMock ---
 

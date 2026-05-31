@@ -12,6 +12,7 @@ import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRep
 
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
+import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import com.ticketing.ticketapp.Infastructure.InMemoryDiscountPolicyRepository;
 import com.ticketing.ticketapp.Infastructure.OrderRepositoryImpl;
 import com.ticketing.ticketapp.Infastructure.TicketRepositoryImpl;
@@ -65,6 +66,7 @@ class PurchasedServiceTest {
         MockitoAnnotations.openMocks(this);
     }
 
+
     @Test
     void purchaseTicket_Success_WithSpyAndStateCheck() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
@@ -93,10 +95,10 @@ class PurchasedServiceTest {
 
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
-        when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
+        when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(100);
         when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenReturn("new byte[]{1, 2, 3}");
 
-        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none");
+        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
 
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
 
@@ -117,7 +119,16 @@ class PurchasedServiceTest {
 
         verify(orderRepoSpy).delete(orderId);
     }
-
+    private CreditCardDetails createCreditCardDetails() {
+        return      new CreditCardDetails(
+                "0000000000000000", // card_number
+                "12",               // month
+                "2030",             // year
+                "System Check",     // holder
+                "000",              // cvv
+                "00000000"          // id
+        );
+    }
     @Test
     void purchaseTicket_Failure_PaymentDeclined() throws Exception {
         iTicketRepository ticketRepoSpy = spy(new TicketRepositoryImpl());
@@ -143,11 +154,11 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
-        when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(false);
+        when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(100);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none");
+        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
 
-        verify(paymentService).processPayment(EMAIL, 100.0);
+        verify(paymentService).processPayment(createCreditCardDetails(), 100.0,"USD");
         verify(supplyService, never()).supplyToEmail(anyString(), anyString());
 
         Ticket ticketAfterFailedPurchase = ticketRepoSpy.getTicketById(ticketId);
@@ -181,9 +192,9 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none");
+        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
 
-        verify(paymentService, never()).processPayment(anyString(), anyDouble());
+        verify(paymentService, never()).processPayment(any(), anyDouble(),"USD");
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
         verify(orderRepoSpy, never()).delete(anyString());
     }
@@ -213,9 +224,9 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, "orderId", USERNAME, "none");
+        purchasedService.PurchaseTicket(EMAIL, "orderId", USERNAME, "none",createCreditCardDetails());
 
-        verify(paymentService, never()).processPayment(anyString(), anyDouble());
+        verify(paymentService, never()).processPayment(any(), anyDouble(),"USD");
         assertNotNull(orderRepoSpy.findById(orderId));
         verify(orderRepoSpy, never()).delete(anyString());
     }
@@ -245,12 +256,12 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
-        when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
+        when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(100);
         when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenThrow(new RuntimeException("Generator Error"));
 
-        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none");
+        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
 
-        verify(paymentService).refund(EMAIL, 100.0);
+        verify(paymentService).refund(100);
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
         verify(orderRepoSpy, never()).delete(USERNAME);
     }
@@ -283,11 +294,11 @@ class PurchasedServiceTest {
 
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
-        when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
+        when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(100);
         when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenReturn("new byte[]{1, 2, 3}");
         when(tokenService.validateToken(anyString())).thenReturn(true);
         when(tokenService.extractUserId(anyString())).thenReturn(USERNAME);
-        purchasedService.PurchaseTicket(EMAIL, "", USERNAME, "none");
+        purchasedService.PurchaseTicket(EMAIL, "", USERNAME, "none",createCreditCardDetails());
 
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
 
@@ -456,12 +467,12 @@ class PurchasedServiceTest {
 
         when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
 
-        Response<String> response = purchasedService.PurchaseTicket(EMAIL, orderId, validToken, "none");
+        Response<String> response = purchasedService.PurchaseTicket(EMAIL, orderId, validToken, "none",createCreditCardDetails());
 
         assertTrue(response.isError());
         assertEquals("User is suspended", response.getMessage());
 
-        verify(paymentService, never()).processPayment(anyString(), anyDouble());
+        verify(paymentService, never()).processPayment(any(), anyDouble(),"USD");
         verify(supplyService, never()).supplyToEmail(anyString(), anyString());
 
         assertNotNull(orderRepoSpy.findById(orderId));

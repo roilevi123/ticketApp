@@ -56,23 +56,23 @@ public class SystemController {
         return ResponseEntity.badRequest().body(Map.of("error", response.getMessage()));
     }
 
-    @PostMapping("/external/payment")
-    public ResponseEntity<?> processPayment(
-            @RequestAttribute("cleanToken") String token,
-            @RequestBody PaymentRequest request) {
-
-        boolean result = paymentService.processPayment(request.getCreditCardDetails(), request.getAmount());
-        if (result) {
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "transactionId", "TXN-" + UUID.randomUUID()
-            ));
-        }
-        return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "error", "Payment declined"
-        ));
-    }
+//    @PostMapping("/external/payment")
+//    public ResponseEntity<?> processPayment(
+//            @RequestAttribute("cleanToken") String token,
+//            @RequestBody PaymentRequest request) {
+//
+//        boolean result = paymentService.processPayment(request.getCreditCardDetails(), request.getAmount());
+//        if (result) {
+//            return ResponseEntity.ok(Map.of(
+//                    "success", true,
+//                    "transactionId", "TXN-" + UUID.randomUUID()
+//            ));
+//        }
+//        return ResponseEntity.badRequest().body(Map.of(
+//                "success", false,
+//                "error", "Payment declined"
+//        ));
+//    }
 
     @PostMapping("/external/supply")
     public ResponseEntity<?> supplyTicket(

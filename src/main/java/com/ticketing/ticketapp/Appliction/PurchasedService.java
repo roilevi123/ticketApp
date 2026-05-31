@@ -18,6 +18,7 @@ import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.SalesReportDTO;
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
+import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +77,7 @@ public class PurchasedService {
         return m || (o);
     }
 
-    public Response<String> PurchaseTicket(String email, String orderId, String token, String userCoupon) {
+    public Response<String> PurchaseTicket(String email, String orderId, String token, String userCoupon, CreditCardDetails paymentDetails) {
         try {
             ActiveOrder order = repository.findById(orderId);
             if (tokenService.validateToken(token)) {
@@ -118,8 +119,8 @@ public class PurchasedService {
                             t.getPrice(),
                             finalContext))
                     .sum();
-
-            if (!paymentService.processPayment(email, totalPriceAfterDiscounts)) {
+            int transactionID=paymentService.processPayment(paymentDetails, totalPriceAfterDiscounts,"USD");
+            if (transactionID == 1) {
                 throw new Exception("Payment failed");
             }
 
@@ -138,7 +139,7 @@ public class PurchasedService {
                 repository.delete(order.getOrderId());
 
             } catch (Exception e) {
-                paymentService.refund(email, totalPriceAfterDiscounts);
+                paymentService.refund(transactionID);
                 throw e;
             }
 
