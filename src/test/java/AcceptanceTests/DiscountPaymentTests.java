@@ -31,13 +31,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@org.springframework.boot.test.context.SpringBootTest 
+@org.springframework.boot.test.context.SpringBootTest
 @org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
 @org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
 @org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
-
-@DataJpaTest
-@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
 @DisplayName("Discount & Payment Price Acceptance Tests")
 public class DiscountPaymentTests {
 
@@ -56,7 +53,9 @@ public class DiscountPaymentTests {
     private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
 //    @jakarta.persistence.PersistenceContext
 //    private jakarta.persistence.EntityManager entityManager;
-    private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+@Autowired
+
+private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @BeforeEach
     void setUp() {
         IUserRepository userRepository = new UserRepositoryImpl();

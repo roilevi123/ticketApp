@@ -51,8 +51,7 @@ public class AdminJUnitTests {
     private TokenService tokenService;
     @Autowired
     private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
-
-
+    @Autowired
     private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @BeforeEach
     void setUp() {
