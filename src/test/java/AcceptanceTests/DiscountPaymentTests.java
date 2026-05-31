@@ -54,7 +54,6 @@ public class DiscountPaymentTests {
 //    @jakarta.persistence.PersistenceContext
 //    private jakarta.persistence.EntityManager entityManager;
 @Autowired
-
 private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @BeforeEach
     void setUp() {
