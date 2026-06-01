@@ -33,6 +33,7 @@ export default function PolicyBuilderTab({ companyName }) {
   const [selectedDiscountIds, setSelectedDiscountIds] = useState([]);
 
   // קריאת ה-GET הרשמית לשרת לפי שם האירוע המדויק (Purchase Rules)
+// קריאת ה-GET הרשמית לשרת לפי שם האירוע המדויק (Purchase Rules)
   const fetchExistingPolicies = async () => {
     if (!targetEvent) return;
     try {
@@ -43,16 +44,26 @@ export default function PolicyBuilderTab({ companyName }) {
         policiesArray = response.data;
       } else if (response.data?.data && Array.isArray(response.data.data)) {
         policiesArray = response.data.data;
-      } else if (response.data && typeof response.data === 'object' && response.data.id) {
+      } else if (response.data && typeof response.data === 'object') {
         policiesArray = [response.data];
       }
 
+      // --- הבלוק החדש שהחלפנו עכשיו ---
       const formattedPolicies = policiesArray
-          .map(p => ({
-            id: p.policyId || p.id,
-            description: p.description || p.type || (p.operator ? `Composite (${p.operator}) Rule` : 'Active Policy Logic')
-          }))
-          .filter(p => Boolean(p.id));
+          .map(p => {
+            // תפיסת ה-ID בכל וריאציה אפשרית שה-Hibernate/JDBC מחזיר
+            const currentId = p.id || p.policyId || p.componentId || p.policy_id;
+
+            // לוקחים ישירות את התיאור שהשרת ייצר, ואם אין - משתמשים בסוג כגיבוי
+            const finalDescription = p.description || p.type || p.componentType || 'Active Rule';
+
+            return {
+              id: currentId ? String(currentId) : null,
+              description: finalDescription
+            };
+          })
+          .filter(p => Boolean(p.id)); // מציג את כל מי שיש לו ID תקף, בלי קשר לסוג שלו
+      // ----------------------------------
 
       setExistingPolicies(formattedPolicies);
     } catch (error) {
@@ -152,8 +163,8 @@ export default function PolicyBuilderTab({ companyName }) {
       const response = await axiosClient.post('/company/policies/purchase/quantity-limit', {
         targetId: targetEvent,
         type: 'EVENT',
-        min: Number(minTickets),
-        max: Number(maxTickets)
+        min: Number(minTickets)==0 ?1 :Number(minTickets),
+        max: Number(maxTickets) == 0 ? 999999:Number(maxTickets)
       });
       const serverGeneratedId = response.data?.id || response.data?.policyId || `qty-${Date.now()}`;
       const newPolicyItem = { id: serverGeneratedId, description: `Quantity limit: between ${minTickets} and ${maxTickets}` };
