@@ -1,6 +1,7 @@
 package com.ticketing.ticketapp.Domain.Order;
 
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
+import jakarta.persistence.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.Date;
@@ -58,6 +59,14 @@ class ActiveOrderTest {
         copy.SetVersion(99);
 
         assertNotEquals(original.getVersion(), copy.getVersion());
+    }
+
+    @Test
+    void ormAnnotations_AreConfiguredForOrderRelations() throws NoSuchFieldException {
+        assertTrue(ActiveOrder.class.isAnnotationPresent(Entity.class));
+        assertTrue(ActiveOrder.class.getDeclaredField("user").isAnnotationPresent(OneToOne.class));
+        assertTrue(ActiveOrder.class.getDeclaredField("event").isAnnotationPresent(ManyToOne.class));
+        assertTrue(ActiveOrder.class.getDeclaredField("tickets").isAnnotationPresent(ManyToMany.class));
     }
 }
 

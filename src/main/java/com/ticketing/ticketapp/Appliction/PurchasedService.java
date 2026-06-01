@@ -23,6 +23,7 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -75,6 +76,7 @@ public class PurchasedService {
         return m || (o);
     }
 
+    @Transactional
     public Response<String> PurchaseTicket(String email, String orderId, String token, String userCoupon, CreditCardDetails paymentDetails) {
         try {
             ActiveOrder order = repository.findById(orderId);
@@ -83,12 +85,12 @@ public class PurchasedService {
                 String username = tokenService.extractUsername(token);
                 if (username != null && userRepository.isUserSuspendedNow(username) ||
                         (userID != null && userRepository.isUserSuspendedNow(userID))) {
-                    throw new Exception("User is suspended");
+                    throw new OrderTransactionException("User is suspended");
                 }
                 order = repository.getOrder(userID);
             }
             if (order == null || order.getExpirationTime().before(new Date())) {
-                throw new Exception("Order expired or not found");
+                throw new OrderTransactionException("Order expired or not found");
             }
 
             PurchaseContext context = new PurchaseContext(
@@ -119,7 +121,7 @@ public class PurchasedService {
                     .sum();
             int transactionID=paymentService.processPayment(paymentDetails, totalPriceAfterDiscounts,"USD");
             if (transactionID == -1) {
-                throw new Exception("Payment failed");
+                throw new OrderTransactionException("Payment failed");
             }
 
             try {
@@ -326,4 +328,5 @@ public class PurchasedService {
             }
         }
     }
+
 }
