@@ -28,15 +28,19 @@ public class PurchasePolicyRepositoryAdapter implements iPurchasePolicyRepositor
         return jpaRepository.findById(policyId).orElse(null);
     }
 
+
     @Override
     public PurchasePolicy findByEvent(String eventId) {
-        return jpaRepository.findByTargetIdAndTargetType(eventId, PurchaseTargetType.EVENT);
+        List<PurchasePolicy> policies = jpaRepository.findByTargetIdAndTargetType(eventId, PurchaseTargetType.EVENT);
+        return (policies != null && !policies.isEmpty()) ? policies.get(0) : null;
     }
 
     @Override
     public PurchasePolicy findByCompany(String companyName) {
-        return jpaRepository.findByTargetIdAndTargetType(companyName, PurchaseTargetType.COMPANY);
+        List<PurchasePolicy> policies = jpaRepository.findByTargetIdAndTargetType(companyName, PurchaseTargetType.COMPANY);
+        return (policies != null && !policies.isEmpty()) ? policies.get(0) : null;
     }
+
 
     @Override
     public void delete(String policyId) {
@@ -52,15 +56,9 @@ public class PurchasePolicyRepositoryAdapter implements iPurchasePolicyRepositor
 
     @Override
     public List<PurchasePolicy> findByEventAndCompany(String eventId, String companyName) {
-        List<PurchasePolicy> policies = new ArrayList<>();
-        PurchasePolicy eventPolicy = findByEvent(eventId);
-        if (eventPolicy != null) {
-            policies.add(eventPolicy);
-        }
-        PurchasePolicy companyPolicy = findByCompany(companyName);
-        if (companyPolicy != null) {
-            policies.add(companyPolicy);
-        }
-        return policies;
+        List<PurchasePolicy> policiesEvents = jpaRepository.findByTargetIdAndTargetType(eventId, PurchaseTargetType.EVENT);
+        List<PurchasePolicy> policiesCompanies = jpaRepository.findByTargetIdAndTargetType(companyName, PurchaseTargetType.COMPANY);
+        policiesCompanies.addAll(policiesEvents);
+        return policiesCompanies;
     }
 }

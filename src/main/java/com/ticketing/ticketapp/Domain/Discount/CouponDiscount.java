@@ -26,6 +26,11 @@ public class CouponDiscount extends DiscountComponent {
 
     @Override
     public double calculateDiscount(double price, PurchaseContext context) {
+        // מונע קריסה אם היוזר לא הזין קופון בכלל
+        if (context.getUserCoupon() == null) {
+            return 0;
+        }
+
         boolean isCodeMatch = code.equalsIgnoreCase(context.getUserCoupon());
 
         if (isCodeMatch) {
@@ -34,7 +39,8 @@ public class CouponDiscount extends DiscountComponent {
         return 0;
     }
 
-    public double gePercentage() {
+    // תוקנה שגיאת ההקלדה כאן
+    public double getPercentage() {
         return percentage;
     }
 

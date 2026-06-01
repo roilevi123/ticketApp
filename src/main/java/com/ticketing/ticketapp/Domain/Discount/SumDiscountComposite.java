@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 public class SumDiscountComposite extends DiscountComponent {
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinColumn(name = "parent_id")
+    @JoinColumn(name = "sum_parent_id") // <-- שונה כדי למנוע התנגשות
     private List<DiscountComponent> children = new ArrayList<>();
 
     protected SumDiscountComposite() {
