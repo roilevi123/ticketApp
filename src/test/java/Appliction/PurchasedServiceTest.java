@@ -164,7 +164,7 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
-        when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(1);
+        when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(-1);
 
         purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
 

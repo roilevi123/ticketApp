@@ -42,7 +42,7 @@ public class SystemService {
                 "00000000"          // id
         );
         int paymentResult = paymentService.processPayment(dummyCard, 0.0, "USD");
-        boolean paymentOk = (paymentResult >= 10000 && paymentResult <= 100000);
+        boolean paymentOk = ( paymentResult!=-1);
         boolean supplyOk = supplyService.supplyToEmail("system@check.internal", "ping");
         if (!paymentOk || !supplyOk) {
             return Response.error("External services unavailable");

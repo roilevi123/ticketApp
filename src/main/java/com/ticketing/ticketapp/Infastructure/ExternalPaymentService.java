@@ -46,7 +46,7 @@ public class ExternalPaymentService implements IPaymentService {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return 1;
+            return -1;
         }
     }
 
