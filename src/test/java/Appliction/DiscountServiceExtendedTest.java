@@ -42,7 +42,7 @@ class DiscountServiceExtendedTest {
     @Test
     void calculatePriceAfterDiscounts_EventPolicyPresent_AppliesDiscount() {
         DiscountPolicy eventPolicy = new DiscountPolicy("p1", EVENT, DiscountTargetType.EVENT,
-                new CouponDiscount("SAVE10", 10.0));
+                new CouponDiscount("1","SAVE10", 10.0));
         when(discountRepo.findByEvent(EVENT)).thenReturn(eventPolicy);
         when(discountRepo.findByCompany(COMPANY)).thenReturn(null);
 
@@ -55,7 +55,7 @@ class DiscountServiceExtendedTest {
     @Test
     void calculatePriceAfterDiscounts_CompanyPolicyPresent_AppliesDiscount() {
         DiscountPolicy companyPolicy = new DiscountPolicy("p2", COMPANY, DiscountTargetType.COMPANY,
-                new CouponDiscount("CORP20", 20.0));
+                new CouponDiscount("1","CORP20", 20.0));
         when(discountRepo.findByEvent(EVENT)).thenReturn(null);
         when(discountRepo.findByCompany(COMPANY)).thenReturn(companyPolicy);
 
@@ -68,9 +68,9 @@ class DiscountServiceExtendedTest {
     @Test
     void calculatePriceAfterDiscounts_BothPolicies_MaxDiscountWins() {
         DiscountPolicy eventPolicy = new DiscountPolicy("p1", EVENT, DiscountTargetType.EVENT,
-                new CouponDiscount("EVT5", 5.0));
+                new CouponDiscount("1","EVT5", 5.0));
         DiscountPolicy companyPolicy = new DiscountPolicy("p2", COMPANY, DiscountTargetType.COMPANY,
-                new CouponDiscount("CORP30", 30.0));
+                new CouponDiscount("1","CORP30", 30.0));
         when(discountRepo.findByEvent(EVENT)).thenReturn(eventPolicy);
         when(discountRepo.findByCompany(COMPANY)).thenReturn(companyPolicy);
 
@@ -86,7 +86,7 @@ class DiscountServiceExtendedTest {
     void createMaxDiscountPolicy_MissingPolicy_ReturnsError() {
         when(discountRepo.getPolicy("existing")).thenReturn(
                 new DiscountPolicy("existing", EVENT, DiscountTargetType.EVENT,
-                        new ConditionalDiscount(10.0, null, "")));
+                        new ConditionalDiscount("1",10.0, null, "")));
         when(discountRepo.getPolicy("missing")).thenReturn(null);
 
         var result = discountService.createMaxDiscountPolicy(TOKEN, EVENT, DiscountTargetType.EVENT,

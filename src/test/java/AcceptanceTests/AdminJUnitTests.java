@@ -3,6 +3,7 @@ package AcceptanceTests;
 import com.ticketing.ticketapp.Appliction.*;
 import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
+import com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
@@ -18,19 +19,26 @@ import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.*;
 import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import com.ticketing.ticketapp.Infastructure.*;
+import com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.mockito.Mockito.mock;
-
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDateTime;
-
+@DataJpaTest
+@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
 @DisplayName("Admin Management Acceptance Tests")
 public class AdminJUnitTests {
 
@@ -42,7 +50,10 @@ public class AdminJUnitTests {
     private AdminService adminService;
     private IUserRepository userRepository;
     private TokenService tokenService;
-
+    @Autowired
+    private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
+    @Autowired
+    private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @BeforeEach
     void setUp() {
         this.userRepository = new UserRepositoryImpl();
@@ -53,8 +64,8 @@ public class AdminJUnitTests {
         IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
         iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        iDiscountPolicyRepository discountPolicyRepository=new InMemoryDiscountPolicyRepository();
-        iPurchasePolicyRepository purchasePolicyRepository=new InMemoryPurchasePolicyRepository();
+        iDiscountPolicyRepository discountPolicyRepository = new DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
+        iPurchasePolicyRepository purchasePolicyRepository = new PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
             public boolean isAdmin(String userID) {
@@ -105,6 +116,7 @@ public class AdminJUnitTests {
         queueRepository.deleteAll();
         tokenService.clearAllData();
         adminRepository.deleteAll();
+        purchasePolicyRepository.deleteAll();
     }
 
     private String gt() {

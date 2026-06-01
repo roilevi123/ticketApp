@@ -1,12 +1,22 @@
 package com.ticketing.ticketapp.Domain.PurchasePolicy;
 
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class AndPurchaseComposite implements PurchaseComponent {
-    private final List<PurchaseComponent> components = new ArrayList<>();
+@Entity
+@DiscriminatorValue("AND_COMPOSITE")
+public class AndPurchaseComposite extends PurchaseComponent {
+
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "parent_composite_id") // קישור ישיר ללא טבלת ביניים!
+    private List<PurchaseComponent> components = new ArrayList<>();
+
+    public AndPurchaseComposite() {
+        super();
+    }
 
     public void add(PurchaseComponent component) {
         components.add(component);
@@ -16,6 +26,7 @@ public class AndPurchaseComposite implements PurchaseComponent {
     public boolean isSatisfied(PurchaseValidationData data) {
         return components.stream().allMatch(c -> c.isSatisfied(data));
     }
+
     @Override
     public String getDescription() {
         String childrenDesc = components.stream()
@@ -28,7 +39,6 @@ public class AndPurchaseComposite implements PurchaseComponent {
         return components;
     }
 
-    /** AND = all conditions must hold, so the tightest (minimum) seat cap wins. */
     @Override
     public Integer getMaxSeats() {
         return components.stream()

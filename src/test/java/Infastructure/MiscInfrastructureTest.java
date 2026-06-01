@@ -1,15 +1,30 @@
-package Infastructure;
+
+        package Infastructure;
 
 import com.ticketing.ticketapp.Domain.Discount.*;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.*;
 import com.ticketing.ticketapp.Infastructure.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.springframework.boot.test.context.SpringBootTest
+@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
+@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
+@org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
 class MiscInfrastructureTest {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
+
+    @BeforeEach
+    void setUp() {
+        jpaDiscountPolicyRepository.deleteAll();
+    }
 
     // --- AdminRepositoryImpl ---
 
@@ -25,48 +40,61 @@ class MiscInfrastructureTest {
         assertDoesNotThrow(repo::deleteAll);
     }
 
-    // --- InMemoryDiscountPolicyRepository (direct, not spy) ---
+    // --- InMemoryDiscountPolicyRepository (Converted to DB Adapter) ---
 
     @Test
     void discountRepo_SaveAndGetPolicy() {
-        InMemoryDiscountPolicyRepository repo = new InMemoryDiscountPolicyRepository();
-        DiscountPolicy p = new DiscountPolicy("p1", "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, ""));
+        com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter repo =
+                new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
+
+        DiscountPolicy p = new DiscountPolicy("p1", "e1", DiscountTargetType.EVENT, new ConditionalDiscount("101", 10.0, null, ""));
         repo.save(p);
-        assertEquals(p, repo.getPolicy("p1"));
+
+        DiscountPolicy fetched = repo.getPolicy("p1");
+        assertNotNull(fetched);
+        assertEquals(p.getPolicyId(), fetched.getPolicyId());
     }
 
     @Test
     void discountRepo_FindByEvent_ReturnsMatch() {
-        InMemoryDiscountPolicyRepository repo = new InMemoryDiscountPolicyRepository();
-        DiscountPolicy p = new DiscountPolicy("p1", "event1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, ""));
+        com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter repo =
+                new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
+
+        DiscountPolicy p = new DiscountPolicy("p2", "event1", DiscountTargetType.EVENT, new ConditionalDiscount("102", 10.0, null, ""));
         repo.save(p);
         assertNotNull(repo.findByEvent("event1"));
     }
 
     @Test
     void discountRepo_FindByCompany_ReturnsMatch() {
-        InMemoryDiscountPolicyRepository repo = new InMemoryDiscountPolicyRepository();
-        DiscountPolicy p = new DiscountPolicy("p1", "compA", DiscountTargetType.COMPANY, new ConditionalDiscount(5.0, null, ""));
+        com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter repo =
+                new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
+
+        DiscountPolicy p = new DiscountPolicy("p3", "compA", DiscountTargetType.COMPANY, new ConditionalDiscount("103", 5.0, null, ""));
         repo.save(p);
         assertNotNull(repo.findByCompany("compA"));
     }
 
     @Test
     void discountRepo_Delete_RemovesPolicy() {
-        InMemoryDiscountPolicyRepository repo = new InMemoryDiscountPolicyRepository();
-        DiscountPolicy p = new DiscountPolicy("p1", "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, ""));
+        com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter repo =
+                new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
+
+        DiscountPolicy p = new DiscountPolicy("p4", "e1", DiscountTargetType.EVENT, new ConditionalDiscount("104", 10.0, null, ""));
         repo.save(p);
-        repo.delete("p1");
-        assertNull(repo.getPolicy("p1"));
+        repo.delete("p4");
+        assertNull(repo.getPolicy("p4"));
     }
 
     @Test
     void discountRepo_DeleteAll_ClearsAll() {
-        InMemoryDiscountPolicyRepository repo = new InMemoryDiscountPolicyRepository();
-        DiscountPolicy p = new DiscountPolicy("p1", "e1", DiscountTargetType.EVENT, new ConditionalDiscount(10.0, null, ""));
+        com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter repo =
+                new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
+
+        DiscountPolicy p = new DiscountPolicy("p5", "e1", DiscountTargetType.EVENT, new ConditionalDiscount("105", 10.0, null, ""));
         repo.save(p);
         repo.deleteAll();
-        assertNull(repo.getPolicy("p1"));
+        assertNull(repo.getPolicy("p5"));
     }
 
     // --- InMemoryPurchasePolicyRepository ---
@@ -163,3 +191,4 @@ class MiscInfrastructureTest {
         assertTrue(svc.supplyToEmail("user@test.com", "Your ticket content"));
     }
 }
+

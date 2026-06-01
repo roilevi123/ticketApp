@@ -67,10 +67,12 @@ export default function CheckoutPage() {
       [tickets],
   );
 
-  const handleApplyCoupon = async () => {
-    if (!coupon.trim()) return;
+  // פונקציה מרכזית לחישוב המחיר מול השרת (תומכת גם בהנחות אוטומטיות וגם בקופון ידני)
+  const calculateFinalPrice = async (couponCode = "") => {
+    const firstTicket = tickets[0];
+    if (!firstTicket) return;
+
     setIsCalculating(true);
-    setCouponMsg(null);
     try {
       const firstTicket = tickets[0];
       if (!firstTicket) return;
@@ -80,23 +82,44 @@ export default function CheckoutPage() {
         companyName: firstTicket.company,
         originalPrice: originalTotal,
         quantity: tickets.length,
-        coupon: coupon.trim()
+        coupon: couponCode.trim() || null // שליחת null אם אין קופון כדי לאפשר הנחה אוטומטית (כמו Simple או Quantity)
       });
 
-      // מניח שהשרת יחזיר את המחיר החדש
       const newTotal = res.data.finalPrice ?? res.data;
       setDiscountedTotal(newTotal);
 
-      if (newTotal < originalTotal) {
-        setCouponMsg({ type: 'success', text: 'Coupon applied successfully!' });
-      } else {
-        setCouponMsg({ type: 'error', text: 'Coupon is invalid or not applicable.' });
+      // עדכון הודעת פידבק רק אם המשתמש ניסה להזין קופון באופן אקטיבי
+      if (couponCode.trim()) {
+        if (newTotal < originalTotal) {
+          setCouponMsg({ type: 'success', text: 'Coupon applied successfully!' });
+        } else {
+          setCouponMsg({ type: 'error', text: 'Coupon is invalid or not applicable.' });
+        }
       }
     } catch (err) {
-      setCouponMsg({ type: 'error', text: 'Failed to verify coupon.' });
+      if (couponCode.trim()) {
+        setCouponMsg({ type: 'error', text: 'Failed to verify coupon.' });
+      }
+      console.error("Discount calculation failed:", err);
     } finally {
       setIsCalculating(false);
     }
+  };
+
+  // אפקט שרץ אוטומטית כשהעגלה או הכרטיסים נטענים - בודק הנחות אוטומטיות מהשרת
+  useEffect(() => {
+    if (hasActiveOrder && tickets.length > 0) {
+      calculateFinalPrice(coupon);
+    } else {
+      setDiscountedTotal(null);
+    }
+  }, [tickets, originalTotal, hasActiveOrder]);
+
+  // הפעלה בלחיצה ידנית על כפתור Apply
+  const handleApplyCoupon = () => {
+    if (!coupon.trim()) return;
+    setCouponMsg(null);
+    calculateFinalPrice(coupon);
   };
 
   const handleSubmit = async (event) => {
@@ -268,11 +291,13 @@ export default function CheckoutPage() {
                       Total to pay
                     </span>
                         <div className="flex flex-col items-end">
+                          {/* תוקן: מציג את המחיר המקורי הלא מוזל עם קו מוחק עליו */}
                           {discountedTotal !== null && discountedTotal < originalTotal && (
                               <span className="text-label-sm text-on-surface-variant line-through opacity-70">
                           {formatMoney(originalTotal)}
                         </span>
                           )}
+                          {/* מציג את המחיר החדש לאחר ההנחה האוטומטית/קופון */}
                           <span className="text-headline-sm text-on-surface font-bold">
                         {formatMoney(discountedTotal !== null ? discountedTotal : originalTotal)}
                       </span>

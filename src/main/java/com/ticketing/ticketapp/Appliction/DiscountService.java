@@ -19,13 +19,11 @@ public class DiscountService {
     private static final Logger logger = LoggerFactory.getLogger(DiscountService.class);
     private IUserRepository userRepository;
 
-
     public DiscountService(iDiscountPolicyRepository discountRepo, TokenService tokenService, PurchasedService purchasedService, IUserRepository userRepository) {
         this.discountRepo = discountRepo;
         this.tokenService = tokenService;
         this.purchasedService = purchasedService;
         this.userRepository = userRepository;
-
     }
 
     public Response<String> createSimpleDiscount(String token, String targetId, DiscountTargetType type, double percentage, String companyName) {
@@ -34,7 +32,9 @@ public class DiscountService {
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
                 throw new Exception("User is suspended");
-            DiscountComponent simple = new ConditionalDiscount(percentage, null, "no conditions");
+
+            String discountId = UUID.randomUUID().toString();
+            DiscountComponent simple = new ConditionalDiscount(discountId, percentage, null, "no conditions");
             return Response.success(savePolicy(targetId, type, simple));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -48,8 +48,10 @@ public class DiscountService {
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
                 throw new Exception("User is suspended");
+
             String conditionDesc = "quantity >= " + minQuantity;
-            DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getQuantity() >= minQuantity, conditionDesc);
+            String discountId = UUID.randomUUID().toString();
+            DiscountComponent discount = new ConditionalDiscount(discountId, percentage, ctx -> ctx.getQuantity() >= minQuantity, conditionDesc);
             return Response.success(savePolicy(targetId, type, discount));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -63,8 +65,10 @@ public class DiscountService {
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
                 throw new Exception("User is suspended");
+
             String conditionDesc = "purchase date before " + deadline.toString();
-            DiscountComponent discount = new ConditionalDiscount(percentage, ctx -> ctx.getPurchaseDate().before(deadline), conditionDesc);
+            String discountId = UUID.randomUUID().toString();
+            DiscountComponent discount = new ConditionalDiscount(discountId, percentage, ctx -> ctx.getPurchaseDate().before(deadline), conditionDesc);
             return Response.success(savePolicy(targetId, type, discount));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -78,7 +82,9 @@ public class DiscountService {
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
                 throw new Exception("User is suspended");
-            DiscountComponent coupon = new CouponDiscount(code, percentage);
+
+            String discountId = UUID.randomUUID().toString();
+            DiscountComponent coupon = new CouponDiscount(discountId, code, percentage);
             return Response.success(savePolicy(targetId, type, coupon));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -92,7 +98,9 @@ public class DiscountService {
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
                 throw new Exception("User is suspended");
-            SumDiscountComposite sumComposite = new SumDiscountComposite();
+
+            String compositeId = UUID.randomUUID().toString();
+            SumDiscountComposite sumComposite = new SumDiscountComposite(compositeId);
 
             for (String id : existingPolicyIds) {
                 DiscountPolicy existingPolicy = discountRepo.getPolicy(id);
@@ -117,7 +125,9 @@ public class DiscountService {
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
                 throw new Exception("User is suspended");
-            MaxDiscountComposite maxComposite = new MaxDiscountComposite();
+
+            String compositeId = UUID.randomUUID().toString();
+            MaxDiscountComposite maxComposite = new MaxDiscountComposite(compositeId);
 
             for (String id : existingPolicyIds) {
                 DiscountPolicy existingPolicy = discountRepo.getPolicy(id);
@@ -184,7 +194,8 @@ public class DiscountService {
             DiscountPolicy eventPolicy = discountRepo.findByEvent(eventId);
             DiscountPolicy companyPolicy = discountRepo.findByCompany(companyName);
 
-            MaxDiscountComposite combinedRoot = new MaxDiscountComposite();
+            String combinedRootId = UUID.randomUUID().toString();
+            MaxDiscountComposite combinedRoot = new MaxDiscountComposite(combinedRootId);
 
             if (eventPolicy != null) {
                 combinedRoot.add(eventPolicy.getRoot());
