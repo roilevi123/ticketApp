@@ -172,9 +172,8 @@ class OrderServiceExtendedTest {
     void reserveTickets_EventPolicyFails_ReturnsError() {
         PurchasePolicy policy = new PurchasePolicy("p1", EVENT, PurchaseTargetType.EVENT, new QuantityLimitCondition(0, 0));
         policyRepository.save(policy);
-
         // תיקון: הגדרת ה-Mock של ה-JPA שיחזיר את הפוליסה של האירוע
-        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(EVENT, PurchaseTargetType.EVENT)).thenReturn(policy);
+        when(policyRepository.findByEvent(EVENT)).thenReturn(policy);
 
         ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
 
@@ -189,8 +188,7 @@ class OrderServiceExtendedTest {
         PurchasePolicy policy = new PurchasePolicy("p2", COMPANY, PurchaseTargetType.COMPANY, new QuantityLimitCondition(0, 0));
         policyRepository.save(policy);
 
-        // תיקון: הגדרת ה-Mock של ה-JPA שיחזיר את הפוליסה של החברה
-        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(COMPANY, PurchaseTargetType.COMPANY)).thenReturn(policy);
+        when(policyRepository.findByCompany(COMPANY)).thenReturn(policy);
 
         ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
 
@@ -209,8 +207,8 @@ class OrderServiceExtendedTest {
         policyRepository.save(companyPolicy);
 
         // תיקון: הגדרת ה-Mock של ה-JPA לשני המקרים
-        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(EVENT, PurchaseTargetType.EVENT)).thenReturn(eventPolicy);
-        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(COMPANY, PurchaseTargetType.COMPANY)).thenReturn(companyPolicy);
+        when(policyRepository.findByEvent(EVENT)).thenReturn(eventPolicy);
+        when(policyRepository.findByCompany(COMPANY)).thenReturn(companyPolicy);
 
         ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
 
@@ -225,7 +223,7 @@ class OrderServiceExtendedTest {
         policyRepository.save(policy);
 
         // תיקון: הגדרת ה-Mock של ה-JPA שיחזיר את הפוליסה
-        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(EVENT, PurchaseTargetType.EVENT)).thenReturn(policy);
+        when(policyRepository.findByEvent(EVENT)).thenReturn(policy);
 
         ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
 
@@ -243,7 +241,7 @@ class OrderServiceExtendedTest {
         policyRepository.save(policy);
 
         // תיקון: הגדרת ה-Mock של ה-JPA שיחזיר את הפוליסה
-        when(jpaPurchasePolicyRepository.findByTargetIdAndTargetType(EVENT, PurchaseTargetType.EVENT)).thenReturn(policy);
+        when(policyRepository.findByEvent(EVENT)).thenReturn(policy);
 
         ticketRepository.storeTicket(0, 0, EVENT, COMPANY, 100);
 

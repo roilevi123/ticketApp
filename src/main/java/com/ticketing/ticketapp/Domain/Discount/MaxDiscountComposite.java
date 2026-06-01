@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 public class MaxDiscountComposite extends DiscountComponent {
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinColumn(name = "parent_id")
+    @JoinColumn(name = "max_parent_id") // <-- שונה כדי למנוע התנגשות
     private List<DiscountComponent> children = new ArrayList<>();
 
     protected MaxDiscountComposite() {

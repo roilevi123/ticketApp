@@ -51,7 +51,8 @@ public class ConditionalDiscount extends DiscountComponent {
                 String pattern = "EEE MMM dd HH:mm:ss zzz yyyy";
                 SimpleDateFormat parser = new SimpleDateFormat(pattern, Locale.US);
                 Date deadline = parser.parse(dateStr);
-                this.condition = ctx -> ctx.getPurchaseDate().before(deadline);
+                // הוספת בדיקה כדי לוודא שאין NullPointerException על תאריך
+                this.condition = ctx -> ctx.getPurchaseDate() != null && ctx.getPurchaseDate().before(deadline);
             } catch (Exception e) {
                 this.condition = ctx -> true;
             }
