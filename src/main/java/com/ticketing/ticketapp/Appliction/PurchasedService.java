@@ -118,7 +118,7 @@ public class PurchasedService {
                             finalContext))
                     .sum();
             int transactionID=paymentService.processPayment(paymentDetails, totalPriceAfterDiscounts,"USD");
-            if (transactionID == 1) {
+            if (transactionID == -1) {
                 throw new Exception("Payment failed");
             }
 
