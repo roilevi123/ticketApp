@@ -15,6 +15,7 @@ import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRep
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import com.ticketing.ticketapp.Infastructure.*;
 import com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter;
 import org.junit.jupiter.api.BeforeEach;
@@ -130,6 +131,16 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         }
         return map;
     }
+    private CreditCardDetails createCreditCardDetails() {
+        return      new CreditCardDetails(
+                "0000000000000000", // card_number
+                "12",               // month
+                "2030",             // year
+                "System Check",     // holder
+                "000",              // cvv
+                "00000000"          // id
+        );
+    }
 
     @Test
     @DisplayName("1. Simple Percentage Discount Verification")
@@ -140,9 +151,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b1");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b1@g.com", orderId, "b1", "none");
+        purchasedService.PurchaseTicket("b1@g.com", orderId, "b1", "none",createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment("b1@g.com", 90.0);
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 90.0,"USD");
     }
 
     @Test
@@ -154,9 +165,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b2");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C2", "E2", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b2@g.com", orderId, "b2", "PROMO50");
+        purchasedService.PurchaseTicket("b2@g.com", orderId, "b2", "PROMO50",createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment("b2@g.com", 100.0);
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0,"USD");
     }
 
     @Test
@@ -169,9 +180,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         List<int[]> seats = List.of(new int[]{0, 0, 1}, new int[]{0, 1, 1});
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C3", "E3", seats, null).getData();
 
-        purchasedService.PurchaseTicket("b3@g.com", orderId, "b3", "none");
+        purchasedService.PurchaseTicket("b3@g.com", orderId, "b3", "none",createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment("b3@g.com", 160.0);
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 160.0,"USD");
     }
 
     @Test
@@ -187,9 +198,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b4");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C4", "E4", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b4@g.com", orderId, "b4", "PLUS5");
+        purchasedService.PurchaseTicket("b4@g.com", orderId, "b4", "PLUS5",createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment("b4@g.com", 85.0);
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 85.0,"USD");
     }
 
     @Test
@@ -205,9 +216,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b5");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C5", "E5", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b5@g.com", orderId, "b5", "none");
+        purchasedService.PurchaseTicket("b5@g.com", orderId, "b5", "none",createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment("b5@g.com", 70.0);
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 70.0,"USD");
     }
 
     @Test
@@ -222,9 +233,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b6");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C6", "E6", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b6@g.com", orderId, "b6", "none");
+        purchasedService.PurchaseTicket("b6@g.com", orderId, "b6", "none",createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment("b6@g.com", 100.0);
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0,"USD");
     }
 
     @Test
@@ -236,9 +247,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b7");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C7", "E7", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b7@g.com", orderId, "b7", "FAKE_CODE");
+        purchasedService.PurchaseTicket("b7@g.com", orderId, "b7", "FAKE_CODE",createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment("b7@g.com", 100.0);
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0,"USD");
     }
 
     @Test

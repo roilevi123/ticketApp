@@ -43,7 +43,15 @@ export default function CheckoutPage() {
   const [submitError, setSubmitError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
-  // States for Coupon / Automatic Discount Logic
+  // === משתני State חדשים עבור שדות האשראי ===
+  const [cardNumber, setCardNumber] = useState("");
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
+  const [holder, setHolder] = useState("");
+  const [cvv, setCvv] = useState("");
+  const [holderId, setHolderId] = useState("");
+
+  // States for Coupon Logic
   const [discountedTotal, setDiscountedTotal] = useState(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [couponMsg, setCouponMsg] = useState(null);
@@ -66,6 +74,9 @@ export default function CheckoutPage() {
 
     setIsCalculating(true);
     try {
+      const firstTicket = tickets[0];
+      if (!firstTicket) return;
+
       const res = await axiosClient.post('/company/policies/discount/calculate', {
         eventId: firstTicket.event,
         companyName: firstTicket.company,
@@ -124,17 +135,44 @@ export default function CheckoutPage() {
       return;
     }
 
+    // וולידציה בסיסית שכל שדות האשראי מולאו
+    if (!cardNumber || !month || !year || !holder || !cvv || !holderId) {
+      setSubmitError("Please fill out all credit card details.");
+      return;
+    }
+
     try {
       setSubmitting(true);
       setSubmitError(null);
       setSuccessMessage(null);
 
-      await purchaseActiveOrder({ email: email.trim(), coupon: coupon.trim() });
+      // מעבירים את המבנה החדש הכולל את creditCardDetails ל-Context
+      await purchaseActiveOrder({
+        email: email.trim(),
+        coupon: coupon.trim(),
+        creditCardDetails: {
+          cardNumber: cardNumber.trim(),
+          month: month.trim(),
+          year: year.trim(),
+          holder: holder.trim(),
+          cvv: cvv.trim(),
+          id: holderId.trim()
+        }
+      });
+
       await refreshActiveOrder();
 
       setSuccessMessage("Purchase completed successfully.");
       setCoupon("");
       setDiscountedTotal(null);
+
+      // איפוס שדות האשראי
+      setCardNumber("");
+      setMonth("");
+      setYear("");
+      setHolder("");
+      setCvv("");
+      setHolderId("");
     } catch (err) {
       setSubmitError(
           getOrderErrorMessage(err, "Checkout failed. Please review your details and try again."),
@@ -336,7 +374,7 @@ export default function CheckoutPage() {
                           value={coupon}
                           onChange={(e) => {
                             setCoupon(e.target.value);
-                            setDiscountedTotal(null); // איפוס כדי לאפשר חישוב מחדש אם הטקסט שונה
+                            setDiscountedTotal(null);
                             setCouponMsg(null);
                           }}
                           placeholder="Optional"
@@ -356,6 +394,82 @@ export default function CheckoutPage() {
                           {couponMsg.text}
                         </p>
                     )}
+                  </div>
+
+                  {/* === החלק החדש שמציג את שדות האשראי בטופס === */}
+                  <div className="border-t border-outline-variant pt-4 mt-4 space-y-4">
+                    <h3 className="text-body-lg font-bold text-on-surface">Payment Information</h3>
+
+                    <label className="block space-y-2">
+                      <span className="text-label-md text-on-surface-variant">Card Holder Name</span>
+                      <input
+                          type="text"
+                          value={holder}
+                          onChange={(e) => setHolder(e.target.value)}
+                          placeholder="Israel Israeli"
+                          className="w-full rounded-2xl border border-outline-variant bg-surface-container px-4 py-3 text-body-md text-on-surface outline-none focus:border-secondary"
+                      />
+                    </label>
+
+                    <label className="block space-y-2">
+                      <span className="text-label-md text-on-surface-variant">Holder ID</span>
+                      <input
+                          type="text"
+                          value={holderId}
+                          onChange={(e) => setHolderId(e.target.value)}
+                          placeholder="123456789"
+                          className="w-full rounded-2xl border border-outline-variant bg-surface-container px-4 py-3 text-body-md text-on-surface outline-none focus:border-secondary"
+                      />
+                    </label>
+
+                    <label className="block space-y-2">
+                      <span className="text-label-md text-on-surface-variant">Card Number</span>
+                      <input
+                          type="text"
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(e.target.value)}
+                          placeholder="1111222233334444"
+                          className="w-full rounded-2xl border border-outline-variant bg-surface-container px-4 py-3 text-body-md text-on-surface outline-none focus:border-secondary"
+                      />
+                    </label>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <label className="block space-y-2">
+                        <span className="text-label-md text-on-surface-variant">Exp Month</span>
+                        <input
+                            type="text"
+                            value={month}
+                            onChange={(e) => setMonth(e.target.value)}
+                            placeholder="MM"
+                            maxLength="2"
+                            className="w-full text-center rounded-2xl border border-outline-variant bg-surface-container px-2 py-3 text-body-md text-on-surface outline-none focus:border-secondary"
+                        />
+                      </label>
+
+                      <label className="block space-y-2">
+                        <span className="text-label-md text-on-surface-variant">Exp Year</span>
+                        <input
+                            type="text"
+                            value={year}
+                            onChange={(e) => setYear(e.target.value)}
+                            placeholder="YYYY"
+                            maxLength="4"
+                            className="w-full text-center rounded-2xl border border-outline-variant bg-surface-container px-2 py-3 text-body-md text-on-surface outline-none focus:border-secondary"
+                        />
+                      </label>
+
+                      <label className="block space-y-2">
+                        <span className="text-label-md text-on-surface-variant">CVV</span>
+                        <input
+                            type="password"
+                            value={cvv}
+                            onChange={(e) => setCvv(e.target.value)}
+                            placeholder="123"
+                            maxLength="3"
+                            className="w-full text-center rounded-2xl border border-outline-variant bg-surface-container px-2 py-3 text-body-md text-on-surface outline-none focus:border-secondary"
+                        />
+                      </label>
+                    </div>
                   </div>
 
                   {submitError && (

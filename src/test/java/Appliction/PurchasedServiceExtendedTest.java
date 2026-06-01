@@ -13,6 +13,7 @@ import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
+import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,7 +69,16 @@ class PurchasedServiceExtendedTest {
     }
 
     // ── PurchaseTicket: sold-out → notifies owners and managers ──────────────
-
+    private CreditCardDetails createCreditCardDetails() {
+        return      new CreditCardDetails(
+                "0000000000000000", // card_number
+                "12",               // month
+                "2030",             // year
+                "System Check",     // holder
+                "000",              // cvv
+                "00000000"          // id
+        );
+    }
     @Test
     void purchaseTicket_SoldOut_NotifiesOwnersAndManagers() throws Exception {
         TicketRepositoryImpl ticketRepoSpy = spy(new TicketRepositoryImpl());
@@ -80,7 +90,7 @@ class PurchasedServiceExtendedTest {
         Date futureDate = new Date(System.currentTimeMillis() + 1_000_000);
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
-        when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
+        when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(100);
         when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenReturn("barcode");
 
         User ownerUser = new User("ownerName", "pass", 40);
@@ -96,7 +106,7 @@ class PurchasedServiceExtendedTest {
         // token validation fails → order is fetched by orderId (not by userId)
         when(tokenService.validateToken(USERNAME)).thenReturn(false);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none");
+        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
 
         verify(notifier).notifyUser(eq(ownerUser.getID()), eq("Event Sold Out"), anyString());
         verify(notifier).notifyUser(eq(managerUser.getID()), eq("Event Sold Out"), anyString());
@@ -116,11 +126,11 @@ class PurchasedServiceExtendedTest {
         // Guest order: userId = null
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), null, futureDate);
 
-        when(paymentService.processPayment(EMAIL, 100.0)).thenReturn(true);
+        when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(100);
         when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenReturn("barcode");
         when(tokenService.validateToken(USERNAME)).thenReturn(false);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none");
+        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
 
         verify(notifier, never()).notifyUser(any(), eq("Purchase Successful"), any());
     }

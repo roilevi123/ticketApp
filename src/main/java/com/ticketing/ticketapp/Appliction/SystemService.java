@@ -1,6 +1,7 @@
 package com.ticketing.ticketapp.Appliction;
 
 import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
+import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.springframework.stereotype.Service;
 
@@ -32,8 +33,16 @@ public class SystemService {
         if (initialized) {
             return Response.error("System already initialized");
         }
-
-        boolean paymentOk = paymentService.processPayment("0000000000000000", 0.0);
+        CreditCardDetails dummyCard = new CreditCardDetails(
+                "0000000000000000", // card_number
+                "12",               // month
+                "2030",             // year
+                "System Check",     // holder
+                "000",              // cvv
+                "00000000"          // id
+        );
+        int paymentResult = paymentService.processPayment(dummyCard, 0.0, "USD");
+        boolean paymentOk = (paymentResult >= 10000 && paymentResult <= 100000);
         boolean supplyOk = supplyService.supplyToEmail("system@check.internal", "ping");
         if (!paymentOk || !supplyOk) {
             return Response.error("External services unavailable");

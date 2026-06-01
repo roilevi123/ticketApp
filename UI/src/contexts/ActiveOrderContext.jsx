@@ -109,16 +109,17 @@ export function ActiveOrderProvider({ children }) {
   );
 
   const purchaseActiveOrder = useCallback(
-    async ({ email, coupon }) => {
-      const response = await axiosClient.post("/orders/purchase", {
-        email,
-        coupon,
-      });
+      async ({ email, coupon, creditCardDetails }) => { // <-- הוספנו את המשתנה כאן בתוך הסוגריים המסולסלים
+        const response = await axiosClient.post("/orders/purchase", {
+          email,
+          coupon,
+          creditCardDetails
+        });
 
-      await refreshActiveOrder();
-      return response.data;
-    },
-    [refreshActiveOrder],
+        await refreshActiveOrder();
+        return response.data;
+      },
+      [refreshActiveOrder],
   );
 
   const value = useMemo(

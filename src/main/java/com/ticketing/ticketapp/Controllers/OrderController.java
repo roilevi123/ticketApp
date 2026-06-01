@@ -4,6 +4,7 @@ import com.ticketing.ticketapp.Appliction.OrderService;
 import com.ticketing.ticketapp.Appliction.PurchasedService;
 import com.ticketing.ticketapp.Appliction.Response;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
+import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -70,7 +71,7 @@ public class OrderController {
             String coupon = (request.getCoupon() != null && !request.getCoupon().isBlank())
                     ? request.getCoupon() : "none";
             Response<String> result = purchasedService.PurchaseTicket(
-                    request.getEmail(), null, token, coupon);
+                    request.getEmail(), null, token, coupon,request.getCreditCardDetails());
             if (result.isSuccess()) {
                 return ResponseEntity.ok(Map.of("message", "Purchase successful"));
             } else {
@@ -86,12 +87,14 @@ public class OrderController {
 class PurchaseRequestDTO {
     private String email;
     private String coupon;
-
+    private CreditCardDetails creditCardDetails;
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
     public String getCoupon() { return coupon; }
     public void setCoupon(String coupon) { this.coupon = coupon; }
+    public CreditCardDetails getCreditCardDetails() { return creditCardDetails; }
+    public void setCreditCardDetails(CreditCardDetails creditCardDetails) { this.creditCardDetails = creditCardDetails; }
 }
 
 class ReserveRequestDTO {

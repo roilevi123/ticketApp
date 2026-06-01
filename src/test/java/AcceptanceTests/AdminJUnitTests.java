@@ -17,6 +17,7 @@ import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.*;
+import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import com.ticketing.ticketapp.Infastructure.*;
 import com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter;
 import org.junit.jupiter.api.BeforeEach;
@@ -139,7 +140,16 @@ public class AdminJUnitTests {
         }
         return map;
     }
-
+    private CreditCardDetails createCreditCardDetails() {
+        return      new CreditCardDetails(
+                "0000000000000000", // card_number
+                "12",               // month
+                "2030",             // year
+                "System Check",     // holder
+                "000",              // cvv
+                "00000000"          // id
+        );
+    }
     @Test
     @DisplayName("1. Close Company Success")
     void closeCompanySuccess1() {
@@ -197,7 +207,7 @@ public class AdminJUnitTests {
         reg("buyer", "p");
         String tB = log("buyer", "p");
         String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer", "none");
+        purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer", "none",createCreditCardDetails());
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());
@@ -230,12 +240,12 @@ public class AdminJUnitTests {
         reg("b1", "p");
         String tB1 = log("b1", "p");
         String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1", "none");
+        purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1", "none",createCreditCardDetails());
 
         reg("b2", "p");
         String tB2 = log("b2", "p");
         String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1}), null).getData();
-        purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2", "none");
+        purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2", "none",createCreditCardDetails());
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());
@@ -283,10 +293,10 @@ public class AdminJUnitTests {
         String tB = log("buyer8", "p");
 
         String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8", "none");
+        purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8", "none",createCreditCardDetails());
 
         String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8", "none");
+        purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8", "none",createCreditCardDetails());
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());

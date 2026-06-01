@@ -17,6 +17,7 @@ import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
+import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -126,7 +127,16 @@ public class PurchaseOrderTests {
         map[1][1] = MapArea.STAND;
         return map;
     }
-
+    private CreditCardDetails createCreditCardDetails() {
+        return      new CreditCardDetails(
+                "0000000000000000", // card_number
+                "12",               // month
+                "2030",             // year
+                "System Check",     // holder
+                "000",              // cvv
+                "00000000"          // id
+        );
+    }
     @Test @DisplayName("1. Purchased Ticket Success")
     void purchasedTicketSuccess1() {
         reg("1", "1");
@@ -137,7 +147,7 @@ public class PurchaseOrderTests {
         String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
-        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none").getData());
+        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails()).getData());
     }
 
     @Test @DisplayName("2. Purchased Ticket Failed - Order Expired")
@@ -151,7 +161,7 @@ public class PurchaseOrderTests {
         List<int[]> requests = List.of(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
         Thread.sleep(11000);
-        assertTrue(purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none").isError());
+        assertTrue(purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails()).isError());
     }
 
     @Test @DisplayName("3. Purchased Ticket Success - Multiple Spots")
@@ -164,7 +174,7 @@ public class PurchaseOrderTests {
         String token1 = log("2", "2");
         List<int[]> requests = Arrays.asList(new int[]{0, 0, 1}, new int[]{1, 1, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
-        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none").getData());
+        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails()).getData());
     }
 
     @Test @DisplayName("4. Get Company Transaction Success")
@@ -177,7 +187,7 @@ public class PurchaseOrderTests {
         String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
-        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none");
+        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails());
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token).getData();
 
         boolean isCompanyExist = false;
@@ -208,7 +218,7 @@ public class PurchaseOrderTests {
         String token1 = log("2", "2");
         List<int[]> requests = Arrays.asList(new int[]{0, 0, 1}, new int[]{1, 1, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
-        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none");
+        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails());
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token).getData();
 
         boolean isCompanyExist = false;
@@ -249,7 +259,7 @@ public class PurchaseOrderTests {
         reg("2", "2");
         String token2 = log("2", "2");
         String orderId = reserveTicketService.reserveTickets(token2, "1", "1", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none");
+        purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails());
 
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token3).getData();
 
@@ -291,8 +301,8 @@ public class PurchaseOrderTests {
         String o1 = reserveTicketService.reserveTickets(tB2, "1", "E1", requests, null).getData();
         String o2 = reserveTicketService.reserveTickets(tB3, "1", "E2", requests, null).getData();
 
-        assertEquals("success", purchasedService.PurchaseTicket("r2@g.com", o1, "buyer2", "none").getData());
-        assertEquals("success", purchasedService.PurchaseTicket("r3@g.com", o2, "buyer3", "none").getData());
+        assertEquals("success", purchasedService.PurchaseTicket("r2@g.com", o1, "buyer2", "none",createCreditCardDetails()).getData());
+        assertEquals("success", purchasedService.PurchaseTicket("r3@g.com", o2, "buyer3", "none",createCreditCardDetails()).getData());
 
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("1", token).getData();
 
@@ -348,8 +358,8 @@ public class PurchaseOrderTests {
         String o1 = reserveTicketService.reserveTickets(tA, "C9", "E1", List.of(new int[]{0, 0, 1}), null).getData();
         String o2 = reserveTicketService.reserveTickets(tB, "C9", "E2", List.of(new int[]{0, 0, 1}), null).getData();
 
-        assertEquals("success", purchasedService.PurchaseTicket("a@g.com", o1, "buyer9a", "none").getData());
-        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", o2, "buyer9b", "none").getData());
+        assertEquals("success", purchasedService.PurchaseTicket("a@g.com", o1, "buyer9a", "none",createCreditCardDetails()).getData());
+        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", o2, "buyer9b", "none",createCreditCardDetails()).getData());
 
         List<PurchaseOrderDTO> result = purchasedService.getCompanyTransaction("C9", token).getData();
         assertNotNull(result);
@@ -377,7 +387,7 @@ public class PurchaseOrderTests {
         reg("20", "20");
         String tB = log("20", "20");
         String orderId = reserveTicketService.reserveTickets(tB, "C10", "E10", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b@gmail.com", orderId, "20", "none");
+        purchasedService.PurchaseTicket("b@gmail.com", orderId, "20", "none",createCreditCardDetails());
 
         List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(tB).getData();
         boolean isCompanyExist = false;
@@ -415,10 +425,10 @@ public class PurchaseOrderTests {
         List<int[]> req = List.of(new int[]{0, 0, 1});
 
         String oA = reserveTicketService.reserveTickets(tB, "CA", "EA", req, null).getData();
-        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oA, "buyer", "none").getData(), "Purchase for CA failed");
+        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oA, "buyer", "none",createCreditCardDetails()).getData(), "Purchase for CA failed");
 
         String oB = reserveTicketService.reserveTickets(tB, "CB", "EB", req, null).getData();
-        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oB, "buyer", "none").getData(), "Purchase for CB failed");
+        assertEquals("success", purchasedService.PurchaseTicket("b@g.com", oB, "buyer", "none",createCreditCardDetails()).getData(), "Purchase for CB failed");
 
         List<PurchaseOrderDTO> result = purchasedService.getUserTransaction(tB).getData();
         boolean isCompany1Exist = false;
@@ -461,7 +471,7 @@ public class PurchaseOrderTests {
 
         String guestToken = tokenService.generateGuestToken();
         String order1 = reserveTicketService.reserveTickets(guestToken, "SecC", "SecE", List.of(new int[]{0, 0, 1}), null).getData();
-        assertEquals("success", purchasedService.PurchaseTicket("u1@gmail.com", order1, "guestUser", "none").getData());
+        assertEquals("success", purchasedService.PurchaseTicket("u1@gmail.com", order1, "guestUser", "none",createCreditCardDetails()).getData());
     }
 
     @Test @DisplayName("14. Purchased Ticket Success After App Re-entry")
@@ -477,7 +487,7 @@ public class PurchaseOrderTests {
 
         userService.logout(tB);
         log("2", "2");
-        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none").getData());
+        assertEquals("success", purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails()).getData());
     }
 
     @Test @DisplayName("15. Purchase Order Guest Fail - App Exit")
@@ -487,7 +497,7 @@ public class PurchaseOrderTests {
         companyService.CreateCompany("SecC", tO);
         eventService.createEvent(tO, "SecE", "SecC", EventType.PLAY, 100, new Date(), "L", "SecC", getMapArea());
 
-        assertTrue(purchasedService.PurchaseTicket("u1@gmail.com", "invalid_id", "user1", "none").isError());
+        assertTrue(purchasedService.PurchaseTicket("u1@gmail.com", "invalid_id", "user1", "none",createCreditCardDetails()).isError());
     }
 
     @Test @DisplayName("16. Purchased Ticket Fail - App Re-entry but Expired")
@@ -504,7 +514,7 @@ public class PurchaseOrderTests {
         userService.logout(tB);
         Thread.sleep(11000);
         log("2", "2");
-        assertTrue(purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none").isError());
+        assertTrue(purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails()).isError());
     }
 
     @Test
@@ -542,7 +552,7 @@ public class PurchaseOrderTests {
 
         adminService.suspendUser(realBuyerId, "admin", 7);
 
-        Response<String> purchaseResponse = purchasedService.PurchaseTicket("buyer@gmail.com", orderId, buyerToken, "none");
+        Response<String> purchaseResponse = purchasedService.PurchaseTicket("buyer@gmail.com", orderId, buyerToken, "none",createCreditCardDetails());
 
         assertTrue(purchaseResponse.isError(), "Purchase should fail for suspended user");
         assertEquals("User is suspended", purchaseResponse.getMessage());
