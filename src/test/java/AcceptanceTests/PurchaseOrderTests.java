@@ -1,6 +1,7 @@
 package AcceptanceTests;
 
 import com.ticketing.ticketapp.Appliction.*;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderException;
 import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
@@ -12,6 +13,7 @@ import com.ticketing.ticketapp.Domain.OwnerManagerTree.Permission;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderException;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
@@ -23,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.mock;
-import com.ticketing.ticketapp.Appliction.INotifier;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
@@ -161,7 +163,11 @@ public class PurchaseOrderTests {
         List<int[]> requests = List.of(new int[]{0, 0, 1});
         String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
         Thread.sleep(11000);
-        assertTrue(purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails()).isError());
+        
+        PurchaseOrderException exception = assertThrows(PurchaseOrderException.class, () -> {
+            purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails());
+        });
+        assertEquals("Order expired or not found", exception.getMessage());
     }
 
     @Test @DisplayName("3. Purchased Ticket Success - Multiple Spots")
@@ -497,7 +503,10 @@ public class PurchaseOrderTests {
         companyService.CreateCompany("SecC", tO);
         eventService.createEvent(tO, "SecE", "SecC", EventType.PLAY, 100, new Date(), "L", "SecC", getMapArea());
 
-        assertTrue(purchasedService.PurchaseTicket("u1@gmail.com", "invalid_id", "user1", "none",createCreditCardDetails()).isError());
+        PurchaseOrderException ex = assertThrows(PurchaseOrderException.class, () -> {
+            purchasedService.PurchaseTicket("u1@gmail.com", "invalid_id", "user1", "none", createCreditCardDetails());
+        });
+        assertEquals("Order expired or not found", ex.getMessage());
     }
 
     @Test @DisplayName("16. Purchased Ticket Fail - App Re-entry but Expired")
@@ -514,7 +523,11 @@ public class PurchaseOrderTests {
         userService.logout(tB);
         Thread.sleep(11000);
         log("2", "2");
-        assertTrue(purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails()).isError());
+        
+        PurchaseOrderException exception = assertThrows(PurchaseOrderException.class, () -> {
+            purchasedService.PurchaseTicket("ro@gmail.com", orderId, "2", "none",createCreditCardDetails());
+        });
+        assertEquals("Order expired or not found", exception.getMessage());
     }
 
     @Test
@@ -552,10 +565,11 @@ public class PurchaseOrderTests {
 
         adminService.suspendUser(realBuyerId, "admin", 7);
 
-        Response<String> purchaseResponse = purchasedService.PurchaseTicket("buyer@gmail.com", orderId, buyerToken, "none",createCreditCardDetails());
+        PurchaseOrderException exception = assertThrows(PurchaseOrderException.class, () -> {
+            purchasedService.PurchaseTicket("buyer@gmail.com", orderId, buyerToken, "none",createCreditCardDetails());
+        });
 
-        assertTrue(purchaseResponse.isError(), "Purchase should fail for suspended user");
-        assertEquals("User is suspended", purchaseResponse.getMessage());
+        assertEquals("User is suspended", exception.getMessage());
     }
 
     private boolean isNumeric(String str) {

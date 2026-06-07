@@ -8,6 +8,7 @@ import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderException;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
@@ -166,8 +167,10 @@ class PurchasedServiceTest {
 
         when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(-1);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
-
+        PurchaseOrderException exception = assertThrows(PurchaseOrderException.class, () -> {
+            purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
+        });
+        assertEquals("Payment failed", exception.getMessage());
         verify(paymentService).processPayment(createCreditCardDetails(), 100.0,"USD");
         verify(supplyService, never()).supplyToEmail(anyString(), anyString());
 
@@ -202,8 +205,11 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
+        PurchaseOrderException exception = assertThrows(PurchaseOrderException.class, () -> {
+            purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
+        });
 
+        assertEquals("Order expired or not found", exception.getMessage());
         verify(paymentService, never()).processPayment(any(CreditCardDetails.class), anyDouble(),eq("USD"));
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
         verify(orderRepoSpy, never()).delete(anyString());
@@ -234,7 +240,10 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, pastDate);
 
-        purchasedService.PurchaseTicket(EMAIL, "orderId", USERNAME, "none",createCreditCardDetails());
+        PurchaseOrderException exception = assertThrows(PurchaseOrderException.class, () -> {
+            purchasedService.PurchaseTicket(EMAIL, "orderId", USERNAME, "none",createCreditCardDetails());
+        });
+        assertEquals("Order expired or not found", exception.getMessage());
 
         verify(paymentService, never()).processPayment(any(CreditCardDetails.class), anyDouble(),eq("USD"));
         assertNotNull(orderRepoSpy.findById(orderId));
@@ -269,8 +278,11 @@ class PurchasedServiceTest {
         when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(100);
         when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenThrow(new RuntimeException("Generator Error"));
 
-        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
-
+        PurchaseOrderException exception = assertThrows(PurchaseOrderException.class, () -> {
+            purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
+        });
+        
+        assertEquals("Failed during save or supply: Generator Error", exception.getMessage());
         verify(paymentService).refund(100);
         assertNotNull(orderRepoSpy.getOrder(USERNAME));
         verify(orderRepoSpy, never()).delete(USERNAME);
@@ -477,14 +489,12 @@ class PurchasedServiceTest {
 
         when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
 
-        Response<String> response = purchasedService.PurchaseTicket(EMAIL, orderId, validToken, "none",createCreditCardDetails());
-
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
-
+        PurchaseOrderException exception = assertThrows(PurchaseOrderException.class, () -> {
+            purchasedService.PurchaseTicket(EMAIL, orderId, validToken, "none",createCreditCardDetails());
+        });
+        assertEquals("User is suspended", exception.getMessage());
         verify(paymentService, never()).processPayment(any(CreditCardDetails.class), anyDouble(),eq("USD"));
         verify(supplyService, never()).supplyToEmail(anyString(), anyString());
-
         assertNotNull(orderRepoSpy.findById(orderId));
     }
 }
