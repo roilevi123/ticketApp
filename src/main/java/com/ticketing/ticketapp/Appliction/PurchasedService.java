@@ -10,6 +10,7 @@ import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.Owner;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderException;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
@@ -23,6 +24,7 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -75,6 +77,7 @@ public class PurchasedService {
         return m || (o);
     }
 
+    @Transactional
     public Response<String> PurchaseTicket(String email, String orderId, String token, String userCoupon, CreditCardDetails paymentDetails) {
         try {
             ActiveOrder order = repository.findById(orderId);
@@ -83,12 +86,12 @@ public class PurchasedService {
                 String username = tokenService.extractUsername(token);
                 if (username != null && userRepository.isUserSuspendedNow(username) ||
                         (userID != null && userRepository.isUserSuspendedNow(userID))) {
-                    throw new Exception("User is suspended");
+                    throw new PurchaseOrderException("User is suspended");
                 }
                 order = repository.getOrder(userID);
             }
             if (order == null || order.getExpirationTime().before(new Date())) {
-                throw new Exception("Order expired or not found");
+                throw new PurchaseOrderException("Order expired or not found");
             }
 
             PurchaseContext context = new PurchaseContext(
@@ -117,9 +120,9 @@ public class PurchasedService {
                             t.getPrice(),
                             finalContext))
                     .sum();
-            int transactionID=paymentService.processPayment(paymentDetails, totalPriceAfterDiscounts,"USD");
+            int transactionID = paymentService.processPayment(paymentDetails, totalPriceAfterDiscounts,"USD");
             if (transactionID == -1) {
-                throw new Exception("Payment failed");
+                throw new PurchaseOrderException("Payment failed");
             }
 
             try {
@@ -136,10 +139,12 @@ public class PurchasedService {
 
                 repository.delete(order.getOrderId());
 
+
             } catch (Exception e) {
                 paymentService.refund(transactionID);
-                throw e;
+                throw new PurchaseOrderException("Failed during save or supply: " + e.getMessage(), e);
             }
+        
 
             if (order.getUserId() != null) {
                 notifier.notifyUser(order.getUserId(), "Purchase Successful",
@@ -160,21 +165,26 @@ public class PurchasedService {
             }
 
             return Response.success("success");
+            
+        } catch (PurchaseOrderException e) {
+            logger.error("Transaction aborted: " + e.getMessage());
+            throw e; 
         } catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<List<PurchaseOrderDTO>> getCompanyTransaction(String company, String token) {
         try {
             logger.info("getCompanyTransaction");
             if (!tokenService.validateToken(token)) {
-                throw new Exception("Invalid token");
+                throw new PurchaseOrderException("Invalid token");
             }
             String username = tokenService.extractUserId(token);
             if (username == null || !isAuthorized(company, username)) {
-                throw new Exception("User not authorized");
+                throw new PurchaseOrderException("User not authorized");
             }
             List<PurchaseOrder> purchaseOrders = purchasedOrderRepository.getPurchasedOrdersForCompany(company);
             StringBuilder orders = new StringBuilder();
@@ -199,11 +209,12 @@ public class PurchasedService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<List<PurchaseOrderDTO>> getUserTransaction(String token) {
         try {
             logger.info("getUserTransaction");
             if (!tokenService.validateToken(token)) {
-                throw new Exception("Invalid token");
+                throw new PurchaseOrderException("Invalid token");
             }
             String userID = tokenService.extractUserId(token);
 
@@ -244,19 +255,20 @@ public class PurchasedService {
         return originalPrice - discountAmount;
     }
 
+    @Transactional(readOnly = true)
     public Response<SalesReportDTO> getSubTreeSalesReport(String token, String companyName) {
         try {
             logger.info("Initiating sub-tree sales report generation for company: {}", companyName);
             if (!tokenService.validateToken(token)) {
-                throw new Exception("Invalid token");
+                throw new PurchaseOrderException("Invalid token");
             }
-            
+
             String currentUsername = tokenService.extractUserId(token);
             boolean isOwner = treeOfRoleRepository.exitsOwner(currentUsername, companyName);
             boolean isAuthorizedManager = treeOfRoleRepository.ManagerPermitToSeeTransactions(currentUsername, companyName);
-            
+
             if (!isOwner && !isAuthorizedManager) {
-                throw new Exception("Unauthorized: User does not have permission to generate sales reports");
+                throw new PurchaseOrderException("Unauthorized: User does not have permission to generate sales reports");
             }
 
             List<Owner> allOwners = treeOfRoleRepository.getAllOwnersByCompany(companyName);
