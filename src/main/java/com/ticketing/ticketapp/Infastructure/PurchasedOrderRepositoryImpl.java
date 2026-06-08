@@ -2,13 +2,10 @@ package com.ticketing.ticketapp.Infastructure;
 
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Repository
 public class PurchasedOrderRepositoryImpl implements iPurchasedOrderRepository {
     private List<PurchaseOrder> purchasedOrders=new ArrayList<PurchaseOrder>();
 
