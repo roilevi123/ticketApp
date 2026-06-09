@@ -4,13 +4,11 @@ import com.ticketing.ticketapp.Domain.OwnerManagerTree.Manager;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.Owner;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.Permission;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-@Repository
 public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
     private Map<String, Owner> owners=new ConcurrentHashMap<String,Owner>();
     private Map<String, Manager> managers=new ConcurrentHashMap<String,Manager>();

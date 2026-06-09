@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
@@ -33,6 +34,7 @@ import com.ticketing.ticketapp.Domain.Company.Company;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.Manager;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.Owner;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.OwnerManagerException;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.Permission;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
@@ -85,9 +87,7 @@ class CompanyServiceTest {
     void createCompany_InvalidToken() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
 
-        Response<String> status = companyService.CreateCompany(COMPANY, TOKEN);
-        assertFalse(status.isSuccess());
-
+        assertThrows(OwnerManagerException.class, () -> companyService.CreateCompany(COMPANY, TOKEN));
         verifyNoInteractions(companyRepository);
         verifyNoInteractions(treeOfRoleRepository);
     }
@@ -129,8 +129,8 @@ class CompanyServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
 
-        Response<String> result = companyService.AppointAManager(managerName, COMPANY, new HashSet<>(), TOKEN);
-        assertFalse(result.isSuccess());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.AppointAManager(managerName, COMPANY, new HashSet<>(), TOKEN));
         verify(treeOfRoleRepository, never()).storeManager(anyString(), anyString(), anySet(), anyString());
     }
 
@@ -198,8 +198,8 @@ class CompanyServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
 
-        Response<String> result = companyService.RejectAppointmentForManager(TOKEN, COMPANY);
-        assertFalse(result.isSuccess());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.RejectAppointmentForManager(TOKEN, COMPANY));
         verify(treeOfRoleRepository, never()).deleteManager(anyString(), anyString());
     }
 
@@ -209,8 +209,8 @@ class CompanyServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.isManager(USERNAME, COMPANY)).thenReturn(false);
 
-        Response<String> result = companyService.RejectAppointmentForManager(TOKEN, COMPANY);
-        assertFalse(result.isSuccess());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.RejectAppointmentForManager(TOKEN, COMPANY));
     }
 
     @Test
@@ -238,8 +238,8 @@ class CompanyServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
 
-        Response<String> result = companyService.AppointOwner(newOwnerName, COMPANY, TOKEN);
-        assertFalse(result.isSuccess());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.AppointOwner(newOwnerName, COMPANY, TOKEN));
         verify(treeOfRoleRepository, never()).storeOwner(anyString(), anyString(), anyString());
     }
 
@@ -308,8 +308,8 @@ class CompanyServiceTest {
         when(treeOfRoleRepository.isOwner(USERNAME, COMPANY)).thenReturn(true);
         when(companyRepository.getCompanyFounder(COMPANY)).thenReturn(USERNAME);
 
-        Response<String> result = companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
-        assertFalse(result.isSuccess());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.RejectAppointmentForOwner(TOKEN, COMPANY));
         verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
     }
 
@@ -317,8 +317,8 @@ class CompanyServiceTest {
     void rejectAppointmentForOwner_Failure_InvalidToken() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
 
-        Response<String> result = companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
-        assertFalse(result.isSuccess());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.RejectAppointmentForOwner(TOKEN, COMPANY));
         verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
     }
 
@@ -348,8 +348,8 @@ class CompanyServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.isAppointerOwner(ownerToFire, COMPANY, USERNAME)).thenReturn(false);
 
-        Response<String> res = companyService.FireOwner(TOKEN, COMPANY, ownerToFire);
-        assertFalse(res.isSuccess());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.FireOwner(TOKEN, COMPANY, ownerToFire));
         verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
     }
 
@@ -378,8 +378,8 @@ class CompanyServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.isAppointerManager(managerToFire, COMPANY, USERNAME)).thenReturn(false);
 
-        Response<String> res = companyService.FireManager(TOKEN, COMPANY, managerToFire);
-        assertFalse(res.isSuccess());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.FireManager(TOKEN, COMPANY, managerToFire));
         verify(treeOfRoleRepository, never()).deleteManager(anyString(), anyString());
     }
 
@@ -416,8 +416,8 @@ class CompanyServiceTest {
         when(treeOfRoleRepository.getManager(managerName, COMPANY)).thenReturn(mockManager);
         when(treeOfRoleRepository.isAppointerManager(managerName, COMPANY, USERNAME)).thenReturn(false);
 
-        Response<String> res = companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerName, Set.of(Permission.MANAGE_INVENTORY));
-        assertFalse(res.isSuccess());
+        assertThrows(OwnerManagerException.class, () ->
+                companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerName, Set.of(Permission.MANAGE_INVENTORY)));
         verify(treeOfRoleRepository, never()).save(any(Manager.class));
         assertEquals(new HashSet<>(), treeOfRoleRepository.getManager(managerName, COMPANY).getPermissions());
     }
@@ -499,8 +499,8 @@ class CompanyServiceTest {
     void unfreezeCompany_Failure_InvalidToken() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
 
-        Response<String> res = companyService.unfreezeCompany(COMPANY, TOKEN);
-        assertFalse(res.isSuccess());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.unfreezeCompany(COMPANY, TOKEN));
         verifyNoInteractions(companyRepository);
     }
 
@@ -532,8 +532,8 @@ class CompanyServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
 
-        Response<Set<Permission>> result = companyService.GetManagerPermissions(TOKEN, COMPANY, managerName);
-        assertTrue(result.isError());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.GetManagerPermissions(TOKEN, COMPANY, managerName));
         verify(treeOfRoleRepository, never()).getManager(anyString(), anyString());
     }
 
@@ -581,9 +581,8 @@ class CompanyServiceTest {
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.isManager(USERNAME, COMPANY)).thenReturn(false);
 
-        Response<String> result = companyService.replyToBuyer(TOKEN, COMPANY, "buyer1", "Hello");
-
-        assertTrue(result.isError());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.replyToBuyer(TOKEN, COMPANY, "buyer1", "Hello"));
         verify(notifier, never()).notifyUser(eq("buyer1"), anyString(), anyString());
     }
 
@@ -603,9 +602,8 @@ class CompanyServiceTest {
     void getActiveCompanies_InvalidToken_ReturnsError() {
         when(tokenService.validateToken(TOKEN)).thenReturn(false);
 
-        Response<?> result = companyService.getActiveCompanies(TOKEN);
-
-        assertTrue(result.isError());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.getActiveCompanies(TOKEN));
     }
 
     @Test
@@ -632,9 +630,8 @@ class CompanyServiceTest {
         when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getOwner(USERNAME, COMPANY)).thenReturn(null);
 
-        Response<String> result = companyService.GetRoleTreeString(TOKEN, COMPANY);
-
-        assertTrue(result.isError());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.GetRoleTreeString(TOKEN, COMPANY));
     }
 
     @Test
@@ -656,12 +653,10 @@ class CompanyServiceTest {
         when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY)).thenReturn(false);
         when(treeOfRoleRepository.isManager(USERNAME, COMPANY)).thenReturn(false);
 
-        Response<String> result = companyService.sendMessageToUser(TOKEN, COMPANY, "user42", "Hello");
-
-        assertTrue(result.isError());
+        assertThrows(OwnerManagerException.class,
+                () -> companyService.sendMessageToUser(TOKEN, COMPANY, "user42", "Hello"));
         verify(notifier, never()).notifyUser(any(), any(), any());
     }
-
 
     @Test
     void createCompany_Failure_SuspendedUser() {
@@ -673,16 +668,13 @@ class CompanyServiceTest {
         when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
         when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
 
-        Response<String> status = companyService.CreateCompany(COMPANY, TOKEN);
-
-        assertFalse(status.isSuccess());
-        assertTrue(status.isError());
-        assertEquals("User is suspended", status.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.CreateCompany(COMPANY, TOKEN));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(companyRepository, never()).store(anyString(), anyString());
         verify(treeOfRoleRepository, never()).storeOwner(anyString(), anyString(), anyString());
     }
-
 
     @Test
     void appointAManager_Failure_SuspendedUser() {
@@ -691,14 +683,11 @@ class CompanyServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
-
         when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
-        Response<String> result = companyService.AppointAManager(targetUsername, COMPANY, new HashSet<>(), TOKEN);
-
-        assertFalse(result.isSuccess());
-        assertTrue(result.isError());
-        assertEquals("User is suspended", result.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.AppointAManager(targetUsername, COMPANY, new HashSet<>(), TOKEN));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(treeOfRoleRepository, never()).exitsOwner(anyString(), anyString());
         verify(userRepository, never()).getUserByUsername(anyString());
@@ -718,25 +707,22 @@ class CompanyServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME); // למקרה שמחלצים ID
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getManager(USERNAME, COMPANY)).thenReturn(mockManager);
         when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
         when(userRepository.getUserByUsername(USERNAME)).thenReturn(mockUser);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
 
-        when(userRepository.isUserSuspendedNow(mockUser.getName())).thenReturn(true);
-
-        Response<String> result = companyService.ApproveAppointmentForManager(TOKEN, COMPANY);
-
-        assertFalse(result.isSuccess());
-        assertTrue(result.isError());
-        assertEquals("User is suspended", result.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.ApproveAppointmentForManager(TOKEN, COMPANY));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(treeOfRoleRepository, never()).save(any(Manager.class));
         assertFalse(mockManager.isAccepted());
     }
 
     @Test
-    void rejectAppointmentForManager_Failure_SuspendedUser(){
+    void rejectAppointmentForManager_Failure_SuspendedUser() {
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
         Manager mockManager = spy(new Manager(USERNAME, COMPANY, permissions, "Administrator"));
@@ -747,18 +733,15 @@ class CompanyServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME); // למקרה שמחלצים ID
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getManager(USERNAME, COMPANY)).thenReturn(mockManager);
         when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
         when(userRepository.getUserByUsername(USERNAME)).thenReturn(mockUser);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
 
-        when(userRepository.isUserSuspendedNow(mockUser.getName())).thenReturn(true);
-
-        Response<String> result = companyService.RejectAppointmentForManager(TOKEN, COMPANY);
-
-        assertFalse(result.isSuccess());
-        assertTrue(result.isError());
-        assertEquals("User is suspended", result.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.RejectAppointmentForManager(TOKEN, COMPANY));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(treeOfRoleRepository, never()).save(any(Manager.class));
         assertFalse(mockManager.isAccepted());
@@ -771,14 +754,11 @@ class CompanyServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
-
         when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
-        Response<String> result = companyService.AppointOwner(targetUsername, COMPANY, TOKEN);
-
-        assertFalse(result.isSuccess());
-        assertTrue(result.isError());
-        assertEquals("User is suspended", result.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.AppointOwner(targetUsername, COMPANY, TOKEN));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(treeOfRoleRepository, never()).exitsOwner(anyString(), anyString());
         verify(userRepository, never()).getUserByUsername(anyString());
@@ -798,25 +778,22 @@ class CompanyServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME); // למקרה שמחלצים ID
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getManager(USERNAME, COMPANY)).thenReturn(mockManager);
         when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
         when(userRepository.getUserByUsername(USERNAME)).thenReturn(mockUser);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
 
-        when(userRepository.isUserSuspendedNow(mockUser.getName())).thenReturn(true);
-
-        Response<String> result = companyService.ApproveAppointmentForOwner(TOKEN, COMPANY);
-
-        assertFalse(result.isSuccess());
-        assertTrue(result.isError());
-        assertEquals("User is suspended", result.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.ApproveAppointmentForOwner(TOKEN, COMPANY));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(treeOfRoleRepository, never()).save(any(Manager.class));
         assertFalse(mockManager.isAccepted());
     }
 
     @Test
-    void rejectAppointmentForOwner_Failure_SuspendedUser(){
+    void rejectAppointmentForOwner_Failure_SuspendedUser() {
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
         Manager mockManager = spy(new Manager(USERNAME, COMPANY, permissions, "Administrator"));
@@ -827,18 +804,15 @@ class CompanyServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME); // למקרה שמחלצים ID
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
         when(treeOfRoleRepository.getManager(USERNAME, COMPANY)).thenReturn(mockManager);
         when(userRepository.getUserByID(USERNAME)).thenReturn(mockUser);
         when(userRepository.getUserByUsername(USERNAME)).thenReturn(mockUser);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(true);
 
-        when(userRepository.isUserSuspendedNow(mockUser.getName())).thenReturn(true);
-
-        Response<String> result = companyService.RejectAppointmentForOwner(TOKEN, COMPANY);
-
-        assertFalse(result.isSuccess());
-        assertTrue(result.isError());
-        assertEquals("User is suspended", result.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.RejectAppointmentForOwner(TOKEN, COMPANY));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(treeOfRoleRepository, never()).save(any(Manager.class));
         assertFalse(mockManager.isAccepted());
@@ -852,36 +826,30 @@ class CompanyServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
-
         when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
-        Response<String> res = companyService.FireOwner(TOKEN, COMPANY, ownerToFire);
-
-        assertFalse(res.isSuccess());
-        assertTrue(res.isError());
-        assertEquals("User is suspended", res.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.FireOwner(TOKEN, COMPANY, ownerToFire));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(treeOfRoleRepository, never()).deleteOwner(ownerToFire, COMPANY);
     }
 
     @Test
     void FireManager_Failure_SuspendedUser() {
-        String ownerToFire = "owner_to_fire";
+        String managerToFire = "manager_to_fire";
         String mockUserId = "user-123";
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
-
         when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
-        Response<String> res = companyService.FireManager(TOKEN, COMPANY, ownerToFire);
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.FireManager(TOKEN, COMPANY, managerToFire));
+        assertEquals("User is suspended", ex.getMessage());
 
-        assertFalse(res.isSuccess());
-        assertTrue(res.isError());
-        assertEquals("User is suspended", res.getMessage());
-
-        verify(treeOfRoleRepository, never()).deleteOwner(ownerToFire, COMPANY);
+        verify(treeOfRoleRepository, never()).deleteManager(anyString(), anyString());
     }
 
     @Test
@@ -892,14 +860,11 @@ class CompanyServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
-
         when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
-        Response<String> res = companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerID, newPermissions);
-
-        assertFalse(res.isSuccess());
-        assertTrue(res.isError());
-        assertEquals("User is suspended", res.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.ChangeManagerPermissions(TOKEN, COMPANY, managerID, newPermissions));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(treeOfRoleRepository, never()).getManager(anyString(), anyString());
         verify(treeOfRoleRepository, never()).save(any(Manager.class));
@@ -912,14 +877,11 @@ class CompanyServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
-
         when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
-        Response<String> res = companyService.freezeCompany(COMPANY, TOKEN);
-
-        assertFalse(res.isSuccess());
-        assertTrue(res.isError());
-        assertEquals("User is suspended", res.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.freezeCompany(COMPANY, TOKEN));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(companyRepository, never()).getCompany(anyString());
         verify(companyRepository, never()).save(any(Company.class));
@@ -932,14 +894,11 @@ class CompanyServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
-
         when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
-        Response<String> res = companyService.unfreezeCompany(COMPANY, TOKEN);
-
-        assertFalse(res.isSuccess());
-        assertTrue(res.isError());
-        assertEquals("User is suspended", res.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.unfreezeCompany(COMPANY, TOKEN));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(companyRepository, never()).getCompany(anyString());
         verify(companyRepository, never()).save(any(Company.class));
@@ -954,14 +913,11 @@ class CompanyServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
-
         when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
-        Response<String> res = companyService.replyToBuyer(TOKEN, COMPANY, buyerId, message);
-
-        assertFalse(res.isSuccess());
-        assertTrue(res.isError());
-        assertEquals("User is suspended", res.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.replyToBuyer(TOKEN, COMPANY, buyerId, message));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(treeOfRoleRepository, never()).exitsOwner(anyString(), anyString());
         verify(treeOfRoleRepository, never()).isManager(anyString(), anyString());
@@ -977,14 +933,11 @@ class CompanyServiceTest {
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
         when(tokenService.extractUsername(TOKEN)).thenReturn(USERNAME);
-
         when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
-        Response<String> res = companyService.sendMessageToUser(TOKEN, COMPANY, targetUserId, message);
-
-        assertFalse(res.isSuccess());
-        assertTrue(res.isError());
-        assertEquals("User is suspended", res.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.sendMessageToUser(TOKEN, COMPANY, targetUserId, message));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(treeOfRoleRepository, never()).exitsOwner(anyString(), anyString());
         verify(treeOfRoleRepository, never()).isManager(anyString(), anyString());
@@ -998,14 +951,11 @@ class CompanyServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
-
         when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
-        Response<String> res = companyService.FireMember(TOKEN, COMPANY, memberUsername);
-
-        assertFalse(res.isSuccess());
-        assertTrue(res.isError());
-        assertEquals("User is suspended", res.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.FireMember(TOKEN, COMPANY, memberUsername));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(userRepository, never()).getUserByUsername(anyString());
         verify(treeOfRoleRepository, never()).getManager(anyString(), anyString());
@@ -1018,14 +968,11 @@ class CompanyServiceTest {
 
         when(tokenService.validateToken(TOKEN)).thenReturn(true);
         when(tokenService.extractUserId(TOKEN)).thenReturn(mockUserId);
-
         when(userRepository.isUserSuspendedNow(mockUserId)).thenReturn(true);
 
-        Response<String> res = companyService.closeCompany(COMPANY, TOKEN);
-
-        assertFalse(res.isSuccess());
-        assertTrue(res.isError());
-        assertEquals("User is suspended", res.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.closeCompany(COMPANY, TOKEN));
+        assertEquals("User is suspended", ex.getMessage());
 
         verify(treeOfRoleRepository, never()).getOwner(anyString(), anyString());
         verify(companyRepository, never()).deleteCompany(anyString());
