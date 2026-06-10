@@ -109,8 +109,10 @@ public class AdminService {
 
     private void notifyMember(String username, String title, String message) {
         try {
+            logger.info("Attempting to notify a member: ", username);
             User u = userRepository.getUserByUsername(username);
             if (u != null) notifier.notifyUser(u.getID(), title, message);
+            logger.info("Notified user successfully");
         } catch (Exception e) {
             logger.warn("Failed to notify user {}: {}", username, e.getMessage());
         }
