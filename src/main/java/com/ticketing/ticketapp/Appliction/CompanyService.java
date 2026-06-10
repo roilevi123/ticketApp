@@ -530,6 +530,7 @@ public class CompanyService {
 
     public Response<String> sendMessageToUser(String token, String companyName, String targetUserId, String message) {
         try {
+            logger.info("User of token {} is attempting to send message to user {} from company {}", token, targetUserId, companyName);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -539,6 +540,7 @@ public class CompanyService {
             if (!isOwner && !isManager)
                 throw new OwnerManagerException("Not authorized to send messages for this company");
             notifier.notifyUser(targetUserId, "Message from " + companyName, message);
+            logger.info("User {} sent user {} a message from company {}", userID, targetUserId, companyName);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
