@@ -93,6 +93,7 @@ public class CompanyService {
     @Transactional
     public Response<String> ApproveAppointmentForManager(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to approve appointment for management of the company:", token,company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -100,6 +101,7 @@ public class CompanyService {
             Manager m = treeOfRoleRepository.getManager(userID, company);
             m.acceptAppointment();
             treeOfRoleRepository.save(m);
+            logger.info("User {} approved appointment for management of th eocmpany: ", userID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
