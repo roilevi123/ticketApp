@@ -334,10 +334,12 @@ public class AdminService {
 
     public Response<String> broadcastMessage(String adminId, String title, String message) {
         try {
+            logger.info("Admin {} is attempting to broadcast a message", adminId);
             if (!adminRepository.isAdmin(adminId)) {
                 throw new Exception("Not authorized");
             }
             notifier.broadcast(title, message);
+            logger.info("Admin {} broadcasted a message successfully", adminId);
             return Response.success("Broadcast sent");
         } catch (Exception e) {
             logger.error(e.getMessage());
