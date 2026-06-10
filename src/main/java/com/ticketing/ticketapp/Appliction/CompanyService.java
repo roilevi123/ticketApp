@@ -489,6 +489,7 @@ public class CompanyService {
     @Transactional(readOnly = true)
     public Response<String> GetRoleTreeString(String token, String companyName) {
         try {
+            logger.info("User of token {} is attempting to get role tree for the company:", token, companyName);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (treeOfRoleRepository.getOwner(userID, companyName) == null)
@@ -498,6 +499,7 @@ public class CompanyService {
             Company company = companyRepository.getCompany(companyName);
             StringBuilder treeString = new StringBuilder();
             buildTreeString(company.getFounderID(), allOwners, allManagers, treeString, 0);
+            logger.info("User {} got role tree for company {} successfully", userID, companyName);
             return Response.success(treeString.toString());
         } catch (OwnerManagerException e) {
             throw e;
