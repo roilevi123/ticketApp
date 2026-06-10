@@ -25,6 +25,24 @@ public class PurchasedOrderRepositoryAdapter implements iPurchasedOrderRepositor
     }
 
     @Override
+    public void StorePurchasedOrder(String company, String event, List<String> ticketsId, String buyerID, String orderId, List<String> externalTicketIds) {
+        PurchaseOrder order = new PurchaseOrder(company, event, ticketsId, buyerID, orderId);
+        order.setExternalTicketIds(externalTicketIds);
+        jpaRepository.saveAndFlush(order);
+    }
+
+    @Override
+    public PurchaseOrder getByOrderId(String orderId) {
+        return jpaRepository.findById(orderId).orElse(null);
+    }
+
+    @Override
+    public void deleteByOrderId(String orderId) {
+        jpaRepository.deleteById(orderId);
+        jpaRepository.flush();
+    }
+
+    @Override
     public List<PurchaseOrder> GetAllPurchasedOrders() {
         return jpaRepository.findAll();
     }

@@ -54,6 +54,10 @@ public class Ticket {
         this.isPurchased = true;
     }
 
+    public void cancelPurchase() {
+        this.isPurchased = false;
+    }
+
 
     public String getEvent() {
         return event;

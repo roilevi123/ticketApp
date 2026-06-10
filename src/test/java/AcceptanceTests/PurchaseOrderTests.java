@@ -25,9 +25,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.*;
 
@@ -49,6 +53,8 @@ public class PurchaseOrderTests {
     private TokenService tokenService;
     private IUserRepository userRepository;
     private AdminService adminService;
+    @MockBean
+    IExternalTicketService externalTicketService;
     @org.springframework.beans.factory.annotation.Autowired
     private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
     @Autowired
@@ -77,7 +83,8 @@ public class PurchaseOrderTests {
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, discountPolicyRepository    );
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
-        this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentService, barcodeGenerator, tokenService, treeOfRoleRepository, discountPolicyRepository, userRepository, notifierMock);
+        this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentService, barcodeGenerator, tokenService, treeOfRoleRepository, discountPolicyRepository, userRepository, notifierMock, externalTicketService);
+        when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
 
         this.userRepository = userRepository;
         iAdminRepository adminRepository = new AdminRepositoryImpl(){

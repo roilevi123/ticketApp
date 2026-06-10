@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.Date;
 import java.util.List;
@@ -39,6 +40,7 @@ class PurchasedServiceExtendedTest {
     @Mock private ISupplyService supplyService;
     @Mock private IPaymentService paymentService;
     @Mock private IBarcodeGenerator barcodeGenerator;
+    @MockBean IExternalTicketService externalTicketService;
     @Mock private TokenService tokenService;
     @Mock private iTreeOfRoleRepository treeOfRoleRepository;
     @Mock private IUserRepository userRepository;
@@ -58,6 +60,7 @@ class PurchasedServiceExtendedTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         jpaDiscountPolicyRepository.deleteAll();
+        when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
     }
 
     private PurchasedService buildService(IActiveOrderRepository orderRepo,
@@ -65,7 +68,7 @@ class PurchasedServiceExtendedTest {
                                           iDiscountPolicyRepository discountRepo) {
         return new PurchasedService(orderRepo, ticketRepo, purchasedOrderRepository,
                 supplyService, paymentService, barcodeGenerator, tokenService,
-                treeOfRoleRepository, discountRepo, userRepository, notifier);
+                treeOfRoleRepository, discountRepo, userRepository, notifier, externalTicketService);
     }
 
     // ── PurchaseTicket: sold-out → notifies owners and managers ──────────────

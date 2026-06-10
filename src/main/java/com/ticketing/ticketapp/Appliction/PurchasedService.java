@@ -36,6 +36,7 @@ public class PurchasedService {
     private ISupplyService supplyService;
     private IPaymentService paymentService;
     private IBarcodeGenerator barcodeGenerator;
+    private IExternalTicketService externalTicketService;
     private iTicketRepository ticketRepository;
     private iPurchasedOrderRepository purchasedOrderRepository;
     private iTreeOfRoleRepository treeOfRoleRepository;
@@ -56,12 +57,14 @@ public class PurchasedService {
             iTreeOfRoleRepository treeOfRoleRepository,
             iDiscountPolicyRepository discountRepo,
             IUserRepository userRepository,
-            INotifier notifier
+            INotifier notifier,
+            IExternalTicketService externalTicketService
     ) {
         this.repository = repository;
         this.supplyService = supplyService;
         this.paymentService = paymentService;
         this.barcodeGenerator = barcodeGenerator;
+        this.externalTicketService = externalTicketService;
         this.ticketRepository = ticketRepository;
         this.purchasedOrderRepository = purchasedOrderRepository;
         this.tokenService = tokenService;
@@ -120,31 +123,51 @@ public class PurchasedService {
                             t.getPrice(),
                             finalContext))
                     .sum();
-            int transactionID = paymentService.processPayment(paymentDetails, totalPriceAfterDiscounts,"USD");
+
+            int transactionID = paymentService.processPayment(paymentDetails, totalPriceAfterDiscounts, "USD");
             if (transactionID == -1) {
                 throw new PurchaseOrderException("Payment failed");
             }
 
+            List<String> externalTicketCodes = new ArrayList<>();
             try {
+                String customerId = order.getUserId() != null ? order.getUserId() : "guest";
+                for (Ticket t : purchasedTickets) {
+                    String ticketCode = externalTicketService.issueTicket(
+                            customerId, t.getEvent(), t.getEvent(), t.getRow(), t.getCol());
+                    if (ticketCode == null || ticketCode.equals("-1")) {
+                        for (String code : externalTicketCodes) {
+                            externalTicketService.cancelTicket(code);
+                        }
+                        paymentService.refund(transactionID);
+                        throw new PurchaseOrderException("External ticket issuance failed");
+                    }
+                    externalTicketCodes.add(ticketCode);
+                }
+
                 for (Ticket t : purchasedTickets) {
                     ticketRepository.save(t);
                 }
 
-                for (Ticket t : purchasedTickets) {
-                    String barcode = barcodeGenerator.generateBarcode(t.getEvent(), t.getId());
-                    supplyService.supplyToEmail(email, barcode);
+                for (int i = 0; i < purchasedTickets.size(); i++) {
+                    supplyService.supplyToEmail(email, externalTicketCodes.get(i));
                 }
 
-                purchasedOrderRepository.StorePurchasedOrder(order.getCompanyId(), order.getEventId(), order.getTicketIds(), order.getUserId(), order.getOrderId());
+                purchasedOrderRepository.StorePurchasedOrder(
+                        order.getCompanyId(), order.getEventId(), order.getTicketIds(),
+                        order.getUserId(), order.getOrderId(), externalTicketCodes);
 
                 repository.delete(order.getOrderId());
 
-
+            } catch (PurchaseOrderException e) {
+                throw e;
             } catch (Exception e) {
+                for (String code : externalTicketCodes) {
+                    externalTicketService.cancelTicket(code);
+                }
                 paymentService.refund(transactionID);
                 throw new PurchaseOrderException("Failed during save or supply: " + e.getMessage(), e);
             }
-        
 
             if (order.getUserId() != null) {
                 notifier.notifyUser(order.getUserId(), "Purchase Successful",
@@ -165,10 +188,48 @@ public class PurchasedService {
             }
 
             return Response.success("success");
-            
+
         } catch (PurchaseOrderException e) {
             logger.error("Transaction aborted: " + e.getMessage());
-            throw e; 
+            throw e;
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
+
+    public Response<String> cancelOrder(String orderId, String token) {
+        try {
+            if (!tokenService.validateToken(token)) {
+                return Response.error("Invalid token");
+            }
+            String userId = tokenService.extractUserId(token);
+
+            PurchaseOrder order = purchasedOrderRepository.getByOrderId(orderId);
+            if (order == null) {
+                return Response.error("Order not found");
+            }
+            if (!userId.equals(order.getBuyerID())) {
+                return Response.error("Not authorized to cancel this order");
+            }
+
+            for (String ticketCode : order.getExternalTicketIds()) {
+                externalTicketService.cancelTicket(ticketCode);
+            }
+
+            for (String ticketId : order.getTicketsId()) {
+                Ticket t = ticketRepository.getTicketById(ticketId);
+                if (t != null) {
+                    t.cancelPurchase();
+                    ticketRepository.save(t);
+                }
+            }
+
+            purchasedOrderRepository.deleteByOrderId(orderId);
+
+            logger.info("Order {} cancelled by user {}", orderId, userId);
+            return Response.success("Order cancelled successfully");
+
         } catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
@@ -281,15 +342,15 @@ public class PurchasedService {
             List<PurchaseOrderDTO> matchingOrderDTOs = new ArrayList<>();
 
             for (PurchaseOrder order : allCompanyOrders) {
-                if (subTreeUserIds.contains(order.getBuyerID()) || order.getBuyerID().equals(currentUsername)) { 
+                if (subTreeUserIds.contains(order.getBuyerID()) || order.getBuyerID().equals(currentUsername)) {
                     List<String> ticketsId = order.getTicketsId();
                     List<Ticket> ticketList = ticketRepository.getTickets(ticketsId);
                     List<TicketDTO> ticketDTOs = new ArrayList<>();
                     double orderTotal = 0.0;
-                    
+
                     for (Ticket ticket : ticketList) {
                         ticketDTOs.add(TicketDTO.fromEntity(ticket));
-                        orderTotal += ticket.getPrice(); 
+                        orderTotal += ticket.getPrice();
                     }
 
                     totalRevenue += orderTotal;
@@ -303,9 +364,9 @@ public class PurchasedService {
             report.setTotalTicketsSold(totalTicketsSold);
             report.setOrders(matchingOrderDTOs);
 
-            logger.info("Successfully generated sales report for sub-tree of {}. Total Revenue: {}, Tickets Sold: {}", 
+            logger.info("Successfully generated sales report for sub-tree of {}. Total Revenue: {}, Tickets Sold: {}",
                     currentUsername, totalRevenue, totalTicketsSold);
-                    
+
             return Response.success(report);
 
         } catch (Exception e) {
@@ -315,7 +376,6 @@ public class PurchasedService {
     }
 
     private void populateSubTreeIds(String currentUserId, List<Owner> allOwners, List<Manager> allManagers, Set<String> subTreeUserIds) {
-        
         List<String> directDownlineOwners = allOwners.stream()
                 .filter(o -> currentUserId.equals(o.getAppointerID()) && o.isAccepted())
                 .map(Owner::getUserID)
@@ -327,7 +387,7 @@ public class PurchasedService {
                 .toList();
 
         for (String ownerId : directDownlineOwners) {
-            if (subTreeUserIds.add(ownerId)) { 
+            if (subTreeUserIds.add(ownerId)) {
                 populateSubTreeIds(ownerId, allOwners, allManagers, subTreeUserIds);
             }
         }

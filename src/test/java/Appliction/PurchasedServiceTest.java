@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.Date;
 import java.util.List;
@@ -58,6 +59,8 @@ class PurchasedServiceTest {
     private com.ticketing.ticketapp.Domain.User.IUserRepository userRepository;
     @Mock
     private INotifier notifier;
+    @MockBean
+    IExternalTicketService externalTicketService;
 
     @org.springframework.beans.factory.annotation.Autowired
     private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
@@ -95,7 +98,8 @@ class PurchasedServiceTest {
                 treeOfRoleRepository,
                 discountPolicyRepository,
                 userRepository,
-                notifier
+                notifier,
+                externalTicketService
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -107,7 +111,7 @@ class PurchasedServiceTest {
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
         when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(100);
-        when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenReturn("new byte[]{1, 2, 3}");
+        when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
 
         purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
 
@@ -125,7 +129,8 @@ class PurchasedServiceTest {
                 eq(EVENT),
                 anyList(),
                 eq(USERNAME),
-                eq(orderId)
+                eq(orderId),
+                anyList()
         );
 
         verify(orderRepoSpy).delete(orderId);
@@ -157,7 +162,8 @@ class PurchasedServiceTest {
                 treeOfRoleRepository,
                 discountPolicyRepository,
                 userRepository,
-                notifier
+                notifier,
+                externalTicketService
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -197,7 +203,8 @@ class PurchasedServiceTest {
                 treeOfRoleRepository,
                 discountPolicyRepository,
                 userRepository,
-                notifier
+                notifier,
+                externalTicketService
         );
 
         Date pastDate = new Date(System.currentTimeMillis() - 1000000);
@@ -232,7 +239,8 @@ class PurchasedServiceTest {
                 treeOfRoleRepository,
                 discountPolicyRepository,
                 userRepository,
-                notifier
+                notifier,
+                externalTicketService
         );
 
         Date pastDate = new Date(System.currentTimeMillis() - 1000000);
@@ -267,7 +275,8 @@ class PurchasedServiceTest {
                 treeOfRoleRepository,
                 discountPolicyRepository,
                 userRepository,
-                notifier
+                notifier,
+                externalTicketService
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -276,7 +285,8 @@ class PurchasedServiceTest {
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
         when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(100);
-        when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenThrow(new RuntimeException("Generator Error"));
+        when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
+        doThrow(new RuntimeException("Generator Error")).when(supplyService).supplyToEmail(anyString(), anyString());
 
         PurchaseOrderException exception = assertThrows(PurchaseOrderException.class, () -> {
             purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
@@ -305,7 +315,8 @@ class PurchasedServiceTest {
                 treeOfRoleRepository,
                 discountPolicyRepository,
                 userRepository,
-                notifier
+                notifier,
+                externalTicketService
         );
 
         Date futureDate = new Date(System.currentTimeMillis() + 1000000);
@@ -317,7 +328,7 @@ class PurchasedServiceTest {
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
         when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(100);
-        when(barcodeGenerator.generateBarcode(anyString(), anyString())).thenReturn("new byte[]{1, 2, 3}");
+        when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
         when(tokenService.validateToken(anyString())).thenReturn(true);
         when(tokenService.extractUserId(anyString())).thenReturn(USERNAME);
         purchasedService.PurchaseTicket(EMAIL, "", USERNAME, "none",createCreditCardDetails());
@@ -336,7 +347,8 @@ class PurchasedServiceTest {
                 eq(EVENT),
                 anyList(),
                 eq(USERNAME),
-                eq(orderId)
+                eq(orderId),
+                anyList()
         );
 
         verify(orderRepoSpy).delete(orderId);
@@ -473,7 +485,8 @@ class PurchasedServiceTest {
                 treeOfRoleRepository,
                 discountPolicyRepository,
                 userRepository,
-                notifier
+                notifier,
+                externalTicketService
         );
 
         String validToken = "valid_suspended_user_token";

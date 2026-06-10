@@ -28,8 +28,12 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import java.util.Date;
 import java.util.List;
 
@@ -51,6 +55,8 @@ public class AdminJUnitTests {
     private AdminService adminService;
     private IUserRepository userRepository;
     private TokenService tokenService;
+    @MockBean
+    IExternalTicketService externalTicketService;
     @Autowired
     private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
     @Autowired
@@ -92,7 +98,9 @@ public class AdminJUnitTests {
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository,
                 purchasedOrderRepository, supplyService,
                 paymentService, barcodeGenerator,
-                tokenService, treeOfRoleRepository, discountPolicyRepository, userRepository, notifierMock);
+                tokenService, treeOfRoleRepository, discountPolicyRepository, userRepository, notifierMock,
+                externalTicketService);
+        when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
 
         this.adminService = new AdminService(
                 treeOfRoleRepository,
