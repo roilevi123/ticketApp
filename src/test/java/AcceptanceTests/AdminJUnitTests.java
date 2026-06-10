@@ -9,6 +9,7 @@ import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.OwnerManagerException;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
@@ -163,7 +164,11 @@ public class AdminJUnitTests {
         assertTrue(response.isSuccess());
         assertTrue(eventService.getCompanyInfo(token, "C1").isError());
         assertTrue(eventService.getCompanyEvents(token, "C1").isError());
-        assertTrue(companyService.GetRoleTreeString(token, "C1").isError());
+        
+        OwnerManagerException exception = assertThrows(OwnerManagerException.class, () -> {
+            companyService.GetRoleTreeString(token, "C1");
+        });
+        assertEquals("Only owners can view the role tree", exception.getMessage());
     }
 
     @Test

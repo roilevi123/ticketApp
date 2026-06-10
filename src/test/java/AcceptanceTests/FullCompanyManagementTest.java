@@ -5,13 +5,13 @@ import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.OwnerManagerException;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.Permission;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
-import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -92,7 +92,7 @@ public class FullCompanyManagementTest {
 
     @Test @DisplayName("2. Create Company - Fail (User Not Found)")
     void createCompanyFailedUserNotFound2() {
-        assertTrue(companyService.CreateCompany("1", "invalid_token").isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.CreateCompany("1", "invalid_token"));
     }
 
     // --- Manager Appointment ---
@@ -113,7 +113,7 @@ public class FullCompanyManagementTest {
         reg("1", "1");
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
-        assertTrue(companyService.AppointAManager("non_existent", "1", new HashSet<>(), token).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.AppointAManager("non_existent", "1", new HashSet<>(), token));
     }
 
     @Test @DisplayName("5. Appoint Manager - Fail (Not Owner)")
@@ -124,7 +124,7 @@ public class FullCompanyManagementTest {
         reg("3", "3");
         String token3 = log("3", "3");
         companyService.CreateCompany("1", token1);
-        assertTrue(companyService.AppointAManager("2", "1", new HashSet<>(), token3).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.AppointAManager("2", "1", new HashSet<>(), token3));
     }
 
     @Test @DisplayName("6. Approve Manager Request - Success")
@@ -167,7 +167,7 @@ public class FullCompanyManagementTest {
         reg("2", "2");
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
-        assertTrue(companyService.RejectAppointmentForManager(token2, "1").isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.RejectAppointmentForManager(token2, "1"));
     }
 
     // --- Owner Appointment ---
@@ -186,7 +186,7 @@ public class FullCompanyManagementTest {
         reg("1", "1");
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
-        assertTrue(companyService.AppointOwner("non_existent", "1", token).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.AppointOwner("non_existent", "1", token));
     }
 
     @Test @DisplayName("12. Appoint Owner - Fail (Not Owner)")
@@ -197,7 +197,7 @@ public class FullCompanyManagementTest {
         reg("3", "3");
         String token3 = log("3", "3");
         companyService.CreateCompany("1", token);
-        assertTrue(companyService.AppointOwner("2", "1", token3).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.AppointOwner("2", "1", token3));
     }
 
     @Test @DisplayName("13. Approve Owner Request - Success")
@@ -240,7 +240,7 @@ public class FullCompanyManagementTest {
         reg("2", "2");
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
-        assertTrue(companyService.RejectAppointmentForOwner(token2, "1").isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.RejectAppointmentForOwner(token2, "1"));
     }
 
     // --- Firing ---
@@ -270,7 +270,7 @@ public class FullCompanyManagementTest {
         companyService.ApproveAppointmentForOwner(token2, "1");
         companyService.AppointOwner("3", "1", token1);
         companyService.ApproveAppointmentForOwner(token3, "1");
-        assertTrue(companyService.FireOwner(token2, "1", "3").isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.FireOwner(token2, "1", "3"));
     }
 
     @Test @DisplayName("19. Fire Owner - Fail (Fire Founder)")
@@ -282,7 +282,7 @@ public class FullCompanyManagementTest {
         companyService.CreateCompany("1", token1);
         companyService.AppointOwner("2", "1", token1);
         companyService.ApproveAppointmentForOwner(token2, "1");
-        assertTrue(companyService.FireOwner(token2, "1", "1").isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.FireOwner(token2, "1", "1"));
     }
 
     @Test @DisplayName("20. Fire Owner - Fail (Owner Approval Pending)")
@@ -292,7 +292,7 @@ public class FullCompanyManagementTest {
         reg("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointOwner("2", "1", token);
-        assertTrue(companyService.FireOwner(token, "1", "2").isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.FireOwner(token, "1", "2"));
     }
 
     @Test @DisplayName("21. Fire Manager - Success")
@@ -320,7 +320,7 @@ public class FullCompanyManagementTest {
         companyService.ApproveAppointmentForOwner(token2, "1");
         companyService.AppointAManager("3", "1", new HashSet<>(), token1);
         companyService.ApproveAppointmentForManager(token3, "1");
-        assertTrue(companyService.FireManager(token2, "1", "3").isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.FireManager(token2, "1", "3"));
     }
 
     @Test @DisplayName("23. Fire Manager - Fail (Not Approved Yet)")
@@ -330,7 +330,7 @@ public class FullCompanyManagementTest {
         reg("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointAManager("2", "1", new HashSet<>(), token);
-        assertTrue(companyService.FireManager(token, "1", "2").isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.FireManager(token, "1", "2"));
     }
 
     // --- Permissions ---
@@ -362,7 +362,7 @@ public class FullCompanyManagementTest {
         companyService.ApproveAppointmentForOwner(token2, "1");
         companyService.AppointAManager("3", "1", new HashSet<>(), token1);
         companyService.ApproveAppointmentForManager(token3, "1");
-        assertTrue(companyService.ChangeManagerPermissions(token2, "1", "3", new HashSet<>()).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.ChangeManagerPermissions(token2, "1", "3", new HashSet<>()));
     }
 
     @Test @DisplayName("26. Change Permissions - Fail (Not Manager)")
@@ -372,7 +372,7 @@ public class FullCompanyManagementTest {
         reg("2", "2");
         companyService.CreateCompany("1", token);
         companyService.AppointAManager("2", "1", new HashSet<>(), token);
-        assertTrue(companyService.ChangeManagerPermissions(token, "1", "2", new HashSet<>()).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.ChangeManagerPermissions(token, "1", "2", new HashSet<>()));
     }
 
     // --- Freeze / Unfreeze ---
@@ -462,7 +462,7 @@ public class FullCompanyManagementTest {
         String token3 = log("3", "3");
         companyService.CreateCompany("1", token);
         companyService.AppointAManager("2", "1", new HashSet<>(), token);
-        assertTrue(companyService.GetManagerPermissions(token3, "1", "2").isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.GetManagerPermissions(token3, "1", "2"));
     }
 
     // --- Role Tree ---
@@ -555,12 +555,12 @@ public class FullCompanyManagementTest {
 
     @Test
     void ApproveAppointmentForManagerInvalidToken() {
-        assertTrue(companyService.ApproveAppointmentForManager("null", null).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.ApproveAppointmentForManager("null", null));
     }
 
     @Test
     void RejectAppointmentForManagerInvalidToken() {
-        assertTrue(companyService.RejectAppointmentForManager("null", null).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.RejectAppointmentForManager("null", null));
     }
 
     @Test
@@ -570,22 +570,22 @@ public class FullCompanyManagementTest {
 
     @Test
     void ApproveAppointmentForOwnerInvalidToken() {
-        assertTrue(companyService.ApproveAppointmentForOwner("null", null).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.ApproveAppointmentForOwner("null", null));
     }
 
     @Test
     void FireOwnerInvalidToken() {
-        assertTrue(companyService.FireOwner("null", null, null).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.FireOwner("null", null, null));
     }
 
     @Test
     void FireManagerInvalidToken() {
-        assertTrue(companyService.FireManager("null", null, null).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.FireManager("null", null, null));
     }
 
     @Test
     void ChangeManagerPermissionsInvalidToken() {
-        assertTrue(companyService.ChangeManagerPermissions("null", null, null, null).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.ChangeManagerPermissions("null", null, null, null));
     }
 
     @Test
@@ -602,7 +602,7 @@ public class FullCompanyManagementTest {
 
     @Test
     void GetManagerPermissionsInvalidToken() {
-        assertTrue(companyService.GetManagerPermissions("null", null, null).isError());
+        assertThrows(OwnerManagerException.class, () -> companyService.GetManagerPermissions("null", null, null));
     }
 
     @Test
@@ -613,21 +613,18 @@ public class FullCompanyManagementTest {
         String userToken = log("suspended_user", "password123");
 
         String idA = userRepository.getUserByUsername("suspended_user").getID();
-
         adminService.suspendUser(idA, "admin", 7);
 
-        Response<String> response = companyService.CreateCompany("MyCompany", userToken);
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.CreateCompany("MyCompany", userToken));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
     @DisplayName("Appoint Manager - Fail (User Is Suspended)")
     void appointManagerFailedUserSuspended(){
         reg("admin", "adminPassword");
-        reg ("user2", "password345");
+        reg("user2", "password345");
         reg("suspended_user", "password123");
         String suspendedUserToken = log("suspended_user", "password123");
         String userToken = log("user2", "password345");
@@ -635,201 +632,169 @@ public class FullCompanyManagementTest {
         companyService.CreateCompany("company", suspendedUserToken);
 
         String idA = userRepository.getUserByUsername("suspended_user").getID();
-
         adminService.suspendUser(idA, "admin", 7);
 
-        Response<String> response = companyService.AppointAManager(userToken, "company", new HashSet<>(), suspendedUserToken);
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.AppointAManager(userToken, "company", new HashSet<>(), suspendedUserToken));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
     @DisplayName("Approve Management Appointment - Fail (User Suspended)")
     void approveAppointmentAsManagerFailedUserSuspended(){
         reg("admin", "adminPassword");
-        reg ("user2", "password345");
+        reg("user2", "password345");
         reg("suspended_user", "password123");
         String suspendedUserToken = log("suspended_user", "password123");
         String userToken = log("user2", "password345");
 
-        adminService.suspendUser(tokenService.extractUserId(suspendedUserToken), "admin", 0);
         companyService.CreateCompany("company", userToken);
-        companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
+        companyService.AppointAManager("suspended_user", "company", new HashSet<>(), userToken);
 
         String idA = userRepository.getUserByUsername("suspended_user").getID();
+        adminService.suspendUser(idA, "admin", 7);
 
-        Response<String> response = companyService.ApproveAppointmentForManager(suspendedUserToken, "company");
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
-
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.ApproveAppointmentForManager(suspendedUserToken, "company"));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
     @DisplayName("Regect Appointment For Manager - Fail (User Is Suspended)")
     void rejectAppointemntForManagerFailUserSuspended(){
         reg("admin", "adminPassword");
-        reg ("user2", "password345");
+        reg("user2", "password345");
         reg("suspended_user", "password123");
         String suspendedUserToken = log("suspended_user", "password123");
         String userToken = log("user2", "password345");
 
-        adminService.suspendUser(tokenService.extractUserId(suspendedUserToken), "admin", 0);
         companyService.CreateCompany("company", userToken);
-        companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
+        companyService.AppointAManager("suspended_user", "company", new HashSet<>(), userToken);
 
         String idA = userRepository.getUserByUsername("suspended_user").getID();
+        adminService.suspendUser(idA, "admin", 7);
 
-        Response<String> response = companyService.RejectAppointmentForManager(suspendedUserToken, "company");
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.RejectAppointmentForManager(suspendedUserToken, "company"));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
     @DisplayName("Appoint Owner - Fail (User Is Suspended)")
     void appointOwnerFailedUserSuspended(){
         reg("admin", "adminPassword");
-        reg ("user2", "password345");
+        reg("user2", "password345");
         reg("suspended_user", "password123");
         String suspendedUserToken = log("suspended_user", "password123");
         String userToken = log("user2", "password345");
 
         companyService.CreateCompany("company", suspendedUserToken);
-        String  suspendedUserID = tokenService.extractUserId(suspendedUserToken);
-
+        String suspendedUserID = tokenService.extractUserId(suspendedUserToken);
         adminService.suspendUser(suspendedUserID, "admin", 7);
 
-        Response<String> response = companyService.AppointOwner(userToken, "company", suspendedUserToken);
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.AppointOwner(userToken, "company", suspendedUserToken));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
     @DisplayName("Approve Ownership Appointment - Fail (User Suspended)")
     void approveAppointmentAsOwnerFailedUserSuspended(){
         reg("admin", "adminPassword");
-        reg ("user2", "password345");
+        reg("user2", "password345");
         reg("suspended_user", "password123");
         String suspendedUserToken = log("suspended_user", "password123");
         String userToken = log("user2", "password345");
 
-        adminService.suspendUser(tokenService.extractUserId(suspendedUserToken), "admin", 0);
         companyService.CreateCompany("company", userToken);
-        companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
+        companyService.AppointOwner("suspended_user", "company", userToken);
 
         String idA = userRepository.getUserByUsername("suspended_user").getID();
+        adminService.suspendUser(idA, "admin", 7);
 
-        Response<String> response = companyService.ApproveAppointmentForOwner(suspendedUserToken, "company");
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
-
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.ApproveAppointmentForOwner(suspendedUserToken, "company"));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
     @DisplayName("Regect Appointment For Owner - Fail (User Is Suspended)")
     void rejectAppointemntForOwnerFailUserSuspended(){
         reg("admin", "adminPassword");
-        reg ("user2", "password345");
+        reg("user2", "password345");
         reg("suspended_user", "password123");
         String suspendedUserToken = log("suspended_user", "password123");
         String userToken = log("user2", "password345");
 
-        adminService.suspendUser(tokenService.extractUserId(suspendedUserToken), "admin", 0);
         companyService.CreateCompany("company", userToken);
-        companyService.AppointAManager(tokenService.extractUserId(userToken),"company", new HashSet<>(), suspendedUserToken);
+        companyService.AppointOwner("suspended_user", "company", userToken);
 
         String idA = userRepository.getUserByUsername("suspended_user").getID();
+        adminService.suspendUser(idA, "admin", 7);
 
-        Response<String> response = companyService.RejectAppointmentForOwner(suspendedUserToken, "company");
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.RejectAppointmentForOwner(suspendedUserToken, "company"));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
     @DisplayName("Fire Owner - Fail (User Is Suspended)")
     void FireOwnerFailedUserSuspended(){
         reg("admin", "adminPassword");
-        reg ("user2", "password345");
+        reg("user2", "password345");
         reg("suspended_user", "password123");
         String suspendedUserToken = log("suspended_user", "password123");
-        String userToken = log("user2", "password345");
 
         companyService.CreateCompany("company", suspendedUserToken);
 
         String idA = userRepository.getUserByUsername("suspended_user").getID();
-        String idB = userRepository.getUserByUsername("user2").getID();
-        companyService.AppointOwner(idA, "company", userToken);
         adminService.suspendUser(idA, "admin", 7);
-        companyService.ApproveAppointmentForOwner(userToken, "company");
-        Response<String> response=companyService.FireOwner(suspendedUserToken, "company", idB);
 
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.FireOwner(suspendedUserToken, "company", "user2"));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
     @DisplayName("Fire Manager - Fail (User Is Suspended)")
     void FireManagerFailedUserSuspended(){
         reg("admin", "adminPassword");
-        reg ("user2", "password345");
+        reg("user2", "password345");
         reg("suspended_user", "password123");
         String suspendedUserToken = log("suspended_user", "password123");
-        String userToken = log("user2", "password345");
 
         companyService.CreateCompany("company", suspendedUserToken);
 
         String idA = userRepository.getUserByUsername("suspended_user").getID();
-        String idB = userRepository.getUserByUsername("user2").getID();
-        companyService.AppointAManager(idA, "company", new HashSet<>(),userToken);
         adminService.suspendUser(idA, "admin", 7);
-        companyService.ApproveAppointmentForManager(userToken, "company");
-        Response<String> response=companyService.FireManager(suspendedUserToken, "company", idB);
 
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.FireManager(suspendedUserToken, "company", "user2"));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
     @DisplayName("Change Manager Permissions - Fail (User Is Suspended)")
     void changeManagerPermissionsFailedUserSuspended() {
-        // 1. רישום המשתמשים וקבלת טוקן עבור המשתמש שמבצע את הפעולה
         reg("admin", "adminPassword");
         reg("user2", "password345");
         reg("suspended_user", "password123");
         String suspendedUserToken = log("suspended_user", "password123");
         String userToken = log("user2", "password345");
 
-        // 2. יצירת חברה ומינוי מנהל לפני ביצוע החסימה
         companyService.CreateCompany("company", suspendedUserToken);
         companyService.AppointAManager("user2", "company", new HashSet<>(), suspendedUserToken);
         companyService.ApproveAppointmentForManager(userToken, "company");
 
-        // 3. השעיית המשתמש הממנה (suspended_user) על ידי האדמין
         String idA = userRepository.getUserByUsername("suspended_user").getID();
         adminService.suspendUser(idA, "admin", 7);
 
-        // 4. ניסיון לשינוי הרשאות על ידי המשתמש המושהה
         Set<Permission> newPerms = new HashSet<>();
         newPerms.add(Permission.MANAGE_INVENTORY);
-        Response<String> response = companyService.ChangeManagerPermissions(suspendedUserToken, "company", "user2", newPerms);
 
-        // 5. וידאו שהפעולה נחסמה עם הודעת השגיאה המתאימה
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.ChangeManagerPermissions(suspendedUserToken, "company", "user2", newPerms));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
@@ -873,11 +838,9 @@ public class FullCompanyManagementTest {
         String founderId = userRepository.getUserByUsername("founder_user").getID();
         adminService.suspendUser(founderId, "admin", 7);
 
-        Response<String> response = companyService.freezeCompany("company_to_freeze", founderToken);
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.freezeCompany("company_to_freeze", founderToken));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
@@ -893,11 +856,9 @@ public class FullCompanyManagementTest {
         String founderId = userRepository.getUserByUsername("founder_user").getID();
         adminService.suspendUser(founderId, "admin", 7);
 
-        Response<String> response = companyService.unfreezeCompany("company_to_unfreeze", founderToken);
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.unfreezeCompany("company_to_unfreeze", founderToken));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
@@ -915,11 +876,9 @@ public class FullCompanyManagementTest {
         String ownerId = userRepository.getUserByUsername("owner_user").getID();
         adminService.suspendUser(ownerId, "admin", 7);
 
-        Response<String> response = companyService.replyToBuyer(ownerToken, "my_company", buyerId, "Hello?");
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.replyToBuyer(ownerToken, "my_company", buyerId, "Hello?"));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
@@ -937,11 +896,9 @@ public class FullCompanyManagementTest {
         String ownerId = userRepository.getUserByUsername("owner_user").getID();
         adminService.suspendUser(ownerId, "admin", 7);
 
-        Response<String> response = companyService.sendMessageToUser(ownerToken, "messaging_company", targetUserId, "Hello user");
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.sendMessageToUser(ownerToken, "messaging_company", targetUserId, "Hello user"));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
@@ -962,11 +919,9 @@ public class FullCompanyManagementTest {
         String ownerId = userRepository.getUserByUsername("owner_user").getID();
         adminService.suspendUser(ownerId, "admin", 7);
 
-        Response<String> response = companyService.FireMember(ownerToken, "firing_company", memberUsername);
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.FireMember(ownerToken, "firing_company", memberUsername));
+        assertEquals("User is suspended", ex.getMessage());
     }
 
     @Test
@@ -982,10 +937,8 @@ public class FullCompanyManagementTest {
         String founderId = userRepository.getUserByUsername("founder_user").getID();
         adminService.suspendUser(founderId, "admin", 7);
 
-        Response<String> response = companyService.closeCompany("closing_company", founderToken);
-
-        assertFalse(response.isSuccess());
-        assertTrue(response.isError());
-        assertEquals("User is suspended", response.getMessage());
+        OwnerManagerException ex = assertThrows(OwnerManagerException.class,
+                () -> companyService.closeCompany("closing_company", founderToken));
+        assertEquals("User is suspended", ex.getMessage());
     }
 }
