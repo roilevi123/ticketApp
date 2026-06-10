@@ -321,6 +321,7 @@ public class CompanyService {
     @Transactional
     public Response<String> ChangeManagerPermissions(String token, String company, String managerUsername, Set<Permission> newPermissions) {
         try {
+            logger.info("User of token {} is attempting to change the premmisions of the manager {} of the company: ", token, managerUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(appointerID))
@@ -334,6 +335,7 @@ public class CompanyService {
                 throw new OwnerManagerException("You are not authorized to change permissions for this manager");
             manager.setPermissions(newPermissions);
             treeOfRoleRepository.save(manager);
+            logger.info("User {} changed premmisions of the manager {} of the company {} successfully", appointerID, targetUserID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
