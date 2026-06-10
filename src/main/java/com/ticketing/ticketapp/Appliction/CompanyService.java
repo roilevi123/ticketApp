@@ -467,6 +467,7 @@ public class CompanyService {
     @Transactional(readOnly = true)
     public Response<Set<Permission>> GetManagerPermissions(String token, String company, String managerUsername) {
         try {
+            logger.info("User of token {} is attempting to get manager {} premmisions for comapny:", token, managerUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (!treeOfRoleRepository.exitsOwner(userID, company))
@@ -475,6 +476,7 @@ public class CompanyService {
             if (targetUser == null) throw new OwnerManagerException("Target user not found");
             String targetUserID = targetUser.getID();
             Set<Permission> permissions = treeOfRoleRepository.getManagerPermissions(targetUserID, company);
+            logger.info("User {} got manager {} premissions for company {} successfully", userID, targetUserID, company);
             return Response.success(permissions);
         } catch (OwnerManagerException e) {
             throw e;
