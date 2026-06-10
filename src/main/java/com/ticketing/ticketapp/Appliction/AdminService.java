@@ -261,12 +261,13 @@ public class AdminService {
 
     public Response<List<Suspension>> getAllSuspensions(String adminId){
         try{
-            logger.info("Admin {} is viewing suspension history", adminId);
+            logger.info("Admin {} is attempting to get all suspension history", adminId);
 
             if(!adminRepository.isAdmin(adminId))
                 throw new Exception("Admin does not exist");
 
             List<Suspension> suspensions = userRepository.getAllSuspensions();
+            logger.info("Admin got all suspension history successfully");
             return Response.success(suspensions);
         }catch(Exception e){
             logger.info("Failed to get all suspensions: {}", e.getMessage());
