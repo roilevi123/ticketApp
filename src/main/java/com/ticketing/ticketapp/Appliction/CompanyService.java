@@ -446,6 +446,7 @@ public class CompanyService {
     @Transactional(readOnly = true)
     public Response<List<CompanyDTO>> getActiveCompanies(String token) {
         try {
+            logger.info("User of token {} is attempting to get active companies", token);
             boolean isGuest = token == null || token.trim().isEmpty() || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token))
                 throw new OwnerManagerException("Invalid token");
@@ -453,6 +454,7 @@ public class CompanyService {
                     .stream()
                     .map(CompanyDTO::fromEntity)
                     .toList();
+            logger.info("User of token {} got active companies successfully", token);
             return Response.success(companies);
         } catch (OwnerManagerException e) {
             throw e;
