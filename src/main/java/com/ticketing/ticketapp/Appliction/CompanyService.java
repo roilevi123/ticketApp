@@ -423,6 +423,7 @@ public class CompanyService {
 
     public Response<String> replyToBuyer(String token, String companyName, String buyerId, String message) {
         try {
+            logger.info("User of token {} is attempting to reply to buyer: ", token, buyerId);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
