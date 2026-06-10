@@ -135,6 +135,7 @@ public class CompanyService {
     @Transactional
     public Response<String> AppointOwner(String ownerUsername, String company, String token) {
         try {
+            logger.info("User of token {} is attempting to appoint owner {} for comapny: ", token, ownerUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(appointerID))
@@ -148,6 +149,7 @@ public class CompanyService {
             treeOfRoleRepository.storeOwner(targetUserID, company, appointerID);
             notifyMember(targetUserID, "Owner Appointment",
                     "You have been appointed as an owner of '" + company + "'. Please approve or reject the appointment.");
+            logger.info("User {} appointed {} for owner for the company {} successfully", appointerID, targetUserID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
