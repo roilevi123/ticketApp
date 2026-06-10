@@ -552,7 +552,9 @@ public class CompanyService {
 
     private void notifyMember(String userID, String title, String message) {
         try {
+            logger.info("Attemptiong to notify member {}", userID);
             notifier.notifyUser(userID, title, message);
+            logger.info("Notified user {} successfully", userID);
         } catch (Exception e) {
             logger.warn("Failed to notify user {}: {}", userID, e.getMessage());
         }
