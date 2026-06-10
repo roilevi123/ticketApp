@@ -119,7 +119,7 @@ public class AdminService {
     }
     public Response<String> removeUser(String UserID,String adminID) {
         try {
-            logger.info("Deleting user " + UserID);
+            logger.info("Attempting to delete user: " + UserID);
             if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
@@ -127,7 +127,7 @@ public class AdminService {
             tokenService.banUser(UserID);
             userRepository.deleteUser(UserID);
             treeOfRoleRepository.deleteUserRoles(UserID);
-            logger.info("Deleted user " + UserID);
+            logger.info("Deleted user successfully: " + UserID);
             return Response.success("success");
         }catch (Exception e) {
             logger.error(e.getMessage());
