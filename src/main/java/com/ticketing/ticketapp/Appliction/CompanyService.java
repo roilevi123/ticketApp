@@ -114,6 +114,7 @@ public class CompanyService {
     @Transactional
     public Response<String> RejectAppointmentForManager(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to reject appointment for managment for the company: ", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -121,6 +122,7 @@ public class CompanyService {
             if (!treeOfRoleRepository.isManager(userID, company))
                 throw new OwnerManagerException("User is not a manager");
             treeOfRoleRepository.deleteManager(userID, company);
+            logger.info("User {} rejected appointment for management for company {} successfully",userID, company );
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
