@@ -394,6 +394,7 @@ public class CompanyService {
     @Transactional
     public Response<String> closeCompany(String company, String token) {
         try {
+            logger.info("User of token {} is attempting to close the company: ", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userId = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userId))
@@ -410,7 +411,7 @@ public class CompanyService {
             String closeMsg = "Company '" + company + "' has been permanently closed by its founder.";
             owners.forEach(owner -> notifyMember(owner.getUserID(), title, closeMsg));
             managers.forEach(mgr -> notifyMember(mgr.getUserID(), title, closeMsg));
-            logger.info("Company '{}' closed by founder '{}'", company, userId);
+            logger.info("Company '{}' closed by founder '{}' successfully", company, userId);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
