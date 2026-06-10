@@ -99,7 +99,7 @@ public class AdminService {
                 throw new Exception("Admin does not exist");
             }
             notifier.notifyUser(targetUserId, "Message from Admin", message);
-            logger.info("Admin sent a message successfully to user with id: ", targetUserId)
+            logger.info("Admin sent a message successfully to user with id: ", targetUserId);
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
