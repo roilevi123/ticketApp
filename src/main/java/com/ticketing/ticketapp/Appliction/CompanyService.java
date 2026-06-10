@@ -183,6 +183,7 @@ public class CompanyService {
     @Transactional
     public Response<String> RejectAppointmentForOwner(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to reject appointment for ownership for the company: ", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -193,6 +194,7 @@ public class CompanyService {
             if (userID.equals(founderID))
                 throw new OwnerManagerException("Founder cannot give up the appointment");
             treeOfRoleRepository.deleteOwner(userID, company);
+            logger.info("User {} rejected ownership for the company {} successfully", userID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
