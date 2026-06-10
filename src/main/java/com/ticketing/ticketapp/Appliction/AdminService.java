@@ -239,7 +239,7 @@ public class AdminService {
 
     public Response<String> cancelSuspension(String targetUserId, String adminId){
         try{
-            logger.info("Admin {} is canceling the suspension of the user {}", targetUserId, adminId);
+            logger.info("Admin {} is attempting to cancel the suspension of the user {}", targetUserId, adminId);
 
             if(!adminRepository.isAdmin(adminId))
                 throw new Exception("Admin does not exist");
