@@ -255,6 +255,7 @@ public class CompanyService {
     @Transactional
     public Response<String> FireMember(String token, String company, String memberUsername) {
         try {
+            logger.info("User of token {} is attempting to fire the member {} of the company: ", token, memberUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(appointerID))
@@ -288,6 +289,7 @@ public class CompanyService {
                     notifyMember(removedId, "Role Removed",
                             "You have been removed from your role in '" + company + "' because your appointer was removed.");
                 }
+                logger.info("User {} fired {} from membership for the company {} successfully", appointerID, targetUserID, company);
                 return Response.success("success");
             }
 
