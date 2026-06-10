@@ -2,31 +2,39 @@ package com.ticketing.ticketapp.Infastructure;
 
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class PurchasedOrderRepositoryImpl implements iPurchasedOrderRepository {
-    private List<PurchaseOrder> purchasedOrders=new ArrayList<PurchaseOrder>();
 
+    private final List<PurchaseOrder> purchasedOrders = new ArrayList<>();
 
     @Override
     public void StorePurchasedOrder(String company, String event, List<String> ticketsId, String buyerID, String orderId) {
-        PurchaseOrder order=new PurchaseOrder(company, event, ticketsId, buyerID, orderId);
-        purchasedOrders.add(order);
-
+        purchasedOrders.add(new PurchaseOrder(company, event, ticketsId, buyerID, orderId));
     }
 
-//    @Override
-//    public String GetPurchasedOrder(String orderId) {
-//        PurchaseOrder order1=null;
-//        for (PurchaseOrder order : purchasedOrders) {
-//            if (order.getOrderId().equals(orderId)) {
-//                order1=order;
-//            }
-//        }
-//        return order1==null?"null":order1.getOrderId();
-//    }
+    @Override
+    public void StorePurchasedOrder(String company, String event, List<String> ticketsId, String buyerID, String orderId, List<String> externalTicketIds) {
+        PurchaseOrder order = new PurchaseOrder(company, event, ticketsId, buyerID, orderId);
+        order.setExternalTicketIds(externalTicketIds);
+        purchasedOrders.add(order);
+    }
+
+    @Override
+    public PurchaseOrder getByOrderId(String orderId) {
+        return purchasedOrders.stream()
+                .filter(o -> o.getOrderId().equals(orderId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public void deleteByOrderId(String orderId) {
+        purchasedOrders.removeIf(o -> o.getOrderId().equals(orderId));
+    }
 
     @Override
     public List<PurchaseOrder> GetAllPurchasedOrders() {
@@ -50,7 +58,5 @@ public class PurchasedOrderRepositoryImpl implements iPurchasedOrderRepository {
     @Override
     public void deleteAll() {
         purchasedOrders.clear();
-
     }
-
 }

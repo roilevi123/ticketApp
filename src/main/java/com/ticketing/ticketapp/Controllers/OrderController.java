@@ -63,6 +63,23 @@ public class OrderController {
         }
     }
 
+    @DeleteMapping("/{orderId}")
+    public ResponseEntity<?> cancelOrder(
+            @RequestAttribute("cleanToken") String token,
+            @PathVariable String orderId) {
+        try {
+            Response<String> result = purchasedService.cancelOrder(orderId, token);
+            if (result.isSuccess()) {
+                return ResponseEntity.ok(Map.of("message", result.getData()));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", result.getMessage()));
+            }
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", ex.getMessage()));
+        }
+    }
+
     @PostMapping("/purchase")
     public ResponseEntity<?> purchaseTicket(
             @RequestAttribute("cleanToken") String token,

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter;
 import java.util.Calendar;
@@ -50,6 +51,8 @@ public class DiscountPaymentTests {
     private iDiscountPolicyRepository discountRepo;
     private IUserRepository userRepository;
     private AdminService adminService;
+    @MockBean
+    IExternalTicketService externalTicketService;
     @Autowired
     private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
 //    @jakarta.persistence.PersistenceContext
@@ -84,8 +87,10 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         this.purchasedService = new PurchasedService(
                 activeOrderRepository, ticketRepository, purchasedOrderRepository,
                 supplyService, paymentServiceSpy, barcodeGenerator,
-                tokenService, treeOfRoleRepository, discountRepo, userRepository, notifierMock
+                tokenService, treeOfRoleRepository, discountRepo, userRepository, notifierMock,
+                externalTicketService
         );
+        when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
 
         this.discountService = new DiscountService(discountRepo, tokenService, purchasedService, userRepository);
 

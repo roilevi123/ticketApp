@@ -1,6 +1,7 @@
 package com.ticketing.ticketapp.Domain.PurchasedOrderAggregate;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -24,6 +25,11 @@ public class PurchaseOrder {
     @CollectionTable(name = "purchased_order_tickets", joinColumns = @JoinColumn(name = "order_id"))
     @Column(name = "ticket_id")
     private List<String> ticketsId;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "purchased_order_external_tickets", joinColumns = @JoinColumn(name = "order_id"))
+    @Column(name = "external_ticket_code")
+    private List<String> externalTicketIds = new ArrayList<>();
 
     protected PurchaseOrder() {}
 
@@ -50,6 +56,15 @@ public class PurchaseOrder {
     public String getOrderId() {
         return orderId;
     }
+
+    public List<String> getExternalTicketIds() {
+        return externalTicketIds;
+    }
+
+    public void setExternalTicketIds(List<String> externalTicketIds) {
+        this.externalTicketIds = externalTicketIds != null ? externalTicketIds : new ArrayList<>();
+    }
+
     @Override
     public String toString() {
         return "PurchaseOrder{" +

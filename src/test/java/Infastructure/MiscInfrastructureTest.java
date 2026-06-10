@@ -4,8 +4,10 @@
 import com.ticketing.ticketapp.Domain.Discount.*;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.*;
 import com.ticketing.ticketapp.Infastructure.*;
+import com.ticketing.ticketapp.Appliction.IExternalTicketService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.util.List;
 
@@ -18,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
 class MiscInfrastructureTest {
 
+    @MockBean
+    IExternalTicketService externalTicketService;
     @org.springframework.beans.factory.annotation.Autowired
     private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
 
