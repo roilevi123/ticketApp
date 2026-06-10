@@ -66,6 +66,7 @@ public class CompanyService {
     @Transactional
     public Response<String> AppointAManager(String managerUsername, String company, Set<Permission> permissions, String token) {
         try {
+            logger.info("User of token {} is attempting to assign {} as manager of company: ", token, managerUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(appointerID))
@@ -79,6 +80,7 @@ public class CompanyService {
             treeOfRoleRepository.storeManager(targetUserID, company, permissions, appointerID);
             notifyMember(targetUserID, "Manager Appointment",
                     "You have been appointed as a manager of '" + company + "'. Please approve or reject the appointment.");
+            logger.info("User {} assigned {} as manager for {} successfully", appointerID, managerUsername, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
