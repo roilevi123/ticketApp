@@ -277,6 +277,7 @@ public class AdminService {
 
     public Response<List<PurchaseOrderDTO>> getPurchaseHistory(String adminId, String buyerId, String company, String eventId) {
         try {
+            logger.info("Admin {} is attempting to get purchasing history", adminId);
             if (!adminRepository.isAdmin(adminId))
                 throw new Exception("Admin does not exist");
 
@@ -299,6 +300,7 @@ public class AdminService {
                 List<TicketDTO> ticketDTOs = ticketList.stream().map(TicketDTO::fromEntity).collect(Collectors.toList());
                 dtos.add(PurchaseOrderDTO.create(order, ticketDTOs));
             }
+            logger.info("Admin {} got purchasing history successfully", adminId);
             return Response.success(dtos);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -308,6 +310,7 @@ public class AdminService {
 
     public Response<Map<String, Long>> getSystemAnalytics(String adminId) {
         try {
+            logger.info("Admin {} is attempting to get system analytics", adminId);
             if (!adminRepository.isAdmin(adminId))
                 throw new Exception("Admin does not exist");
 
@@ -317,6 +320,7 @@ public class AdminService {
             Map<String, Long> analytics = new HashMap<>();
             analytics.put("totalPurchases", totalPurchases);
             analytics.put("activeOrders", activeOrders);
+            logger.info("Admin {} got system analytics successfully", adminId);
             return Response.success(analytics);
         } catch (Exception e) {
             logger.error(e.getMessage());
