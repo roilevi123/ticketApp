@@ -94,10 +94,12 @@ public class AdminService {
 
     public Response<String> sendMessageToUser(String adminId, String targetUserId, String message) {
         try {
+            logger.info("Admin attempting to send a message to user with id: ", targetUserId);
             if (!adminRepository.isAdmin(adminId)) {
                 throw new Exception("Admin does not exist");
             }
             notifier.notifyUser(targetUserId, "Message from Admin", message);
+            logger.info("Admin sent a message successfully to user with id: ", targetUserId)
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
