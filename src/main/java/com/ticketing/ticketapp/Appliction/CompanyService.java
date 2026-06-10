@@ -218,7 +218,7 @@ public class CompanyService {
             if (!treeOfRoleRepository.isAppointerOwner(targetUserID, company, appointerID))
                 throw new OwnerManagerException("You are not allowed to fire this owner");
             treeOfRoleRepository.deleteOwner(targetUserID, company);
-            logger.info("User {} fired {} successfully", appointerID, targetUserID);
+            logger.info("User {} fired {} from ownership for the company {} successfully", appointerID, targetUserID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -231,6 +231,7 @@ public class CompanyService {
     @Transactional
     public Response<String> FireManager(String token, String company, String managerUsername) {
         try {
+            logger.info("User of token {} is attempting to fire manager {} of the company: ", token, managerUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(appointerID))
@@ -241,6 +242,7 @@ public class CompanyService {
             if (!treeOfRoleRepository.isAppointerManager(targetUserID, company, appointerID))
                 throw new OwnerManagerException("You are not allowed to fire this manager");
             treeOfRoleRepository.deleteManager(targetUserID, company);
+            logger.info("User {} fired {} for management for the company {} successfully", appointerID, targetUserID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
