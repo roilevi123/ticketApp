@@ -162,6 +162,7 @@ public class CompanyService {
     @Transactional
     public Response<String> ApproveAppointmentForOwner(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to approve appointment for ownership for the company: ", token,company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -169,6 +170,7 @@ public class CompanyService {
             Owner o = treeOfRoleRepository.getOwner(userID, company);
             o.acceptAppointment();
             treeOfRoleRepository.save(o);
+            logger.info("User {} approved ownership for the company {} successfully", userID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
