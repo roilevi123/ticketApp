@@ -70,7 +70,7 @@ public class AdminService {
     }
     public Response<String> CloseCompany(String companyName,String adminID) {
         try {
-            logger.info("Deleting company " + companyName);
+            logger.info("Admin attempting to close company: " + companyName);
             if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
@@ -79,7 +79,7 @@ public class AdminService {
             companyRepository.deleteCompany(companyName);
             eventRepository.deleteCompanyEvent(companyName);
             treeOfRoleRepository.deleteCompanyMangersAndOwners(companyName);
-            logger.info("Deleted company " + companyName);
+            logger.info("Deleted company successfully:  " + companyName);
             String title = "Company Closed";
             String message = "Company '" + companyName + "' has been permanently closed by an administrator.";
             owners.forEach(o -> notifyMember(o.getUserID(), title, message));
