@@ -44,14 +44,14 @@ public class CompanyService {
     @Transactional
     public Response<String> CreateCompany(String company, String token) {
         try {
+            logger.info("User of token {}, is attempting to create a company: ", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
                 throw new OwnerManagerException("User is suspended");
-            logger.info("User {} is creating company {}", userID, company);
             companyRepository.store(company, userID);
             treeOfRoleRepository.storeOwner(userID, company, iTreeOfRoleRepository.FOUNDER_APPOINTER);
-            logger.info("Successfully created company {}", company);
+            logger.info("User {} successfully created company {}",userID, company);
             User userObj = userRepository.getUserByID(userID);
             String founderToken = tokenService.generateCompanyToken(userID, userObj.getName(), "FOUNDER", company);
             return Response.success(founderToken);
