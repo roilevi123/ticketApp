@@ -186,7 +186,7 @@ public class AdminService {
 
     public Response<String> unbanUser(String targetUserId, String adminId) {
         try {
-            logger.info("Unbanning user " + targetUserId);
+            logger.info("Attempting to unban user: " + targetUserId);
             if (!adminRepository.isAdmin(adminId)) {
                 throw new Exception("Admin does not exist");
             }
@@ -201,7 +201,7 @@ public class AdminService {
 
     public Response<String> suspendUser(String targetUserID, String adminID, int durationInDays){
         try {
-            logger.info("Admin {} is suspending user {} for {} days", adminID, targetUserID, durationInDays);
+            logger.info("Admin {} is attempting to suspend user {} for {} days", adminID, targetUserID, durationInDays);
 
             if(!adminRepository.isAdmin(adminID))
                 throw new Exception("Admin does not exist");
