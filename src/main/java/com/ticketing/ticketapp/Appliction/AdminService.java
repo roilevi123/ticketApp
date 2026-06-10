@@ -136,7 +136,7 @@ public class AdminService {
     }
     public Response<List<PurchaseOrderDTO>> GetAllPurchasedOrders(String adminID) {
         try {
-            logger.info("Getting all purchased orders");
+            logger.info("Attempting to get all purchased orders");
             if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
@@ -158,7 +158,7 @@ public class AdminService {
                 orders.append(tickets+"\n");
 
             }
-
+            logger.info("Got all purchased orders successfully");
             return Response.success(orderDTOS);
         }catch (Exception e) {
             logger.error(e.getMessage());
