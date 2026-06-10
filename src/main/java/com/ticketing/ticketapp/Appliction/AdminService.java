@@ -168,7 +168,7 @@ public class AdminService {
     }
     public Response<String> banUser(String targetUserId, String adminId) {
         try {
-            logger.info("Banning user " + targetUserId);
+            logger.info("Attempting to ban user: " + targetUserId);
             if (!adminRepository.isAdmin(adminId)) {
                 throw new Exception("Admin does not exist");
             }
@@ -176,7 +176,7 @@ public class AdminService {
                 throw new Exception("User not found");
             }
             tokenService.banUser(targetUserId);
-            logger.info("Banned user " + targetUserId);
+            logger.info("Banned user successfully: " + targetUserId);
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
