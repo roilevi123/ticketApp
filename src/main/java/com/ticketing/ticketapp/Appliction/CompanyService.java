@@ -360,7 +360,7 @@ public class CompanyService {
             String msg = "Company '" + company + "' has been suspended by its founder.";
             treeOfRoleRepository.getAllOwnersByCompany(company).forEach(o -> notifyMember(o.getUserID(), title, msg));
             treeOfRoleRepository.getAllManagersByCompany(company).forEach(m -> notifyMember(m.getUserID(), title, msg));
-            logger.info("User {} freezed the company {} successfully ", token, company);
+            logger.info("User {} freezed the company {} successfully ", userID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -373,6 +373,7 @@ public class CompanyService {
     @Transactional
     public Response<String> unfreezeCompany(String company, String token) {
         try {
+            logger.info("User of token {} is attempting to unfreeze the company: ", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -380,6 +381,7 @@ public class CompanyService {
             Company companyObj = companyRepository.getCompany(company);
             companyObj.unfreezeCompany(userID);
             companyRepository.save(companyObj);
+            logger.info("User {} unfreezed the company {} successfully ", userID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
