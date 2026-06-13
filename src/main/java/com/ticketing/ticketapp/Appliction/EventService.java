@@ -65,6 +65,7 @@ public class EventService {
     public Response<String> createEvent(String token, String eventName, String artistName, EventType eventType,
             double price, Date date, String location, String company, MapArea[][] map) {
         try {
+            logger.info("User of token {} is attempting to create an event for the company:", token, company);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
