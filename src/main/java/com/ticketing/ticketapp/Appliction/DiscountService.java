@@ -102,6 +102,7 @@ public class DiscountService {
 
     public Response<String> createSumDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
         try {
+            logger.info("User of token {} is attempting to create sum discount policy for the company: ", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -119,7 +120,7 @@ public class DiscountService {
                     throw new Exception("Policy not found: " + id);
                 }
             }
-
+            logger.info("User {} created sum discount policy for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, sumComposite));
         } catch (Exception e) {
             logger.error(e.getMessage());
