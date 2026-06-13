@@ -44,14 +44,14 @@ public class CompanyService {
     @Transactional
     public Response<String> CreateCompany(String company, String token) {
         try {
+            logger.info("User of token {}, is attempting to create a company: {}", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
                 throw new OwnerManagerException("User is suspended");
-            logger.info("User {} is creating company {}", userID, company);
             companyRepository.store(company, userID);
             treeOfRoleRepository.storeOwner(userID, company, iTreeOfRoleRepository.FOUNDER_APPOINTER);
-            logger.info("Successfully created company {}", company);
+            logger.info("User {} successfully created company {}",userID, company);
             User userObj = userRepository.getUserByID(userID);
             String founderToken = tokenService.generateCompanyToken(userID, userObj.getName(), "FOUNDER", company);
             return Response.success(founderToken);
@@ -66,6 +66,7 @@ public class CompanyService {
     @Transactional
     public Response<String> AppointAManager(String managerUsername, String company, Set<Permission> permissions, String token) {
         try {
+            logger.info("User of token {} is attempting to assign {} as manager of company: {}", token, managerUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(appointerID))
@@ -79,6 +80,7 @@ public class CompanyService {
             treeOfRoleRepository.storeManager(targetUserID, company, permissions, appointerID);
             notifyMember(targetUserID, "Manager Appointment",
                     "You have been appointed as a manager of '" + company + "'. Please approve or reject the appointment.");
+            logger.info("User {} assigned {} as manager for {} successfully", appointerID, managerUsername, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -91,6 +93,7 @@ public class CompanyService {
     @Transactional
     public Response<String> ApproveAppointmentForManager(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to approve appointment for management of the company: {}", token,company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -98,6 +101,7 @@ public class CompanyService {
             Manager m = treeOfRoleRepository.getManager(userID, company);
             m.acceptAppointment();
             treeOfRoleRepository.save(m);
+            logger.info("User {} approved appointment for management of the eocmpany: {}", userID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -110,6 +114,7 @@ public class CompanyService {
     @Transactional
     public Response<String> RejectAppointmentForManager(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to reject appointment for managment for the company: {}", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -117,6 +122,7 @@ public class CompanyService {
             if (!treeOfRoleRepository.isManager(userID, company))
                 throw new OwnerManagerException("User is not a manager");
             treeOfRoleRepository.deleteManager(userID, company);
+            logger.info("User {} rejected appointment for management for company {} successfully",userID, company );
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -129,6 +135,7 @@ public class CompanyService {
     @Transactional
     public Response<String> AppointOwner(String ownerUsername, String company, String token) {
         try {
+            logger.info("User of token {} is attempting to appoint owner {} for comapny: {}", token, ownerUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(appointerID))
@@ -142,6 +149,7 @@ public class CompanyService {
             treeOfRoleRepository.storeOwner(targetUserID, company, appointerID);
             notifyMember(targetUserID, "Owner Appointment",
                     "You have been appointed as an owner of '" + company + "'. Please approve or reject the appointment.");
+            logger.info("User {} appointed {} for owner for the company {} successfully", appointerID, targetUserID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -154,6 +162,7 @@ public class CompanyService {
     @Transactional
     public Response<String> ApproveAppointmentForOwner(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to approve appointment for ownership for the company: {}", token,company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -161,6 +170,7 @@ public class CompanyService {
             Owner o = treeOfRoleRepository.getOwner(userID, company);
             o.acceptAppointment();
             treeOfRoleRepository.save(o);
+            logger.info("User {} approved ownership for the company {} successfully", userID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -173,6 +183,7 @@ public class CompanyService {
     @Transactional
     public Response<String> RejectAppointmentForOwner(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to reject appointment for ownership for the company: {}", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -183,6 +194,7 @@ public class CompanyService {
             if (userID.equals(founderID))
                 throw new OwnerManagerException("Founder cannot give up the appointment");
             treeOfRoleRepository.deleteOwner(userID, company);
+            logger.info("User {} rejected ownership for the company {} successfully", userID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -195,6 +207,7 @@ public class CompanyService {
     @Transactional
     public Response<String> FireOwner(String token, String company, String ownerUsername) {
         try {
+            logger.info("User of token {} is attempting to fire the owner {} of the company: {}", token,ownerUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(appointerID))
@@ -205,6 +218,7 @@ public class CompanyService {
             if (!treeOfRoleRepository.isAppointerOwner(targetUserID, company, appointerID))
                 throw new OwnerManagerException("You are not allowed to fire this owner");
             treeOfRoleRepository.deleteOwner(targetUserID, company);
+            logger.info("User {} fired {} from ownership for the company {} successfully", appointerID, targetUserID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -217,6 +231,7 @@ public class CompanyService {
     @Transactional
     public Response<String> FireManager(String token, String company, String managerUsername) {
         try {
+            logger.info("User of token {} is attempting to fire manager {} of the company: {}", token, managerUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(appointerID))
@@ -227,6 +242,7 @@ public class CompanyService {
             if (!treeOfRoleRepository.isAppointerManager(targetUserID, company, appointerID))
                 throw new OwnerManagerException("You are not allowed to fire this manager");
             treeOfRoleRepository.deleteManager(targetUserID, company);
+            logger.info("User {} fired {} for management for the company {} successfully", appointerID, targetUserID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -239,6 +255,7 @@ public class CompanyService {
     @Transactional
     public Response<String> FireMember(String token, String company, String memberUsername) {
         try {
+            logger.info("User of token {} is attempting to fire the member {} of the company: {}", token, memberUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(appointerID))
@@ -272,6 +289,7 @@ public class CompanyService {
                     notifyMember(removedId, "Role Removed",
                             "You have been removed from your role in '" + company + "' because your appointer was removed.");
                 }
+                logger.info("User {} fired {} from membership for the company {} successfully", appointerID, targetUserID, company);
                 return Response.success("success");
             }
 
@@ -303,6 +321,7 @@ public class CompanyService {
     @Transactional
     public Response<String> ChangeManagerPermissions(String token, String company, String managerUsername, Set<Permission> newPermissions) {
         try {
+            logger.info("User of token {} is attempting to change the premmisions of the manager {} of the company: {}", token, managerUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String appointerID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(appointerID))
@@ -316,6 +335,7 @@ public class CompanyService {
                 throw new OwnerManagerException("You are not authorized to change permissions for this manager");
             manager.setPermissions(newPermissions);
             treeOfRoleRepository.save(manager);
+            logger.info("User {} changed premmisions of the manager {} of the company {} successfully", appointerID, targetUserID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -328,6 +348,7 @@ public class CompanyService {
     @Transactional
     public Response<String> freezeCompany(String company, String token) {
         try {
+            logger.info("User of token {} is attempting to freeze the company: {}", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -339,6 +360,7 @@ public class CompanyService {
             String msg = "Company '" + company + "' has been suspended by its founder.";
             treeOfRoleRepository.getAllOwnersByCompany(company).forEach(o -> notifyMember(o.getUserID(), title, msg));
             treeOfRoleRepository.getAllManagersByCompany(company).forEach(m -> notifyMember(m.getUserID(), title, msg));
+            logger.info("User {} freezed the company {} successfully ", userID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -351,6 +373,7 @@ public class CompanyService {
     @Transactional
     public Response<String> unfreezeCompany(String company, String token) {
         try {
+            logger.info("User of token {} is attempting to unfreeze the company: {}", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -358,6 +381,7 @@ public class CompanyService {
             Company companyObj = companyRepository.getCompany(company);
             companyObj.unfreezeCompany(userID);
             companyRepository.save(companyObj);
+            logger.info("User {} unfreezed the company {} successfully ", userID, company);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -370,6 +394,7 @@ public class CompanyService {
     @Transactional
     public Response<String> closeCompany(String company, String token) {
         try {
+            logger.info("User of token {} is attempting to close the company: {}", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userId = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userId))
@@ -386,7 +411,7 @@ public class CompanyService {
             String closeMsg = "Company '" + company + "' has been permanently closed by its founder.";
             owners.forEach(owner -> notifyMember(owner.getUserID(), title, closeMsg));
             managers.forEach(mgr -> notifyMember(mgr.getUserID(), title, closeMsg));
-            logger.info("Company '{}' closed by founder '{}'", company, userId);
+            logger.info("Company '{}' closed by founder '{}' successfully", company, userId);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -398,6 +423,7 @@ public class CompanyService {
 
     public Response<String> replyToBuyer(String token, String companyName, String buyerId, String message) {
         try {
+            logger.info("User of token {} is attempting to reply to buyer: {}", token, buyerId);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -420,6 +446,7 @@ public class CompanyService {
     @Transactional(readOnly = true)
     public Response<List<CompanyDTO>> getActiveCompanies(String token) {
         try {
+            logger.info("User of token {} is attempting to get active companies", token);
             boolean isGuest = token == null || token.trim().isEmpty() || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token))
                 throw new OwnerManagerException("Invalid token");
@@ -427,6 +454,7 @@ public class CompanyService {
                     .stream()
                     .map(CompanyDTO::fromEntity)
                     .toList();
+            logger.info("User of token {} got active companies successfully", token);
             return Response.success(companies);
         } catch (OwnerManagerException e) {
             throw e;
@@ -439,6 +467,7 @@ public class CompanyService {
     @Transactional(readOnly = true)
     public Response<Set<Permission>> GetManagerPermissions(String token, String company, String managerUsername) {
         try {
+            logger.info("User of token {} is attempting to get manager {} premmisions for comapny: {}", token, managerUsername, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (!treeOfRoleRepository.exitsOwner(userID, company))
@@ -447,6 +476,7 @@ public class CompanyService {
             if (targetUser == null) throw new OwnerManagerException("Target user not found");
             String targetUserID = targetUser.getID();
             Set<Permission> permissions = treeOfRoleRepository.getManagerPermissions(targetUserID, company);
+            logger.info("User {} got manager {} premissions for company {} successfully", userID, targetUserID, company);
             return Response.success(permissions);
         } catch (OwnerManagerException e) {
             throw e;
@@ -459,6 +489,7 @@ public class CompanyService {
     @Transactional(readOnly = true)
     public Response<String> GetRoleTreeString(String token, String companyName) {
         try {
+            logger.info("User of token {} is attempting to get role tree for the company: {}", token, companyName);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (treeOfRoleRepository.getOwner(userID, companyName) == null)
@@ -468,6 +499,7 @@ public class CompanyService {
             Company company = companyRepository.getCompany(companyName);
             StringBuilder treeString = new StringBuilder();
             buildTreeString(company.getFounderID(), allOwners, allManagers, treeString, 0);
+            logger.info("User {} got role tree for company {} successfully", userID, companyName);
             return Response.success(treeString.toString());
         } catch (OwnerManagerException e) {
             throw e;
@@ -498,6 +530,7 @@ public class CompanyService {
 
     public Response<String> sendMessageToUser(String token, String companyName, String targetUserId, String message) {
         try {
+            logger.info("User of token {} is attempting to send message to user {} from company {}", token, targetUserId, companyName);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userID = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userID))
@@ -507,6 +540,7 @@ public class CompanyService {
             if (!isOwner && !isManager)
                 throw new OwnerManagerException("Not authorized to send messages for this company");
             notifier.notifyUser(targetUserId, "Message from " + companyName, message);
+            logger.info("User {} sent user {} a message from company {}", userID, targetUserId, companyName);
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
@@ -518,7 +552,9 @@ public class CompanyService {
 
     private void notifyMember(String userID, String title, String message) {
         try {
+            logger.info("Attemptiong to notify member {}", userID);
             notifier.notifyUser(userID, title, message);
+            logger.info("Notified user {} successfully", userID);
         } catch (Exception e) {
             logger.warn("Failed to notify user {}: {}", userID, e.getMessage());
         }

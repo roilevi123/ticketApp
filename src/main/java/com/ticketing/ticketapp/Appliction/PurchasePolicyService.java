@@ -26,6 +26,7 @@ public class PurchasePolicyService {
 
     public Response<String> createAgeLimitPolicy(String token, String targetId, PurchaseTargetType type, int minAge) {
         try {
+            logger.info("User of token {} is attempting to create age limit policy (min age: {}) for company {}", token, minAge,targetId);
             validateToken(token);
             String userID = tokenService.extractUserId(token);
             String username = tokenService.extractUsername(token);
@@ -34,6 +35,7 @@ public class PurchasePolicyService {
                 throw new Exception("User is suspended");
             }
             PurchaseComponent condition = new AgeLimitCondition(minAge);
+            logger.info("User {} created age limit policy (min age: {}) for the company {} successfully", userID, minAge, targetId);
             return Response.success(saveToRepo(targetId, type, condition));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -43,6 +45,7 @@ public class PurchasePolicyService {
 
     public Response<String> createQuantityLimitPolicy(String token, String targetId, PurchaseTargetType type, int min, int max) {
         try {
+            logger.info("User of token {} is attempting to create quantity limit policy (min: {}, max: {}) for company {}", token,min, max, targetId);
             validateToken(token);
             String userID = tokenService.extractUserId(token);
             String username = tokenService.extractUsername(token);
@@ -51,6 +54,7 @@ public class PurchasePolicyService {
                 throw new Exception("User is suspended");
             }
             PurchaseComponent condition = new QuantityLimitCondition(min, max);
+            logger.info("User {} created quantity limit policy (min: {}, max: {}) for the company {} successfully", userID, min, max, targetId);
             return Response.success(saveToRepo(targetId, type, condition));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -60,6 +64,7 @@ public class PurchasePolicyService {
 
     public Response<String> createAndPolicy(String token, String targetId, PurchaseTargetType type, List<String> componentIds) {
         try {
+            logger.info("User of token {} is attempting to create AND policy for company {}", token, targetId);
             validateToken(token);
             String userID = tokenService.extractUserId(token);
             String username = tokenService.extractUsername(token);
@@ -76,6 +81,7 @@ public class PurchasePolicyService {
                     purchaseRepo.delete(id);
                 }
             }
+            logger.info("User {} created AND policy for the company {} successfully", userID, targetId);
             return Response.success(saveToRepo(targetId, type, andComposite));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -85,6 +91,7 @@ public class PurchasePolicyService {
 
     public Response<String> createOrPolicy(String token, String targetId, PurchaseTargetType type, List<String> componentIds) {
         try {
+            logger.info("User of token {} is attempting to create OR policy for company {}", token, targetId);
             validateToken(token);
             String userID = tokenService.extractUserId(token);
             String username = tokenService.extractUsername(token);
@@ -101,6 +108,8 @@ public class PurchasePolicyService {
                     purchaseRepo.delete(id);
                 }
             }
+            logger.info("User {} created OR policy for the company {} successfully", userID, targetId);
+
             return Response.success(saveToRepo(targetId, type, orComposite));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -147,6 +156,7 @@ public class PurchasePolicyService {
 
     public Response<List<PurchasePolicyDTO>> getPoliciesForEventAndCompany(String token, String eventId, String companyName) {
         try {
+            logger.info("User of token {} is attempting to get policies for event {} of the comapny {}", token, eventId, companyName);
             validateToken(token);
 
             List<PurchasePolicy> policies = purchaseRepo.findByEventAndCompany(eventId, companyName);
@@ -158,6 +168,7 @@ public class PurchasePolicyService {
                             p.getRoot().getDescription()
                     ))
                     .collect(Collectors.toList());
+            logger.info("User of token {} got policies for event {} of company {} successfully", token, eventId, companyName);
             return Response.success(dtos);
         } catch (Exception e) {
             logger.error("Error retrieving purchase policies: " + e.getMessage());

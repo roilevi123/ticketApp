@@ -70,7 +70,7 @@ public class AdminService {
     }
     public Response<String> CloseCompany(String companyName,String adminID) {
         try {
-            logger.info("Deleting company " + companyName);
+            logger.info("Admin attempting to close company: " + companyName);
             if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
@@ -79,7 +79,7 @@ public class AdminService {
             companyRepository.deleteCompany(companyName);
             eventRepository.deleteCompanyEvent(companyName);
             treeOfRoleRepository.deleteCompanyMangersAndOwners(companyName);
-            logger.info("Deleted company " + companyName);
+            logger.info("Deleted company successfully:  " + companyName);
             String title = "Company Closed";
             String message = "Company '" + companyName + "' has been permanently closed by an administrator.";
             owners.forEach(o -> notifyMember(o.getUserID(), title, message));
@@ -94,10 +94,12 @@ public class AdminService {
 
     public Response<String> sendMessageToUser(String adminId, String targetUserId, String message) {
         try {
+            logger.info("Admin attempting to send a message to user with id: "+ targetUserId);
             if (!adminRepository.isAdmin(adminId)) {
                 throw new Exception("Admin does not exist");
             }
             notifier.notifyUser(targetUserId, "Message from Admin", message);
+            logger.info("Admin sent a message successfully to user with id: "+ targetUserId);
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -107,15 +109,17 @@ public class AdminService {
 
     private void notifyMember(String username, String title, String message) {
         try {
+            logger.info("Attempting to notify a member: "+ username);
             User u = userRepository.getUserByUsername(username);
             if (u != null) notifier.notifyUser(u.getID(), title, message);
+            logger.info("Notified user successfully");
         } catch (Exception e) {
             logger.warn("Failed to notify user {}: {}", username, e.getMessage());
         }
     }
     public Response<String> removeUser(String UserID,String adminID) {
         try {
-            logger.info("Deleting user " + UserID);
+            logger.info("Attempting to delete user: " + UserID);
             if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
@@ -123,7 +127,7 @@ public class AdminService {
             tokenService.banUser(UserID);
             userRepository.deleteUser(UserID);
             treeOfRoleRepository.deleteUserRoles(UserID);
-            logger.info("Deleted user " + UserID);
+            logger.info("Deleted user successfully: " + UserID);
             return Response.success("success");
         }catch (Exception e) {
             logger.error(e.getMessage());
@@ -132,7 +136,7 @@ public class AdminService {
     }
     public Response<List<PurchaseOrderDTO>> GetAllPurchasedOrders(String adminID) {
         try {
-            logger.info("Getting all purchased orders");
+            logger.info("Attempting to get all purchased orders");
             if(!adminRepository.isAdmin(adminID)) {
                 throw new Exception("Admin does not exist");
             }
@@ -154,7 +158,7 @@ public class AdminService {
                 orders.append(tickets+"\n");
 
             }
-
+            logger.info("Got all purchased orders successfully");
             return Response.success(orderDTOS);
         }catch (Exception e) {
             logger.error(e.getMessage());
@@ -164,7 +168,7 @@ public class AdminService {
     }
     public Response<String> banUser(String targetUserId, String adminId) {
         try {
-            logger.info("Banning user " + targetUserId);
+            logger.info("Attempting to ban user: " + targetUserId);
             if (!adminRepository.isAdmin(adminId)) {
                 throw new Exception("Admin does not exist");
             }
@@ -172,7 +176,7 @@ public class AdminService {
                 throw new Exception("User not found");
             }
             tokenService.banUser(targetUserId);
-            logger.info("Banned user " + targetUserId);
+            logger.info("Banned user successfully: " + targetUserId);
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -182,7 +186,7 @@ public class AdminService {
 
     public Response<String> unbanUser(String targetUserId, String adminId) {
         try {
-            logger.info("Unbanning user " + targetUserId);
+            logger.info("Attempting to unban user: " + targetUserId);
             if (!adminRepository.isAdmin(adminId)) {
                 throw new Exception("Admin does not exist");
             }
@@ -197,7 +201,7 @@ public class AdminService {
 
     public Response<String> suspendUser(String targetUserID, String adminID, int durationInDays){
         try {
-            logger.info("Admin {} is suspending user {} for {} days", adminID, targetUserID, durationInDays);
+            logger.info("Admin {} is attempting to suspend user {} for {} days", adminID, targetUserID, durationInDays);
 
             if(!adminRepository.isAdmin(adminID))
                 throw new Exception("Admin does not exist");
@@ -235,7 +239,7 @@ public class AdminService {
 
     public Response<String> cancelSuspension(String targetUserId, String adminId){
         try{
-            logger.info("Admin {} is canceling the suspension of the user {}", targetUserId, adminId);
+            logger.info("Admin {} is attempting to cancel the suspension of the user {}", targetUserId, adminId);
 
             if(!adminRepository.isAdmin(adminId))
                 throw new Exception("Admin does not exist");
@@ -257,12 +261,13 @@ public class AdminService {
 
     public Response<List<Suspension>> getAllSuspensions(String adminId){
         try{
-            logger.info("Admin {} is viewing suspension history", adminId);
+            logger.info("Admin {} is attempting to get all suspension history", adminId);
 
             if(!adminRepository.isAdmin(adminId))
                 throw new Exception("Admin does not exist");
 
             List<Suspension> suspensions = userRepository.getAllSuspensions();
+            logger.info("Admin got all suspension history successfully");
             return Response.success(suspensions);
         }catch(Exception e){
             logger.info("Failed to get all suspensions: {}", e.getMessage());
@@ -272,6 +277,7 @@ public class AdminService {
 
     public Response<List<PurchaseOrderDTO>> getPurchaseHistory(String adminId, String buyerId, String company, String eventId) {
         try {
+            logger.info("Admin {} is attempting to get purchasing history", adminId);
             if (!adminRepository.isAdmin(adminId))
                 throw new Exception("Admin does not exist");
 
@@ -294,6 +300,7 @@ public class AdminService {
                 List<TicketDTO> ticketDTOs = ticketList.stream().map(TicketDTO::fromEntity).collect(Collectors.toList());
                 dtos.add(PurchaseOrderDTO.create(order, ticketDTOs));
             }
+            logger.info("Admin {} got purchasing history successfully", adminId);
             return Response.success(dtos);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -303,6 +310,7 @@ public class AdminService {
 
     public Response<Map<String, Long>> getSystemAnalytics(String adminId) {
         try {
+            logger.info("Admin {} is attempting to get system analytics", adminId);
             if (!adminRepository.isAdmin(adminId))
                 throw new Exception("Admin does not exist");
 
@@ -312,6 +320,7 @@ public class AdminService {
             Map<String, Long> analytics = new HashMap<>();
             analytics.put("totalPurchases", totalPurchases);
             analytics.put("activeOrders", activeOrders);
+            logger.info("Admin {} got system analytics successfully", adminId);
             return Response.success(analytics);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -325,10 +334,12 @@ public class AdminService {
 
     public Response<String> broadcastMessage(String adminId, String title, String message) {
         try {
+            logger.info("Admin {} is attempting to broadcast a message", adminId);
             if (!adminRepository.isAdmin(adminId)) {
                 throw new Exception("Not authorized");
             }
             notifier.broadcast(title, message);
+            logger.info("Admin {} broadcasted a message successfully", adminId);
             return Response.success("Broadcast sent");
         } catch (Exception e) {
             logger.error(e.getMessage());

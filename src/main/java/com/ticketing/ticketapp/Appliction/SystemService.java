@@ -3,6 +3,8 @@ package com.ticketing.ticketapp.Appliction;
 import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import com.ticketing.ticketapp.Infastructure.TokenService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,6 +15,8 @@ public class SystemService {
     private final iAdminRepository adminRepository;
     private final IPaymentService paymentService;
     private final ISupplyService supplyService;
+    private static final Logger logger = LoggerFactory.getLogger(PurchasedService.class);
+
 
     private volatile boolean initialized = false;
     private volatile boolean open = false;
@@ -33,6 +37,7 @@ public class SystemService {
         if (initialized) {
             return Response.error("System already initialized");
         }
+        logger.info("initializing system");
         CreditCardDetails dummyCard = new CreditCardDetails(
                 "0000000000000000", // card_number
                 "12",               // month

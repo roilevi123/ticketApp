@@ -65,6 +65,7 @@ public class EventService {
     public Response<String> createEvent(String token, String eventName, String artistName, EventType eventType,
             double price, Date date, String location, String company, MapArea[][] map) {
         try {
+            logger.info("User of token {} is attempting to create an event for the company: {}", token, company);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
@@ -91,6 +92,7 @@ public class EventService {
 
     public Response<String> deleteEvent(String eventId, String companyName, String token) {
         try {
+            logger.info("User of token {} is attempting to delete the event {} of the company: {}", token, eventId, companyName);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
@@ -129,7 +131,7 @@ public class EventService {
     public Response<String> UpdateEvent(String token, String eventName, String artistName, EventType eventType,
             double price, Date date, String location, String company, MapArea[][] map, double rating) {
         try {
-            logger.info("trying update event: " + eventName);
+            logger.info("User of token {} is attempting to update the event: {}" ,token, eventName);
             String userId = tokenService.extractUserId(token);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
@@ -162,7 +164,7 @@ public class EventService {
                         .forEach(o -> notifier.notifyUser(o.getBuyerID(), "Event Rescheduled",
                                 "The event '" + eventName + "' has been rescheduled to " + date + "."));
             }
-            logger.info("Successfully update event: " + eventName);
+            logger.info("User {} successfully update event: ", userID, eventName);
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -172,16 +174,17 @@ public class EventService {
 
     public Response<String> getCompanyInfo(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to get company info: {}" , token, company);
+
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            logger.info("trying Getting company info: " + company);
             boolean c = companyRepository.isCompanyActive(company);
             if (!c) {
                 throw new RuntimeException("the company is not active");
             }
-            logger.info("Successfully Getting company info: " + company);
+            logger.info("User {} successfully got company info: " , token, company);
             return Response.success(companyRepository.getCompanyDescription(company));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -191,11 +194,11 @@ public class EventService {
 
     public Response<List<EventDTO>> getCompanyEvents(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to get company events: {}", token, company);
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            logger.info("trying Getting company events: " + company);
             boolean c = companyRepository.isCompanyActive(company);
             if (!c) {
                 throw new RuntimeException("the company is not active");
@@ -205,7 +208,7 @@ public class EventService {
             for (Event event : events) {
                 eventDTOs.add(getEventWithDiscount(event));
             }
-            logger.info("Successfully Getting company events: " + company);
+            logger.info("User of token {} successfully got company events: {}",token, company);
             return Response.success(eventDTOs);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -215,14 +218,14 @@ public class EventService {
 
     public Response<MapArea[][]> getMapArea(String token, String company, String eventName) {
         try {
+            logger.info("User of token {} is attempting to get area map for event {} of the company {} ", token, eventName, company);
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            logger.info("trying Getting map area: " + eventName);
             MapArea[][] map = eventRepository.getMapArea(company, eventName);
             MapArea[][] mapArea = ticketRepository.getMapAreas(company, eventName, map);
-            logger.info("Successfully Getting map area: " + eventName);
+            logger.info("User of token {} successfully got area map for the event: {} of the compant {}",token, eventName,company);
             return Response.success(mapArea);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -232,6 +235,7 @@ public class EventService {
 
     public Response<EventDTO> getEvent(String token, String company, String eventName) {
         try {
+            logger.info("User of token {} is attempting to get event {} of the company {} ", token, eventName, company);
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
@@ -240,7 +244,7 @@ public class EventService {
             if (event == null) {
                 return Response.error("Event not found");
             }
-            logger.info("Retrieved event '{}' for company '{}'", eventName, company);
+            logger.info("User of token {} successfully got event: {} of the company {}",token, event, company);
             return Response.success(getEventWithDiscount(event));
         } catch (Exception e) {
             logger.error("Failed to retrieve event '{}': {}", eventName, e.getMessage());
@@ -253,6 +257,8 @@ public class EventService {
             Date startDate, Date endDate,
             String location, Double minRating) {
         try {
+            logger.info("User of token {} is attempting to search company events: ", token, company);
+
             if (token != null && !token.trim().isEmpty()) {
                 boolean isGuest = token.contains("guest-temporary-token");
                 if (!isGuest && !tokenService.validateToken(token)) {

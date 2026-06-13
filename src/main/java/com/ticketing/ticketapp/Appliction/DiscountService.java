@@ -28,6 +28,7 @@ public class DiscountService {
 
     public Response<String> createSimpleDiscount(String token, String targetId, DiscountTargetType type, double percentage, String companyName) {
         try {
+            logger.info("User of token {} is attempting to create a simple discount for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -35,6 +36,7 @@ public class DiscountService {
 
             String discountId = UUID.randomUUID().toString();
             DiscountComponent simple = new ConditionalDiscount(discountId, percentage, null, "no conditions");
+            logger.info("User {} created a simple discount for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, simple));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -44,6 +46,7 @@ public class DiscountService {
 
     public Response<String> createQuantityDiscount(String token, String targetId, DiscountTargetType type, double percentage, int minQuantity, String companyName) {
         try {
+            logger.info("User of token {} is attempting to create quantity discount for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -52,6 +55,7 @@ public class DiscountService {
             String conditionDesc = "quantity >= " + minQuantity;
             String discountId = UUID.randomUUID().toString();
             DiscountComponent discount = new ConditionalDiscount(discountId, percentage, ctx -> ctx.getQuantity() >= minQuantity, conditionDesc);
+            logger.info("User {} created quantity discount for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, discount));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -61,6 +65,7 @@ public class DiscountService {
 
     public Response<String> createTimeLimitedDiscount(String token, String targetId, DiscountTargetType type, double percentage, Date deadline, String companyName) {
         try {
+            logger.info("User of token {} is attempting to create a time limited discount for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -69,6 +74,7 @@ public class DiscountService {
             String conditionDesc = "purchase date before " + deadline.toString();
             String discountId = UUID.randomUUID().toString();
             DiscountComponent discount = new ConditionalDiscount(discountId, percentage, ctx -> ctx.getPurchaseDate().before(deadline), conditionDesc);
+            logger.info("User {} created a time limited discount for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, discount));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -78,6 +84,7 @@ public class DiscountService {
 
     public Response<String> createCouponDiscount(String token, String targetId, DiscountTargetType type, String code, double percentage, String companyName) {
         try {
+            logger.info("User of token {} is attempting to create coupon discount for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -85,6 +92,7 @@ public class DiscountService {
 
             String discountId = UUID.randomUUID().toString();
             DiscountComponent coupon = new CouponDiscount(discountId, code, percentage);
+            logger.info("User {} created coupon discount for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, coupon));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -94,6 +102,7 @@ public class DiscountService {
 
     public Response<String> createSumDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
         try {
+            logger.info("User of token {} is attempting to create sum discount policy for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -111,7 +120,7 @@ public class DiscountService {
                     throw new Exception("Policy not found: " + id);
                 }
             }
-
+            logger.info("User {} created sum discount policy for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, sumComposite));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -121,6 +130,7 @@ public class DiscountService {
 
     public Response<String> createMaxDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
         try {
+            logger.info("User of token {} is attempting to create max discount policy for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -138,7 +148,7 @@ public class DiscountService {
                     throw new Exception("Policy not found: " + id);
                 }
             }
-
+            logger.info("User {} created max discount policy for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, maxComposite));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -161,6 +171,7 @@ public class DiscountService {
 
     public Response<List<DiscountPolicyDTO>> getDiscountsForEventAndCompany(String token, String eventId, String companyName) {
         try {
+            logger.info("User of token {} is attempting to get all discount for the event {} of the company {}", token, eventId, companyName);
             validateAuthority(token, companyName);
             List<DiscountPolicy> policies = discountRepo.findByEventAndCompany(eventId, companyName);
             List<DiscountPolicyDTO> dtos = policies.stream()
@@ -172,6 +183,7 @@ public class DiscountService {
                             0.0
                     ))
                     .collect(Collectors.toList());
+            logger.info("User of token {} got all discounts for the event {} of the company {} successfully", token, eventId, companyName);
             return Response.success(dtos);
         } catch (Exception e) {
             logger.error("Error retrieving discounts: " + e.getMessage());
@@ -181,6 +193,7 @@ public class DiscountService {
 
     public Response<Double> calculatePriceAfterDiscounts(String token, String eventId, String companyName, double originalPrice, int quantity, String coupon) {
         try {
+            logger.info("User of token {} is attempting to calculate price after discounts for the event {} of the company: {}", token, eventId, companyName);
             if (!tokenService.validateToken(token)) {
                 return Response.error("Invalid token");
             }
@@ -205,6 +218,7 @@ public class DiscountService {
             }
 
             double discountAmount = combinedRoot.calculateDiscount(originalPrice, context);
+            logger.info("User {} calculated price after discounts for the event {} of the company {} successfully", userID, eventId, companyName);
             return Response.success(originalPrice - discountAmount);
 
         } catch (Exception e) {

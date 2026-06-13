@@ -42,6 +42,7 @@ public class UserService implements IAuth {
     @Override
     public Response<String> register(String token, String username, String password, int age, String email) {
         try {
+            logger.info("User is attempting to register with username: {}, age: {}, email: {}", username,age,email);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
@@ -59,6 +60,7 @@ public class UserService implements IAuth {
     @Override
     public Response<String> login(String token, String username, String password) {
         try {
+            logger.info("User of token {}, username {} is attempting to login", token, username);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
@@ -85,7 +87,7 @@ public class UserService implements IAuth {
     @Override
     public Response<String> logout(String token) {
         try {
-            logger.info("Logout requested");
+            logger.info("User of token {} is attempting to logout", token);
             if (tokenService.validateToken(token)) {
                 tokenService.addBlacklistToken(token);
                 logger.info("Logout completed successfully");
@@ -101,7 +103,7 @@ public class UserService implements IAuth {
 
     public Response<String> updateUserProfile(String token, UserDTO request) {
         try {
-            logger.info("Updating user profile");
+            logger.info("User of token {} is attempting to update profile", token);
             if (!tokenService.validateToken(token)) {
                 logger.error("Invalid token provided for updating profile");
                 throw new RuntimeException("Invalid token");
@@ -133,7 +135,7 @@ public class UserService implements IAuth {
     @Override
     public Response<UserDTO> getUserProfile(String token) {
         try {
-            logger.info("Getting user info");
+            logger.info("User of token {} is attempting to get user info", token);
             if (tokenService.validateToken(token)) {
                 String userId = tokenService.extractUserId(token);
                 User user = userRepository.getUserByID(userId);
@@ -155,7 +157,7 @@ public class UserService implements IAuth {
     @Override
     public Response<String> updateUserPassword(String token, String newPassword) {
         try {
-            logger.info("Updating user password");
+            logger.info("User of token {} is attempting to update password", token);
             if (!tokenService.validateToken(token)) {
                 logger.error("Invalid token provided for updating password");
                 throw new RuntimeException("Invalid token");
@@ -184,6 +186,7 @@ public class UserService implements IAuth {
 
     public Response<String> submitUserComplaint(String token, String targetRole, String messageContent) {
         try {
+            logger.info("User of token {} is attempting to submit user complaint", token);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
@@ -211,6 +214,7 @@ public class UserService implements IAuth {
     public Response<String> submitProducerComplaint(String token, String companyName, String eventName,
                                                      String subject, String content) {
         try {
+            logger.info("User of token {} is attempting to submit producer compalint", token);
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String username = tokenService.extractUsername(token);
             String userId = tokenService.extractUserId(token);
@@ -242,6 +246,7 @@ public class UserService implements IAuth {
 
     public Response<List<String>> getUserCompanies(String token) {
         try {
+            logger.info("User of token {} is attempting to get user complaints",token);
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String userId = tokenService.extractUserId(token);
             List<String> companies = roleRepository.getUserCompanies(userId);
@@ -254,6 +259,7 @@ public class UserService implements IAuth {
 
     public Response<String> switchCompanyContext(String token, String companyName) {
         try {
+            logger.info("User of token {} is attempting to switch company coxtext for company {}", token, companyName);
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String userId = tokenService.extractUserId(token);
             User user = userRepository.getUserByID(userId);
@@ -282,6 +288,7 @@ public class UserService implements IAuth {
 
     public Response<List<String>> getUserNotifications(String token) {
         try {
+            logger.info("User of token {} is attemting to get notifications", token);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
@@ -289,6 +296,7 @@ public class UserService implements IAuth {
             List<String> messages = userNotificationRepository.getAll(userId).stream()
                     .map(n -> n.getMessage())
                     .collect(java.util.stream.Collectors.toList());
+            logger.info("User of token {} got notifications successfully", token);
             return Response.success(messages);
         } catch (Exception e) {
             logger.error("Failed to fetch notifications", e);
