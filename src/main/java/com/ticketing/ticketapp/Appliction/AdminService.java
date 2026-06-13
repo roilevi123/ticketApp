@@ -94,12 +94,12 @@ public class AdminService {
 
     public Response<String> sendMessageToUser(String adminId, String targetUserId, String message) {
         try {
-            logger.info("Admin attempting to send a message to user with id: ", targetUserId);
+            logger.info("Admin attempting to send a message to user with id: "+ targetUserId);
             if (!adminRepository.isAdmin(adminId)) {
                 throw new Exception("Admin does not exist");
             }
             notifier.notifyUser(targetUserId, "Message from Admin", message);
-            logger.info("Admin sent a message successfully to user with id: ", targetUserId);
+            logger.info("Admin sent a message successfully to user with id: "+ targetUserId);
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -109,7 +109,7 @@ public class AdminService {
 
     private void notifyMember(String username, String title, String message) {
         try {
-            logger.info("Attempting to notify a member: ", username);
+            logger.info("Attempting to notify a member: "+ username);
             User u = userRepository.getUserByUsername(username);
             if (u != null) notifier.notifyUser(u.getID(), title, message);
             logger.info("Notified user successfully");

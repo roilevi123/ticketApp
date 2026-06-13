@@ -28,7 +28,7 @@ public class DiscountService {
 
     public Response<String> createSimpleDiscount(String token, String targetId, DiscountTargetType type, double percentage, String companyName) {
         try {
-            logger.info("User of token {} is attempting to create a simple discount for the company: ", token, companyName);
+            logger.info("User of token {} is attempting to create a simple discount for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -46,7 +46,7 @@ public class DiscountService {
 
     public Response<String> createQuantityDiscount(String token, String targetId, DiscountTargetType type, double percentage, int minQuantity, String companyName) {
         try {
-            logger.info("User of token {} is attempting to create quantity discount for the company: ", token, companyName);
+            logger.info("User of token {} is attempting to create quantity discount for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -65,7 +65,7 @@ public class DiscountService {
 
     public Response<String> createTimeLimitedDiscount(String token, String targetId, DiscountTargetType type, double percentage, Date deadline, String companyName) {
         try {
-            logger.info("User of token {} is attempting to create a time limited discount for the company: ", token, companyName);
+            logger.info("User of token {} is attempting to create a time limited discount for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -84,7 +84,7 @@ public class DiscountService {
 
     public Response<String> createCouponDiscount(String token, String targetId, DiscountTargetType type, String code, double percentage, String companyName) {
         try {
-            logger.info("User of token {} is attempting to create coupon discount for the company: ", token, companyName);
+            logger.info("User of token {} is attempting to create coupon discount for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -102,7 +102,7 @@ public class DiscountService {
 
     public Response<String> createSumDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
         try {
-            logger.info("User of token {} is attempting to create sum discount policy for the company: ", token, companyName);
+            logger.info("User of token {} is attempting to create sum discount policy for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -130,7 +130,7 @@ public class DiscountService {
 
     public Response<String> createMaxDiscountPolicy(String token, String targetId, DiscountTargetType type, List<String> existingPolicyIds, String companyName) {
         try {
-            logger.info("User of token {} is attempting to create max discount policy for the company: ", token, companyName);
+            logger.info("User of token {} is attempting to create max discount policy for the company: {}", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -193,7 +193,7 @@ public class DiscountService {
 
     public Response<Double> calculatePriceAfterDiscounts(String token, String eventId, String companyName, double originalPrice, int quantity, String coupon) {
         try {
-            logger.info("User of token {} is attempting to calculate price after discounts for the event {} of the company:", token, eventId, companyName);
+            logger.info("User of token {} is attempting to calculate price after discounts for the event {} of the company: {}", token, eventId, companyName);
             if (!tokenService.validateToken(token)) {
                 return Response.error("Invalid token");
             }
