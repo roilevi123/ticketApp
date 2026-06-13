@@ -171,6 +171,7 @@ public class DiscountService {
 
     public Response<List<DiscountPolicyDTO>> getDiscountsForEventAndCompany(String token, String eventId, String companyName) {
         try {
+            logger.info("User of token {} is attempting to get all discount for the event {} of the company {}", token, eventId, companyName);
             validateAuthority(token, companyName);
             List<DiscountPolicy> policies = discountRepo.findByEventAndCompany(eventId, companyName);
             List<DiscountPolicyDTO> dtos = policies.stream()
@@ -182,6 +183,7 @@ public class DiscountService {
                             0.0
                     ))
                     .collect(Collectors.toList());
+            logger.info("User of token {} got all discounts for the event {} of the company {}", token, eventId, companyName);
             return Response.success(dtos);
         } catch (Exception e) {
             logger.error("Error retrieving discounts: " + e.getMessage());
