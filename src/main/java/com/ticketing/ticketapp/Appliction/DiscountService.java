@@ -28,6 +28,7 @@ public class DiscountService {
 
     public Response<String> createSimpleDiscount(String token, String targetId, DiscountTargetType type, double percentage, String companyName) {
         try {
+            logger.info("User of token {} is attempting to create a simple discount for the company: ", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -35,6 +36,7 @@ public class DiscountService {
 
             String discountId = UUID.randomUUID().toString();
             DiscountComponent simple = new ConditionalDiscount(discountId, percentage, null, "no conditions");
+            logger.info("User {} created a simple discount for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, simple));
         } catch (Exception e) {
             logger.error(e.getMessage());
