@@ -174,16 +174,17 @@ public class EventService {
 
     public Response<String> getCompanyInfo(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to get company info: " , token, company);
+
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            logger.info("trying Getting company info: " + company);
             boolean c = companyRepository.isCompanyActive(company);
             if (!c) {
                 throw new RuntimeException("the company is not active");
             }
-            logger.info("Successfully Getting company info: " + company);
+            logger.info("User {} successfully got company info: " , token, company);
             return Response.success(companyRepository.getCompanyDescription(company));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -193,11 +194,11 @@ public class EventService {
 
     public Response<List<EventDTO>> getCompanyEvents(String token, String company) {
         try {
+            logger.info("User of token {} is attempting to get company events: ", token, company);
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            logger.info("trying Getting company events: " + company);
             boolean c = companyRepository.isCompanyActive(company);
             if (!c) {
                 throw new RuntimeException("the company is not active");
@@ -207,7 +208,7 @@ public class EventService {
             for (Event event : events) {
                 eventDTOs.add(getEventWithDiscount(event));
             }
-            logger.info("Successfully Getting company events: " + company);
+            logger.info("User of token {} successfully got company events: ",token, company);
             return Response.success(eventDTOs);
         } catch (Exception e) {
             logger.error(e.getMessage());
