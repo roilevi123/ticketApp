@@ -47,6 +47,7 @@ public class LotteryService {
      */
     public Response<String> configureLottery(String token, String companyName, String eventName, Date startDate, Date endDate, int maxWinners) {
         try {
+            logger.info("User of token {} is attempting to configure lottery fot the event {}", token, eventName);
             if (!tokenService.validateToken(token)) {
                 return Response.error("Invalid token");
             }
@@ -73,7 +74,7 @@ public class LotteryService {
             event.setLotteryMaxWinners(maxWinners);
             eventRepository.save(event);
 
-            logger.info("Lottery configured for event '{}' / company '{}' - endDate={}, maxWinners={}",
+            logger.info("Lottery configured successfully for event '{}' / company '{}' - endDate={}, maxWinners={}",
                     eventName, companyName, endDate, maxWinners);
             return Response.success("Lottery configured successfully");
         } catch (Exception e) {
@@ -88,6 +89,7 @@ public class LotteryService {
      */
     public Response<String> registerForLottery(String token, String companyName, String eventName) {
         try {
+            logger.info("User of token {} is attempting to register for lottery for the event {} of the company {}", token, eventName, companyName);
             if (!tokenService.validateToken(token)) {
                 return Response.error("Invalid token - please log in");
             }
@@ -107,7 +109,7 @@ public class LotteryService {
                 return Response.error("You are already registered for this lottery");
             }
 
-            logger.info("User '{}' registered for the lottery of event '{}' / '{}'",
+            logger.info("User '{}' registered for the lottery of event '{}' / '{}' successfully",
                     userId, eventName, companyName);
             return Response.success("Successfully registered for the lottery! " +
                     "Winners will be notified after the draw.");
@@ -123,6 +125,7 @@ public class LotteryService {
      */
     public Response<Map<String, Object>> getLotteryStatus(String token, String companyName, String eventName) {
         try {
+            logger.info("User of token {} is attempting to get lottery status for the event {} of the company {}", token, eventName, companyName);
             LotteryRegistration lr = lotteryRepository.find(eventName, companyName);
             if (lr == null) {
                 return Response.success(Map.of("hasLottery", false));
@@ -161,6 +164,7 @@ public class LotteryService {
                 }
             }
 
+            logger.info("User of token {} got lottery status for the event {} of the company {} successfully", token, eventName, companyName);
             return Response.success(status);
         } catch (Exception e) {
             logger.error("Failed to get lottery status for '{}': {}", eventName, e.getMessage());
