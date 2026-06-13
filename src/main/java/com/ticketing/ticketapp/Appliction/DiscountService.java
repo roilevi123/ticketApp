@@ -46,6 +46,7 @@ public class DiscountService {
 
     public Response<String> createQuantityDiscount(String token, String targetId, DiscountTargetType type, double percentage, int minQuantity, String companyName) {
         try {
+            logger.info("User of token {} is attempting to create quantity discount for the company: ", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -54,6 +55,7 @@ public class DiscountService {
             String conditionDesc = "quantity >= " + minQuantity;
             String discountId = UUID.randomUUID().toString();
             DiscountComponent discount = new ConditionalDiscount(discountId, percentage, ctx -> ctx.getQuantity() >= minQuantity, conditionDesc);
+            logger.info("User {} created quantity discount for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, discount));
         } catch (Exception e) {
             logger.error(e.getMessage());
