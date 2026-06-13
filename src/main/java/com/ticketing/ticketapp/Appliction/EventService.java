@@ -92,6 +92,7 @@ public class EventService {
 
     public Response<String> deleteEvent(String eventId, String companyName, String token) {
         try {
+            logger.info("User of token {} is attempting to delete the event {} of the company: ", token, eventId, companyName);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
