@@ -73,7 +73,7 @@ public class OrderService {
         List<String> reservedTicketIds = new ArrayList<>();
 
         try {
-            logger.info("Starting bulk ticket reservation for event: " + event);
+            logger.info("User of token {} is attempting to reserve tickets for the event {} of the company{} " ,token, event, company);
             String userID = null;
             if (tokenService.validateToken(token)) {
                 userID = tokenService.extractUserId(token);
@@ -150,6 +150,7 @@ public class OrderService {
                         "Your reservation for event " + event + " was successful. Please complete the payment by "
                                 + formattedTime);
             }
+            logger.info("User {} reserved tickets for the event {} of the company {} successfully", userID, event, company);
             return Response.success(id);
 
         } catch (Exception e) {
@@ -160,7 +161,7 @@ public class OrderService {
 
     public Response<List<TicketDTO>> getActiveOrderTickets(String token, String orderId) {
         try {
-            logger.info("get information about active order ticket reservation for token: " + token);
+            logger.info("User of token {} is attempting to get active order tikcets of the order: {}", token, orderId);
             List<String> ticketsId;
             ActiveOrder activeOrder;
 
