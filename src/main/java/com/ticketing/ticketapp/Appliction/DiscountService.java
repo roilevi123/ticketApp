@@ -65,6 +65,7 @@ public class DiscountService {
 
     public Response<String> createTimeLimitedDiscount(String token, String targetId, DiscountTargetType type, double percentage, Date deadline, String companyName) {
         try {
+            logger.info("User of token {} is attempting to create a time limited discount for the company: ", token, companyName);
             validateAuthority(token, companyName);
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
@@ -73,6 +74,7 @@ public class DiscountService {
             String conditionDesc = "purchase date before " + deadline.toString();
             String discountId = UUID.randomUUID().toString();
             DiscountComponent discount = new ConditionalDiscount(discountId, percentage, ctx -> ctx.getPurchaseDate().before(deadline), conditionDesc);
+            logger.info("User {} created a time limited discount for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, discount));
         } catch (Exception e) {
             logger.error(e.getMessage());
