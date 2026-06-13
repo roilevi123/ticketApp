@@ -183,7 +183,7 @@ public class DiscountService {
                             0.0
                     ))
                     .collect(Collectors.toList());
-            logger.info("User of token {} got all discounts for the event {} of the company {}", token, eventId, companyName);
+            logger.info("User of token {} got all discounts for the event {} of the company {} successfully", token, eventId, companyName);
             return Response.success(dtos);
         } catch (Exception e) {
             logger.error("Error retrieving discounts: " + e.getMessage());
@@ -193,6 +193,7 @@ public class DiscountService {
 
     public Response<Double> calculatePriceAfterDiscounts(String token, String eventId, String companyName, double originalPrice, int quantity, String coupon) {
         try {
+            logger.info("User of token {} is attempting to calculate price after discounts for the event {} of the company:", token, eventId, companyName);
             if (!tokenService.validateToken(token)) {
                 return Response.error("Invalid token");
             }
@@ -217,6 +218,7 @@ public class DiscountService {
             }
 
             double discountAmount = combinedRoot.calculateDiscount(originalPrice, context);
+            logger.info("User {} calculated price after discounts for the event {} of the company {} successfully", userID, eventId, companyName);
             return Response.success(originalPrice - discountAmount);
 
         } catch (Exception e) {
