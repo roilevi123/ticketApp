@@ -131,7 +131,7 @@ public class EventService {
     public Response<String> UpdateEvent(String token, String eventName, String artistName, EventType eventType,
             double price, Date date, String location, String company, MapArea[][] map, double rating) {
         try {
-            logger.info("trying update event: " + eventName);
+            logger.info("User of token {} is attempting to update the event: {}" ,token, eventName);
             String userId = tokenService.extractUserId(token);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
@@ -164,7 +164,7 @@ public class EventService {
                         .forEach(o -> notifier.notifyUser(o.getBuyerID(), "Event Rescheduled",
                                 "The event '" + eventName + "' has been rescheduled to " + date + "."));
             }
-            logger.info("Successfully update event: " + eventName);
+            logger.info("User {} successfully update event: ", userID, eventName);
             return Response.success("success");
         } catch (Exception e) {
             logger.error(e.getMessage());
