@@ -174,7 +174,7 @@ public class EventService {
 
     public Response<String> getCompanyInfo(String token, String company) {
         try {
-            logger.info("User of token {} is attempting to get company info: " , token, company);
+            logger.info("User of token {} is attempting to get company info: {}" , token, company);
 
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
@@ -194,7 +194,7 @@ public class EventService {
 
     public Response<List<EventDTO>> getCompanyEvents(String token, String company) {
         try {
-            logger.info("User of token {} is attempting to get company events: ", token, company);
+            logger.info("User of token {} is attempting to get company events: {}", token, company);
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
@@ -208,7 +208,7 @@ public class EventService {
             for (Event event : events) {
                 eventDTOs.add(getEventWithDiscount(event));
             }
-            logger.info("User of token {} successfully got company events: ",token, company);
+            logger.info("User of token {} successfully got company events: {}",token, company);
             return Response.success(eventDTOs);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -218,14 +218,14 @@ public class EventService {
 
     public Response<MapArea[][]> getMapArea(String token, String company, String eventName) {
         try {
+            logger.info("User of token {} is attempting to get area map for event {} of the company {} ", token, eventName, company);
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
-            logger.info("trying Getting map area: " + eventName);
             MapArea[][] map = eventRepository.getMapArea(company, eventName);
             MapArea[][] mapArea = ticketRepository.getMapAreas(company, eventName, map);
-            logger.info("Successfully Getting map area: " + eventName);
+            logger.info("User of token {} successfully got area map for the event: {} of the compant {}",token, eventName,company);
             return Response.success(mapArea);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -235,6 +235,7 @@ public class EventService {
 
     public Response<EventDTO> getEvent(String token, String company, String eventName) {
         try {
+            logger.info("User of token {} is attempting to get event {} of the company {} ", token, eventName, company);
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
@@ -243,7 +244,7 @@ public class EventService {
             if (event == null) {
                 return Response.error("Event not found");
             }
-            logger.info("Retrieved event '{}' for company '{}'", eventName, company);
+            logger.info("User of token {} successfully got event: {} of the company {}",token, event, company);
             return Response.success(getEventWithDiscount(event));
         } catch (Exception e) {
             logger.error("Failed to retrieve event '{}': {}", eventName, e.getMessage());
@@ -256,6 +257,8 @@ public class EventService {
             Date startDate, Date endDate,
             String location, Double minRating) {
         try {
+            logger.info("User of token {} is attempting to search company events: ", token, company);
+
             if (token != null && !token.trim().isEmpty()) {
                 boolean isGuest = token.contains("guest-temporary-token");
                 if (!isGuest && !tokenService.validateToken(token)) {
