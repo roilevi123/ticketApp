@@ -83,6 +83,7 @@ public class PurchasedService {
     @Transactional
     public Response<String> PurchaseTicket(String email, String orderId, String token, String userCoupon, CreditCardDetails paymentDetails) {
         try {
+            logger.info("User of token {} is attempting to purchase tickets of the order {}", token, orderId);
             ActiveOrder order = repository.findById(orderId);
             if (tokenService.validateToken(token)) {
                 String userID = tokenService.extractUserId(token);
@@ -187,6 +188,7 @@ public class PurchasedService {
                 });
             }
 
+            logger.info("User of token {} purchased tickets of order {} successfully", token, orderId);
             return Response.success("success");
 
         } catch (PurchaseOrderException e) {
@@ -200,6 +202,7 @@ public class PurchasedService {
 
     public Response<String> cancelOrder(String orderId, String token) {
         try {
+            logger.info("User of token {} is attempting to cancel the order: {}", token, orderId);
             if (!tokenService.validateToken(token)) {
                 return Response.error("Invalid token");
             }
@@ -239,7 +242,7 @@ public class PurchasedService {
     @Transactional(readOnly = true)
     public Response<List<PurchaseOrderDTO>> getCompanyTransaction(String company, String token) {
         try {
-            logger.info("getCompanyTransaction");
+            logger.info("User of token {} is attempting to get company transactions for company {}", token, company);
             if (!tokenService.validateToken(token)) {
                 throw new PurchaseOrderException("Invalid token");
             }
@@ -263,6 +266,7 @@ public class PurchasedService {
                 orderDTOS.add(PurchaseOrderDTO.create(purchasedOrder, ticketDTOS));
                 orders.append(tickets + "\n");
             }
+            logger.info("User {} got company transactions for company {} successfully", username, company);
             return Response.success(orderDTOS);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -273,7 +277,7 @@ public class PurchasedService {
     @Transactional(readOnly = true)
     public Response<List<PurchaseOrderDTO>> getUserTransaction(String token) {
         try {
-            logger.info("getUserTransaction");
+            logger.info("User of token {} is attempting to get their transaction", token);
             if (!tokenService.validateToken(token)) {
                 throw new PurchaseOrderException("Invalid token");
             }
@@ -295,6 +299,7 @@ public class PurchasedService {
                 orderDTOS.add(PurchaseOrderDTO.create(purchasedOrder, ticketDTOS));
                 orders.append(tickets + "\n");
             }
+            logger.info("User {} got their transaction successfully", userID);
             return Response.success(orderDTOS);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -319,7 +324,7 @@ public class PurchasedService {
     @Transactional(readOnly = true)
     public Response<SalesReportDTO> getSubTreeSalesReport(String token, String companyName) {
         try {
-            logger.info("Initiating sub-tree sales report generation for company: {}", companyName);
+            logger.info("User of token {} is attempting to get sub tree sales report for the company {}",token, companyName);
             if (!tokenService.validateToken(token)) {
                 throw new PurchaseOrderException("Invalid token");
             }
