@@ -5,9 +5,11 @@ import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Domain.User.UserDTO;
+import com.ticketing.ticketapp.Domain.User.UserSuspendedException;
 
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -40,6 +42,7 @@ public class UserService implements IAuth {
     }
 
     @Override
+    @Transactional
     public Response<String> register(String token, String username, String password, int age, String email) {
         try {
             logger.info("User is attempting to register with username: {}, age: {}, email: {}", username,age,email);
@@ -58,6 +61,7 @@ public class UserService implements IAuth {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Response<String> login(String token, String username, String password) {
         try {
             logger.info("User of token {}, username {} is attempting to login", token, username);
@@ -85,6 +89,7 @@ public class UserService implements IAuth {
     }
 
     @Override
+    @Transactional
     public Response<String> logout(String token) {
         try {
             logger.info("User of token {} is attempting to logout", token);
@@ -101,6 +106,7 @@ public class UserService implements IAuth {
         }
     }
 
+    @Transactional
     public Response<String> updateUserProfile(String token, UserDTO request) {
         try {
             logger.info("User of token {} is attempting to update profile", token);
@@ -115,9 +121,8 @@ public class UserService implements IAuth {
                 throw new RuntimeException("User not found");
             }
 
-            if(userRepository.isUserSuspendedNow(userId))
-                throw new Exception("User is suspended");
-
+            if (userRepository.isUserSuspendedNow(userId))
+                throw new UserSuspendedException(userId);
 
             user.setName(request.getName());
             user.setEmail(request.getEmail());
@@ -133,6 +138,7 @@ public class UserService implements IAuth {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Response<UserDTO> getUserProfile(String token) {
         try {
             logger.info("User of token {} is attempting to get user info", token);
@@ -155,6 +161,7 @@ public class UserService implements IAuth {
     }
 
     @Override
+    @Transactional
     public Response<String> updateUserPassword(String token, String newPassword) {
         try {
             logger.info("User of token {} is attempting to update password", token);
@@ -169,8 +176,8 @@ public class UserService implements IAuth {
                 throw new RuntimeException("User not found");
             }
 
-            if(userRepository.isUserSuspendedNow(userId))
-                throw new Exception("User is suspended");
+            if (userRepository.isUserSuspendedNow(userId))
+                throw new UserSuspendedException(userId);
 
             String encodedPassword = passwordEncoder.encode(newPassword);
             user.setPassword(encodedPassword);
@@ -184,6 +191,7 @@ public class UserService implements IAuth {
     }
 
 
+    @Transactional
     public Response<String> submitUserComplaint(String token, String targetRole, String messageContent) {
         try {
             logger.info("User of token {} is attempting to submit user complaint", token);
@@ -194,8 +202,8 @@ public class UserService implements IAuth {
             String username = tokenService.extractUsername(token);
             String userID = tokenService.extractUserId(token);
 
-            if(userRepository.isUserSuspendedNow(userID))
-                throw new RuntimeException("User is suspended");
+            if (userRepository.isUserSuspendedNow(userID))
+                throw new UserSuspendedException(userID);
 
             String senderId = tokenService.extractUserId(token);
 
@@ -211,6 +219,7 @@ public class UserService implements IAuth {
         }
     }
 
+    @Transactional
     public Response<String> submitProducerComplaint(String token, String companyName, String eventName,
                                                      String subject, String content) {
         try {
@@ -218,7 +227,7 @@ public class UserService implements IAuth {
             if (!tokenService.validateToken(token)) throw new RuntimeException("Invalid token");
             String username = tokenService.extractUsername(token);
             String userId = tokenService.extractUserId(token);
-            if (userRepository.isUserSuspendedNow(userId)) throw new RuntimeException("User is suspended");
+            if (userRepository.isUserSuspendedNow(userId)) throw new UserSuspendedException(userId);
 
             String title = "Complaint about " + eventName;
             String body = (subject == null || subject.isBlank()) ? content : "[" + subject + "] " + content;
@@ -244,6 +253,7 @@ public class UserService implements IAuth {
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<List<String>> getUserCompanies(String token) {
         try {
             logger.info("User of token {} is attempting to get user complaints",token);
@@ -257,6 +267,7 @@ public class UserService implements IAuth {
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<String> switchCompanyContext(String token, String companyName) {
         try {
             logger.info("User of token {} is attempting to switch company coxtext for company {}", token, companyName);
@@ -286,6 +297,7 @@ public class UserService implements IAuth {
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<List<String>> getUserNotifications(String token) {
         try {
             logger.info("User of token {} is attemting to get notifications", token);
