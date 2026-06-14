@@ -2,6 +2,6 @@ package com.ticketing.ticketapp.Domain.User;
 
 public class UserSuspendedException extends RuntimeException {
     public UserSuspendedException(String userId) {
-        super("User " + userId + " is currently suspended");
+        super("User is suspended");
     }
 }
