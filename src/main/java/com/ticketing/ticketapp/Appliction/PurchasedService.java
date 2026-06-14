@@ -200,6 +200,7 @@ public class PurchasedService {
         }
     }
 
+    @Transactional
     public Response<String> cancelOrder(String orderId, String token) {
         try {
             logger.info("User of token {} is attempting to cancel the order: {}", token, orderId);

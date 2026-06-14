@@ -9,6 +9,7 @@ import com.ticketing.ticketapp.Domain.PurchasePolicy.PurchaseValidationData;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
+import com.ticketing.ticketapp.Domain.Ticket.TicketDomainException;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
@@ -16,6 +17,7 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -68,6 +70,7 @@ public class OrderService {
      *                    high-demand lottery event; must be a valid, unused code
      *                    issued to this user. Pass {@code null} for normal events.
      */
+    @Transactional
     public Response<String> reserveTickets(String token, String company, String event,
             List<int[]> requests, String lotteryCode) {
         List<String> reservedTicketIds = new ArrayList<>();
@@ -80,7 +83,7 @@ public class OrderService {
             }
             if(userID!=null)
                 if(userRepository.isUserSuspendedNow(userID))
-                    throw new Exception("User is suspended");
+                    throw new TicketDomainException("User is suspended");
 
             // ── Lottery gate-check ────────────────────────────────────────────
             Event eventEntity = eventRepository.getEvent(event, company);
@@ -159,6 +162,7 @@ public class OrderService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<List<TicketDTO>> getActiveOrderTickets(String token, String orderId) {
         try {
             logger.info("User of token {} is attempting to get active order tikcets of the order: {}", token, orderId);
@@ -201,8 +205,7 @@ public class OrderService {
         }
     }
 
-    private void validatePurchasePolicies(String eventId, String companyName, String userId, int totalRequested)
-            throws Exception {
+    private void validatePurchasePolicies(String eventId, String companyName, String userId, int totalRequested) {
         User user = userRepository.getUserByID(userId);
         int age = (user != null) ? user.getAge() : 10000;
 
@@ -210,12 +213,12 @@ public class OrderService {
 
         PurchasePolicy eventPolicy = purchasePolicyRepo.findByEvent(eventId);
         if (eventPolicy != null && !eventPolicy.validate(data)) {
-            throw new Exception("Doesn't stand in Event Purchase Policy");
+            throw new TicketDomainException("Doesn't stand in Event Purchase Policy");
         }
 
         PurchasePolicy companyPolicy = purchasePolicyRepo.findByCompany(companyName);
         if (companyPolicy != null && !companyPolicy.validate(data)) {
-            throw new Exception("Doesn't stand in Company Purchase Policy");
+            throw new TicketDomainException("Doesn't stand in Company Purchase Policy");
         }
     }
 }

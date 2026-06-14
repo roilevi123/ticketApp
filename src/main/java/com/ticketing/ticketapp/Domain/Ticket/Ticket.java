@@ -1,17 +1,43 @@
 package com.ticketing.ticketapp.Domain.Ticket;
 
+import jakarta.persistence.*;
 import java.util.Date;
 
+@Entity
+@Table(name = "tickets")
 public class Ticket {
+
+    @Column(name = "ticket_row")
     private int row;
+
+    @Column(name = "ticket_col")
     private int col;
+
+    @Column(name = "event_name", nullable = false)
     private String event;
+
+    @Column(name = "company_name", nullable = false)
     private String company;
+
+    @Column(name = "is_purchased")
     private boolean isPurchased;
+
+    @Version
+    @Column(name = "version")
     private int version;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "reservation_expiry")
     private Date date;
+
+    @Id
+    @Column(name = "ticket_id")
     private String id;
-    private double price; 
+
+    @Column(name = "price")
+    private double price;
+
+    protected Ticket() {}
 
     public Ticket(int row, int col, String event, String company, String id, double price) {
         this.row = row;
