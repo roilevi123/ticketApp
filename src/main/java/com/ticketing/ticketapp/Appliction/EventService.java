@@ -14,6 +14,7 @@ import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import com.ticketing.ticketapp.Domain.Event.Event;
 import com.ticketing.ticketapp.Domain.Event.EventDTO;
+import com.ticketing.ticketapp.Domain.Event.EventDomainException;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
@@ -24,6 +25,7 @@ import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EventService {
@@ -62,6 +64,7 @@ public class EventService {
         return m || (o);
     }
 
+    @Transactional
     public Response<String> createEvent(String token, String eventName, String artistName, EventType eventType,
             double price, Date date, String location, String company, MapArea[][] map) {
         try {
@@ -74,9 +77,9 @@ public class EventService {
                 logger.info("Unauthorized attempt to create event '{}' for company '{}'", eventName, company);
                 return Response.error("Unauthorized");
             }
-            String userID =tokenService.extractUserId(token);
-            if(userRepository.isUserSuspendedNow(userID))
-                throw new Exception("User is suspended");
+            String userID = tokenService.extractUserId(token);
+            if (userRepository.isUserSuspendedNow(userID))
+                throw new EventDomainException("User is suspended");
 
             Event event = eventRepository.store(eventName, artistName, eventType, price, date, location, company, map);
             ticketRepository.makeMapToTicket(event.getCompany(), event.getName(), map, null,
@@ -90,6 +93,7 @@ public class EventService {
         }
     }
 
+    @Transactional
     public Response<String> deleteEvent(String eventId, String companyName, String token) {
         try {
             logger.info("User of token {} is attempting to delete the event {} of the company: {}", token, eventId, companyName);
@@ -102,9 +106,9 @@ public class EventService {
                 logger.info("Unauthorized attempt to delete event '{}' for company '{}'", eventId, companyName);
                 return Response.error("Unauthorized");
             }
-            String userID =tokenService.extractUserId(token);
-            if(userRepository.isUserSuspendedNow(userID))
-                throw new Exception("User is suspended");
+            String userID = tokenService.extractUserId(token);
+            if (userRepository.isUserSuspendedNow(userID))
+                throw new EventDomainException("User is suspended");
 
             Event event = eventRepository.getEventById(eventId, companyName);
             if (event == null) {
@@ -128,6 +132,7 @@ public class EventService {
         }
     }
 
+    @Transactional
     public Response<String> UpdateEvent(String token, String eventName, String artistName, EventType eventType,
             double price, Date date, String location, String company, MapArea[][] map, double rating) {
         try {
@@ -139,9 +144,9 @@ public class EventService {
             if (userId == null || !isAuthorized(company, userId)) {
                 throw new RuntimeException("Unauthorized: User is not an owner or authorized manager");
             }
-            String userID =tokenService.extractUserId(token);
-            if(userRepository.isUserSuspendedNow(userID))
-                throw new Exception("User is suspended");
+            String userID = tokenService.extractUserId(token);
+            if (userRepository.isUserSuspendedNow(userID))
+                throw new EventDomainException("User is suspended");
 
             Event event = eventRepository.getEvent(eventName, company);
             if (event == null) {
@@ -172,6 +177,7 @@ public class EventService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<String> getCompanyInfo(String token, String company) {
         try {
             logger.info("User of token {} is attempting to get company info: {}" , token, company);
@@ -192,6 +198,7 @@ public class EventService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<List<EventDTO>> getCompanyEvents(String token, String company) {
         try {
             logger.info("User of token {} is attempting to get company events: {}", token, company);
@@ -216,6 +223,7 @@ public class EventService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<MapArea[][]> getMapArea(String token, String company, String eventName) {
         try {
             logger.info("User of token {} is attempting to get area map for event {} of the company {} ", token, eventName, company);
@@ -233,6 +241,7 @@ public class EventService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<EventDTO> getEvent(String token, String company, String eventName) {
         try {
             logger.info("User of token {} is attempting to get event {} of the company {} ", token, eventName, company);
@@ -252,6 +261,7 @@ public class EventService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<List<EventDTO>> searchEvents(String token, String query, String company, EventType type,
             Double minPrice, Double maxPrice,
             Date startDate, Date endDate,
