@@ -1,12 +1,32 @@
 package com.ticketing.ticketapp.Domain.User;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "users")
 public class User {
-    private String name;
-    private String password;
+
+    @Id
+    @Column(name = "user_id")
     private String ID;
+
+    @Column(name = "name", nullable = false, unique = true)
+    private String name;
+
+    @Column(name = "password", nullable = false)
+    private String password;
+
+    @Column(name = "email")
     private String email;
+
+    @Version
+    @Column(name = "version")
     private int version;
+
+    @Column(name = "age")
     private int age;
+
+    protected User() {}
 
     public User(String name, String password, int age) {
         this(name, password, age, "");
