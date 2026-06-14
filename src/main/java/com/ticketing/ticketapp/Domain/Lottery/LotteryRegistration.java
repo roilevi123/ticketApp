@@ -1,21 +1,52 @@
 package com.ticketing.ticketapp.Domain.Lottery;
 
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Represents the lottery configuration and registration list for a high-demand event.
  */
+@Entity
+@Table(name = "lottery_registrations")
+@IdClass(LotteryRegistrationKey.class)
 public class LotteryRegistration {
-    private final String eventName;
-    private final String companyName;
+
+    @Id
+    @Column(name = "event_name")
+    private String eventName;
+
+    @Id
+    @Column(name = "company_name")
+    private String companyName;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "start_date")
     private Date startDate;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "end_date")
     private Date endDate;
+
+    @Column(name = "max_winners")
     private int maxWinners;
-    private final List<String> registeredUserIds;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "lottery_registered_users",
+        joinColumns = {
+            @JoinColumn(name = "event_name", referencedColumnName = "event_name"),
+            @JoinColumn(name = "company_name", referencedColumnName = "company_name")
+        }
+    )
+    @Column(name = "user_id")
+    private List<String> registeredUserIds;
+
+    @Column(name = "drawn")
     private boolean drawn;
+
+    protected LotteryRegistration() {}
 
     public LotteryRegistration(String eventName, String companyName, Date startDate, Date endDate, int maxWinners) {
         this.eventName = eventName;
@@ -23,7 +54,7 @@ public class LotteryRegistration {
         this.startDate = startDate;
         this.endDate = endDate;
         this.maxWinners = maxWinners;
-        this.registeredUserIds = new CopyOnWriteArrayList<>();
+        this.registeredUserIds = new ArrayList<>();
         this.drawn = false;
     }
 
@@ -31,9 +62,6 @@ public class LotteryRegistration {
         this(eventName, companyName, null, endDate, maxWinners);
     }
 
-    /**
-     * Adds a user to the lottery. Returns false if already registered.
-     */
     public boolean addUser(String userId) {
         if (registeredUserIds.contains(userId)) return false;
         registeredUserIds.add(userId);
@@ -54,7 +82,6 @@ public class LotteryRegistration {
         return !isClosed();
     }
 
-
     public String getEventName() { return eventName; }
     public String getCompanyName() { return companyName; }
     public Date getStartDate() { return startDate; }
@@ -62,9 +89,8 @@ public class LotteryRegistration {
     public int getMaxWinners() { return maxWinners; }
     public boolean isDrawn() { return drawn; }
 
-    /** Returns a snapshot copy so callers cannot mutate the list. */
+    /** Returns a snapshot copy so callers cannot mutate the backing list. */
     public List<String> getRegisteredUserIds() { return new ArrayList<>(registeredUserIds); }
-
 
     public void setDrawn(boolean drawn) { this.drawn = drawn; }
     public void setStartDate(Date startDate) { this.startDate = startDate; }
