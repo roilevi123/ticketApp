@@ -203,12 +203,14 @@ export default function CheckoutPage() {
                   <div className="p-4 rounded-2xl border border-secondary bg-secondary/10 text-secondary">
                     {successMessage}
                     <div className="mt-3 flex gap-3">
-                      <Link
-                          to="/my-tickets"
-                          className="inline-flex items-center rounded-full bg-secondary px-5 py-2 text-label-md font-bold text-on-secondary"
-                      >
-                        View My Tickets
-                      </Link>
+                      {userID && (
+                        <Link
+                            to="/my-tickets"
+                            className="inline-flex items-center rounded-full bg-secondary px-5 py-2 text-label-md font-bold text-on-secondary"
+                        >
+                          View My Tickets
+                        </Link>
+                        )}
                       <button
                           type="button"
                           onClick={() => navigate("/")}
