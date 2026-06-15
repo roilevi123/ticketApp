@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ticketing.ticketapp.Domain.Order.ActiveOrderDomainException;
 
 import java.util.*;
 
@@ -95,7 +96,7 @@ public class PurchasedService {
                 order = repository.getOrder(userID);
             }
             if (order == null || order.getExpirationTime().before(new Date())) {
-                throw new PurchaseOrderException("Order expired or not found");
+                throw new ActiveOrderDomainException("Order expired or not found");
             }
 
             PurchaseContext context = new PurchaseContext(
