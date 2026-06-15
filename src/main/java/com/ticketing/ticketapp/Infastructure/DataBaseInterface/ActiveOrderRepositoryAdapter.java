@@ -15,12 +15,18 @@ import java.util.UUID;
 
 @Repository
 @Primary
-public class ActiveOrderRepositoryAdapter {
+public class ActiveOrderRepositoryAdapter implements IActiveOrderRepository {
 
     private final JpaOrderRepository jpaOrderRepository;
 
     public ActiveOrderRepositoryAdapter(JpaOrderRepository jpaOrderRepository){
         this.jpaOrderRepository= jpaOrderRepository;
+    }
+
+    @Override
+    @Transactional
+    public void save(ActiveOrder activeOrder){
+
     }
 
     @Override
@@ -31,20 +37,44 @@ public class ActiveOrderRepositoryAdapter {
 
     @Override
     @Transactional
-    public String findById(String orderID){
-        return "";
+    public ActiveOrder findById(String orderID){
+        return null;
     }
 
     @Override
     @Transactional
-    public String findByUserId(String userID){
-        return "";
+    public void update (ActiveOrder activeOrder){
+
     }
 
     @Override
     @Transactional
-    public String delete(String orderID){
-        return "";
+    public void delete(String orderID){
+
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllActiveOrders(){
+
+    }
+
+    @Override
+    @Transactional
+    public List<String> getTicketsId(String userID){
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public ActiveOrder getOrder(String userID){
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public List<ActiveOrder> getAllActiveOrders(){
+        return null;
     }
 
 
