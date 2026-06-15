@@ -4,12 +4,14 @@ import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 import com.ticketing.ticketapp.Domain.Lottery.ILotteryCodeRepository;
 import com.ticketing.ticketapp.Domain.Lottery.ILotteryRepository;
 import com.ticketing.ticketapp.Domain.Lottery.LotteryCode;
+import com.ticketing.ticketapp.Domain.Lottery.LotteryDomainException;
 import com.ticketing.ticketapp.Domain.Lottery.LotteryRegistration;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -45,6 +47,7 @@ public class LotteryService {
      * Configures (or updates) the lottery for an event.
      * Only event organizers with a valid token may call this.
      */
+    @Transactional
     public Response<String> configureLottery(String token, String companyName, String eventName, Date startDate, Date endDate, int maxWinners) {
         try {
             logger.info("User of token {} is attempting to configure lottery fot the event {}", token, eventName);
@@ -53,7 +56,7 @@ public class LotteryService {
             }
             String userID = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userID))
-                throw new RuntimeException("User is suspended");
+                throw new LotteryDomainException("User is suspended");
             Event event = eventRepository.getEvent(eventName, companyName);
             if (event == null) {
                 return Response.error("Event not found: " + eventName);
@@ -87,6 +90,7 @@ public class LotteryService {
      * Registers the authenticated user for the lottery of the given event.
      * Guests (non-members) are rejected.
      */
+    @Transactional
     public Response<String> registerForLottery(String token, String companyName, String eventName) {
         try {
             logger.info("User of token {} is attempting to register for lottery for the event {} of the company {}", token, eventName, companyName);
@@ -95,7 +99,7 @@ public class LotteryService {
             }
             String userId = tokenService.extractUserId(token);
             if(userRepository.isUserSuspendedNow(userId))
-                throw new RuntimeException("User is suspended");
+                throw new LotteryDomainException("User is suspended");
             if (userId == null) {
                 return Response.error("Could not resolve user from token");
             }
@@ -123,6 +127,7 @@ public class LotteryService {
      * Returns the current lottery status for an event, including whether the
      * authenticated user has registered or won.
      */
+    @Transactional(readOnly = true)
     public Response<Map<String, Object>> getLotteryStatus(String token, String companyName, String eventName) {
         try {
             logger.info("User of token {} is attempting to get lottery status for the event {} of the company {}", token, eventName, companyName);
@@ -175,6 +180,7 @@ public class LotteryService {
     /**
      * Validates a lottery purchase code for a specific user/event/company triple.
      */
+    @Transactional(readOnly = true)
     public boolean validateLotteryCode(String code, String userId, String eventName, String companyName) {
         return lotteryCodeRepository.validate(code, userId, eventName, companyName);
     }
@@ -183,6 +189,7 @@ public class LotteryService {
      * Consumes (marks as used) a lottery code.
      * Called by OrderService after a successful ticket reservation.
      */
+    @Transactional
     public void consumeLotteryCode(String code) {
         lotteryCodeRepository.markUsed(code);
         logger.info("Lottery code consumed: {}", code);
@@ -197,6 +204,7 @@ public class LotteryService {
      * selects up to {@code maxWinners} random participants, generates purchase
      * codes, notifies winners, and marks the lottery as drawn.
      */
+    @Transactional
     public void performDraw(LotteryRegistration lr) {
         List<String> participants = lr.getRegisteredUserIds();
         int numWinners = Math.min(lr.getMaxWinners(), participants.size());
