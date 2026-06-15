@@ -9,6 +9,7 @@ import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderDTO;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrderException;
+import com.ticketing.ticketapp.Infastructure.ExternalServiceException;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 
 import com.ticketing.ticketapp.Domain.Ticket.Ticket;
@@ -171,12 +172,13 @@ class PurchasedServiceTest {
         String ticketId = ticketRepoSpy.getTicketsForEvent(COMPANY, EVENT).get(0).getId();
         String orderId = orderRepoSpy.store(COMPANY, EVENT, List.of(ticketId), USERNAME, futureDate);
 
-        when(paymentService.processPayment(createCreditCardDetails(), 100.0,"USD")).thenReturn(-1);
+        doThrow(new ExternalServiceException("Payment service returned error: -1"))
+                .when(paymentService).processPayment(createCreditCardDetails(), 100.0, "USD");
 
         PurchaseOrderException exception = assertThrows(PurchaseOrderException.class, () -> {
             purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none",createCreditCardDetails());
         });
-        assertEquals("Payment failed", exception.getMessage());
+        assertEquals("External service error: Payment service returned error: -1", exception.getMessage());
         verify(paymentService).processPayment(createCreditCardDetails(), 100.0,"USD");
         verify(supplyService, never()).supplyToEmail(anyString(), anyString());
 
