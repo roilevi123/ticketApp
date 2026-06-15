@@ -305,7 +305,7 @@ export default function EventDetails() {
 
   // ── Reserve tickets (regular events) ────────────────────────────────────────
   async function handleReserve() {
-    if (!isRegisteredMember || selectedSeats.length === 0 || isReserving) return;
+    if (selectedSeats.length === 0 || isReserving) return;
 
     setIsReserving(true);
     setActionError(null);
@@ -633,9 +633,9 @@ export default function EventDetails() {
 
                         <button
                           onClick={handleReserve}
-                          disabled={!isRegisteredMember || selectedSeats.length === 0 || isReserving}
+                          disabled={selectedSeats.length === 0 || isReserving}
                           className={`w-full py-3 rounded-xl font-bold text-label-md uppercase tracking-wider transition-all ${
-                            isRegisteredMember && selectedSeats.length > 0
+                             selectedSeats.length > 0
                               ? "bg-secondary text-on-secondary hover:brightness-110 active:scale-95"
                               : "bg-surface-container-highest text-outline cursor-not-allowed"
                           }`}
@@ -645,11 +645,7 @@ export default function EventDetails() {
                             : `Buy Tickets${selectedSeats.length > 0 ? ` (${selectedSeats.length})` : ""}`}
                         </button>
 
-                        {!isRegisteredMember && (
-                          <p className="text-label-sm text-on-surface-variant text-center">
-                            Sign in as a member to reserve tickets.
-                          </p>
-                        )}
+
                       </div>
                     )}
                   </div>
