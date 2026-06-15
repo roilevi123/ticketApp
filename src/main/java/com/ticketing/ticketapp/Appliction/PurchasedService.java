@@ -218,7 +218,11 @@ public class PurchasedService {
             }
 
             for (String ticketCode : order.getExternalTicketIds()) {
-                externalTicketService.cancelTicket(ticketCode);
+                try {
+                    externalTicketService.cancelTicket(ticketCode);
+                } catch (Exception e) {
+                    logger.warn("Failed to cancel external ticket {} during order cancellation: {}", ticketCode, e.getMessage());
+                }
             }
 
             for (String ticketId : order.getTicketsId()) {

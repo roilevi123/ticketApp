@@ -20,10 +20,6 @@ public class ExternalPaymentService implements IPaymentService {
         this.API_URL = apiUrl;
     }
 
-    private final HttpClient client = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(3))
-            .build();
-
     @Override
     public int processPayment(CreditCardDetails cardDetails, double amount, String currency) {
         try {
@@ -42,7 +38,9 @@ public class ExternalPaymentService implements IPaymentService {
                     .map(e -> e.getKey() + "=" + e.getValue())
                     .collect(Collectors.joining("&"));
 
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(3))
+                    .build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
                     .header("Content-Type", "application/x-www-form-urlencoded")
@@ -51,9 +49,17 @@ public class ExternalPaymentService implements IPaymentService {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new ExternalServiceException("Payment service returned HTTP " + response.statusCode());
+            }
+            String body = response.body();
+            if (body == null || body.isBlank()) {
+                throw new ExternalServiceException("Payment service returned empty response");
+            }
+            return Integer.parseInt(body.trim());
 
-            return Integer.parseInt(response.body().trim());
-
+        } catch (ExternalServiceException e) {
+            throw e;
         } catch (Exception e) {
             e.printStackTrace();
             return -1;
@@ -65,7 +71,9 @@ public class ExternalPaymentService implements IPaymentService {
         try {
             String requestBody = "action_type=refund&transaction_id=" + transactionId;
 
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(3))
+                    .build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
                     .header("Content-Type", "application/x-www-form-urlencoded")
@@ -74,8 +82,17 @@ public class ExternalPaymentService implements IPaymentService {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return Integer.parseInt(response.body().trim());
+            if (response.statusCode() != 200) {
+                throw new ExternalServiceException("Payment refund service returned HTTP " + response.statusCode());
+            }
+            String body = response.body();
+            if (body == null || body.isBlank()) {
+                throw new ExternalServiceException("Payment refund service returned empty response");
+            }
+            return Integer.parseInt(body.trim());
 
+        } catch (ExternalServiceException e) {
+            throw e;
         } catch (HttpTimeoutException e) {
             System.err.println("[ExternalPaymentService] Timed Out! (Limit reached)");
             return -1;
