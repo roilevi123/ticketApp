@@ -20,6 +20,7 @@ import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import com.ticketing.ticketapp.Domain.Ticket.TicketDTO;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
+import com.ticketing.ticketapp.Infastructure.ExternalServiceException;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,9 +128,6 @@ public class PurchasedService {
                     .sum();
 
             int transactionID = paymentService.processPayment(paymentDetails, totalPriceAfterDiscounts, "USD");
-            if (transactionID == -1) {
-                throw new PurchaseOrderException("Payment failed");
-            }
 
             List<String> externalTicketCodes = new ArrayList<>();
             try {
@@ -137,13 +135,6 @@ public class PurchasedService {
                 for (Ticket t : purchasedTickets) {
                     String ticketCode = externalTicketService.issueTicket(
                             customerId, t.getEvent(), t.getEvent(), t.getRow(), t.getCol());
-                    if (ticketCode == null || ticketCode.equals("-1")) {
-                        for (String code : externalTicketCodes) {
-                            externalTicketService.cancelTicket(code);
-                        }
-                        paymentService.refund(transactionID);
-                        throw new PurchaseOrderException("External ticket issuance failed");
-                    }
                     externalTicketCodes.add(ticketCode);
                 }
 
@@ -165,9 +156,17 @@ public class PurchasedService {
                 throw e;
             } catch (Exception e) {
                 for (String code : externalTicketCodes) {
-                    externalTicketService.cancelTicket(code);
+                    try {
+                        externalTicketService.cancelTicket(code);
+                    } catch (ExternalServiceException ex) {
+                        logger.error("Failed to cancel external ticket {} during rollback: {}", code, ex.getMessage());
+                    }
                 }
-                paymentService.refund(transactionID);
+                try {
+                    paymentService.refund(transactionID);
+                } catch (ExternalServiceException ex) {
+                    logger.error("Failed to refund transaction {} during rollback: {}", transactionID, ex.getMessage());
+                }
                 throw new PurchaseOrderException("Failed during save or supply: " + e.getMessage(), e);
             }
 
@@ -195,6 +194,9 @@ public class PurchasedService {
         } catch (PurchaseOrderException e) {
             logger.error("Transaction aborted: " + e.getMessage());
             throw e;
+        } catch (ExternalServiceException e) {
+            logger.error("External service error during purchase: {}", e.getMessage());
+            throw new PurchaseOrderException("External service error: " + e.getMessage(), e);
         } catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
@@ -219,7 +221,11 @@ public class PurchasedService {
             }
 
             for (String ticketCode : order.getExternalTicketIds()) {
-                externalTicketService.cancelTicket(ticketCode);
+                try {
+                    externalTicketService.cancelTicket(ticketCode);
+                } catch (Exception e) {
+                    logger.warn("Failed to cancel external ticket {} during order cancellation: {}", ticketCode, e.getMessage());
+                }
             }
 
             for (String ticketId : order.getTicketsId()) {
