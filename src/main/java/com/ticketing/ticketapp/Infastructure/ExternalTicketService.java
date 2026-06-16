@@ -8,6 +8,7 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
@@ -33,7 +34,9 @@ public class ExternalTicketService implements IExternalTicketService {
 
             System.out.println("[ExternalTicketService] issueTicket request: " + requestBody);
 
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(3))
+                    .build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
                     .header("Content-Type", "application/x-www-form-urlencoded")
@@ -42,15 +45,25 @@ public class ExternalTicketService implements IExternalTicketService {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            String body = response.body().trim();
-            System.out.println("[ExternalTicketService] issueTicket response: " + body);
-            if (body.equals("-1")) {
+            if (response.statusCode() != 200) {
+                throw new ExternalServiceException("Ticket service returned HTTP " + response.statusCode() + " for issueTicket");
+            }
+            String body = response.body();
+            if (body == null || body.isBlank()) {
+                throw new ExternalServiceException("Ticket service returned empty response for issueTicket");
+            }
+            String trimmedBody = body.trim();
+            System.out.println("[ExternalTicketService] issueTicket response: " + trimmedBody);
+            if (trimmedBody.equals("-1")) {
                 throw new ExternalServiceException("Ticket service returned error: -1");
             }
-            return body;
+            return trimmedBody;
 
         } catch (ExternalServiceException e) {
             throw e;
+        } catch (HttpTimeoutException e) {
+            System.err.println("[ExternalTicketService] issueTicket Timed Out!");
+            return "-1";
         } catch (Exception e) {
             throw new ExternalServiceException("Ticket service issueTicket error: " + e.getMessage(), e);
         }
@@ -64,7 +77,9 @@ public class ExternalTicketService implements IExternalTicketService {
 
             System.out.println("[ExternalTicketService] cancelTicket request: " + requestBody);
 
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(3))
+                    .build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
                     .header("Content-Type", "application/x-www-form-urlencoded")
@@ -73,8 +88,15 @@ public class ExternalTicketService implements IExternalTicketService {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("[ExternalTicketService] cancelTicket response: " + response.body());
-            int result = Integer.parseInt(response.body().trim());
+            if (response.statusCode() != 200) {
+                throw new ExternalServiceException("Ticket service returned HTTP " + response.statusCode() + " for cancelTicket");
+            }
+            String body = response.body();
+            if (body == null || body.isBlank()) {
+                throw new ExternalServiceException("Ticket service returned empty response for cancelTicket");
+            }
+            System.out.println("[ExternalTicketService] cancelTicket response: " + body);
+            int result = Integer.parseInt(body.trim());
             if (result == -1) {
                 throw new ExternalServiceException("Ticket cancel service returned error: -1");
             }
@@ -82,6 +104,9 @@ public class ExternalTicketService implements IExternalTicketService {
 
         } catch (ExternalServiceException e) {
             throw e;
+        } catch (HttpTimeoutException e) {
+            System.err.println("[ExternalTicketService] cancelTicket Timed Out!");
+            return false;
         } catch (Exception e) {
             throw new ExternalServiceException("Ticket service cancelTicket error: " + e.getMessage(), e);
         }

@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,7 +38,9 @@ public class ExternalPaymentService implements IPaymentService {
                     .map(e -> e.getKey() + "=" + e.getValue())
                     .collect(Collectors.joining("&"));
 
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(3))
+                    .build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
                     .header("Content-Type", "application/x-www-form-urlencoded")
@@ -46,7 +49,14 @@ public class ExternalPaymentService implements IPaymentService {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            int result = Integer.parseInt(response.body().trim());
+            if (response.statusCode() != 200) {
+                throw new ExternalServiceException("Payment service returned HTTP " + response.statusCode());
+            }
+            String body = response.body();
+            if (body == null || body.isBlank()) {
+                throw new ExternalServiceException("Payment service returned empty response");
+            }
+            int result = Integer.parseInt(body.trim());
             if (result == -1) {
                 throw new ExternalServiceException("Payment service returned error: -1");
             }
@@ -64,7 +74,9 @@ public class ExternalPaymentService implements IPaymentService {
         try {
             String requestBody = "action_type=refund&transaction_id=" + transactionId;
 
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(3))
+                    .build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
                     .header("Content-Type", "application/x-www-form-urlencoded")
@@ -73,7 +85,14 @@ public class ExternalPaymentService implements IPaymentService {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            int result = Integer.parseInt(response.body().trim());
+            if (response.statusCode() != 200) {
+                throw new ExternalServiceException("Payment refund service returned HTTP " + response.statusCode());
+            }
+            String body = response.body();
+            if (body == null || body.isBlank()) {
+                throw new ExternalServiceException("Payment refund service returned empty response");
+            }
+            int result = Integer.parseInt(body.trim());
             if (result == -1) {
                 throw new ExternalServiceException("Payment refund service returned error: -1");
             }
@@ -81,6 +100,9 @@ public class ExternalPaymentService implements IPaymentService {
 
         } catch (ExternalServiceException e) {
             throw e;
+        } catch (HttpTimeoutException e) {
+            System.err.println("[ExternalPaymentService] Timed Out! (Limit reached)");
+            return -1;
         } catch (Exception e) {
             throw new ExternalServiceException("Payment refund service error: " + e.getMessage(), e);
         }
