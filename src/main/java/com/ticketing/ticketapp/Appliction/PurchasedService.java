@@ -220,12 +220,14 @@ public class PurchasedService {
                 return Response.error("Not authorized to cancel this order");
             }
 
-            for (String ticketCode : order.getExternalTicketIds()) {
-                try {
+            try {
+                for (String ticketCode : order.getExternalTicketIds()) {
                     externalTicketService.cancelTicket(ticketCode);
-                } catch (Exception e) {
-                    logger.warn("Failed to cancel external ticket {} during order cancellation: {}", ticketCode, e.getMessage());
                 }
+            } catch (Exception e) {
+                logger.error("External service failure during cancellation: " + e.getMessage());
+
+                throw new com.ticketing.ticketapp.Infastructure.ExternalServiceException("External service timeout/error", e);
             }
 
             for (String ticketId : order.getTicketsId()) {
@@ -242,7 +244,6 @@ public class PurchasedService {
             return Response.success("Order cancelled successfully");
 
         } catch (com.ticketing.ticketapp.Infastructure.ExternalServiceException e) {
-            logger.error("External service timeout during cancellation: " + e.getMessage());
             throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());
