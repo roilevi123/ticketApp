@@ -13,5 +13,6 @@ import java.util.Optional;
 
 @Repository
 public interface JpaOrderRepository extends JpaRepository<ActiveOrder, String>{
-    Optional<ActiveOrder> findByUserId(String userId);
+   ActiveOrder findByUserId(String userId);
+
 }
