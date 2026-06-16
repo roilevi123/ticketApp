@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +44,7 @@ public class CompanyService {
     }
 
     @Transactional
+    @CacheEvict(value = "activeCompanies", allEntries = true)
     public Response<String> CreateCompany(String company, String token) {
         try {
             logger.info("User of token {}, is attempting to create a company: {}", token, company);
@@ -346,6 +349,7 @@ public class CompanyService {
     }
 
     @Transactional
+    @CacheEvict(value = "activeCompanies", allEntries = true)
     public Response<String> freezeCompany(String company, String token) {
         try {
             logger.info("User of token {} is attempting to freeze the company: {}", token, company);
@@ -371,6 +375,7 @@ public class CompanyService {
     }
 
     @Transactional
+    @CacheEvict(value = "activeCompanies", allEntries = true)
     public Response<String> unfreezeCompany(String company, String token) {
         try {
             logger.info("User of token {} is attempting to unfreeze the company: {}", token, company);
@@ -392,6 +397,7 @@ public class CompanyService {
     }
 
     @Transactional
+    @CacheEvict(value = "activeCompanies", allEntries = true)
     public Response<String> closeCompany(String company, String token) {
         try {
             logger.info("User of token {} is attempting to close the company: {}", token, company);
@@ -444,6 +450,7 @@ public class CompanyService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "activeCompanies")
     public Response<List<CompanyDTO>> getActiveCompanies(String token) {
         try {
             logger.info("User of token {} is attempting to get active companies", token);

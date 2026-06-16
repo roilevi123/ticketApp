@@ -26,6 +26,9 @@ import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 public class EventService {
@@ -65,6 +68,7 @@ public class EventService {
     }
 
     @Transactional
+    @CacheEvict(value = { "companyEvents", "searchedEvents" }, allEntries = true)
     public Response<String> createEvent(String token, String eventName, String artistName, EventType eventType,
             double price, Date date, String location, String company, MapArea[][] map) {
         try {
@@ -94,9 +98,15 @@ public class EventService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "events", allEntries = true),
+            @CacheEvict(value = "eventMaps", allEntries = true),
+            @CacheEvict(value = { "companyEvents", "searchedEvents" }, allEntries = true)
+    })
     public Response<String> deleteEvent(String eventId, String companyName, String token) {
         try {
-            logger.info("User of token {} is attempting to delete the event {} of the company: {}", token, eventId, companyName);
+            logger.info("User of token {} is attempting to delete the event {} of the company: {}", token, eventId,
+                    companyName);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
@@ -133,10 +143,15 @@ public class EventService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "events", key = "#company + '-' + #eventName"),
+            @CacheEvict(value = "eventMaps", key = "#company + '-' + #eventName"),
+            @CacheEvict(value = { "companyEvents", "searchedEvents" }, allEntries = true)
+    })
     public Response<String> UpdateEvent(String token, String eventName, String artistName, EventType eventType,
             double price, Date date, String location, String company, MapArea[][] map, double rating) {
         try {
-            logger.info("User of token {} is attempting to update the event: {}" ,token, eventName);
+            logger.info("User of token {} is attempting to update the event: {}", token, eventName);
             String userId = tokenService.extractUserId(token);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
@@ -178,9 +193,10 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "companyInfo", key = "#company")
     public Response<String> getCompanyInfo(String token, String company) {
         try {
-            logger.info("User of token {} is attempting to get company info: {}" , token, company);
+            logger.info("User of token {} is attempting to get company info: {}", token, company);
 
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
@@ -190,7 +206,7 @@ public class EventService {
             if (!c) {
                 throw new RuntimeException("the company is not active");
             }
-            logger.info("User {} successfully got company info: " , token, company);
+            logger.info("User {} successfully got company info: ", token, company);
             return Response.success(companyRepository.getCompanyDescription(company));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -199,6 +215,7 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "companyEvents", key = "#company")
     public Response<List<EventDTO>> getCompanyEvents(String token, String company) {
         try {
             logger.info("User of token {} is attempting to get company events: {}", token, company);
@@ -215,7 +232,7 @@ public class EventService {
             for (Event event : events) {
                 eventDTOs.add(getEventWithDiscount(event));
             }
-            logger.info("User of token {} successfully got company events: {}",token, company);
+            logger.info("User of token {} successfully got company events: {}", token, company);
             return Response.success(eventDTOs);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -224,16 +241,19 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "eventMaps", key = "#company + '-' + #eventName")
     public Response<MapArea[][]> getMapArea(String token, String company, String eventName) {
         try {
-            logger.info("User of token {} is attempting to get area map for event {} of the company {} ", token, eventName, company);
+            logger.info("User of token {} is attempting to get area map for event {} of the company {} ", token,
+                    eventName, company);
             boolean isGuest = token == null || token.contains("guest-temporary-token");
             if (!isGuest && !tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
             }
             MapArea[][] map = eventRepository.getMapArea(company, eventName);
             MapArea[][] mapArea = ticketRepository.getMapAreas(company, eventName, map);
-            logger.info("User of token {} successfully got area map for the event: {} of the compant {}",token, eventName,company);
+            logger.info("User of token {} successfully got area map for the event: {} of the compant {}", token,
+                    eventName, company);
             return Response.success(mapArea);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -242,6 +262,7 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "events", key = "#company + '-' + #eventName")
     public Response<EventDTO> getEvent(String token, String company, String eventName) {
         try {
             logger.info("User of token {} is attempting to get event {} of the company {} ", token, eventName, company);
@@ -253,7 +274,7 @@ public class EventService {
             if (event == null) {
                 return Response.error("Event not found");
             }
-            logger.info("User of token {} successfully got event: {} of the company {}",token, event, company);
+            logger.info("User of token {} successfully got event: {} of the company {}", token, event, company);
             return Response.success(getEventWithDiscount(event));
         } catch (Exception e) {
             logger.error("Failed to retrieve event '{}': {}", eventName, e.getMessage());
@@ -262,6 +283,7 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "searchedEvents", key = "{#query, #company, #type, #minPrice, #maxPrice, #startDate, #endDate, #location, #minRating}")
     public Response<List<EventDTO>> searchEvents(String token, String query, String company, EventType type,
             Double minPrice, Double maxPrice,
             Date startDate, Date endDate,
@@ -299,8 +321,10 @@ public class EventService {
             String policyId = UUID.randomUUID().toString();
 
             MaxDiscountComposite combinedRoot = new MaxDiscountComposite(policyId);
-            if (eventPolicy != null) combinedRoot.add(eventPolicy.getRoot());
-            if (companyPolicy != null) combinedRoot.add(companyPolicy.getRoot());
+            if (eventPolicy != null)
+                combinedRoot.add(eventPolicy.getRoot());
+            if (companyPolicy != null)
+                combinedRoot.add(companyPolicy.getRoot());
 
             PurchaseContext context = new PurchaseContext(1, null, new Date());
             double discountAmount = combinedRoot.calculateDiscount(event.getPrice(), context);
@@ -311,7 +335,7 @@ public class EventService {
         } catch (Exception e) {
             logger.error("Error calculating discount for event '{}': {}", event.getName(), e.getMessage());
         }
-        
-        return EventDTO.fromEntity(event, discountedPrice); 
+
+        return EventDTO.fromEntity(event, discountedPrice);
     }
 }
