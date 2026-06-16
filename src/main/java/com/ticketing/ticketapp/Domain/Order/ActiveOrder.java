@@ -2,15 +2,45 @@ package com.ticketing.ticketapp.Domain.Order;
 
 import java.util.Date;
 import java.util.List;
+import jakarta.persistence.*;
 
+@Entity
+@Table(
+        name = "active_orders",
+        indexes = {
+                @Index(name = "idx_unique_active_user", columnList = "user_id", unique = true)
+        }
+)
 public class ActiveOrder {
+
+    @Id
+    @Column(name="order_id")
     private String orderId;
+
+    @Column(name="user_id", nullable = true)
     private String userId;
+
+    @Column(name="event_id", nullable = false)
     private String eventId;
+
+    @Column(name = "company_id", nullable = false)
     private String companyId;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "active_order_tickets", joinColumns = @JoinColumn(name = "order_id"))
+    @Column(name = "ticket_id")
     private List<String> ticketIds;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "expiration_time")
     private Date expirationTime;
+
+    @Version
+    @Column(name = "version")
     private int version;
+
+    protected ActiveOrder(){}
+
     public ActiveOrder(String company, String event, List<String> ticketsId, String buyerID, String orderId, Date expiryDate) {
         this.companyId = company;
         this.eventId = event;

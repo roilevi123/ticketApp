@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ticketing.ticketapp.Domain.Order.ActiveOrderDomainException;
 
 import java.util.*;
 
@@ -219,12 +220,14 @@ public class PurchasedService {
                 return Response.error("Not authorized to cancel this order");
             }
 
-            for (String ticketCode : order.getExternalTicketIds()) {
-                try {
+            try {
+                for (String ticketCode : order.getExternalTicketIds()) {
                     externalTicketService.cancelTicket(ticketCode);
-                } catch (Exception e) {
-                    logger.warn("Failed to cancel external ticket {} during order cancellation: {}", ticketCode, e.getMessage());
                 }
+            } catch (Exception e) {
+                logger.error("External service failure during cancellation: " + e.getMessage());
+
+                throw new com.ticketing.ticketapp.Infastructure.ExternalServiceException("External service timeout/error", e);
             }
 
             for (String ticketId : order.getTicketsId()) {
@@ -240,6 +243,8 @@ public class PurchasedService {
             logger.info("Order {} cancelled by user {}", orderId, userId);
             return Response.success("Order cancelled successfully");
 
+        } catch (com.ticketing.ticketapp.Infastructure.ExternalServiceException e) {
+            throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
