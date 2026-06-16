@@ -97,7 +97,7 @@ public class PurchasedService {
                 order = repository.getOrder(userID);
             }
             if (order == null || order.getExpirationTime().before(new Date())) {
-                throw new ActiveOrderDomainException("Order expired or not found");
+                throw new PurchaseOrderException("Order expired or not found");
             }
 
             PurchaseContext context = new PurchaseContext(
@@ -241,6 +241,9 @@ public class PurchasedService {
             logger.info("Order {} cancelled by user {}", orderId, userId);
             return Response.success("Order cancelled successfully");
 
+        } catch (com.ticketing.ticketapp.Infastructure.ExternalServiceException e) {
+            logger.error("External service timeout during cancellation: " + e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
