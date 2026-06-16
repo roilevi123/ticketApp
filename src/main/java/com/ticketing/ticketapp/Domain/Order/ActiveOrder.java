@@ -5,7 +5,12 @@ import java.util.List;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name="activeOrders")
+@Table(
+        name = "active_orders",
+        indexes = {
+                @Index(name = "idx_unique_active_user", columnList = "user_id", unique = true)
+        }
+)
 public class ActiveOrder {
 
     @Id
