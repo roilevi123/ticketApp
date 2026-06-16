@@ -162,10 +162,10 @@ public class OrderService {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Response<List<TicketDTO>> getActiveOrderTickets(String token, String orderId) {
         try {
-            logger.info("User of token {} is attempting to get active order tikcets of the order: {}", token, orderId);
+            logger.info("User of token {} is attempting to get active order tickets of the order: {}", token, orderId);
             List<String> ticketsId;
             ActiveOrder activeOrder;
 
@@ -186,6 +186,7 @@ public class OrderService {
             }
 
             if (activeOrder.getExpirationTime() != null && !activeOrder.getExpirationTime().after(new Date())) {
+                releaseOrderTickets(activeOrder);
                 activeOrderRepository.delete(activeOrder.getOrderId());
                 return Response.success(new ArrayList<>());
             }
@@ -202,6 +203,19 @@ public class OrderService {
         } catch (Exception e) {
             logger.error("Error retrieving active order: {}", e.getMessage());
             return Response.error(e.getMessage());
+        }
+    }
+
+    private void releaseOrderTickets(ActiveOrder activeOrder) {
+        List<String> ticketsId = activeOrder.getTicketIds();
+        if (ticketsId != null && !ticketsId.isEmpty()) {
+            List<Ticket> ticketList = ticketRepository.getTickets(ticketsId);
+            for (Ticket ticket : ticketList) {
+                if (ticket != null) {
+                    ticket.setDate(null);
+                    ticketRepository.save(ticket);
+                }
+            }
         }
     }
 
