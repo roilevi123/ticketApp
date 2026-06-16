@@ -12,7 +12,7 @@ public class ActiveOrder {
     @Column(name="order_id")
     private String orderId;
 
-    @Column(name="user_id", nullable = false)
+    @Column(name="user_id", nullable = true)
     private String userId;
 
     @Column(name="event_id", nullable = false)
@@ -21,7 +21,9 @@ public class ActiveOrder {
     @Column(name = "company_id", nullable = false)
     private String companyId;
 
-    @Column(name = "ticket_ids")
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "active_order_tickets", joinColumns = @JoinColumn(name = "order_id"))
+    @Column(name = "ticket_id")
     private List<String> ticketIds;
 
     @Temporal(TemporalType.TIMESTAMP)
