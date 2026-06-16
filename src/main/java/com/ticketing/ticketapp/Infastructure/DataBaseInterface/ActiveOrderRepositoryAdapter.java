@@ -3,7 +3,6 @@ package com.ticketing.ticketapp.Infastructure.DataBaseInterface;
 import com.ticketing.ticketapp.Domain.Order.ActiveOrder;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Infastructure.JpaOrderRepository;
-import com.ticketing.ticketapp.Infastructure.JpaTicketRepository;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,7 +69,7 @@ public class ActiveOrderRepositoryAdapter implements IActiveOrderRepository {
     @Override
     @Transactional(readOnly = true)
     public List<String> getTicketsId(String userID){
-        ActiveOrder order = jpaOrderRepository.findByUserId(userID);
+        ActiveOrder order = jpaOrderRepository.findFirstByUserId(userID).orElse(null);
         if(order==null)
             return new LinkedList<>();
         return order.getTicketIds();
@@ -79,7 +78,7 @@ public class ActiveOrderRepositoryAdapter implements IActiveOrderRepository {
     @Override
     @Transactional(readOnly = true)
     public ActiveOrder getOrder(String userID){
-        return jpaOrderRepository.findByUserId(userID);
+        return jpaOrderRepository.findFirstByUserId(userID).orElse(null);
     }
 
     @Override
