@@ -1,14 +1,30 @@
 package com.ticketing.ticketapp.Domain.Company;
 
+import jakarta.persistence.*;
 
-
+@Entity
+@Table(name = "companies")
 public class Company {
 
+    @Id
+    @Column(name = "company_name")
     private String companyName;
+
+    @Column(name = "founder_id", nullable = false)
     private String founderID;
+
+    @Column(name = "active", nullable = false)
     private boolean active=true;
+
+    @Version
+    @Column(name = "version")
     private int version;
+
+    @Column(name = "rating")
     private double rating;
+
+    protected Company() {}
+
     public Company(String companyName, String founderID) {
         this.companyName = companyName;
 
@@ -27,21 +43,21 @@ public class Company {
 
     public void freezeCompany(String userID) {
         if(!founderID.equals(userID)) {
-            throw new RuntimeException("this is not the founder so we don't freeze the company");
+            throw new CompanyDomainException("this is not the founder so we don't freeze the company");
 
 
         }
         if(!active) {
-            throw new RuntimeException("already frozen the company");
+            throw new CompanyDomainException("already frozen the company");
         }
         active=false;
     }
     public void unfreezeCompany(String userID) {
         if(!founderID.equals(userID)) {
-            throw new RuntimeException("this is not the founder so we don't unfreeze the company");
+            throw new CompanyDomainException("this is not the founder so we don't unfreeze the company");
         }
         if(active) {
-            throw new RuntimeException("already unfreeze the company");
+            throw new CompanyDomainException("already unfreeze the company");
         }
         active=true;
     }
