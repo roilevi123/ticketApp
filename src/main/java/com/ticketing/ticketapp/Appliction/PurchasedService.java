@@ -86,16 +86,23 @@ public class PurchasedService {
     public Response<String> PurchaseTicket(String email, String orderId, String token, String userCoupon, CreditCardDetails paymentDetails) {
         try {
             logger.info("User of token {} is attempting to purchase tickets of the order {}", token, orderId);
+
             ActiveOrder order = repository.findById(orderId);
+
             if (tokenService.validateToken(token)) {
                 String userID = tokenService.extractUserId(token);
                 String username = tokenService.extractUsername(token);
-                if (username != null && userRepository.isUserSuspendedNow(username) ||
+
+                if ((username != null && userRepository.isUserSuspendedNow(username)) ||
                         (userID != null && userRepository.isUserSuspendedNow(userID))) {
                     throw new PurchaseOrderException("User is suspended");
                 }
-                order = repository.getOrder(userID);
+
+                if (order != null && order.getUserId() != null && !order.getUserId().equals(userID)) {
+                    throw new PurchaseOrderException("Unauthorized: This order does not belong to the current user");
+                }
             }
+
             if (order == null || order.getExpirationTime().before(new Date())) {
                 throw new PurchaseOrderException("Order expired or not found");
             }
@@ -336,14 +343,14 @@ public class PurchasedService {
     @Transactional(readOnly = true)
     public Response<SalesReportDTO> getSubTreeSalesReport(String token, String companyName) {
         try {
-            logger.info("User of token {} is attempting to get sub tree sales report for the company {}",token, companyName);
+            logger.info("User of token {} is attempting to get sub tree sales report for the company {}", token, companyName);
             if (!tokenService.validateToken(token)) {
                 throw new PurchaseOrderException("Invalid token");
             }
 
-            String currentUsername = tokenService.extractUserId(token);
-            boolean isOwner = treeOfRoleRepository.exitsOwner(currentUsername, companyName);
-            boolean isAuthorizedManager = treeOfRoleRepository.ManagerPermitToSeeTransactions(currentUsername, companyName);
+            String currentUserId = tokenService.extractUserId(token);
+            boolean isOwner = treeOfRoleRepository.exitsOwner(currentUserId, companyName);
+            boolean isAuthorizedManager = treeOfRoleRepository.ManagerPermitToSeeTransactions(currentUserId, companyName);
 
             if (!isOwner && !isAuthorizedManager) {
                 throw new PurchaseOrderException("Unauthorized: User does not have permission to generate sales reports");
@@ -352,22 +359,31 @@ public class PurchasedService {
             List<Owner> allOwners = treeOfRoleRepository.getAllOwnersByCompany(companyName);
             List<Manager> allManagers = treeOfRoleRepository.getAllManagersByCompany(companyName);
             Set<String> subTreeUserIds = new HashSet<>();
-            populateSubTreeIds(currentUsername, allOwners, allManagers, subTreeUserIds);
+            populateSubTreeIds(currentUserId, allOwners, allManagers, subTreeUserIds);
+
             List<PurchaseOrder> allCompanyOrders = purchasedOrderRepository.getPurchasedOrdersForCompany(companyName);
             double totalRevenue = 0.0;
             int totalTicketsSold = 0;
             List<PurchaseOrderDTO> matchingOrderDTOs = new ArrayList<>();
 
             for (PurchaseOrder order : allCompanyOrders) {
-                if (subTreeUserIds.contains(order.getBuyerID()) || order.getBuyerID().equals(currentUsername)) {
+                if (order.getBuyerID() != null && (order.getBuyerID().equals(currentUserId) || subTreeUserIds.contains(order.getBuyerID()))) {
                     List<String> ticketsId = order.getTicketsId();
                     List<Ticket> ticketList = ticketRepository.getTickets(ticketsId);
                     List<TicketDTO> ticketDTOs = new ArrayList<>();
                     double orderTotal = 0.0;
 
+                    PurchaseContext dummyContext = new PurchaseContext(ticketsId.size(), null, new Date());
+
                     for (Ticket ticket : ticketList) {
                         ticketDTOs.add(TicketDTO.fromEntity(ticket));
-                        orderTotal += ticket.getPrice();
+                        double finalTicketPrice = getPriceAfterDiscounts(
+                                order.getEvent(),
+                                order.getCompany(),
+                                ticket.getPrice(),
+                                dummyContext
+                        );
+                        orderTotal += finalTicketPrice;
                     }
 
                     totalRevenue += orderTotal;
@@ -382,7 +398,7 @@ public class PurchasedService {
             report.setOrders(matchingOrderDTOs);
 
             logger.info("Successfully generated sales report for sub-tree of {}. Total Revenue: {}, Tickets Sold: {}",
-                    currentUsername, totalRevenue, totalTicketsSold);
+                    currentUserId, totalRevenue, totalTicketsSold);
 
             return Response.success(report);
 
@@ -393,13 +409,15 @@ public class PurchasedService {
     }
 
     private void populateSubTreeIds(String currentUserId, List<Owner> allOwners, List<Manager> allManagers, Set<String> subTreeUserIds) {
+        if (currentUserId == null) return;
+
         List<String> directDownlineOwners = allOwners.stream()
-                .filter(o -> currentUserId.equals(o.getAppointerID()) && o.isAccepted())
+                .filter(o -> currentUserId.equals(o.getAppointerID()) && o.isAccepted() && o.getUserID() != null)
                 .map(Owner::getUserID)
                 .toList();
 
         List<String> directDownlineManagers = allManagers.stream()
-                .filter(m -> currentUserId.equals(m.getAppointerID()))
+                .filter(m -> currentUserId.equals(m.getAppointerID()) && m.getUserID() != null)
                 .map(Manager::getUserID)
                 .toList();
 
