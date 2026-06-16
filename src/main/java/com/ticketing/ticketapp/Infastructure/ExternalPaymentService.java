@@ -7,7 +7,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,10 +18,6 @@ public class ExternalPaymentService implements IPaymentService {
     public void setApiUrl(String apiUrl) {
         this.API_URL = apiUrl;
     }
-
-    private final HttpClient client = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(3))
-            .build();
 
     @Override
     public int processPayment(CreditCardDetails cardDetails, double amount, String currency) {
@@ -51,12 +46,16 @@ public class ExternalPaymentService implements IPaymentService {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            int result = Integer.parseInt(response.body().trim());
+            if (result == -1) {
+                throw new ExternalServiceException("Payment service returned error: -1");
+            }
+            return result;
 
-            return Integer.parseInt(response.body().trim());
-
+        } catch (ExternalServiceException e) {
+            throw e;
         } catch (Exception e) {
-            e.printStackTrace();
-            return -1;
+            throw new ExternalServiceException("Payment service error: " + e.getMessage(), e);
         }
     }
 
@@ -74,14 +73,16 @@ public class ExternalPaymentService implements IPaymentService {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return Integer.parseInt(response.body().trim());
+            int result = Integer.parseInt(response.body().trim());
+            if (result == -1) {
+                throw new ExternalServiceException("Payment refund service returned error: -1");
+            }
+            return result;
 
-        } catch (HttpTimeoutException e) {
-            System.err.println("[ExternalPaymentService] Timed Out! (Limit reached)");
-            return -1;
+        } catch (ExternalServiceException e) {
+            throw e;
         } catch (Exception e) {
-            System.err.println("[ExternalPaymentService] Network error or timeout: " + e.getMessage());
-            return -1;
+            throw new ExternalServiceException("Payment refund service error: " + e.getMessage(), e);
         }
     }
 }
