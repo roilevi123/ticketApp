@@ -333,8 +333,7 @@ class PurchasedServiceTest {
         when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
         when(tokenService.validateToken(anyString())).thenReturn(true);
         when(tokenService.extractUserId(anyString())).thenReturn(USERNAME);
-        purchasedService.PurchaseTicket(EMAIL, "", USERNAME, "none",createCreditCardDetails());
-
+        purchasedService.PurchaseTicket(EMAIL, orderId, USERNAME, "none", createCreditCardDetails());
         Ticket ticketAfterPurchase = ticketRepoSpy.getTicketById(ticketId);
 
         assertNotNull(ticketAfterPurchase);

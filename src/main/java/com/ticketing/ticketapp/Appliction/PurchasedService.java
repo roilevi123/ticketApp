@@ -85,16 +85,23 @@ public class PurchasedService {
     public Response<String> PurchaseTicket(String email, String orderId, String token, String userCoupon, CreditCardDetails paymentDetails) {
         try {
             logger.info("User of token {} is attempting to purchase tickets of the order {}", token, orderId);
+
             ActiveOrder order = repository.findById(orderId);
+
             if (tokenService.validateToken(token)) {
                 String userID = tokenService.extractUserId(token);
                 String username = tokenService.extractUsername(token);
-                if (username != null && userRepository.isUserSuspendedNow(username) ||
+
+                if ((username != null && userRepository.isUserSuspendedNow(username)) ||
                         (userID != null && userRepository.isUserSuspendedNow(userID))) {
                     throw new PurchaseOrderException("User is suspended");
                 }
-                order = repository.getOrder(userID);
+
+                if (order != null && order.getUserId() != null && !order.getUserId().equals(userID)) {
+                    throw new PurchaseOrderException("Unauthorized: This order does not belong to the current user");
+                }
             }
+
             if (order == null || order.getExpirationTime().before(new Date())) {
                 throw new PurchaseOrderException("Order expired or not found");
             }
