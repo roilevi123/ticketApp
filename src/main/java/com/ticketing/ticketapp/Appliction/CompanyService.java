@@ -427,6 +427,7 @@ public class CompanyService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Response<String> replyToBuyer(String token, String companyName, String buyerId, String message) {
         try {
             logger.info("User of token {} is attempting to reply to buyer: {}", token, buyerId);
@@ -535,6 +536,7 @@ public class CompanyService {
                 });
     }
 
+    @Transactional(readOnly = true)
     public Response<String> sendMessageToUser(String token, String companyName, String targetUserId, String message) {
         try {
             logger.info("User of token {} is attempting to send message to user {} from company {}", token, targetUserId, companyName);
