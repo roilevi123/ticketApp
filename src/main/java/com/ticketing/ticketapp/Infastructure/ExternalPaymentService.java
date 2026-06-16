@@ -56,13 +56,16 @@ public class ExternalPaymentService implements IPaymentService {
             if (body == null || body.isBlank()) {
                 throw new ExternalServiceException("Payment service returned empty response");
             }
-            return Integer.parseInt(body.trim());
+            int result = Integer.parseInt(body.trim());
+            if (result == -1) {
+                throw new ExternalServiceException("Payment service returned error: -1");
+            }
+            return result;
 
         } catch (ExternalServiceException e) {
             throw e;
         } catch (Exception e) {
-            e.printStackTrace();
-            return -1;
+            throw new ExternalServiceException("Payment service error: " + e.getMessage(), e);
         }
     }
 
@@ -89,7 +92,11 @@ public class ExternalPaymentService implements IPaymentService {
             if (body == null || body.isBlank()) {
                 throw new ExternalServiceException("Payment refund service returned empty response");
             }
-            return Integer.parseInt(body.trim());
+            int result = Integer.parseInt(body.trim());
+            if (result == -1) {
+                throw new ExternalServiceException("Payment refund service returned error: -1");
+            }
+            return result;
 
         } catch (ExternalServiceException e) {
             throw e;
@@ -97,8 +104,7 @@ public class ExternalPaymentService implements IPaymentService {
             System.err.println("[ExternalPaymentService] Timed Out! (Limit reached)");
             return -1;
         } catch (Exception e) {
-            System.err.println("[ExternalPaymentService] Network error or timeout: " + e.getMessage());
-            return -1;
+            throw new ExternalServiceException("Payment refund service error: " + e.getMessage(), e);
         }
     }
 }

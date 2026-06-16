@@ -52,8 +52,12 @@ public class ExternalTicketService implements IExternalTicketService {
             if (body == null || body.isBlank()) {
                 throw new ExternalServiceException("Ticket service returned empty response for issueTicket");
             }
-            System.out.println("[ExternalTicketService] issueTicket response: " + body);
-            return body.trim();
+            String trimmedBody = body.trim();
+            System.out.println("[ExternalTicketService] issueTicket response: " + trimmedBody);
+            if (trimmedBody.equals("-1")) {
+                throw new ExternalServiceException("Ticket service returned error: -1");
+            }
+            return trimmedBody;
 
         } catch (ExternalServiceException e) {
             throw e;
@@ -61,8 +65,7 @@ public class ExternalTicketService implements IExternalTicketService {
             System.err.println("[ExternalTicketService] issueTicket Timed Out!");
             return "-1";
         } catch (Exception e) {
-            System.err.println("[ExternalTicketService] issueTicket error: " + e.getMessage());
-            return "-1";
+            throw new ExternalServiceException("Ticket service issueTicket error: " + e.getMessage(), e);
         }
     }
 
@@ -93,7 +96,11 @@ public class ExternalTicketService implements IExternalTicketService {
                 throw new ExternalServiceException("Ticket service returned empty response for cancelTicket");
             }
             System.out.println("[ExternalTicketService] cancelTicket response: " + body);
-            return Integer.parseInt(body.trim()) == 1;
+            int result = Integer.parseInt(body.trim());
+            if (result == -1) {
+                throw new ExternalServiceException("Ticket cancel service returned error: -1");
+            }
+            return result == 1;
 
         } catch (ExternalServiceException e) {
             throw e;
@@ -101,8 +108,7 @@ public class ExternalTicketService implements IExternalTicketService {
             System.err.println("[ExternalTicketService] cancelTicket Timed Out!");
             return false;
         } catch (Exception e) {
-            System.err.println("[ExternalTicketService] cancelTicket error: " + e.getMessage());
-            return false;
+            throw new ExternalServiceException("Ticket service cancelTicket error: " + e.getMessage(), e);
         }
     }
 }
