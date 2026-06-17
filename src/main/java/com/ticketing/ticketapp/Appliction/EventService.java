@@ -149,7 +149,7 @@ public class EventService {
             @CacheEvict(value = { "companyEvents", "searchedEvents" }, allEntries = true)
     })
     public Response<String> UpdateEvent(String token, String eventName, String artistName, EventType eventType,
-            double price, Date date, String location, String company, MapArea[][] map, double rating) {
+                                        double price, Date date, String location, String company, MapArea[][] map, double rating) {
         try {
             logger.info("User of token {} is attempting to update the event: {}", token, eventName);
             String userId = tokenService.extractUserId(token);
@@ -168,16 +168,18 @@ public class EventService {
                 throw new RuntimeException("Event not found: " + eventName);
             }
             Date oldDate = event.getDate();
+
             event.setName(eventName);
             event.setArtistName(artistName);
             event.setType(eventType);
             event.setPrice(price);
             event.setDate(date);
             event.setLocation(location);
-            eventRepository.save(event);
             event.setMap(map);
             event.setRating(rating);
+
             eventRepository.save(event);
+
             if (oldDate != null && !oldDate.equals(date)) {
                 purchasedOrderRepository.getPurchasedOrdersForCompany(company).stream()
                         .filter(o -> o.getEvent().equals(eventName))
@@ -191,6 +193,7 @@ public class EventService {
             return Response.error(e.getMessage());
         }
     }
+
 
     @Transactional(readOnly = true)
     @Cacheable(value = "companyInfo", key = "#company")
