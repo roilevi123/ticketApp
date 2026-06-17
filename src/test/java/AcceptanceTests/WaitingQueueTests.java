@@ -9,60 +9,72 @@ import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
-import com.ticketing.ticketapp.Domain.Discount.*;
+import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+
 import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;
 import java.util.concurrent.*;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@ActiveProfiles("test")
+@Transactional
 @DisplayName("Waiting Queue Management Acceptance Tests")
 public class WaitingQueueTests {
 
+    @Autowired
     private UserService userService;
+
+    @Autowired
     private CompanyService companyService;
+
+    @Autowired
     private EventService eventService;
+
+    @Autowired
     private QueueService queueService;
 
+    @Autowired
     private IUserRepository userRepository;
+
+    @Autowired
     private iCompanyRepository companyRepository;
+
+    @Autowired
     private iEventRepository eventRepository;
+
+    @Autowired
     private iQueueRepository queueRepository;
+
+    @Autowired
     private iTreeOfRoleRepository treeOfRoleRepository;
+
+    @Autowired
     private IActiveOrderRepository activeOrderRepository;
+
+    @Autowired
     private iTicketRepository ticketRepository;
+
+    @Autowired
     private iPurchasedOrderRepository purchasedOrderRepository;
+
+    @Autowired
     private TokenService tokenService;
 
     @BeforeEach
     void setUp() {
-        this.userRepository = new UserRepositoryImpl();
-        this.companyRepository = new CompanyRepositoryImpl();
-        this.eventRepository = new EventRepositoryImpl();
-        this.queueRepository = new QueueRepositoryImpl();
-        this.treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
-        this.activeOrderRepository = new OrderRepositoryImpl();
-        this.ticketRepository = new TicketRepositoryImpl();
-        this.purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        this.tokenService = new TokenService();
-
-        IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-
-
-        INotifier notifierMock = mock(INotifier.class);
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, mock(iDiscountPolicyRepository.class));
-        com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository adminRepositoryMock = mock(com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository.class);
-        this.queueService = new QueueService(queueRepository, tokenService, notifierMock, adminRepositoryMock);
-
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
         treeOfRoleRepository.deleteAllRoles();
