@@ -39,8 +39,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @org.springframework.boot.test.context.SpringBootTest
 @org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
 @org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
+@org.springframework.test.context.ActiveProfiles("test")
 //@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
-@org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
 //@DataJpaTest
 @DisplayName("Complete Purchase Order Acceptance Tests")
 public class PurchaseOrderTests {
