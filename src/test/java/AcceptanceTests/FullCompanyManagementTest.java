@@ -16,6 +16,10 @@ import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
 import static org.mockito.Mockito.mock;
 
 import java.util.HashSet;
@@ -23,41 +27,47 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@ActiveProfiles("test")
 @DisplayName("Company Management Acceptance Tests")
 public class FullCompanyManagementTest {
+
+    @Autowired private IUserRepository userRepository;
+    @Autowired private iCompanyRepository companyRepository;
+    @Autowired
+    private iEventRepository eventRepository;
+    @Autowired private iQueueRepository queueRepository;
+    @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
+    @Autowired private IActiveOrderRepository activeOrderRepository;
+    @Autowired private iTicketRepository ticketRepository;
+    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
 
     private CompanyService companyService;
     private UserService userService;
     private TokenService tokenService;
-    private IUserRepository userRepository;
     private AdminService adminService;
 
     @BeforeEach
     void setUp() {
-        IUserRepository userRepository = new UserRepositoryImpl();
-        iCompanyRepository companyRepository = new CompanyRepositoryImpl();
-        iEventRepository eventRepository = new EventRepositoryImpl();
-        iQueueRepository queueRepository = new QueueRepositoryImpl();
-        iTreeOfRoleRepository treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
-        IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
-        iTicketRepository ticketRepository = new TicketRepositoryImpl();
-        iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
         INotifier notifierMock = mock(INotifier.class);
+
+        // שימוש בריפוזיטוריים המוזרקים על ידי Spring לצורך איתחול הסרביסים
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
 
-        this.userRepository=userRepository;
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
             public boolean isAdmin(String userID) {
                 return userID.equals("admin");
             }
         };
-        this.adminService= new AdminService(treeOfRoleRepository,companyRepository,adminRepository,userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
 
+        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
+
+        // ניקוי מסד הנתונים (H2) לפני כל טסט
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
         treeOfRoleRepository.deleteAllRoles();
@@ -592,8 +602,16 @@ public class FullCompanyManagementTest {
     void ChangeManagerPermissionNotManager() {
         reg("1", "1");
         String token = log("1", "1");
-        assertTrue(companyService.ChangeManagerPermissions(token, null, null, null).isError());
+        companyService.CreateCompany("MyCompany", token);
+
+        reg("2", "2");
+
+        OwnerManagerException exception = assertThrows(OwnerManagerException.class, () -> {
+            companyService.ChangeManagerPermissions(token, "MyCompany", "2", new HashSet<>());
+        });
+        assertEquals("Manager not found", exception.getMessage());
     }
+
 
     @Test
     void freezeCompanyInvalidToken() {
