@@ -19,63 +19,58 @@ import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.mockito.Mockito.mock;
-import com.ticketing.ticketapp.Appliction.INotifier;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.*;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
-@DataJpaTest
-@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
-@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@ActiveProfiles("test")
 @DisplayName("Complete Reserve Ticket Acceptance Tests")
 public class ReseveTicketTests {
+
+    @Autowired private IUserRepository userRepository;
+    @Autowired private iCompanyRepository companyRepository;
+    @Autowired private iEventRepository eventRepository;
+    @Autowired private iQueueRepository queueRepository;
+    @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
+    @Autowired private IActiveOrderRepository activeOrderRepository;
+    @Autowired private iTicketRepository ticketRepository;
+    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
+    @Autowired private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
 
     private UserService userService;
     private CompanyService companyService;
     private EventService eventService;
     private OrderService reserveTicketService;
     private TokenService tokenService;
-    private IUserRepository userRepository;
     private AdminService adminService;
-    @Autowired
-    private com.ticketing.ticketapp.Infastructure.JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+
     @BeforeEach
     void setUp() {
-        IUserRepository userRepository = new UserRepositoryImpl();
-        iCompanyRepository companyRepository = new CompanyRepositoryImpl();
-        iEventRepository eventRepository = new EventRepositoryImpl();
-        iQueueRepository queueRepository = new QueueRepositoryImpl();
-        iTreeOfRoleRepository treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
-        IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
-        iTicketRepository ticketRepository = new TicketRepositoryImpl();
-        iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-        iPurchasePolicyRepository purchasePolicyRepository = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
+        iPurchasePolicyRepository purchasePolicyRepository = new PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
         INotifier notifierMock = mock(INotifier.class);
+        LotteryService lotteryServiceMock = mock(LotteryService.class);
+
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, mock(iDiscountPolicyRepository.class));
-        LotteryService lotteryServiceMock = mock(LotteryService.class);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository,
-                userRepository, purchasePolicyRepository, notifierMock,
-                eventRepository, lotteryServiceMock);
+        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, lotteryServiceMock);
 
-        this.userRepository = userRepository;
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
             public boolean isAdmin(String userID) {
                 return userID.equals("admin");
             }
         };
-        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
+        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), activeOrderRepository);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -85,8 +80,8 @@ public class ReseveTicketTests {
         queueRepository.deleteAll();
         ticketRepository.deleteAllTickets();
         userRepository.deleteAll();
-        tokenService.clearAllData();
         purchasePolicyRepository.deleteAll();
+        tokenService.clearAllData();
     }
 
     private String gt() {
@@ -117,16 +112,6 @@ public class ReseveTicketTests {
         return map;
     }
 
-    public boolean isNumeric(String str) {
-        if (str == null) return false;
-        try {
-            Double.parseDouble(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
-    }
-
     @Test @DisplayName("1. Reserve Ticket Success")
     void reserveTicketTestPass1() {
         reg("1", "1");
@@ -138,8 +123,9 @@ public class ReseveTicketTests {
         String token1 = log("2", "2");
         List<int[]> requests = List.of(new int[]{0, 0, 1});
 
-        String orderId = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
-        assertTrue(isNumeric(orderId), "Expected a numeric order ID on success");
+        Response<String> result = reserveTicketService.reserveTickets(token1, "1", "1", requests, null);
+        assertTrue(result.isSuccess(), "Reservation should succeed");
+        assertNotNull(result.getData(), "Expected a valid order ID on success");
     }
 
     @Test @DisplayName("2. Fail - Not Enough Tickets (Double Booking)")
@@ -155,8 +141,8 @@ public class ReseveTicketTests {
 
         reserveTicketService.reserveTickets(token, "1", "1", requests, null);
 
-        String orderId1 = reserveTicketService.reserveTickets(token1, "1", "1", requests, null).getData();
-        assertFalse(isNumeric(orderId1), "Expected error message (non-numeric) for double booking");
+        Response<String> result = reserveTicketService.reserveTickets(token1, "1", "1", requests, null);
+        assertTrue(result.isError(), "Expected error for double booking");
     }
 
     @Test @DisplayName("3. Fail - Out of Bounds")
@@ -167,8 +153,8 @@ public class ReseveTicketTests {
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         List<int[]> requests = List.of(new int[]{5, 5, 1});
-        String result = reserveTicketService.reserveTickets(token, "1", "1", requests, null).getData();
-        assertFalse(isNumeric(result), "Expected error message (non-numeric) for out of bounds coordinates");
+        Response<String> result = reserveTicketService.reserveTickets(token, "1", "1", requests, null);
+        assertTrue(result.isError(), "Expected error for out of bounds coordinates");
     }
 
     @Test @DisplayName("4. Reserve Multiple Spots Success")
@@ -179,8 +165,9 @@ public class ReseveTicketTests {
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         List<int[]> requests = Arrays.asList(new int[]{0, 0, 1}, new int[]{1, 1, 1});
-        String orderId = reserveTicketService.reserveTickets(token, "1", "1", requests, null).getData();
-        assertTrue(isNumeric(orderId), "Expected numeric order ID for multiple valid spots");
+        Response<String> result = reserveTicketService.reserveTickets(token, "1", "1", requests, null);
+        assertTrue(result.isSuccess(), "Reservation should succeed for multiple valid spots");
+        assertNotNull(result.getData());
     }
 
     @Test @DisplayName("5. Fail - Already Reserved Spot")
@@ -194,8 +181,11 @@ public class ReseveTicketTests {
         String t2 = log("2", "2");
         List<int[]> req = List.of(new int[]{0, 1, 1});
 
-        assertTrue(isNumeric(reserveTicketService.reserveTickets(t2, "1", "1", req, null).getData()), "First reservation should succeed");
-        assertFalse(isNumeric(reserveTicketService.reserveTickets(t2, "1", "1", req, null).getData()), "Second reservation of same spot should fail");
+        Response<String> res1 = reserveTicketService.reserveTickets(t2, "1", "1", req, null);
+        assertTrue(res1.isSuccess(), "First reservation should succeed");
+
+        Response<String> res2 = reserveTicketService.reserveTickets(t2, "1", "1", req, null);
+        assertTrue(res2.isError(), "Second reservation of same spot should fail");
     }
 
     @Test @DisplayName("6. Concurrent Reservations - Conflict")
@@ -217,15 +207,17 @@ public class ReseveTicketTests {
                     userService.register(gt(), "u" + id, "p", 10, "u" + id + "@test.com");
                     String ut = userService.login(gt(), "u" + id, "p").getData();
                     latch.await();
-                    String oid = reserveTicketService.reserveTickets(ut, "1", "1", List.of(new int[]{0, 0, 1}), null).getData();
-                    if (isNumeric(oid)) results.add(oid);
+                    Response<String> resp = reserveTicketService.reserveTickets(ut, "1", "1", List.of(new int[]{0, 0, 1}), null);
+                    if (resp.isSuccess() && resp.getData() != null) {
+                        results.add(resp.getData());
+                    }
                 } catch (Exception ignored) {}
             });
         }
         latch.countDown();
         service.shutdown();
         service.awaitTermination(10, TimeUnit.SECONDS);
-        assertEquals(1, results.size(), "Only one thread should successfully receive a numeric order ID");
+        assertEquals(1, results.size(), "Only one thread should successfully reserve the spot");
     }
 
     @Test @DisplayName("7. Sequential Stand/Seat Success")
@@ -238,8 +230,11 @@ public class ReseveTicketTests {
         reg("u1", "p"); String t1 = log("u1", "p");
         reg("u2", "p"); String t2 = log("u2", "p");
 
-        assertTrue(isNumeric(reserveTicketService.reserveTickets(t1, "1", "1", List.of(new int[]{1, 1, 1}), null).getData()), "Stand reservation should be numeric");
-        assertTrue(isNumeric(reserveTicketService.reserveTickets(t2, "1", "1", List.of(new int[]{0, 0, 1}), null).getData()), "Seat reservation should be numeric");
+        Response<String> res1 = reserveTicketService.reserveTickets(t1, "1", "1", List.of(new int[]{1, 1, 1}), null);
+        assertTrue(res1.isSuccess(), "Stand reservation should succeed");
+
+        Response<String> res2 = reserveTicketService.reserveTickets(t2, "1", "1", List.of(new int[]{0, 0, 1}), null);
+        assertTrue(res2.isSuccess(), "Seat reservation should succeed");
     }
 
     @Test @DisplayName("9. Expired Ticket Becomes Available Again")
@@ -253,12 +248,14 @@ public class ReseveTicketTests {
         reg("u2", "p"); String t2 = log("u2", "p");
         List<int[]> req = List.of(new int[]{0, 0, 1});
 
-        assertTrue(isNumeric(reserveTicketService.reserveTickets(t1, "1", "1", req, null).getData()), "T1 should get numeric ID");
-        assertFalse(isNumeric(reserveTicketService.reserveTickets(t2, "1", "1", req, null).getData()), "T2 should get error message");
+        assertTrue(reserveTicketService.reserveTickets(t1, "1", "1", req, null).isSuccess(), "T1 should succeed initially");
+        assertTrue(reserveTicketService.reserveTickets(t2, "1", "1", req, null).isError(), "T2 should fail as it's already reserved");
 
         Thread.sleep(10005);
 
-        assertTrue(isNumeric(reserveTicketService.reserveTickets(t2, "1", "1", req, null).getData()), "T2 should get numeric ID after expiration");
+        Response<String> res3 = reserveTicketService.reserveTickets(t2, "1", "1", req, null);
+        assertTrue(res3.isSuccess(), "T2 should succeed after the first reservation expires");
+        assertNotNull(res3.getData());
     }
 
     @Test @DisplayName("10. Get Active Order Tickets - Single")
@@ -269,8 +266,9 @@ public class ReseveTicketTests {
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         reg("u1", "p"); String t1 = log("u1", "p");
-        String oid = reserveTicketService.reserveTickets(t1, "1", "1", List.of(new int[]{0, 0, 1}), null).getData();
-        assertTrue(isNumeric(oid));
+        Response<String> res = reserveTicketService.reserveTickets(t1, "1", "1", List.of(new int[]{0, 0, 1}), null);
+        assertTrue(res.isSuccess());
+        String oid = res.getData();
 
         Response<List<TicketDTO>> ticketsResp = reserveTicketService.getActiveOrderTickets(t1, oid);
         assertTrue(ticketsResp.isSuccess());
@@ -292,8 +290,9 @@ public class ReseveTicketTests {
         reserveTicketService.reserveTickets(t1, "1", "1", req, null);
         Thread.sleep(10005);
 
-        String oid2 = reserveTicketService.reserveTickets(t2, "1", "1", req, null).getData();
-        assertTrue(isNumeric(oid2));
+        Response<String> res = reserveTicketService.reserveTickets(t2, "1", "1", req, null);
+        assertTrue(res.isSuccess());
+        String oid2 = res.getData();
 
         Response<List<TicketDTO>> ticketsResp = reserveTicketService.getActiveOrderTickets(t2, oid2);
         assertTrue(ticketsResp.isSuccess());
@@ -308,8 +307,9 @@ public class ReseveTicketTests {
         eventService.createEvent(t, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         String guestToken = tokenService.generateGuestToken();
-        String oid = reserveTicketService.reserveTickets(guestToken, "1", "1", List.of(new int[]{0, 0, 1}), null).getData();
-        assertTrue(isNumeric(oid));
+        Response<String> res = reserveTicketService.reserveTickets(guestToken, "1", "1", List.of(new int[]{0, 0, 1}), null);
+        assertTrue(res.isSuccess());
+        String oid = res.getData();
 
         Response<List<TicketDTO>> ticketsResp = reserveTicketService.getActiveOrderTickets(guestToken, oid);
         assertTrue(ticketsResp.isSuccess());
@@ -324,8 +324,8 @@ public class ReseveTicketTests {
         eventService.createEvent(t, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         reg("u1", "p"); String t1 = log("u1", "p");
-        String oid = reserveTicketService.reserveTickets(t1, "1", "1", List.of(new int[]{0, 0, 1}), null).getData();
-        assertTrue(isNumeric(oid));
+        Response<String> res = reserveTicketService.reserveTickets(t1, "1", "1", List.of(new int[]{0, 0, 1}), null);
+        assertTrue(res.isSuccess());
 
         userService.logout(t1);
         String t1New = log("u1", "p");
@@ -342,8 +342,8 @@ public class ReseveTicketTests {
         eventService.createEvent(t, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
 
         String guestToken = tokenService.generateGuestToken();
-        String oid = reserveTicketService.reserveTickets(guestToken, "1", "1", List.of(new int[]{0, 0, 1}), null).getData();
-        assertTrue(isNumeric(oid));
+        Response<String> res = reserveTicketService.reserveTickets(guestToken, "1", "1", List.of(new int[]{0, 0, 1}), null);
+        assertTrue(res.isSuccess());
 
         assertTrue(reserveTicketService.getActiveOrderTickets(guestToken, "invalidOrderId").isError());
     }
@@ -374,7 +374,7 @@ public class ReseveTicketTests {
         Response<String> response = reserveTicketService.reserveTickets(buyerToken, "company1", "event1", requests, null);
 
         assertFalse(response.isSuccess(), "Reservation should not be successful for suspended user");
-        assertFalse(isNumeric(response.getData()), "Expected error message instead of numeric order ID");
+        assertTrue(response.isError());
         assertEquals("User is suspended", response.getMessage());
     }
 }
