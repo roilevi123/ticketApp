@@ -7,7 +7,6 @@ import com.ticketing.ticketapp.Domain.Discount.*;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
-import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
@@ -22,10 +21,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 
-import com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -33,12 +32,21 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@org.springframework.boot.test.context.SpringBootTest
-@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
-@org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@ActiveProfiles("test")
 @DisplayName("Discount & Payment Price Acceptance Tests")
 public class DiscountPaymentTests {
+
+    @Autowired private IUserRepository userRepository;
+    @Autowired private iCompanyRepository companyRepository;
+    @Autowired private iEventRepository eventRepository;
+    @Autowired private iQueueRepository queueRepository;
+    @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
+    @Autowired private IActiveOrderRepository activeOrderRepository;
+    @Autowired private iTicketRepository ticketRepository;
+    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
+    @Autowired private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
+    @Autowired private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
 
     private UserService userService;
     private CompanyService companyService;
@@ -49,28 +57,15 @@ public class DiscountPaymentTests {
     private IPaymentService paymentServiceSpy;
     private DiscountService discountService;
     private iDiscountPolicyRepository discountRepo;
-    private IUserRepository userRepository;
     private AdminService adminService;
+
     @MockBean
     IExternalTicketService externalTicketService;
-    @Autowired
-    private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
-//    @jakarta.persistence.PersistenceContext
-//    private jakarta.persistence.EntityManager entityManager;
-@Autowired
-private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+
     @BeforeEach
     void setUp() {
-        IUserRepository userRepository = new UserRepositoryImpl();
-        iCompanyRepository companyRepository = new CompanyRepositoryImpl();
-        iEventRepository eventRepository = new EventRepositoryImpl();
-        iQueueRepository queueRepository = new QueueRepositoryImpl();
-        iTreeOfRoleRepository treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
-        IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
-        iTicketRepository ticketRepository = new TicketRepositoryImpl();
-        iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         this.discountRepo = new DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
-        iPurchasePolicyRepository purchasePolicyRepository = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
+        iPurchasePolicyRepository purchasePolicyRepository = new PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
         INotifier notifierMock = mock(INotifier.class);
 
         this.tokenService = new TokenService();
@@ -94,22 +89,25 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
 
         this.discountService = new DiscountService(discountRepo, tokenService, purchasedService, userRepository);
 
-        this.userRepository = userRepository;
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
             public boolean isAdmin(String userID) {
                 return userID.equals("admin");
             }
         };
-        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
+        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, notifierMock, activeOrderRepository);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
         userRepository.deleteAll();
+        companyRepository.deleteAllCompany();
+        purchasedOrderRepository.deleteAll();
+        treeOfRoleRepository.deleteAllRoles();
+        ticketRepository.deleteAllTickets();
+        queueRepository.deleteAll();
         jpaDiscountPolicyRepository.deleteAll();
-//        discountRepo.deleteAll();
-        discountRepo.deleteAll();
-
+        jpaPurchasePolicyRepository.deleteAll();
+        tokenService.clearAllData();
     }
 
     private String setupEventAndGetToken(String owner, String company, String event, double price) {
@@ -136,15 +134,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         }
         return map;
     }
+
     private CreditCardDetails createCreditCardDetails() {
-        return      new CreditCardDetails(
-                "0000000000000000", // card_number
-                "12",               // month
-                "2030",             // year
-                "System Check",     // holder
-                "000",              // cvv
-                "00000000"          // id
-        );
+        return new CreditCardDetails("0000000000000000", "12", "2030", "System Check", "000", "00000000");
     }
 
     @Test
@@ -156,9 +148,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b1");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b1@g.com", orderId, "b1", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b1@g.com", orderId, "b1", "none", createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 90.0,"USD");
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 90.0, "USD");
     }
 
     @Test
@@ -170,9 +162,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b2");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C2", "E2", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b2@g.com", orderId, "b2", "PROMO50",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b2@g.com", orderId, "b2", "PROMO50", createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0,"USD");
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0, "USD");
     }
 
     @Test
@@ -185,9 +177,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         List<int[]> seats = List.of(new int[]{0, 0, 1}, new int[]{0, 1, 1});
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C3", "E3", seats, null).getData();
 
-        purchasedService.PurchaseTicket("b3@g.com", orderId, "b3", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b3@g.com", orderId, "b3", "none", createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 160.0,"USD");
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 160.0, "USD");
     }
 
     @Test
@@ -203,9 +195,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b4");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C4", "E4", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b4@g.com", orderId, "b4", "PLUS5",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b4@g.com", orderId, "b4", "PLUS5", createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 85.0,"USD");
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 85.0, "USD");
     }
 
     @Test
@@ -221,9 +213,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b5");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C5", "E5", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b5@g.com", orderId, "b5", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b5@g.com", orderId, "b5", "none", createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 70.0,"USD");
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 70.0, "USD");
     }
 
     @Test
@@ -238,9 +230,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b6");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C6", "E6", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b6@g.com", orderId, "b6", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b6@g.com", orderId, "b6", "none", createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0,"USD");
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0, "USD");
     }
 
     @Test
@@ -252,9 +244,9 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         String buyerToken = registerAndLoginBuyer("b7");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C7", "E7", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b7@g.com", orderId, "b7", "FAKE_CODE",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b7@g.com", orderId, "b7", "FAKE_CODE", createCreditCardDetails());
 
-        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0,"USD");
+        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0, "USD");
     }
 
     @Test
@@ -299,8 +291,8 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
 
         discountService.createSumDiscountPolicy(ownerToken, "E4", DiscountTargetType.EVENT, List.of(d1, d2), "C4");
 
-        assertNull(discountRepo.getPolicy(d1), "Original policy d1 should be deleted after composite creation");
-        assertNull(discountRepo.getPolicy(d2), "Original policy d2 should be deleted after composite creation");
+        assertNull(discountRepo.getPolicy(d1));
+        assertNull(discountRepo.getPolicy(d2));
     }
 
     @Test
@@ -375,6 +367,7 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         assertEquals("EVENT", discounts.get(0).type());
     }
 
+    @Test
     void createQuantityDiscountInValidToken() {
         Response<String> a = discountService.createQuantityDiscount("a", "C1", DiscountTargetType.EVENT, 1, 10, "");
         assertTrue(a.isError());
@@ -405,7 +398,6 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         Response<List<DiscountPolicyDTO>> a = discountService.getDiscountsForEventAndCompany(ownerToken, "1", "1");
         assertTrue(a.isError());
     }
-
 
     @Test
     @DisplayName("Create Simple Discount - Fail (User Is Suspended)")
