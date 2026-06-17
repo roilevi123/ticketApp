@@ -24,28 +24,35 @@ import com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRep
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
+import java.util.Date;
+import java.util.List;
+import java.time.LocalDateTime;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyInt;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import java.util.Date;
-import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.time.LocalDateTime;
-@DataJpaTest
-@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
-@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.test.context.ActiveProfiles("test")
 @DisplayName("Admin Management Acceptance Tests")
 public class AdminJUnitTests {
+
+    @Autowired private IUserRepository userRepository;
+    @Autowired private iCompanyRepository companyRepository;
+    @Autowired private iEventRepository eventRepository;
+    @Autowired private iQueueRepository queueRepository;
+    @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
+    @Autowired private IActiveOrderRepository activeOrderRepository;
+    @Autowired private iTicketRepository ticketRepository;
+    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
+    @Autowired private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
+    @Autowired private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
 
     private UserService userService;
     private CompanyService companyService;
@@ -53,66 +60,42 @@ public class AdminJUnitTests {
     private OrderService reserveTicketService;
     private PurchasedService purchasedService;
     private AdminService adminService;
-    private IUserRepository userRepository;
     private TokenService tokenService;
+
     @MockBean
     IExternalTicketService externalTicketService;
-    @Autowired
-    private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
-    @Autowired
-    private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+
     @BeforeEach
     void setUp() {
-        this.userRepository = new UserRepositoryImpl();
-        iCompanyRepository companyRepository = new CompanyRepositoryImpl();
-        iEventRepository eventRepository = new EventRepositoryImpl();
-        iQueueRepository queueRepository = new QueueRepositoryImpl();
-        iTreeOfRoleRepository treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
-        IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
-        iTicketRepository ticketRepository = new TicketRepositoryImpl();
-        iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
         iDiscountPolicyRepository discountPolicyRepository = new DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
         iPurchasePolicyRepository purchasePolicyRepository = new PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
+
         iAdminRepository adminRepository = new AdminRepositoryImpl(){
             @Override
             public boolean isAdmin(String userID) {
                 return userID.equals("admin");
             }
         };
+
         this.tokenService = new TokenService();
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
         ISupplyService supplyService = new SupplyServiceMock();
         IPaymentService paymentService = new PaymentServiceMock();
         IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
-
         INotifier notifierMock = mock(INotifier.class);
+
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
-
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
-
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService,
-                treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, discountPolicyRepository);
-
+        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, discountPolicyRepository);
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
+        this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentService, barcodeGenerator, tokenService, treeOfRoleRepository, discountPolicyRepository, userRepository, notifierMock, externalTicketService);
 
-        this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository,
-                purchasedOrderRepository, supplyService,
-                paymentService, barcodeGenerator,
-                tokenService, treeOfRoleRepository, discountPolicyRepository, userRepository, notifierMock,
-                externalTicketService);
         when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
 
         this.adminService = new AdminService(
-                treeOfRoleRepository,
-                companyRepository,
-                adminRepository,
-                userRepository,
-                purchasedOrderRepository,
-                ticketRepository,
-                eventRepository,
-                tokenService,
-                notifierMock,
-                activeOrderRepository
+                treeOfRoleRepository, companyRepository, adminRepository, userRepository,
+                purchasedOrderRepository, ticketRepository, eventRepository, tokenService,
+                notifierMock, activeOrderRepository
         );
 
         userRepository.deleteAll();
@@ -128,37 +111,22 @@ public class AdminJUnitTests {
         purchasePolicyRepository.deleteAll();
     }
 
-    private String gt() {
-        return tokenService.generateGuestToken();
-    }
-
-    private void reg(String username, String password) {
-        userService.register(gt(), username, password, 10, username + "@test.com");
-    }
-
-    private String log(String username, String password) {
-        return userService.login(gt(), username, password).getData();
-    }
+    private String gt() { return tokenService.generateGuestToken(); }
+    private void reg(String username, String password) { userService.register(gt(), username, password, 10, username + "@test.com"); }
+    private String log(String username, String password) { return userService.login(gt(), username, password).getData(); }
 
     private MapArea[][] getMapArea() {
         MapArea[][] map = new MapArea[2][2];
         for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                map[i][j] = MapArea.SEAT;
-            }
+            for (int j = 0; j < 2; j++) { map[i][j] = MapArea.SEAT; }
         }
         return map;
     }
+
     private CreditCardDetails createCreditCardDetails() {
-        return      new CreditCardDetails(
-                "0000000000000000", // card_number
-                "12",               // month
-                "2030",             // year
-                "System Check",     // holder
-                "000",              // cvv
-                "00000000"          // id
-        );
+        return new CreditCardDetails("0000000000000000", "12", "2030", "System Check", "000", "00000000");
     }
+
     @Test
     @DisplayName("1. Close Company Success")
     void closeCompanySuccess1() {
@@ -172,7 +140,7 @@ public class AdminJUnitTests {
         assertTrue(response.isSuccess());
         assertTrue(eventService.getCompanyInfo(token, "C1").isError());
         assertTrue(eventService.getCompanyEvents(token, "C1").isError());
-        
+
         OwnerManagerException exception = assertThrows(OwnerManagerException.class, () -> {
             companyService.GetRoleTreeString(token, "C1");
         });
@@ -220,7 +188,7 @@ public class AdminJUnitTests {
         reg("buyer", "p");
         String tB = log("buyer", "p");
         String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer", "none", createCreditCardDetails());
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());
@@ -253,12 +221,12 @@ public class AdminJUnitTests {
         reg("b1", "p");
         String tB1 = log("b1", "p");
         String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1", "none", createCreditCardDetails());
 
         reg("b2", "p");
         String tB2 = log("b2", "p");
         String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1}), null).getData();
-        purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2", "none", createCreditCardDetails());
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());
@@ -306,10 +274,10 @@ public class AdminJUnitTests {
         String tB = log("buyer8", "p");
 
         String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8", "none", createCreditCardDetails());
 
         String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8", "none", createCreditCardDetails());
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());
@@ -354,7 +322,7 @@ public class AdminJUnitTests {
 
         assertTrue(response.isSuccess());
 
-        Suspension suspension =userRepository.getCurrentSuspensionByUserID(targetUserId);
+        Suspension suspension = userRepository.getCurrentSuspensionByUserID(targetUserId);
         assertNotNull(suspension);
         assertNull(suspension.getEndTime());
         assertTrue(suspension.isPermanent());
@@ -392,7 +360,7 @@ public class AdminJUnitTests {
 
         assertTrue(response.isSuccess());
         assertNotNull(response.getData());
-        assertTrue(response.getData().size() == 2);
+        assertEquals(2, response.getData().size());
     }
 
     @Test
