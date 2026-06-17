@@ -54,7 +54,6 @@ public class FullCompanyManagementTest {
 
         INotifier notifierMock = mock(INotifier.class);
 
-        // שימוש בריפוזיטוריים המוזרקים על ידי Spring לצורך איתחול הסרביסים
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
 
@@ -67,7 +66,6 @@ public class FullCompanyManagementTest {
 
         this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
 
-        // ניקוי מסד הנתונים (H2) לפני כל טסט
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
         treeOfRoleRepository.deleteAllRoles();

@@ -51,12 +51,10 @@ public class InformationEventsTests {
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
         INotifier notifierMock = mock(INotifier.class);
 
-        // שימוש ב-Beans המוזרקים על ידי Spring
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, mock(iDiscountPolicyRepository.class));
 
-        // ניקוי ה-DB (H2) לפני כל טסט
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
         treeOfRoleRepository.deleteAllRoles();
