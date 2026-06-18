@@ -7,6 +7,7 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,7 +21,11 @@ public class QueueService {
     private TokenService tokenService;
     private INotifier notifier;
     private iAdminRepository adminRepository;
-    private final int MAX_ACTIVE_USERS = 100;
+
+    // Default max concurrent reservers per event; overridden by app.queue.max-active-users in application.properties.
+    // Field injection (rather than constructor) keeps the existing 4-arg constructor working for tests built outside the Spring container.
+    @Value("${app.queue.max-active-users:100}")
+    private int maxActiveUsers = 100;
     private final long ACCESS_DURATION = 10 * 60 * 1000;
     private final Map<String, Integer> eventFlowRates = new ConcurrentHashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(PurchasePolicyService.class);
@@ -47,7 +52,7 @@ public class QueueService {
                         .anyMatch(e -> e.getUserID().equals(userID) && e.getGrantedAccessTime() != null);
             } catch (Exception ignored) {}
 
-            int maxUsers = eventFlowRates.getOrDefault(eventId, MAX_ACTIVE_USERS);
+            int maxUsers = eventFlowRates.getOrDefault(eventId, maxActiveUsers);
             String status = queueRepository.checkStatusAtomic(eventId, userID, maxUsers, ACCESS_DURATION);
 
             if ("AUTHORIZED".equals(status) && !hadAccess) {
