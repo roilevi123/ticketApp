@@ -10,7 +10,7 @@ import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Ticket.*;
 import org.springframework.stereotype.Repository;
 
-@Repository
+//@Repository
 public class TicketRepositoryImpl implements iTicketRepository {
     
     private ConcurrentHashMap<String, List<Ticket>> tickets = new ConcurrentHashMap<>();

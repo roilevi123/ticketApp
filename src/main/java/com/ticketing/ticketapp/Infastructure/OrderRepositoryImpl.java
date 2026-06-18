@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Repository
+//@Repository
 public class OrderRepositoryImpl  implements IActiveOrderRepository {
     ConcurrentHashMap<String, ActiveOrder> orders = new ConcurrentHashMap<>();
     private  AtomicLong idCounter = new AtomicLong(1);

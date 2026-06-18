@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import com.ticketing.ticketapp.Domain.Event.*;
 import org.springframework.stereotype.Repository;
 
-@Repository
+//@Repository
 public class EventRepositoryImpl implements iEventRepository {
     private Map<String, Event> events=new HashMap<>();
     private AtomicInteger idCounter = new AtomicInteger(1);

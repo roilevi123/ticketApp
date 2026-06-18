@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Repository
+//@Repository
 public class UserRepositoryImpl implements IUserRepository {
     private final Map<String, String> usernameToId = new ConcurrentHashMap<>();
     private final Map<String, User> usersByID = new ConcurrentHashMap<>();

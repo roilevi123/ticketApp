@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-@Repository
+//@Repository
 public class LotteryCodeRepositoryImpl implements ILotteryCodeRepository {
 
     /** Key: lottery code UUID string */
