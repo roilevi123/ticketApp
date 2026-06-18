@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -32,13 +31,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 @SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @Transactional
 @DisplayName("Purchase Policy Acceptance Tests")
-public class PurchasePolicyAcceptanceTests {
+public abstract class PurchasePolicyAcceptanceTestsBase {
 
-    @Autowired private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
     @Autowired private IUserRepository userRepository;
     @Autowired private iCompanyRepository companyRepository;
     @Autowired private iEventRepository eventRepository;
@@ -48,7 +45,9 @@ public class PurchasePolicyAcceptanceTests {
     @Autowired private iTicketRepository ticketRepository;
     @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
     @Autowired private TokenService tokenService;
-    @Autowired private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
+
+    @Autowired protected iPurchasePolicyRepository purchasePolicyRepository;
+    @Autowired protected iDiscountPolicyRepository discountPolicyRepository;
 
     private UserService userService;
     private CompanyService companyService;
@@ -59,9 +58,6 @@ public class PurchasePolicyAcceptanceTests {
 
     @BeforeEach
     void setUp() {
-        iPurchasePolicyRepository purchasePolicyRepository = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
-        iDiscountPolicyRepository discountPolicyRepository = new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
-
         INotifier notifierMock = mock(INotifier.class);
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
@@ -75,6 +71,7 @@ public class PurchasePolicyAcceptanceTests {
             @Override
             public boolean isAdmin(String userID) { return userID.equals("admin"); }
         };
+
         this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), activeOrderRepository);
     }
 

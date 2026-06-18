@@ -36,9 +36,9 @@ import static org.mockito.Mockito.*;
 
 @org.springframework.test.annotation.DirtiesContext(classMode = org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@org.springframework.test.context.ActiveProfiles("test")
+//@org.springframework.test.context.ActiveProfiles("test")
 @DisplayName("Admin Management Acceptance Tests")
-public class DiscountPaymentTests {
+public abstract class DiscountPaymentTestsBase {
 
         @Autowired private IUserRepository userRepository;
         @Autowired private iCompanyRepository companyRepository;
@@ -48,11 +48,13 @@ public class DiscountPaymentTests {
         @Autowired private IActiveOrderRepository activeOrderRepository;
         @Autowired private iTicketRepository ticketRepository;
         @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
-        @Autowired private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
-        @Autowired private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+//        @Autowired private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
+//        @Autowired private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         @Autowired private iAdminRepository adminRepository;
         @Autowired private TokenService tokenService;
+    @Autowired protected iDiscountPolicyRepository discountRepo;
 
+    @Autowired protected iPurchasePolicyRepository purchasePolicyRepository;
         private UserService userService;
         private CompanyService companyService;
         private EventService eventService;
@@ -60,15 +62,12 @@ public class DiscountPaymentTests {
         private PurchasedService purchasedService;
         private DiscountService discountService;
         private AdminService adminService;
-        private iDiscountPolicyRepository discountRepo;
         private IPaymentService paymentServiceSpy;
 
         @MockBean IExternalTicketService externalTicketService;
 
         @BeforeEach
         void setUp() {
-            this.discountRepo = new DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
-            iPurchasePolicyRepository purchasePolicyRepository = new PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
 
             INotifier notifierMock = mock(INotifier.class);
             IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
@@ -90,7 +89,6 @@ public class DiscountPaymentTests {
             eventRepository.deleteAllEvents();
             companyRepository.deleteAllCompany();
             userRepository.deleteAll();
-            jpaDiscountPolicyRepository.deleteAll();
             discountRepo.deleteAll();
             adminRepository.deleteAll();
             adminRepository.addAdmin("admin");

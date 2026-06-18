@@ -205,18 +205,41 @@ public class DataInitializer implements ApplicationRunner {
                 tokens.put(p[1], res.getData());
                 break;
             }
-            case "registerAdmin":{
-                String guestToken = tokenService.generateGuestToken();
+            case "registerAdmin": {
                 require(p, 5);
-                Response<String> res = userService.register(
-                        guestToken,
-                        p[1],
-                        p[2],
-                        Integer.parseInt(p[3]),
-                        p[4]
+
+                String username = p[1];
+                String password = p[2];
+                int age = Integer.parseInt(p[3]);
+                String email = p[4];
+
+                Response<String> registerRes = userService.register(
+                        tokenService.generateGuestToken(),
+                        username,
+                        password,
+                        age,
+                        email
                 );
-                String adminToken = userService.login(guestToken, "admin", "admin123").getData();
-                adminRepository.addAdmin(tokenService.extractUserId(adminToken));
+
+                if (!registerRes.isSuccess() && !isAlreadyExistsMessage(registerRes.getMessage())) {
+                    assertSuccess(registerRes);
+                }
+
+                Response<String> loginRes = userService.login(
+                        tokenService.generateGuestToken(),
+                        username,
+                        password
+                );
+
+                assertSuccess(loginRes);
+
+                String adminToken = loginRes.getData();
+                tokens.put(username, adminToken);
+
+                String adminId = tokenService.extractUserId(adminToken);
+                adminRepository.addAdmin(adminId);
+
+                break;
             }
 
             case "create-company": {
@@ -505,7 +528,14 @@ public class DataInitializer implements ApplicationRunner {
                 .map(id -> ids.getOrDefault(id, id))
                 .collect(Collectors.toList());
     }
+    private boolean isAlreadyExistsMessage(String msg) {
+        if (msg == null) return false;
+        msg = msg.toLowerCase();
 
+        return msg.contains("already exists")
+                || msg.contains("user already exists")
+                || msg.contains("username already exists");
+    }
     private void assertSuccess(Response<?> res) {
         if (res == null || !res.isSuccess()) {
             throw new RuntimeException(

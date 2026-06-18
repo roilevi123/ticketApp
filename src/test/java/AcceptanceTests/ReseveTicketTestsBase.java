@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -32,11 +31,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 @SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @Transactional
 @DisplayName("Complete Reserve Ticket Acceptance Tests")
-public class ReseveTicketTests {
+public abstract class ReseveTicketTestsBase {
 
     @Autowired private IUserRepository userRepository;
     @Autowired private iCompanyRepository companyRepository;
@@ -48,7 +46,8 @@ public class ReseveTicketTests {
     @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
     @Autowired private iAdminRepository adminRepository;
     @Autowired private TokenService tokenService;
-    @Autowired private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+
+    @Autowired protected iPurchasePolicyRepository purchasePolicyRepository;
 
     private UserService userService;
     private CompanyService companyService;
@@ -60,7 +59,6 @@ public class ReseveTicketTests {
     void setUp() {
         INotifier notifierMock = mock(INotifier.class);
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-        iPurchasePolicyRepository purchasePolicyRepository = new PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
 
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
@@ -180,10 +178,8 @@ public class ReseveTicketTests {
         reg("u1", "p"); String t1 = log("u1", "p");
         reg("u2", "p"); String t2 = log("u2", "p");
 
-        assertTrue(isValidOrderId(reserveTicketService.reserveTickets(t1, "1", "1", List.of(new int[]{1, 1, 1}), null).getData()),
-                "Stand reservation should return a valid Order ID");
-        assertTrue(isValidOrderId(reserveTicketService.reserveTickets(t2, "1", "1", List.of(new int[]{0, 0, 1}), null).getData()),
-                "Seat reservation should return a valid Order ID");
+        assertTrue(isValidOrderId(reserveTicketService.reserveTickets(t1, "1", "1", List.of(new int[]{1, 1, 1}), null).getData()));
+        assertTrue(isValidOrderId(reserveTicketService.reserveTickets(t2, "1", "1", List.of(new int[]{0, 0, 1}), null).getData()));
     }
 
     @Test @DisplayName("9. Expired Ticket Becomes Available Again")
@@ -211,7 +207,6 @@ public class ReseveTicketTests {
         Response<List<TicketDTO>> ticketsResp = reserveTicketService.getActiveOrderTickets(t1, oid);
         assertTrue(ticketsResp.isSuccess());
     }
-
 
     @Test @DisplayName("13. Get Active Order - Success After Expiration Replacement")
     void getActiveOrderTicketsExpired13() throws InterruptedException {

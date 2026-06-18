@@ -72,7 +72,13 @@ public class EventService {
     }
 
     @Transactional
-    @CacheEvict(value = { "companyEvents", "searchedEvents" }, allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "events", key = "#company + '-' + #eventName"),
+            @CacheEvict(value = "eventMaps", key = "#company + '-' + #eventName"),
+            @CacheEvict(value = "companyEvents", allEntries = true),
+            @CacheEvict(value = "searchedEvents", allEntries = true)
+    })
+
     public Response<String> createEvent(String token, String eventName, String artistName, EventType eventType,
             double price, Date date, String location, String company, MapArea[][] map) {
         try {
@@ -274,9 +280,11 @@ public class EventService {
             return Response.error(e.getMessage());
         }
     }
-
-    @Transactional(readOnly = true)
-    @Cacheable(value = "eventMaps", key = "#company + '-' + #eventName")
+    @Cacheable(
+            value = "eventMaps",
+            key = "#company + '-' + #eventName",
+            unless = "!#result.isSuccess()"
+    )
     public Response<MapArea[][]> getMapArea(String token, String company, String eventName) {
         try {
             logger.info("User of token {} is attempting to get area map for event {} of the company {} ", token,
@@ -296,8 +304,11 @@ public class EventService {
         }
     }
 
-    @Transactional(readOnly = true)
-    @Cacheable(value = "events", key = "#company + '-' + #eventName")
+    @Cacheable(
+            value = "events",
+            key = "#company + '-' + #eventName",
+            unless = "!#result.isSuccess()"
+    )
     public Response<EventDTO> getEvent(String token, String company, String eventName) {
         try {
             logger.info("User of token {} is attempting to get event {} of the company {} ", token, eventName, company);
