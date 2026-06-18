@@ -13,8 +13,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Repository
-@Primary
+@ConditionalOnProperty(name = "repository.type", havingValue = "DB")
 public class TicketRepositoryAdapter implements iTicketRepository {
 
     private final JpaTicketRepository jpaTicketRepository;

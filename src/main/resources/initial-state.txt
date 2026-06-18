@@ -1,0 +1,28 @@
+register rina 1234 25 rina@test.com
+register moshe 1234 30 moshe@test.com
+register dan 1234 28 dan@test.com
+
+login rina 1234
+login moshe 1234
+login dan 1234
+
+create-company rina BGU_Events
+
+appoint-manager rina moshe BGU_Events
+approve-manager moshe BGU_Events
+
+appoint-owner rina dan BGU_Events
+approve-owner dan BGU_Events
+
+create-event rina BGU_Events Rock_Night The_Stones LIVE_PERFORMANCE 89.99 BGU_Amphitheater 14 4 4
+create-event rina BGU_Events AI_Conference Dr_Stern CONFERENCE 49.99 Engineering_Building 30 4 4
+
+configure-lottery rina BGU_Events Rock_Night 10 50
+
+discount-simple rina Rock_Night EVENT 10 BGU_Events d1
+discount-quantity rina Rock_Night EVENT 20 3 BGU_Events d2
+discount-max rina Rock_Night EVENT BGU_Events d3 d1,d2
+
+policy-age rina Rock_Night EVENT 18 p1
+policy-quantity rina Rock_Night EVENT 1 4 p2
+policy-and rina Rock_Night EVENT p3 p1,p2

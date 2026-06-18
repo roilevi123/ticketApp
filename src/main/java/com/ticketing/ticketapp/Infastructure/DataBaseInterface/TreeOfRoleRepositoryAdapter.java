@@ -13,8 +13,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.*;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Repository
-@Primary
+@ConditionalOnProperty(name = "repository.type", havingValue = "DB")
 public class TreeOfRoleRepositoryAdapter implements iTreeOfRoleRepository {
 
     private final JpaOwnerRepository ownerRepo;

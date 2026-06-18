@@ -8,7 +8,11 @@ import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
+@Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")
 public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
     private Map<String, Owner> owners=new ConcurrentHashMap<String,Owner>();
     private Map<String, Manager> managers=new ConcurrentHashMap<String,Manager>();

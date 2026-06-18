@@ -315,4 +315,8 @@ public class UserService implements IAuth {
             return Response.error(e.getMessage());
         }
     }
+    public void deleteAll(){
+        userRepository.deleteAll();
+    }
+
 }

@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+@Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")
 public class InMemoryPurchasePolicyRepository implements iPurchasePolicyRepository {
 
     private final Map<String, PurchasePolicy> allPolicies = new ConcurrentHashMap<>();

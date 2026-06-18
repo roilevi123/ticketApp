@@ -15,8 +15,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Repository
-@Primary
+@ConditionalOnProperty(name = "repository.type", havingValue = "DB")
 public class EventRepositoryAdapter implements iEventRepository {
 
     private final JpaEventRepository jpaEventRepository;

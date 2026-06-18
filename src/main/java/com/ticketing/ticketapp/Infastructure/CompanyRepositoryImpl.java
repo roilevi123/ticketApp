@@ -7,7 +7,9 @@ import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
-//@Repository
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+@Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")
 public class CompanyRepositoryImpl implements iCompanyRepository {
     private Map<String, Company> companies = new ConcurrentHashMap<String, Company>();
 

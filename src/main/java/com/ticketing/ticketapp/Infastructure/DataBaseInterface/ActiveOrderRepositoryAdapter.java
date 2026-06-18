@@ -3,15 +3,16 @@ package com.ticketing.ticketapp.Infastructure.DataBaseInterface;
 import com.ticketing.ticketapp.Domain.Order.ActiveOrder;
 import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Infastructure.JpaOrderRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 
 import java.util.*;
-
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Repository
-@Primary
+@ConditionalOnProperty(name = "repository.type", havingValue = "DB")
 public class ActiveOrderRepositoryAdapter implements IActiveOrderRepository {
 
     private final JpaOrderRepository jpaOrderRepository;

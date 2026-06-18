@@ -9,7 +9,9 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "DB")
 public class PurchasePolicyRepositoryAdapter implements iPurchasePolicyRepository {
 
     private final JpaPurchasePolicyRepository jpaRepository;

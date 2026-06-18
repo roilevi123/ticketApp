@@ -10,8 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Date;
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Repository
-@Primary
+@ConditionalOnProperty(name = "repository.type", havingValue = "DB")
 public class LotteryCodeRepositoryAdapter implements ILotteryCodeRepository {
 
     private final JpaLotteryCodeRepository jpaLotteryCodeRepository;

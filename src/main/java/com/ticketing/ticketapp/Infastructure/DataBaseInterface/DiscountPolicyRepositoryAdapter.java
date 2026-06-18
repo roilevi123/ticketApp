@@ -10,8 +10,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Repository
-@Primary
+@ConditionalOnProperty(name = "repository.type", havingValue = "DB")
 public class DiscountPolicyRepositoryAdapter implements iDiscountPolicyRepository {
 
     private final JpaDiscountPolicyRepository jpaRepository;

@@ -8,8 +8,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Repository
-@Primary
+@ConditionalOnProperty(name = "repository.type", havingValue = "DB")
 public class PurchasedOrderRepositoryAdapter implements iPurchasedOrderRepository {
 
     private final JpaPurchasedOrderRepository jpaRepository;
