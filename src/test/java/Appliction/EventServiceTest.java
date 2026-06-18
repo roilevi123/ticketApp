@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DataAccessResourceFailureException;
 
 
 import java.util.*;
@@ -560,5 +561,259 @@ public class EventServiceTest {
         Event notUpdated = eventRepository.getEvent(EVENT_NAME, COMPANY);
         assertEquals("Old Artist", notUpdated.getArtistName());
         assertEquals(100.0, notUpdated.getPrice());
+    }
+    private EventService createDbFailureEventService(
+            iCompanyRepository companyRepo,
+            iEventRepository eventRepo,
+            iPurchasedOrderRepository purchasedRepo,
+            iTicketRepository ticketRepo
+    ) {
+        return new EventService(
+                companyRepo,
+                eventRepo,
+                tokenService,
+                treeOfRoleRepository,
+                ticketRepo,
+                queueRepository,
+                purchasedRepo,
+                userRepository,
+                notifier,
+                mock(iDiscountPolicyRepository.class)
+        );
+    }
+
+    @Test
+    void createEvent_DatabaseFailure_ReturnsError() {
+        iEventRepository failingEventRepo = mock(iEventRepository.class);
+
+        EventService dbFailService = createDbFailureEventService(
+                companyRepository,
+                failingEventRepo,
+                purchasedOrderRepository,
+                ticketRepository
+        );
+
+        when(tokenService.validateToken("token")).thenReturn(true);
+        when(tokenService.extractUserId("token")).thenReturn("user1");
+        when(treeOfRoleRepository.exitsOwner("user1", "C1")).thenReturn(true);
+        when(treeOfRoleRepository.ManagerPermitedToCreateUpdateDelete("user1", "C1")).thenReturn(false);
+        when(userRepository.isUserSuspendedNow("user1")).thenReturn(false);
+
+        doThrow(new DataAccessResourceFailureException("DB down"))
+                .when(failingEventRepo)
+                .store(
+                        eq("E1"),
+                        eq("Artist"),
+                        eq(EventType.PLAY),
+                        eq(100.0),
+                        any(Date.class),
+                        eq("Loc"),
+                        eq("C1"),
+                        any(MapArea[][].class)
+                );
+
+        Response<String> response = dbFailService.createEvent(
+                "token",
+                "E1",
+                "Artist",
+                EventType.PLAY,
+                100.0,
+                new Date(),
+                "Loc",
+                "C1",
+                MAP
+        );
+
+        assertTrue(response.isError());
+        assertEquals("Database unavailable", response.getMessage());
+    }
+
+    @Test
+    void deleteEvent_DatabaseFailure_ReturnsError() {
+        iPurchasedOrderRepository failingPurchasedRepo = mock(iPurchasedOrderRepository.class);
+
+        EventService dbFailService = createDbFailureEventService(
+                companyRepository,
+                eventRepository,
+                failingPurchasedRepo,
+                ticketRepository
+        );
+
+        doThrow(new DataAccessResourceFailureException("DB down"))
+                .when(failingPurchasedRepo)
+                .getPurchasedOrdersForCompany("C1");
+
+        Response<String> response = dbFailService.deleteEvent("E1", "C1", "token");
+
+        assertTrue(response.isError());
+        assertEquals("Database unavailable", response.getMessage());
+    }
+
+    @Test
+    void updateEvent_DatabaseFailure_ReturnsError() {
+        iPurchasedOrderRepository failingPurchasedRepo = mock(iPurchasedOrderRepository.class);
+
+        EventService dbFailService = createDbFailureEventService(
+                companyRepository,
+                eventRepository,
+                failingPurchasedRepo,
+                ticketRepository
+        );
+
+        doThrow(new DataAccessResourceFailureException("DB down"))
+                .when(failingPurchasedRepo)
+                .getPurchasedOrdersForCompany("C1");
+
+        Response<String> response = dbFailService.UpdateEvent(
+                "token",
+                "E1",
+                "Artist",
+                EventType.PLAY,
+                100.0,
+                new Date(),
+                "Loc",
+                "C1",
+                MAP,
+                0
+        );
+
+        assertTrue(response.isError());
+        assertEquals("Database unavailable", response.getMessage());
+    }
+
+    @Test
+    void getCompanyInfo_DatabaseFailure_ReturnsError() {
+        iCompanyRepository failingCompanyRepo = mock(iCompanyRepository.class);
+
+        EventService dbFailService = createDbFailureEventService(
+                failingCompanyRepo,
+                eventRepository,
+                purchasedOrderRepository,
+                ticketRepository
+        );
+
+        when(tokenService.validateToken("token")).thenReturn(true);
+
+        doThrow(new DataAccessResourceFailureException("DB down"))
+                .when(failingCompanyRepo)
+                .isCompanyActive("C1");
+
+        Response<String> response = dbFailService.getCompanyInfo("token", "C1");
+
+        assertTrue(response.isError());
+        assertEquals("Database unavailable", response.getMessage());
+    }
+
+    @Test
+    void getCompanyEvents_DatabaseFailure_ReturnsError() {
+        iCompanyRepository failingCompanyRepo = mock(iCompanyRepository.class);
+
+        EventService dbFailService = createDbFailureEventService(
+                failingCompanyRepo,
+                eventRepository,
+                purchasedOrderRepository,
+                ticketRepository
+        );
+
+        when(tokenService.validateToken("token")).thenReturn(true);
+
+        doThrow(new DataAccessResourceFailureException("DB down"))
+                .when(failingCompanyRepo)
+                .isCompanyActive("C1");
+
+        Response<List<EventDTO>> response = dbFailService.getCompanyEvents("token", "C1");
+
+        assertTrue(response.isError());
+        assertEquals("Database unavailable", response.getMessage());
+    }
+
+    @Test
+    void getEvent_DatabaseFailure_ReturnsError() {
+        iEventRepository failingEventRepo = mock(iEventRepository.class);
+
+        EventService dbFailService = createDbFailureEventService(
+                companyRepository,
+                failingEventRepo,
+                purchasedOrderRepository,
+                ticketRepository
+        );
+
+        when(tokenService.validateToken("token")).thenReturn(true);
+
+        doThrow(new DataAccessResourceFailureException("DB down"))
+                .when(failingEventRepo)
+                .getEvent("E1", "C1");
+
+        Response<EventDTO> response = dbFailService.getEvent("token", "C1", "E1");
+
+        assertTrue(response.isError());
+        assertEquals("Database unavailable", response.getMessage());
+    }
+
+    @Test
+    void searchEvents_DatabaseFailure_ReturnsError() {
+        iEventRepository failingEventRepo = mock(iEventRepository.class);
+
+        EventService dbFailService = createDbFailureEventService(
+                companyRepository,
+                failingEventRepo,
+                purchasedOrderRepository,
+                ticketRepository
+        );
+
+        when(tokenService.validateToken("token")).thenReturn(true);
+
+        doThrow(new DataAccessResourceFailureException("DB down"))
+                .when(failingEventRepo)
+                .searchEvents(
+                        eq("query"),
+                        eq("C1"),
+                        eq(EventType.PLAY),
+                        eq(0.0),
+                        eq(200.0),
+                        any(Date.class),
+                        any(Date.class),
+                        eq("Loc"),
+                        eq(0.0)
+                );
+
+        Response<List<EventDTO>> response = dbFailService.searchEvents(
+                "token",
+                "query",
+                "C1",
+                EventType.PLAY,
+                0.0,
+                200.0,
+                new Date(),
+                new Date(),
+                "Loc",
+                0.0
+        );
+
+        assertTrue(response.isError());
+        assertEquals("Database unavailable", response.getMessage());
+    }
+
+    @Test
+    void getMapArea_DatabaseFailure_ReturnsError() {
+        iEventRepository failingEventRepo = mock(iEventRepository.class);
+
+        EventService dbFailService = createDbFailureEventService(
+                companyRepository,
+                failingEventRepo,
+                purchasedOrderRepository,
+                ticketRepository
+        );
+
+        when(tokenService.validateToken("token")).thenReturn(true);
+
+        doThrow(new DataAccessResourceFailureException("DB down"))
+                .when(failingEventRepo)
+                .getMapArea("C1", "E1");
+
+        Response<MapArea[][]> response = dbFailService.getMapArea("token", "C1", "E1");
+
+        assertTrue(response.isError());
+        assertEquals("DB down", response.getMessage());
     }
 }

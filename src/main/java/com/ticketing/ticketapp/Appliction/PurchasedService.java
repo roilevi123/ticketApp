@@ -440,6 +440,7 @@ public class PurchasedService {
         }
     }
 
+
     private void populateSubTreeIds(String currentUserId, List<Owner> allOwners, List<Manager> allManagers, Set<String> subTreeUserIds) {
         if (currentUserId == null) return;
 
@@ -465,4 +466,5 @@ public class PurchasedService {
             }
         }
     }
+
 }

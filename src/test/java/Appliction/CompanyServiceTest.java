@@ -40,7 +40,11 @@ import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.TokenService;
+import static org.mockito.Mockito.doThrow;
 
+import org.springframework.dao.DataAccessResourceFailureException;
+
+import com.ticketing.ticketapp.Domain.Event.iEventRepository;
 class CompanyServiceTest {
 
     @Mock
@@ -56,7 +60,8 @@ class CompanyServiceTest {
 
     @InjectMocks
     private CompanyService companyService;
-
+    @Mock
+    private iEventRepository eventRepository;
     private final String TOKEN = "test_token";
     private final String USERNAME = "test_user";
     private final String COMPANY = "test_company";
@@ -977,5 +982,335 @@ class CompanyServiceTest {
         verify(treeOfRoleRepository, never()).getOwner(anyString(), anyString());
         verify(companyRepository, never()).deleteCompany(anyString());
         verify(treeOfRoleRepository, never()).deleteCompanyMangersAndOwners(anyString());
+    }
+    @Test
+    void fireMember_ManagerSuccess() {
+        String memberUsername = "manager_user";
+        String memberId = "manager_id";
+
+        User targetUser = mock(User.class);
+        when(targetUser.getID()).thenReturn(memberId);
+
+        Manager manager = new Manager(memberId, COMPANY, Set.of(Permission.MANAGE_INVENTORY), USERNAME);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+        when(userRepository.getUserByUsername(memberUsername)).thenReturn(targetUser);
+        when(treeOfRoleRepository.getManager(memberId, COMPANY)).thenReturn(manager);
+
+        Response<String> res = companyService.FireMember(TOKEN, COMPANY, memberUsername);
+
+        assertTrue(res.isSuccess());
+        assertEquals("success", res.getData());
+
+        verify(treeOfRoleRepository).deleteManager(memberId, COMPANY);
+        verify(notifier).notifyUser(eq(memberId), eq("Role Removed"), anyString());
+    }
+
+    @Test
+    void fireMember_ManagerFailure_NotAppointer() {
+        String memberUsername = "manager_user";
+        String memberId = "manager_id";
+
+        User targetUser = mock(User.class);
+        when(targetUser.getID()).thenReturn(memberId);
+
+        Manager manager = new Manager(memberId, COMPANY, Set.of(Permission.MANAGE_INVENTORY), "someone_else");
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+        when(userRepository.getUserByUsername(memberUsername)).thenReturn(targetUser);
+        when(treeOfRoleRepository.getManager(memberId, COMPANY)).thenReturn(manager);
+
+        OwnerManagerException ex = assertThrows(
+                OwnerManagerException.class,
+                () -> companyService.FireMember(TOKEN, COMPANY, memberUsername)
+        );
+
+        assertEquals("You are not allowed to fire this manager", ex.getMessage());
+        verify(treeOfRoleRepository, never()).deleteManager(anyString(), anyString());
+    }
+
+    @Test
+    void fireMember_OwnerSuccess_WithCascadeDelete() {
+        String ownerUsername = "owner_to_fire";
+        String ownerId = "owner_id";
+
+        String childOwnerId = "child_owner";
+        String childManagerId = "child_manager";
+
+        User targetUser = mock(User.class);
+        when(targetUser.getID()).thenReturn(ownerId);
+
+        Owner ownerToFire = new Owner(ownerId, COMPANY, USERNAME);
+        Owner childOwner = new Owner(childOwnerId, COMPANY, ownerId);
+        Manager childManager = new Manager(childManagerId, COMPANY, Set.of(), ownerId);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+        when(userRepository.getUserByUsername(ownerUsername)).thenReturn(targetUser);
+        when(treeOfRoleRepository.getManager(ownerId, COMPANY)).thenReturn(null);
+        when(treeOfRoleRepository.getOwner(ownerId, COMPANY)).thenReturn(ownerToFire);
+
+        when(treeOfRoleRepository.getAllOwnersByCompany(COMPANY))
+                .thenReturn(List.of(ownerToFire, childOwner))
+                .thenReturn(List.of(ownerToFire, childOwner));
+
+        when(treeOfRoleRepository.getAllManagersByCompany(COMPANY))
+                .thenReturn(List.of(childManager))
+                .thenReturn(List.of(childManager));
+
+        Response<String> res = companyService.FireMember(TOKEN, COMPANY, ownerUsername);
+
+        assertTrue(res.isSuccess());
+        assertEquals("success", res.getData());
+
+        verify(treeOfRoleRepository).deleteOwner(childOwnerId, COMPANY);
+        verify(treeOfRoleRepository).deleteManager(childManagerId, COMPANY);
+        verify(treeOfRoleRepository).deleteOwner(ownerId, COMPANY);
+
+        verify(notifier).notifyUser(eq(ownerId), eq("Role Removed"), anyString());
+        verify(notifier).notifyUser(eq(childOwnerId), eq("Role Removed"), anyString());
+        verify(notifier).notifyUser(eq(childManagerId), eq("Role Removed"), anyString());
+    }
+
+    @Test
+    void fireMember_OwnerFailure_FounderCannotBeFired() {
+        String ownerUsername = "founder_user";
+        String ownerId = "founder_id";
+
+        User targetUser = mock(User.class);
+        when(targetUser.getID()).thenReturn(ownerId);
+
+        Owner founder = new Owner(ownerId, COMPANY, iTreeOfRoleRepository.FOUNDER_APPOINTER);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+        when(userRepository.getUserByUsername(ownerUsername)).thenReturn(targetUser);
+        when(treeOfRoleRepository.getManager(ownerId, COMPANY)).thenReturn(null);
+        when(treeOfRoleRepository.getOwner(ownerId, COMPANY)).thenReturn(founder);
+
+        OwnerManagerException ex = assertThrows(
+                OwnerManagerException.class,
+                () -> companyService.FireMember(TOKEN, COMPANY, ownerUsername)
+        );
+
+        assertEquals("Founders cannot be fired", ex.getMessage());
+        verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
+    }
+
+    @Test
+    void fireMember_OwnerFailure_NotAppointer() {
+        String ownerUsername = "owner_user";
+        String ownerId = "owner_id";
+
+        User targetUser = mock(User.class);
+        when(targetUser.getID()).thenReturn(ownerId);
+
+        Owner owner = new Owner(ownerId, COMPANY, "someone_else");
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+        when(userRepository.getUserByUsername(ownerUsername)).thenReturn(targetUser);
+        when(treeOfRoleRepository.getManager(ownerId, COMPANY)).thenReturn(null);
+        when(treeOfRoleRepository.getOwner(ownerId, COMPANY)).thenReturn(owner);
+
+        OwnerManagerException ex = assertThrows(
+                OwnerManagerException.class,
+                () -> companyService.FireMember(TOKEN, COMPANY, ownerUsername)
+        );
+
+        assertEquals("You are not allowed to fire this owner", ex.getMessage());
+        verify(treeOfRoleRepository, never()).deleteOwner(anyString(), anyString());
+    }
+
+    @Test
+    void fireMember_Failure_UserHasNoRole() {
+        String memberUsername = "regular_user";
+        String memberId = "regular_id";
+
+        User targetUser = mock(User.class);
+        when(targetUser.getID()).thenReturn(memberId);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+        when(userRepository.getUserByUsername(memberUsername)).thenReturn(targetUser);
+        when(treeOfRoleRepository.getManager(memberId, COMPANY)).thenReturn(null);
+        when(treeOfRoleRepository.getOwner(memberId, COMPANY)).thenReturn(null);
+
+        OwnerManagerException ex = assertThrows(
+                OwnerManagerException.class,
+                () -> companyService.FireMember(TOKEN, COMPANY, memberUsername)
+        );
+
+        assertEquals("User has no role in this company", ex.getMessage());
+    }
+
+    @Test
+    void fireMember_Failure_UserNotFound() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+        when(userRepository.getUserByUsername("missing")).thenReturn(null);
+
+        OwnerManagerException ex = assertThrows(
+                OwnerManagerException.class,
+                () -> companyService.FireMember(TOKEN, COMPANY, "missing")
+        );
+
+        assertEquals("User not found", ex.getMessage());
+    }
+
+
+
+    @Test
+    void closeCompany_Failure_NotFounder() {
+        Owner nonFounder = new Owner(USERNAME, COMPANY, "someone_else");
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+        when(treeOfRoleRepository.getOwner(USERNAME, COMPANY)).thenReturn(nonFounder);
+
+        OwnerManagerException ex = assertThrows(
+                OwnerManagerException.class,
+                () -> companyService.closeCompany(COMPANY, TOKEN)
+        );
+
+        assertEquals("Only the founder can close the company", ex.getMessage());
+
+        verify(companyRepository, never()).deleteCompany(anyString());
+        verify(eventRepository, never()).deleteCompanyEvent(anyString());
+        verify(treeOfRoleRepository, never()).deleteCompanyMangersAndOwners(anyString());
+    }
+
+    @Test
+    void closeCompany_Failure_UserNotOwner() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+        when(treeOfRoleRepository.getOwner(USERNAME, COMPANY)).thenReturn(null);
+
+        OwnerManagerException ex = assertThrows(
+                OwnerManagerException.class,
+                () -> companyService.closeCompany(COMPANY, TOKEN)
+        );
+
+        assertEquals("Only the founder can close the company", ex.getMessage());
+    }
+
+    @Test
+    void notifyMember_DoesNotFail_WhenNotifierThrows() {
+        String managerName = "manager_user";
+        String managerId = "manager_id";
+
+        User targetUser = mock(User.class);
+        when(targetUser.getID()).thenReturn(managerId);
+
+        Manager manager = new Manager(managerId, COMPANY, Set.of(), USERNAME);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+        when(userRepository.getUserByUsername(managerName)).thenReturn(targetUser);
+        when(treeOfRoleRepository.getManager(managerId, COMPANY)).thenReturn(manager);
+
+        doThrow(new RuntimeException("notification failed"))
+                .when(notifier)
+                .notifyUser(anyString(), anyString(), anyString());
+
+        Response<String> res = companyService.FireMember(TOKEN, COMPANY, managerName);
+
+        assertTrue(res.isSuccess());
+        verify(treeOfRoleRepository).deleteManager(managerId, COMPANY);
+    }
+
+    @Test
+    void deleteAll_CallsRepositories() {
+        companyService.deleteAll();
+
+        verify(companyRepository).deleteAllCompany();
+        verify(treeOfRoleRepository).deleteAllRoles();
+    }
+
+    @Test
+    void getActiveCompanies_GuestToken_Success() {
+        when(companyRepository.getActiveCompanies())
+                .thenReturn(List.of(new Company(COMPANY, USERNAME)));
+
+        Response<List<com.ticketing.ticketapp.Domain.Company.CompanyDTO>> res =
+                companyService.getActiveCompanies("guest-temporary-token");
+
+        assertTrue(res.isSuccess());
+        assertEquals(1, res.getData().size());
+
+        verify(tokenService, never()).validateToken(anyString());
+    }
+
+    @Test
+    void createCompany_DatabaseFailure_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+
+        doThrow(new org.springframework.dao.DataAccessResourceFailureException("DB down"))
+                .when(companyRepository)
+                .store(COMPANY, USERNAME);
+
+        Response<String> res = companyService.CreateCompany(COMPANY, TOKEN);
+
+        assertTrue(res.isError());
+        assertEquals("Database unavailable", res.getMessage());
+    }
+
+    @Test
+    void getActiveCompanies_DatabaseFailure_ReturnsError() {
+        doThrow(new org.springframework.dao.DataAccessResourceFailureException("DB down"))
+                .when(companyRepository)
+                .getActiveCompanies();
+
+        Response<List<com.ticketing.ticketapp.Domain.Company.CompanyDTO>> res =
+                companyService.getActiveCompanies(null);
+
+        assertTrue(res.isError());
+        assertEquals("Database unavailable", res.getMessage());
+    }
+
+    @Test
+    void closeCompany_DatabaseFailure_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+
+        doThrow(new org.springframework.dao.DataAccessResourceFailureException("DB down"))
+                .when(treeOfRoleRepository)
+                .getOwner(USERNAME, COMPANY);
+
+        Response<String> res = companyService.closeCompany(COMPANY, TOKEN);
+
+        assertTrue(res.isError());
+        assertEquals("Database unavailable", res.getMessage());
+    }
+
+    @Test
+    void fireMember_DatabaseFailure_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(userRepository.isUserSuspendedNow(USERNAME)).thenReturn(false);
+
+        doThrow(new org.springframework.dao.DataAccessResourceFailureException("DB down"))
+                .when(userRepository)
+                .getUserByUsername("member");
+
+        Response<String> res = companyService.FireMember(TOKEN, COMPANY, "member");
+
+        assertTrue(res.isError());
+        assertEquals("Database unavailable", res.getMessage());
     }
 }

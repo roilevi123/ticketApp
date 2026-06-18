@@ -48,7 +48,7 @@ class PurchasedServiceTest {
     private final String USERNAME = "user1";
     private final String COMPANY = "companyX";
     private final String EVENT = "eventY";
-
+    String TOKEN = "token";
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -604,5 +604,71 @@ class PurchasedServiceTest {
                 .supplyToEmail(anyString(), anyString());
 
         assertNotNull(orderRepoSpy.findById(orderId));
+    }
+
+
+    @Test
+    void cancelOrder_InvalidToken_ReturnsError() {
+        when(tokenService.validateToken("bad_token")).thenReturn(false);
+
+        Response<String> result = purchasedService.cancelOrder("order1", "bad_token");
+
+        assertTrue(result.isError());
+        assertEquals("Invalid token", result.getMessage());
+
+        verify(purchasedOrderRepository, never()).getByOrderId(anyString());
+    }
+
+    @Test
+    void cancelOrder_OrderNotFound_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(purchasedOrderRepository.getByOrderId("missing")).thenReturn(null);
+
+        Response<String> result = purchasedService.cancelOrder("missing", TOKEN);
+
+        assertTrue(result.isError());
+        assertEquals("Order not found", result.getMessage());
+    }
+
+    @Test
+    void cancelOrder_NotAuthorized_ReturnsError() {
+        PurchaseOrder order = new PurchaseOrder(
+                COMPANY,
+                EVENT,
+                List.of("T1"),
+                "other_user",
+                "order1"
+        );
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(purchasedOrderRepository.getByOrderId("order1")).thenReturn(order);
+
+        Response<String> result = purchasedService.cancelOrder("order1", TOKEN);
+
+        assertTrue(result.isError());
+        assertEquals("Not authorized to cancel this order", result.getMessage());
+
+        verify(externalTicketService, never()).cancelTicket(anyString());
+    }
+
+
+
+
+
+    @Test
+    void cancelOrder_DatabaseFailure_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+
+        doThrow(new org.springframework.dao.DataAccessResourceFailureException("DB down"))
+                .when(purchasedOrderRepository)
+                .getByOrderId("order1");
+
+        Response<String> result = purchasedService.cancelOrder("order1", TOKEN);
+
+        assertTrue(result.isError());
+        assertEquals("Database unavailable", result.getMessage());
     }
 }
