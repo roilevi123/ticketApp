@@ -1,0 +1,84 @@
+[
+  { "action": "register_user", "username": "admin", "password": "admin123", "age": 30, "email": "admin@bgu.ac.il" },
+  { "action": "register_user", "username": "koren_manager", "password": "koren123", "age": 25, "email": "koren@bgu.ac.il" },
+  { "action": "register_user", "username": "s", "password": "s", "age": 25, "email": "s@test.com" },
+  { "action": "register_user", "username": "d", "password": "d", "age": 25, "email": "d@test.com" },
+
+  { "action": "grant_admin", "username": "admin" },
+
+  { "action": "create_company", "company": "BGU Events", "founderUsername": "admin" },
+
+  { "action": "create_event", "creatorUsername": "admin", "company": "BGU Events",
+    "name": "Rock Night Live", "artist": "The Rolling Stones", "eventType": "LIVE_PERFORMANCE",
+    "price": 89.99, "eventDateDaysFromNow": 14, "location": "BGU Amphitheater",
+    "mapRows": 8, "mapCols": 10 },
+
+  { "action": "create_event", "creatorUsername": "admin", "company": "BGU Events",
+    "name": "Classical Evening", "artist": "BGU Philharmonic", "eventType": "LIVE_PERFORMANCE",
+    "price": 45.00, "eventDateDaysFromNow": 21, "location": "Marcus Family Campus Hall",
+    "mapRows": 8, "mapCols": 10 },
+
+  { "action": "create_event", "creatorUsername": "admin", "company": "BGU Events",
+    "name": "Hamlet", "artist": "BGU Theater Ensemble", "eventType": "PLAY",
+    "price": 35.00, "eventDateDaysFromNow": 7, "location": "Soroka Cultural Center",
+    "mapRows": 8, "mapCols": 10 },
+
+  { "action": "create_event", "creatorUsername": "admin", "company": "BGU Events",
+    "name": "A Midsummer Night", "artist": "Shakespeare Co.", "eventType": "PLAY",
+    "price": 30.00, "eventDateDaysFromNow": 30, "location": "Beer-Sheva Municipal Theater",
+    "mapRows": 8, "mapCols": 10 },
+
+  { "action": "create_event", "creatorUsername": "admin", "company": "BGU Events",
+    "name": "Spring Music Festival", "artist": "Various Artists", "eventType": "FESTIVAL",
+    "price": 0.0, "eventDateDaysFromNow": 45, "location": "BGU Central Park",
+    "mapRows": 8, "mapCols": 10 },
+
+  { "action": "create_event", "creatorUsername": "admin", "company": "BGU Events",
+    "name": "Tech & Society Summit", "artist": "Prof. Alon Cohen", "eventType": "CONFERENCE",
+    "price": 20.00, "eventDateDaysFromNow": 10, "location": "Engineering Building A",
+    "mapRows": 8, "mapCols": 10 },
+
+  { "action": "create_event", "creatorUsername": "admin", "company": "BGU Events",
+    "name": "AI Research Conference", "artist": "Dr. Yael Stern", "eventType": "CONFERENCE",
+    "price": 15.00, "eventDateDaysFromNow": 60, "location": "Alon Building, Room 201",
+    "mapRows": 8, "mapCols": 10 },
+
+  { "action": "create_event", "creatorUsername": "admin", "company": "BGU Events",
+    "name": "Coldplay World Tour", "artist": "Coldplay", "eventType": "LIVE_PERFORMANCE",
+    "price": 149.99, "eventDateDaysFromNow": 90, "location": "BGU Arena",
+    "mapRows": 8, "mapCols": 10 },
+
+  { "action": "configure_lottery", "creatorUsername": "admin", "company": "BGU Events",
+    "event": "Coldplay World Tour", "lotteryEndMinutesFromNow": 5, "maxWinners": 50 },
+
+  { "action": "seed_purchase", "buyerUsername": "admin", "company": "BGU Events",
+    "event": "Rock Night Live", "count": 2 },
+
+  { "action": "seed_purchase", "buyerUsername": "admin", "company": "BGU Events",
+    "event": "Hamlet", "count": 1 },
+
+  { "action": "seed_purchase", "buyerUsername": "admin", "company": "BGU Events",
+    "event": "Classical Evening", "count": 3 },
+
+  { "action": "seed_notification", "recipient": "admin",
+    "title": "Your ticket for 'Rock Night Live' is confirmed",
+    "message": "Show your QR code at the gate. Doors open 30 minutes before the show." },
+
+  { "action": "seed_notification", "recipient": "admin",
+    "title": "System maintenance scheduled for Sunday 02:00–04:00",
+    "message": "The ticketing platform will be briefly unavailable during this window." },
+
+  { "action": "seed_notification", "recipient": "admin",
+    "title": "Welcome back, Admin",
+    "message": "You have full access to the admin dashboard and all system controls." },
+
+  { "action": "seed_notification", "recipient": "SYSTEM_ADMIN",
+    "title": "Complaint from koren_manager",
+    "message": "[Double charge on Classical Evening] I was charged twice for the Classical Evening tickets. Please investigate." },
+
+  { "action": "seed_notification", "recipient": "SYSTEM_ADMIN",
+    "title": "Complaint from koren_manager",
+    "message": "[Seat map showing wrong availability] The seat map for Rock Night Live is showing incorrect availability." },
+
+  { "action": "mark_last_notification_read", "recipient": "admin" }
+]
