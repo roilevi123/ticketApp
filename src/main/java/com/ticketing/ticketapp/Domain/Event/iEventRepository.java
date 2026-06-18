@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 public interface iEventRepository {
+
     public Event store(String eventName, String artistName, EventType eventType, double price, Date date, String location, String company, MapArea[][] mapArea   );
 
     public Event getEvent(String eventName, String company);
@@ -14,6 +15,7 @@ public interface iEventRepository {
     public void deleteAllEvents();
     public void deleteCompanyEvent(String company);
     public List<Event> getEventsByCompany(String company);
+
 
     public MapArea[][] getMapArea(String company, String eventName);
 }

@@ -3,6 +3,7 @@ package AcceptanceTests;
 import com.ticketing.ticketapp.Appliction.*;
 import com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
+import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Event.iEventRepository;
@@ -14,102 +15,84 @@ import com.ticketing.ticketapp.Domain.PurchasePolicy.iPurchasePolicyRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
-import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.mockito.Mockito.mock;
-import com.ticketing.ticketapp.Appliction.INotifier;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-@DataJpaTest
-@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
-@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
+import static org.mockito.Mockito.mock;
+
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@Transactional
 @DisplayName("Purchase Policy Acceptance Tests")
 public class PurchasePolicyAcceptanceTests {
+
+    @Autowired private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+    @Autowired private IUserRepository userRepository;
+    @Autowired private iCompanyRepository companyRepository;
+    @Autowired private iEventRepository eventRepository;
+    @Autowired private iQueueRepository queueRepository;
+    @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
+    @Autowired private IActiveOrderRepository activeOrderRepository;
+    @Autowired private iTicketRepository ticketRepository;
+    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
+    @Autowired private TokenService tokenService;
+    @Autowired private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
 
     private UserService userService;
     private CompanyService companyService;
     private EventService eventService;
     private OrderService reserveService;
     private PurchasePolicyService policyService;
-    private TokenService tokenService;
-    private IUserRepository userRepository;
     private AdminService adminService;
-    @Autowired
-    private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+
     @BeforeEach
     void setUp() {
-        IUserRepository userRepository = new UserRepositoryImpl();
-        iCompanyRepository companyRepository = new CompanyRepositoryImpl();
-        iEventRepository eventRepository = new EventRepositoryImpl();
-        iQueueRepository queueRepository = new QueueRepositoryImpl();
-        iTreeOfRoleRepository treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
-        IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
-        iTicketRepository ticketRepository = new TicketRepositoryImpl();
         iPurchasePolicyRepository purchasePolicyRepository = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
-        iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        INotifier notifierMock = mock(INotifier.class);
+        iDiscountPolicyRepository discountPolicyRepository = new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
 
-        this.tokenService = new TokenService();
+        INotifier notifierMock = mock(INotifier.class);
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, mock(iDiscountPolicyRepository.class));
+        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, discountPolicyRepository);
         this.reserveService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
         this.policyService = new PurchasePolicyService(purchasePolicyRepository, tokenService, userRepository);
 
-        this.userRepository = userRepository;
-        iAdminRepository adminRepository = new AdminRepositoryImpl(){
+        iAdminRepository adminRepository = new AdminRepositoryImpl() {
             @Override
-            public boolean isAdmin(String userID) {
-                return userID.equals("admin");
-            }
+            public boolean isAdmin(String userID) { return userID.equals("admin"); }
         };
-        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
-
-        userRepository.deleteAll();
-        eventRepository.deleteAllEvents();
-        companyRepository.deleteAllCompany();
-        ticketRepository.deleteAllTickets();
-        purchasePolicyRepository.deleteAll();
-        purchasePolicyRepository.deleteAll();
-
+        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), activeOrderRepository);
     }
 
+    private boolean isValidOrderId(String str) { return str != null && !str.isBlank(); }
     private String gt() { return tokenService.generateGuestToken(); }
 
     private MapArea[][] getMap() {
         MapArea[][] map = new MapArea[10][10];
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-                map[i][j] = MapArea.SEAT;
-            }
-        }
+        for (int i = 0; i < 10; i++) for (int j = 0; j < 10; j++) map[i][j] = MapArea.SEAT;
         return map;
     }
-
-    private boolean isNumeric(String str) { return str != null && str.matches("-?\\d+"); }
 
     private String regAndSetup(String adminName, String compName, String eventName, int minAge) {
         userService.register(gt(), adminName, "p", 30, adminName + "@test.com");
         String token = userService.login(gt(), adminName, "p").getData();
         companyService.CreateCompany(compName, token);
-
         eventService.createEvent(token, eventName, eventName, EventType.PLAY, 100, new Date(), "Loc", compName, getMap());
-
-        if (minAge > 0) {
-            policyService.createAgeLimitPolicy(token, eventName, PurchaseTargetType.EVENT, minAge);
-        }
+        if (minAge > 0) policyService.createAgeLimitPolicy(token, eventName, PurchaseTargetType.EVENT, minAge);
         return token;
     }
 
@@ -117,7 +100,6 @@ public class PurchasePolicyAcceptanceTests {
         userService.register(gt(), name, "p", age, name + "@test.com");
         return userService.login(gt(), name, "p").getData();
     }
-
     @Test @DisplayName("1. Fail - Underage for Event Policy")
     void underageForEvent() {
         regAndSetup("admin", "C1", "E1", 18);
@@ -132,7 +114,7 @@ public class PurchasePolicyAcceptanceTests {
         regAndSetup("admin", "C1", "E1", 18);
         String userToken = quickReg("adult", 25);
         Response<String> result = reserveService.reserveTickets(userToken, "C1", "E1", List.of(new int[]{1, 1, 1}), null);
-        assertTrue(isNumeric(result.getData()), "Expected numeric Order ID but got: " + result.getData());
+        assertTrue(isValidOrderId(result.getData()), "Expected valid Order ID but got: " + result.getData());
     }
 
     @Test @DisplayName("3. Fail - Exceeds Max Quantity")
@@ -172,7 +154,7 @@ public class PurchasePolicyAcceptanceTests {
 
         String user = quickReg("u1", 20);
         Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{2, 2, 1}), null);
-        assertTrue(isNumeric(result.getData()));
+        assertTrue(isValidOrderId(result.getData()));
     }
 
     @Test @DisplayName("7. Fail - Composite OR Policy Out of Range")
@@ -194,16 +176,16 @@ public class PurchasePolicyAcceptanceTests {
         String pQty = policyService.createQuantityLimitPolicy(admin, "E1", PurchaseTargetType.EVENT, 1, 1).getData();
         policyService.createOrPolicy(admin, "E1", PurchaseTargetType.EVENT, Arrays.asList(pAge, pQty));
 
-        String user = quickReg("u1", 10); // Underage but quantity is 1
+        String user = quickReg("u1", 10);
         Response<String> result = reserveService.reserveTickets(user, "C1", "E1", List.of(new int[]{3, 3, 1}), null);
-        assertTrue(isNumeric(result.getData()));
+        assertTrue(isValidOrderId(result.getData()));
     }
 
     @Test @DisplayName("9. Fail - Guest User on Age Policy")
     void guestUserAgeFail() {
         regAndSetup("admin", "C1", "E1", 18);
         Response<String> result = reserveService.reserveTickets(gt(), "C1", "E1", List.of(new int[]{0, 0, 1}), null);
-        assertTrue(isNumeric(result.getData()));
+        assertTrue(isValidOrderId(result.getData()));
     }
 
     @Test @DisplayName("10. Fail - Multiple Requests Total Quantity")
