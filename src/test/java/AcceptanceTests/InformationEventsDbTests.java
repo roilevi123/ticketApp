@@ -5,8 +5,8 @@ import org.springframework.test.context.TestPropertySource;
 
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
-        "repository.type=DB"
+        "repository.type=DB",
+        "spring.jpa.hibernate.ddl-auto=create-drop"
 })
-public class InformationEventsDbTests
-        extends InformationEventsTestsBase {
+class InformationEventsDbTests extends InformationEventsTestsBase {
 }
