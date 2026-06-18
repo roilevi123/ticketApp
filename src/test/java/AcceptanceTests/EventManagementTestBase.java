@@ -31,11 +31,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@ActiveProfiles("test")
+//@ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @Transactional
 @DisplayName("Complete Event Management Acceptance Tests")
-public class EventManagementTest {
+public abstract class EventManagementTestBase  {
 
     @Autowired
     private IUserRepository userRepository;

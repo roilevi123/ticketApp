@@ -30,11 +30,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 @SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@ActiveProfiles("test")
+//@ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @Transactional
 @DisplayName("Company Management Acceptance Tests")
-public class FullCompanyManagementTest {
+public abstract class FullCompanyManagementTestBase {
 
     @Autowired private IUserRepository userRepository;
     @Autowired private iCompanyRepository companyRepository;

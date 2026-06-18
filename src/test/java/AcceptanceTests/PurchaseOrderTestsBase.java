@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @Transactional
 @DisplayName("Complete Purchase Order Acceptance Tests")
-public class PurchaseOrderTests {
+public abstract  class PurchaseOrderTestsBase {
 
     @Autowired private IUserRepository userRepository;
     @Autowired private iCompanyRepository companyRepository;
@@ -58,8 +58,9 @@ public class PurchaseOrderTests {
     @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
     @Autowired private iAdminRepository adminRepository;
     @Autowired private TokenService tokenService;
-    @Autowired private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
-    @Autowired private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+    @Autowired protected iDiscountPolicyRepository discountPolicyRepository;
+
+    @Autowired protected iPurchasePolicyRepository purchasePolicyRepository;
 
     @MockBean private IExternalTicketService externalTicketService;
 
@@ -72,9 +73,6 @@ public class PurchaseOrderTests {
 
     @BeforeEach
     void setUp() {
-        // המרה ל-Interface הנדרש עבור ה-Service
-        iDiscountPolicyRepository discountPolicyRepository = new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
-        iPurchasePolicyRepository purchasePolicyRepository = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
 
         INotifier notifierMock = mock(INotifier.class);
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();

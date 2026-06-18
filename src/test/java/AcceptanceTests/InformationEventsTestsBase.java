@@ -31,11 +31,11 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@ActiveProfiles("test")
+//@ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @Transactional
 @DisplayName("Complete Event Information Acceptance Tests")
-public class InformationEventsTests {
+public abstract class InformationEventsTestsBase {
 
     @Autowired private IUserRepository userRepository;
     @Autowired private iCompanyRepository companyRepository;

@@ -34,9 +34,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 @SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@org.springframework.test.context.ActiveProfiles("test")
+//@org.springframework.test.context.ActiveProfiles("test")
 @DisplayName("Admin Management Acceptance Tests")
-public class AdminJUnitTests {
+public abstract class AdminJUnitTestsBase {
 
     @Autowired private IUserRepository userRepository;
     @Autowired private iCompanyRepository companyRepository;

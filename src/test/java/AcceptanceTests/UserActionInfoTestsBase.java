@@ -17,42 +17,56 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 @SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @Transactional
 @DisplayName("User Action Acceptance Tests")
-public class UserActionInfoTest {
+public abstract class UserActionInfoTestsBase {
 
-    @Autowired private IUserRepository userRepository;
-    @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
-    @Autowired private iAdminRepository adminRepository;
-    @Autowired private iCompanyRepository companyRepository;
-    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
-    @Autowired private iTicketRepository ticketRepository;
-    @Autowired private iEventRepository eventRepository;
-    @Autowired private IActiveOrderRepository activeOrderRepository;
-    @Autowired private TokenService tokenService;
+    @Autowired protected IUserRepository userRepository;
+    @Autowired protected iTreeOfRoleRepository treeOfRoleRepository;
+    @Autowired protected iAdminRepository adminRepository;
+    @Autowired protected iCompanyRepository companyRepository;
+    @Autowired protected iPurchasedOrderRepository purchasedOrderRepository;
+    @Autowired protected iTicketRepository ticketRepository;
+    @Autowired protected iEventRepository eventRepository;
+    @Autowired protected IActiveOrderRepository activeOrderRepository;
+    @Autowired protected TokenService tokenService;
 
-    private UserService userService;
-    private AdminService adminService;
+    protected UserService userService;
+    protected AdminService adminService;
 
     @BeforeEach
     void setUp() {
         INotifier notifierMock = mock(INotifier.class);
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
+        this.userService = new UserService(
+                passwordEncoder,
+                userRepository,
+                tokenService,
+                new NotificationRepositoryImpl(),
+                notifierMock,
+                treeOfRoleRepository
+        );
 
-        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository,
-                purchasedOrderRepository, ticketRepository, eventRepository, tokenService,
-                new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), activeOrderRepository);
+        this.adminService = new AdminService(
+                treeOfRoleRepository,
+                companyRepository,
+                adminRepository,
+                userRepository,
+                purchasedOrderRepository,
+                ticketRepository,
+                eventRepository,
+                tokenService,
+                new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())),
+                activeOrderRepository
+        );
 
         userRepository.deleteAll();
         adminRepository.deleteAll();
@@ -61,15 +75,19 @@ public class UserActionInfoTest {
         adminRepository.addAdmin("admin");
     }
 
-    private String gt() { return tokenService.generateGuestToken(); }
+    private String gt() {
+        return tokenService.generateGuestToken();
+    }
 
-    @Test @DisplayName("1. Register Success")
+    @Test
+    @DisplayName("1. Register Success")
     void registerSuccess1() {
         Response<String> result = userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         assertTrue(result.isSuccess());
     }
 
-    @Test @DisplayName("2. Register Fail - Invalid Password")
+    @Test
+    @DisplayName("2. Register Fail - Invalid Password")
     void registerFailInvalidPassword2() {
         assertTrue(userService.register(gt(), "roi", null, 10, "roi@test.com").isError());
     }
@@ -200,8 +218,8 @@ public class UserActionInfoTest {
         assertTrue(userService.login("", "eventId", "").isError());
     }
 
-
-    @Test @DisplayName("16. Update User Profile Fail - User Is Suspended")
+    @Test
+    @DisplayName("16. Update User Profile Fail - User Is Suspended")
     void updateUserProfileFailedUserSuspended() {
         userService.register(gt(), "suspended_user", "password123", 20, "suspended@test.com");
         String token = userService.login(gt(), "suspended_user", "password123").getData();
