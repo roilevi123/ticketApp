@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
 import java.nio.file.Files;
@@ -31,9 +32,11 @@ import java.util.Set;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 @Component
+@Profile("!test")
 @ConditionalOnProperty(
         name = "initial.state.enabled",
-        havingValue = "true"
+        havingValue = "true",
+        matchIfMissing = false
 )
 public class DataInitializer implements ApplicationRunner {
 
@@ -58,6 +61,8 @@ public class DataInitializer implements ApplicationRunner {
     private boolean skipExisting;
     @Value("${initial.state.reset:false}")
     private boolean resetBeforeInit;
+    @Value("${initial.state.enabled:false}")
+    private boolean initialStateEnabled;
     public DataInitializer(UserService userService, CompanyService companyService,
                            EventService eventService, LotteryService lotteryService,
                            TokenService tokenService,
@@ -81,6 +86,11 @@ public class DataInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        if (!initialStateEnabled) {
+            logger.info("DataInitializer: disabled, skipping initial-state config");
+            return;
+        }
+
         try {
             if (resetBeforeInit) {
                 resetDatabase();
