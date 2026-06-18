@@ -671,4 +671,86 @@ class PurchasedServiceTest {
         assertTrue(result.isError());
         assertEquals("Database unavailable", result.getMessage());
     }
+    @Test
+    void cancelOrder_Success_CancelsExternalTicketsAndRestoresTickets() throws Exception {
+        String orderId = "order1";
+        String userId = USERNAME;
+
+        PurchaseOrder order = mock(PurchaseOrder.class);
+
+        Ticket ticket = new Ticket(0, 0, EVENT, COMPANY, "T1", 100.0);
+        ticket.purchase();
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(userId);
+
+        when(purchasedOrderRepository.getByOrderId(orderId)).thenReturn(order);
+        when(order.getBuyerID()).thenReturn(userId);
+        when(order.getExternalTicketIds()).thenReturn(List.of("EXT1"));
+        when(order.getTicketsId()).thenReturn(List.of("T1"));
+
+        when(ticketRepository.getTicketById("T1")).thenReturn(ticket);
+
+        Response<String> result = purchasedService.cancelOrder(orderId, TOKEN);
+
+        assertTrue(result.isSuccess());
+        assertEquals("Order cancelled successfully", result.getData());
+
+        verify(externalTicketService).cancelTicket("EXT1");
+        verify(ticketRepository).save(ticket);
+        verify(purchasedOrderRepository).deleteByOrderId(orderId);
+    }@Test
+    void cancelOrder_ExternalCancelFails_ThrowsExternalServiceException() throws Exception {
+        String orderId = "order1";
+        String userId = USERNAME;
+
+        PurchaseOrder order = mock(PurchaseOrder.class);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(userId);
+
+        when(purchasedOrderRepository.getByOrderId(orderId)).thenReturn(order);
+        when(order.getBuyerID()).thenReturn(userId);
+        when(order.getExternalTicketIds()).thenReturn(List.of("EXT1"));
+
+        doThrow(new RuntimeException("external down"))
+                .when(externalTicketService)
+                .cancelTicket("EXT1");
+
+        ExternalServiceException ex = assertThrows(
+                ExternalServiceException.class,
+                () -> purchasedService.cancelOrder(orderId, TOKEN)
+        );
+
+        assertEquals("External service timeout/error", ex.getMessage());
+
+        verify(ticketRepository, never()).save(any());
+        verify(purchasedOrderRepository, never()).deleteByOrderId(anyString());
+    }
+    @Test
+    void cancelOrder_TicketNotFound_StillDeletesOrder() throws Exception {
+        String orderId = "order1";
+        String userId = USERNAME;
+
+        PurchaseOrder order = mock(PurchaseOrder.class);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(userId);
+
+        when(purchasedOrderRepository.getByOrderId(orderId)).thenReturn(order);
+        when(order.getBuyerID()).thenReturn(userId);
+        when(order.getExternalTicketIds()).thenReturn(List.of("EXT1"));
+        when(order.getTicketsId()).thenReturn(List.of("T1"));
+
+        when(ticketRepository.getTicketById("T1")).thenReturn(null);
+
+        Response<String> result = purchasedService.cancelOrder(orderId, TOKEN);
+
+        assertTrue(result.isSuccess());
+        assertEquals("Order cancelled successfully", result.getData());
+
+        verify(externalTicketService).cancelTicket("EXT1");
+        verify(ticketRepository, never()).save(any());
+        verify(purchasedOrderRepository).deleteByOrderId(orderId);
+    }
 }

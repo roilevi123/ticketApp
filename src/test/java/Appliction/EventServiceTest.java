@@ -7,6 +7,7 @@ import com.ticketing.ticketapp.Domain.OwnerManagerTree.Permission;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.Company.Company;
 import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
@@ -816,4 +817,50 @@ public class EventServiceTest {
         assertTrue(response.isError());
         assertEquals("DB down", response.getMessage());
     }
+    @Test
+    void deleteEvent_WithExistingPurchasedOrders_ReturnsError() {
+        PurchaseOrder order = new PurchaseOrder(
+                "C1",
+                "E1",
+                List.of("T1"),
+                "buyer1",
+                "O1"
+        );
+
+        when(purchasedOrderRepository.getPurchasedOrdersForCompany("C1"))
+                .thenReturn(List.of(order));
+
+        Response<String> result = eventService.deleteEvent("E1", "C1", "token");
+
+        assertTrue(result.isError());
+    }
+    @Test
+    void updateEvent_WithExistingPurchasedOrders_ReturnsError() {
+        PurchaseOrder order = new PurchaseOrder(
+                "C1",
+                "E1",
+                List.of("T1"),
+                "buyer1",
+                "O1"
+        );
+
+        when(purchasedOrderRepository.getPurchasedOrdersForCompany("C1"))
+                .thenReturn(List.of(order));
+
+        Response<String> result = eventService.UpdateEvent(
+                "token",
+                "E1",
+                "Artist",
+                EventType.PLAY,
+                100.0,
+                new Date(),
+                "Loc",
+                "C1",
+                MAP,
+                0
+        );
+
+        assertTrue(result.isError());
+    }
+
 }

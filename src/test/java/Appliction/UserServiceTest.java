@@ -4,6 +4,9 @@ import com.ticketing.ticketapp.Appliction.*;
 
 import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
 import com.ticketing.ticketapp.Domain.Notification.Notification;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.Manager;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.Owner;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.TokenService;
@@ -12,6 +15,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
+
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -30,7 +37,8 @@ class UserServiceTest {
 
     @Mock
     private INotificationRepository userNotificationRepository;
-
+    @Mock
+    private iTreeOfRoleRepository treeOfRoleRepository;
     @Mock
     private INotifier notifier;
 
@@ -343,4 +351,153 @@ class UserServiceTest {
         assertEquals("User is suspended", result.getMessage());
         verify(userNotificationRepository, never()).save(any(), any());
     }
+    @Test
+    void submitProducerComplaint_Success_WithSubject_NotifiesOwnersManagersAndCompanyInbox() {
+        Owner owner = new Owner("owner1", "company1", "founder");
+        Manager manager = new Manager("manager1", "company1", Set.of(), "owner1");
+
+        when(tokenService.validateToken("token")).thenReturn(true);
+        when(tokenService.extractUsername("token")).thenReturn("buyerName");
+        when(tokenService.extractUserId("token")).thenReturn("buyerId");
+        when(userRepository.isUserSuspendedNow("buyerId")).thenReturn(false);
+
+        when(treeOfRoleRepository.getAllOwnersByCompany("company1"))
+                .thenReturn(List.of(owner));
+
+        when(treeOfRoleRepository.getAllManagersByCompany("company1"))
+                .thenReturn(List.of(manager));
+
+        Response<String> result = userService.submitProducerComplaint(
+                "token",
+                "company1",
+                "event1",
+                "bad seats",
+                "The seats were broken"
+        );
+
+        assertTrue(result.isSuccess());
+        assertEquals("Complaint sent to the producer successfully", result.getData());
+
+        verify(notifier).notifyUserWithSender(
+                eq("owner1"),
+                eq("buyerId"),
+                eq("Complaint about event1"),
+                eq("[bad seats] The seats were broken")
+        );
+
+        verify(notifier).notifyUserWithSender(
+                eq("manager1"),
+                eq("buyerId"),
+                eq("Complaint about event1"),
+                eq("[bad seats] The seats were broken")
+        );
+
+        verify(notifier).notifyUserWithSender(
+                eq("COMPANY_COMPLAINT::company1"),
+                eq("buyerId"),
+                eq("Complaint about event1"),
+                eq("[bad seats] The seats were broken")
+        );
+    }
+
+    @Test
+    void submitProducerComplaint_Success_BlankSubject_UsesOnlyContent() {
+        when(tokenService.validateToken("token")).thenReturn(true);
+        when(tokenService.extractUsername("token")).thenReturn("buyerName");
+        when(tokenService.extractUserId("token")).thenReturn("buyerId");
+        when(userRepository.isUserSuspendedNow("buyerId")).thenReturn(false);
+
+        when(treeOfRoleRepository.getAllOwnersByCompany("company1"))
+                .thenReturn(List.of());
+
+        when(treeOfRoleRepository.getAllManagersByCompany("company1"))
+                .thenReturn(List.of());
+
+        Response<String> result = userService.submitProducerComplaint(
+                "token",
+                "company1",
+                "event1",
+                "   ",
+                "Only content message"
+        );
+
+        assertTrue(result.isSuccess());
+
+        verify(notifier).notifyUserWithSender(
+                eq("COMPANY_COMPLAINT::company1"),
+                eq("buyerId"),
+                eq("Complaint about event1"),
+                eq("Only content message")
+        );
+    }
+
+    @Test
+    void submitProducerComplaint_InvalidToken_ReturnsError() {
+        when(tokenService.validateToken("bad_token")).thenReturn(false);
+
+        Response<String> result = userService.submitProducerComplaint(
+                "bad_token",
+                "company1",
+                "event1",
+                "subject",
+                "content"
+        );
+
+        assertTrue(result.isError());
+        assertEquals("Invalid token", result.getMessage());
+
+        verify(notifier, never()).notifyUserWithSender(anyString(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void submitProducerComplaint_SuspendedUser_ReturnsError() {
+        when(tokenService.validateToken("token")).thenReturn(true);
+        when(tokenService.extractUserId("token")).thenReturn("buyerId");
+        when(userRepository.isUserSuspendedNow("buyerId")).thenReturn(true);
+
+        Response<String> result = userService.submitProducerComplaint(
+                "token",
+                "company1",
+                "event1",
+                "subject",
+                "content"
+        );
+
+        assertTrue(result.isError());
+        assertEquals("User is suspended", result.getMessage());
+
+        verify(notifier, never())
+                .notifyUserWithSender(anyString(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void submitProducerComplaint_DatabaseFailure_ReturnsError() {
+        when(tokenService.validateToken("token")).thenReturn(true);
+        when(tokenService.extractUsername("token")).thenReturn("buyerName");
+        when(tokenService.extractUserId("token")).thenReturn("buyerId");
+        when(userRepository.isUserSuspendedNow("buyerId")).thenReturn(false);
+
+        doThrow(new DataAccessResourceFailureException("DB down"))
+                .when(treeOfRoleRepository)
+                .getAllOwnersByCompany("company1");
+
+        Response<String> result = userService.submitProducerComplaint(
+                "token",
+                "company1",
+                "event1",
+                "subject",
+                "content"
+        );
+
+        assertTrue(result.isError());
+        assertEquals("Database unavailable", result.getMessage());
+    }
+
+    @Test
+    void deleteAll_CallsUserRepository() {
+        userService.deleteAll();
+
+        verify(userRepository).deleteAll();
+    }
+
 }

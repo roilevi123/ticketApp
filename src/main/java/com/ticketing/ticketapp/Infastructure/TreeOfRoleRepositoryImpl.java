@@ -251,15 +251,15 @@ public class TreeOfRoleRepositoryImpl implements iTreeOfRoleRepository {
         return "MEMBER";
     }
 
-    @Override
-    public String getUserHighestRole(String userId) {
-        for (Owner o : owners.values()) {
-            if (o.getUserID().equals(userId) && o.isAccepted()) return "OWNER";
-        }
-        for (Manager m : managers.values()) {
-            if (m.getUserID().equals(userId) && m.isAccepted()) return "MANAGER";
-        }
-        return "MEMBER";
-    }
+//    @Override
+//    public String getUserHighestRole(String userId) {
+//        for (Owner o : owners.values()) {
+//            if (o.getUserID().equals(userId) && o.isAccepted()) return "OWNER";
+//        }
+//        for (Manager m : managers.values()) {
+//            if (m.getUserID().equals(userId) && m.isAccepted()) return "MANAGER";
+//        }
+//        return "MEMBER";
+//    }
 
 }
