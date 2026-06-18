@@ -10,8 +10,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-//@Repository
-public class InMemoryDiscountPolicyRepository implements iDiscountPolicyRepository {
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+@Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")public class InMemoryDiscountPolicyRepository implements iDiscountPolicyRepository {
 
     private final Map<String, DiscountPolicy> allPolicies = new ConcurrentHashMap<>();
 

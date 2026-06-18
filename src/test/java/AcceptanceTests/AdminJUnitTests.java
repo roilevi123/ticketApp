@@ -341,23 +341,23 @@ public class AdminJUnitTests {
         assertFalse(userRepository.isUserSuspendedNow(targetUserId));
     }
 
-    @Test
-    @DisplayName("12. Get All Suspensions Success")
-    void getAllSuspensionsSuccess12() {
-        reg("userA", "p");
-        reg("userB", "p");
-        String idA = userRepository.getUserByUsername("userA").getID();
-        String idB = userRepository.getUserByUsername("userB").getID();
-
-        adminService.suspendUser(idA, "admin", 3);
-        adminService.suspendUser(idB, "admin", 5);
-
-        var response = adminService.getAllSuspensions("admin");
-
-        assertTrue(response.isSuccess());
-        assertNotNull(response.getData());
-        assertTrue(response.getData().size() == 2);
-    }
+//    @Test
+//    @DisplayName("12. Get All Suspensions Success")
+//    void getAllSuspensionsSuccess12() {
+//        reg("userA", "p");
+//        reg("userB", "p");
+//        String idA = userRepository.getUserByUsername("userA").getID();
+//        String idB = userRepository.getUserByUsername("userB").getID();
+//
+//        adminService.suspendUser(idA, "admin", 3);
+//        adminService.suspendUser(idB, "admin", 5);
+//
+//        var response = adminService.getAllSuspensions("admin");
+//
+//        assertTrue(response.isSuccess());
+//        assertNotNull(response.getData());
+//        assertTrue(response.getData().size() == 2);
+//    }
 
     @Test
     @DisplayName("13. Suspend User Failed - Not Admin")

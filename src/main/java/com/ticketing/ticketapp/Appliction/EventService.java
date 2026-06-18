@@ -338,4 +338,8 @@ public class EventService {
 
         return EventDTO.fromEntity(event, discountedPrice);
     }
+    public void deleteAllEvents() {
+        eventRepository.deleteAllEvents();
+
+    }
 }

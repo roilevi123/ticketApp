@@ -226,4 +226,7 @@ public class DiscountService {
             return Response.error(e.getMessage());
         }
     }
+    public void deleteAllPolicy(){
+        discountRepo.deleteAll();
+    }
 }

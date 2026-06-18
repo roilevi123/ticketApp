@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-//@Repository
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+@Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")
 public class UserRepositoryImpl implements IUserRepository {
     private final Map<String, String> usernameToId = new ConcurrentHashMap<>();
     private final Map<String, User> usersByID = new ConcurrentHashMap<>();

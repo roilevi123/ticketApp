@@ -10,7 +10,9 @@ import com.ticketing.ticketapp.Domain.Event.MapArea;
 import com.ticketing.ticketapp.Domain.Ticket.*;
 import org.springframework.stereotype.Repository;
 
-//@Repository
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+@Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")
 public class TicketRepositoryImpl implements iTicketRepository {
     
     private ConcurrentHashMap<String, List<Ticket>> tickets = new ConcurrentHashMap<>();

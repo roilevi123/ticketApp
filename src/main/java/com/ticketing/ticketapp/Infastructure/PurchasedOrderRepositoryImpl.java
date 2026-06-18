@@ -6,7 +6,11 @@ import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRep
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Repository;
 
+@Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")
 public class PurchasedOrderRepositoryImpl implements iPurchasedOrderRepository {
 
     private final List<PurchaseOrder> purchasedOrders = new ArrayList<>();

@@ -8,7 +8,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-//@Repository
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+@Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")
 public class OrderRepositoryImpl  implements IActiveOrderRepository {
     ConcurrentHashMap<String, ActiveOrder> orders = new ConcurrentHashMap<>();
     private  AtomicLong idCounter = new AtomicLong(1);

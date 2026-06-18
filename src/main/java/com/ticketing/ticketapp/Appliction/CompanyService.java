@@ -568,4 +568,9 @@ public class CompanyService {
             logger.warn("Failed to notify user {}: {}", userID, e.getMessage());
         }
     }
+    public void deleteAll(){
+        companyRepository.deleteAllCompany();
+        treeOfRoleRepository.deleteAllRoles();
+
+    }
 }

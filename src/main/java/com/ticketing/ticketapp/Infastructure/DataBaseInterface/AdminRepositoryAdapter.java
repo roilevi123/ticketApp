@@ -5,7 +5,9 @@ import org.springframework.stereotype.Repository;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "DB")
 public class AdminRepositoryAdapter implements iAdminRepository {
 
     // בבדיקות או ב-In-Memory, ניתן להשתמש בסט לשמירת האדמינים

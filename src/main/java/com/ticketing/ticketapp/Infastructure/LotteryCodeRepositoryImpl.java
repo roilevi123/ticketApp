@@ -10,8 +10,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-//@Repository
-public class LotteryCodeRepositoryImpl implements ILotteryCodeRepository {
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+@Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")public class LotteryCodeRepositoryImpl implements ILotteryCodeRepository {
 
     /** Key: lottery code UUID string */
     private final Map<String, LotteryCode> codes = new ConcurrentHashMap<>();

@@ -175,4 +175,7 @@ public class PurchasePolicyService {
             return Response.error(e.getMessage());
         }
     }
+    public void deleteAll(){
+        purchaseRepo.deleteAll();
+    }
 }

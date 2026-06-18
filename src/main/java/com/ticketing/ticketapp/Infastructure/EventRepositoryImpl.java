@@ -7,8 +7,9 @@ import java.util.stream.Collectors;
 import com.ticketing.ticketapp.Domain.Event.*;
 import org.springframework.stereotype.Repository;
 
-//@Repository
-public class EventRepositoryImpl implements iEventRepository {
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+@Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")public class EventRepositoryImpl implements iEventRepository {
     private Map<String, Event> events=new HashMap<>();
     private AtomicInteger idCounter = new AtomicInteger(1);
     

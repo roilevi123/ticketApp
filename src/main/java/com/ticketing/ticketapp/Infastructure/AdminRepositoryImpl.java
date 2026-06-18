@@ -6,7 +6,9 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
 
-//@Repository
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+@Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")
 public class AdminRepositoryImpl implements iAdminRepository {
     private List<String> adminsIDs = new ArrayList<>();
     @Override
