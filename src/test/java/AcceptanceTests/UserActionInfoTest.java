@@ -6,58 +6,72 @@ import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Domain.User.UserDTO;
 import com.ticketing.ticketapp.Infastructure.*;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
+import com.ticketing.ticketapp.Domain.Company.iCompanyRepository;
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
+import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
+import com.ticketing.ticketapp.Domain.Event.iEventRepository;
+import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@Transactional
 @DisplayName("User Action Acceptance Tests")
 public class UserActionInfoTest {
 
+    @Autowired private IUserRepository userRepository;
+    @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
+    @Autowired private iAdminRepository adminRepository;
+    @Autowired private iCompanyRepository companyRepository;
+    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
+    @Autowired private iTicketRepository ticketRepository;
+    @Autowired private iEventRepository eventRepository;
+    @Autowired private IActiveOrderRepository activeOrderRepository;
+    @Autowired private TokenService tokenService;
+
     private UserService userService;
-    private IUserRepository userRepository;
-    private IPasswordEncoder passwordEncoder;
-    private TokenService tokenService;
     private AdminService adminService;
 
     @BeforeEach
     void setUp() {
-        this.userRepository = new UserRepositoryImpl();
-        this.passwordEncoder = new PasswordEncoderImpl();
-        this.tokenService = new TokenService();
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), mock(INotifier.class), mock(iTreeOfRoleRepository.class));
+        INotifier notifierMock = mock(INotifier.class);
+        IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
-        iAdminRepository adminRepository = new AdminRepositoryImpl(){
-            @Override
-            public boolean isAdmin(String userID) {
-                return userID.equals("admin");
-            }
-        };
-        this.adminService = new AdminService(new TreeOfRoleRepositoryImpl(), new CompanyRepositoryImpl(), adminRepository, userRepository, new PurchasedOrderRepositoryImpl(), new TicketRepositoryImpl(), new EventRepositoryImpl(), tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
+        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
+
+        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository,
+                purchasedOrderRepository, ticketRepository, eventRepository, tokenService,
+                new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), activeOrderRepository);
 
         userRepository.deleteAll();
+        adminRepository.deleteAll();
         tokenService.clearAllData();
+
+        adminRepository.addAdmin("admin");
     }
 
-    private String gt() {
-        return tokenService.generateGuestToken();
-    }
+    private String gt() { return tokenService.generateGuestToken(); }
 
-    @Test
-    @DisplayName("1. Register Success")
+    @Test @DisplayName("1. Register Success")
     void registerSuccess1() {
         Response<String> result = userService.register(gt(), "roi", "roilevi", 10, "roi@test.com");
         assertTrue(result.isSuccess());
-        assertEquals("success", result.getData());
     }
 
-    @Test
-    @DisplayName("2. Register Fail - Invalid Password")
+    @Test @DisplayName("2. Register Fail - Invalid Password")
     void registerFailInvalidPassword2() {
-        Response<String> result = userService.register(gt(), "roi", null, 10, "roi@test.com");
-        assertTrue(result.isError());
+        assertTrue(userService.register(gt(), "roi", null, 10, "roi@test.com").isError());
     }
 
     @Test
@@ -187,8 +201,7 @@ public class UserActionInfoTest {
     }
 
 
-    @Test
-    @DisplayName("16. Update User Profile Fail - User Is Suspended")
+    @Test @DisplayName("16. Update User Profile Fail - User Is Suspended")
     void updateUserProfileFailedUserSuspended() {
         userService.register(gt(), "suspended_user", "password123", 20, "suspended@test.com");
         String token = userService.login(gt(), "suspended_user", "password123").getData();

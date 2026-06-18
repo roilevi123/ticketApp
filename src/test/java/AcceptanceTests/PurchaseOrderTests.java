@@ -31,49 +31,52 @@ import static org.mockito.ArgumentMatchers.anyInt;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-@org.springframework.boot.test.context.SpringBootTest
-@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
-//@org.springframework.data.jpa.repository.config.EnableJpaRepositories(basePackages = "com.ticketing.ticketapp")
-@org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
-//@DataJpaTest
+
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@Transactional
 @DisplayName("Complete Purchase Order Acceptance Tests")
 public class PurchaseOrderTests {
+
+    @Autowired private IUserRepository userRepository;
+    @Autowired private iCompanyRepository companyRepository;
+    @Autowired private iEventRepository eventRepository;
+    @Autowired private iQueueRepository queueRepository;
+    @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
+    @Autowired private IActiveOrderRepository activeOrderRepository;
+    @Autowired private iTicketRepository ticketRepository;
+    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
+    @Autowired private iAdminRepository adminRepository;
+    @Autowired private TokenService tokenService;
+    @Autowired private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
+    @Autowired private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+
+    @MockBean private IExternalTicketService externalTicketService;
 
     private UserService userService;
     private CompanyService companyService;
     private EventService eventService;
     private OrderService reserveTicketService;
     private PurchasedService purchasedService;
-    private TokenService tokenService;
-    private IUserRepository userRepository;
     private AdminService adminService;
-    @MockBean
-    IExternalTicketService externalTicketService;
-    @org.springframework.beans.factory.annotation.Autowired
-    private com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
-    @Autowired
-    private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+
     @BeforeEach
     void setUp() {
-        IUserRepository userRepository = new UserRepositoryImpl();
-        iCompanyRepository companyRepository = new CompanyRepositoryImpl();
-        iEventRepository eventRepository = new EventRepositoryImpl();
-        iQueueRepository queueRepository = new QueueRepositoryImpl();
-        iTreeOfRoleRepository treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
-        IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
-        iTicketRepository ticketRepository = new TicketRepositoryImpl();
-        iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
+        // המרה ל-Interface הנדרש עבור ה-Service
         iDiscountPolicyRepository discountPolicyRepository = new com.ticketing.ticketapp.Infastructure.DataBaseInterface.DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
         iPurchasePolicyRepository purchasePolicyRepository = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
-        INotifier notifierMock = mock(INotifier.class);
 
-        this.tokenService = new TokenService();
+        INotifier notifierMock = mock(INotifier.class);
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
         ISupplyService supplyService = new SupplyServiceMock();
         IPaymentService paymentService = new PaymentServiceMock();
@@ -81,19 +84,13 @@ public class PurchaseOrderTests {
 
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, discountPolicyRepository    );
+        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, discountPolicyRepository);
         this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
         this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentService, barcodeGenerator, tokenService, treeOfRoleRepository, discountPolicyRepository, userRepository, notifierMock, externalTicketService);
-        when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
 
-        this.userRepository = userRepository;
-        iAdminRepository adminRepository = new AdminRepositoryImpl(){
-            @Override
-            public boolean isAdmin(String userID) {
-                return userID.equals("admin");
-            }
-        };
-        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
+        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), activeOrderRepository);
+
+        when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -103,10 +100,10 @@ public class PurchaseOrderTests {
         queueRepository.deleteAll();
         ticketRepository.deleteAllTickets();
         userRepository.deleteAll();
+        adminRepository.deleteAll();
+        adminRepository.addAdmin("admin");
         tokenService.clearAllData();
-//        jpaDiscountPolicyRepository.deleteAll();
         purchasePolicyRepository.deleteAll();
-
     }
 
     private String gt() {
@@ -551,7 +548,8 @@ public class PurchaseOrderTests {
         assertTrue(t.isError());
     }
 
-    @Test @DisplayName("17. Fail - Purchase Ticket When User Is Suspended")
+    @Test
+    @DisplayName("17. Fail - Purchase Ticket When User Is Suspended")
     void purchaseTicketFailedUserSuspended17() {
         reg("owner_user", "password123");
         String ownerToken = log("owner_user", "password123");
@@ -562,8 +560,10 @@ public class PurchaseOrderTests {
         String buyerToken = log("suspended_buyer", "password456");
 
         List<int[]> requests = List.of(new int[]{0, 0, 1});
+
         String orderId = reserveTicketService.reserveTickets(buyerToken, "company1", "event1", requests, null).getData();
-        assertTrue(isNumeric(orderId), "Reservation should succeed initially");
+
+        assertTrue(isValidOrderId(orderId), "Reservation should succeed and return a valid ID");
 
         reg("admin", "admin");
         log("admin", "admin");
@@ -573,20 +573,14 @@ public class PurchaseOrderTests {
         adminService.suspendUser(realBuyerId, "admin", 7);
 
         PurchaseOrderException exception = assertThrows(PurchaseOrderException.class, () -> {
-            purchasedService.PurchaseTicket("buyer@gmail.com", orderId, buyerToken, "none",createCreditCardDetails());
+            purchasedService.PurchaseTicket("buyer@gmail.com", orderId, buyerToken, "none", createCreditCardDetails());
         });
 
         assertEquals("User is suspended", exception.getMessage());
     }
 
-    private boolean isNumeric(String str) {
-        if (str == null) return false;
-        try {
-            Double.parseDouble(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
+    private boolean isValidOrderId(String str) {
+        return str != null && !str.isBlank();
     }
 }
 

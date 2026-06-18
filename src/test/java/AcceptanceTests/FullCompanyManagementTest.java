@@ -16,47 +16,61 @@ import com.ticketing.ticketapp.Infastructure.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static org.mockito.Mockito.mock;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@Transactional
 @DisplayName("Company Management Acceptance Tests")
 public class FullCompanyManagementTest {
 
+    @Autowired private IUserRepository userRepository;
+    @Autowired private iCompanyRepository companyRepository;
+    @Autowired private iEventRepository eventRepository;
+    @Autowired private iQueueRepository queueRepository;
+    @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
+    @Autowired private IActiveOrderRepository activeOrderRepository;
+    @Autowired private iTicketRepository ticketRepository;
+    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
+    @Autowired private iAdminRepository adminRepository;
+    @Autowired private TokenService tokenService;
+
     private CompanyService companyService;
     private UserService userService;
-    private TokenService tokenService;
-    private IUserRepository userRepository;
     private AdminService adminService;
 
     @BeforeEach
     void setUp() {
-        IUserRepository userRepository = new UserRepositoryImpl();
-        iCompanyRepository companyRepository = new CompanyRepositoryImpl();
-        iEventRepository eventRepository = new EventRepositoryImpl();
-        iQueueRepository queueRepository = new QueueRepositoryImpl();
-        iTreeOfRoleRepository treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
-        IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
-        iTicketRepository ticketRepository = new TicketRepositoryImpl();
-        iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        this.tokenService = new TokenService();
+        INotifier notifierMock = mock(INotifier.class);
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
-        INotifier notifierMock = mock(INotifier.class);
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
 
-        this.userRepository=userRepository;
-        iAdminRepository adminRepository = new AdminRepositoryImpl(){
-            @Override
-            public boolean isAdmin(String userID) {
-                return userID.equals("admin");
-            }
-        };
-        this.adminService= new AdminService(treeOfRoleRepository,companyRepository,adminRepository,userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
+        this.adminService = new AdminService(
+                treeOfRoleRepository,
+                companyRepository,
+                adminRepository,
+                userRepository,
+                purchasedOrderRepository,
+                ticketRepository,
+                eventRepository,
+                tokenService,
+                new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())),
+                activeOrderRepository
+        );
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -66,6 +80,10 @@ public class FullCompanyManagementTest {
         queueRepository.deleteAll();
         ticketRepository.deleteAllTickets();
         userRepository.deleteAll();
+        adminRepository.deleteAll();
+
+        adminRepository.addAdmin("admin");
+
         tokenService.clearAllData();
     }
 
@@ -83,7 +101,8 @@ public class FullCompanyManagementTest {
 
     // --- Company Creation ---
 
-    @Test @DisplayName("1. Create Company - Success")
+    @Test
+    @DisplayName("1. Create Company - Success")
     void createCompanySuccess1() {
         reg("1", "1");
         String token = log("1", "1");
@@ -589,10 +608,18 @@ public class FullCompanyManagementTest {
     }
 
     @Test
+    @DisplayName("Change Manager Permission - Fail (Manager Not Found)")
     void ChangeManagerPermissionNotManager() {
         reg("1", "1");
         String token = log("1", "1");
-        assertTrue(companyService.ChangeManagerPermissions(token, null, null, null).isError());
+
+        String randomManagerId = UUID.randomUUID().toString();
+        String randomCompanyId = UUID.randomUUID().toString();
+        Set<Permission> permissions = new HashSet<>();
+
+        assertThrows(OwnerManagerException.class, () -> {
+            companyService.ChangeManagerPermissions(token, randomCompanyId, randomManagerId, permissions);
+        });
     }
 
     @Test

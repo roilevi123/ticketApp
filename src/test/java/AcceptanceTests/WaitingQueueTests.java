@@ -9,82 +9,67 @@ import com.ticketing.ticketapp.Domain.Order.IActiveOrderRepository;
 import com.ticketing.ticketapp.Domain.OwnerManagerTree.iTreeOfRoleRepository;
 import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRepository;
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
-import com.ticketing.ticketapp.Domain.Discount.*;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
-import com.ticketing.ticketapp.Infastructure.*;
+import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
+import com.ticketing.ticketapp.Infastructure.NotificationRepositoryImpl;
+import com.ticketing.ticketapp.Infastructure.PasswordEncoderImpl;
+import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static org.mockito.Mockito.mock;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@Transactional
 @DisplayName("Waiting Queue Management Acceptance Tests")
 public class WaitingQueueTests {
+
+    @Autowired private IUserRepository userRepository;
+    @Autowired private iCompanyRepository companyRepository;
+    @Autowired private iEventRepository eventRepository;
+    @Autowired private iQueueRepository queueRepository;
+    @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
+    @Autowired private IActiveOrderRepository activeOrderRepository;
+    @Autowired private iTicketRepository ticketRepository;
+    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
+    @Autowired private TokenService tokenService;
 
     private UserService userService;
     private CompanyService companyService;
     private EventService eventService;
     private QueueService queueService;
 
-    private IUserRepository userRepository;
-    private iCompanyRepository companyRepository;
-    private iEventRepository eventRepository;
-    private iQueueRepository queueRepository;
-    private iTreeOfRoleRepository treeOfRoleRepository;
-    private IActiveOrderRepository activeOrderRepository;
-    private iTicketRepository ticketRepository;
-    private iPurchasedOrderRepository purchasedOrderRepository;
-    private TokenService tokenService;
-
     @BeforeEach
     void setUp() {
-        this.userRepository = new UserRepositoryImpl();
-        this.companyRepository = new CompanyRepositoryImpl();
-        this.eventRepository = new EventRepositoryImpl();
-        this.queueRepository = new QueueRepositoryImpl();
-        this.treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
-        this.activeOrderRepository = new OrderRepositoryImpl();
-        this.ticketRepository = new TicketRepositoryImpl();
-        this.purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        this.tokenService = new TokenService();
-
+        INotifier notifierMock = mock(INotifier.class);
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
-
-        INotifier notifierMock = mock(INotifier.class);
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, mock(iDiscountPolicyRepository.class));
-        com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository adminRepositoryMock = mock(com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository.class);
+
+        var adminRepositoryMock = mock(com.ticketing.ticketapp.Domain.AdminAggregate.iAdminRepository.class);
         this.queueService = new QueueService(queueRepository, tokenService, notifierMock, adminRepositoryMock);
-
-        activeOrderRepository.deleteAllActiveOrders();
-        eventRepository.deleteAllEvents();
-        treeOfRoleRepository.deleteAllRoles();
-        companyRepository.deleteAllCompany();
-        purchasedOrderRepository.deleteAll();
-        queueRepository.deleteAll();
-        ticketRepository.deleteAllTickets();
-        userRepository.deleteAll();
-        tokenService.clearAllData();
     }
 
-    private String gt() {
-        return tokenService.generateGuestToken();
-    }
+    private String gt() { return tokenService.generateGuestToken(); }
 
     private MapArea[][] getMapArea() {
         MapArea[][] map = new MapArea[2][2];
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                map[i][j] = MapArea.SEAT;
-            }
-        }
+        for (int i = 0; i < 2; i++) for (int j = 0; j < 2; j++) map[i][j] = MapArea.SEAT;
         return map;
     }
 
@@ -100,14 +85,7 @@ public class WaitingQueueTests {
     void testSequentialQueueEntry1() {
         createEventHelper("creator", "Rock Festival");
         String eventId = "Rock Festivalcreator";
-
-        String user1Token = gt();
-        String user2Token = gt();
-        String status1 = queueService.checkStatus(user1Token, eventId).getData();
-        String status2 = queueService.checkStatus(user2Token, eventId).getData();
-
-        assertEquals("AUTHORIZED", status1);
-        assertEquals("AUTHORIZED", status2);
+        assertEquals("AUTHORIZED", queueService.checkStatus(gt(), eventId).getData());
     }
 
     @Test
@@ -115,16 +93,10 @@ public class WaitingQueueTests {
     void testQueuePositionIncrements2() {
         createEventHelper("creator", "Rock Festival");
         String eventId = "Rock Festivalcreator";
+        for (int i = 1; i <= 100; i++) queueService.checkStatus(gt(), eventId);
 
-        for (int i = 1; i <= 100; i++) {
-            queueService.checkStatus(gt(), eventId);
-        }
-
-        String status101 = queueService.checkStatus(gt(), eventId).getData();
-        String status102 = queueService.checkStatus(gt(), eventId).getData();
-
-        assertEquals("WAITING_POSITION_1", status101);
-        assertEquals("WAITING_POSITION_2", status102);
+        assertEquals("WAITING_POSITION_1", queueService.checkStatus(gt(), eventId).getData());
+        assertEquals("WAITING_POSITION_2", queueService.checkStatus(gt(), eventId).getData());
     }
 
     @Test
@@ -133,32 +105,18 @@ public class WaitingQueueTests {
         createEventHelper("creator3", "Concurrent Fest");
         String eventId = "Concurrent Festcreator3";
         int threadCount = 50;
-
-        List<String> tokens = new ArrayList<>();
-        for (int i = 0; i < threadCount; i++) {
-            tokens.add(gt());
-        }
-
         CountDownLatch latch = new CountDownLatch(1);
         ExecutorService service = Executors.newFixedThreadPool(threadCount);
         List<String> results = Collections.synchronizedList(new ArrayList<>());
 
         for (int i = 0; i < threadCount; i++) {
-            final String tok = tokens.get(i);
-            service.submit(() -> {
-                try {
-                    latch.await();
-                    results.add(queueService.checkStatus(tok, eventId).getData());
-                } catch (Exception ignored) {}
-            });
+            service.submit(() -> { try { latch.await(); results.add(queueService.checkStatus(gt(), eventId).getData()); } catch (Exception ignored) {} });
         }
-
         latch.countDown();
         service.shutdown();
-        assertTrue(service.awaitTermination(10, TimeUnit.SECONDS));
+        service.awaitTermination(10, TimeUnit.SECONDS);
 
-        long authorizedCount = results.stream().filter(r -> "AUTHORIZED".equals(r)).count();
-        assertEquals(threadCount, authorizedCount);
+        assertEquals(threadCount, results.stream().filter(r -> "AUTHORIZED".equals(r)).count());
     }
 
     @Test
@@ -167,36 +125,21 @@ public class WaitingQueueTests {
         createEventHelper("creator4", "Overfill Fest");
         String eventId = "Overfill Festcreator4";
         int threadCount = 150;
-
-        List<String> tokens = new ArrayList<>();
-        for (int i = 0; i < threadCount; i++) {
-            tokens.add(gt());
-        }
-
         CountDownLatch latch = new CountDownLatch(1);
         ExecutorService service = Executors.newFixedThreadPool(threadCount);
         List<String> results = Collections.synchronizedList(new ArrayList<>());
 
         for (int i = 0; i < threadCount; i++) {
-            final String tok = tokens.get(i);
-            service.submit(() -> {
-                try {
-                    latch.await();
-                    results.add(queueService.checkStatus(tok, eventId).getData());
-                } catch (Exception ignored) {}
-            });
+            service.submit(() -> { try { latch.await(); results.add(queueService.checkStatus(gt(), eventId).getData()); } catch (Exception ignored) {} });
         }
-
         latch.countDown();
         service.shutdown();
-        assertTrue(service.awaitTermination(15, TimeUnit.SECONDS));
+        service.awaitTermination(15, TimeUnit.SECONDS);
 
-        long authorizedCount = results.stream().filter(r -> "AUTHORIZED".equals(r)).count();
-        long waitingCount = results.stream().filter(r -> r != null && r.startsWith("WAITING_POSITION_")).count();
-
-        assertEquals(100, authorizedCount);
-        assertEquals(50, waitingCount);
+        assertEquals(100, results.stream().filter(r -> "AUTHORIZED".equals(r)).count());
+        assertEquals(50, results.stream().filter(r -> r != null && r.startsWith("WAITING_POSITION_")).count());
     }
+
 
     @Test
     @DisplayName("5. Concurrent Same User Refresh")
@@ -241,7 +184,6 @@ public class WaitingQueueTests {
 
     @Test
     public void testCheckStatusInvalidToken() {
-        Response<String> result = queueService.checkStatus("", "eventId");
-        assertTrue(result.isError());
+        assertTrue(queueService.checkStatus("", "eventId").isError());
     }
 }

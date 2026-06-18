@@ -23,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter;
@@ -33,84 +34,68 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@org.springframework.boot.test.context.SpringBootTest
-@org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
-@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
-@org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase(replace = org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE)
-@DisplayName("Discount & Payment Price Acceptance Tests")
+@org.springframework.test.annotation.DirtiesContext(classMode = org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@org.springframework.test.context.ActiveProfiles("test")
+@DisplayName("Admin Management Acceptance Tests")
 public class DiscountPaymentTests {
 
-    private UserService userService;
-    private CompanyService companyService;
-    private EventService eventService;
-    private OrderService reserveTicketService;
-    private PurchasedService purchasedService;
-    private TokenService tokenService;
-    private IPaymentService paymentServiceSpy;
-    private DiscountService discountService;
-    private iDiscountPolicyRepository discountRepo;
-    private IUserRepository userRepository;
-    private AdminService adminService;
-    @MockBean
-    IExternalTicketService externalTicketService;
-    @Autowired
-    private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
-//    @jakarta.persistence.PersistenceContext
-//    private jakarta.persistence.EntityManager entityManager;
-@Autowired
-private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
-    @BeforeEach
-    void setUp() {
-        IUserRepository userRepository = new UserRepositoryImpl();
-        iCompanyRepository companyRepository = new CompanyRepositoryImpl();
-        iEventRepository eventRepository = new EventRepositoryImpl();
-        iQueueRepository queueRepository = new QueueRepositoryImpl();
-        iTreeOfRoleRepository treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
-        IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
-        iTicketRepository ticketRepository = new TicketRepositoryImpl();
-        iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        this.discountRepo = new DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
-        iPurchasePolicyRepository purchasePolicyRepository = new com.ticketing.ticketapp.Infastructure.PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
-        INotifier notifierMock = mock(INotifier.class);
+        @Autowired private IUserRepository userRepository;
+        @Autowired private iCompanyRepository companyRepository;
+        @Autowired private iEventRepository eventRepository;
+        @Autowired private iQueueRepository queueRepository;
+        @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
+        @Autowired private IActiveOrderRepository activeOrderRepository;
+        @Autowired private iTicketRepository ticketRepository;
+        @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
+        @Autowired private JpaDiscountPolicyRepository jpaDiscountPolicyRepository;
+        @Autowired private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
+        @Autowired private iAdminRepository adminRepository;
+        @Autowired private TokenService tokenService;
 
-        this.tokenService = new TokenService();
-        IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
-        ISupplyService supplyService = new SupplyServiceMock();
-        IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
-        this.paymentServiceSpy = spy(new PaymentServiceMock());
+        private UserService userService;
+        private CompanyService companyService;
+        private EventService eventService;
+        private OrderService reserveTicketService;
+        private PurchasedService purchasedService;
+        private DiscountService discountService;
+        private AdminService adminService;
+        private iDiscountPolicyRepository discountRepo;
+        private IPaymentService paymentServiceSpy;
 
-        this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
-        this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
-        this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, discountRepo);
-        this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
+        @MockBean IExternalTicketService externalTicketService;
 
-        this.purchasedService = new PurchasedService(
-                activeOrderRepository, ticketRepository, purchasedOrderRepository,
-                supplyService, paymentServiceSpy, barcodeGenerator,
-                tokenService, treeOfRoleRepository, discountRepo, userRepository, notifierMock,
-                externalTicketService
-        );
-        when(externalTicketService.issueTicket(anyString(), anyString(), anyString(), anyInt(), anyInt())).thenReturn("TIX-test-123");
+        @BeforeEach
+        void setUp() {
+            this.discountRepo = new DiscountPolicyRepositoryAdapter(jpaDiscountPolicyRepository);
+            iPurchasePolicyRepository purchasePolicyRepository = new PurchasePolicyRepositoryAdapter(jpaPurchasePolicyRepository);
 
-        this.discountService = new DiscountService(discountRepo, tokenService, purchasedService, userRepository);
+            INotifier notifierMock = mock(INotifier.class);
+            IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
+            ISupplyService supplyService = new SupplyServiceMock();
+            IBarcodeGenerator barcodeGenerator = new BarcodeGeneratorMock();
+            this.paymentServiceSpy = spy(new PaymentServiceMock());
 
-        this.userRepository = userRepository;
-        iAdminRepository adminRepository = new AdminRepositoryImpl(){
-            @Override
-            public boolean isAdmin(String userID) {
-                return userID.equals("admin");
-            }
-        };
-        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
+            this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
+            this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
+            this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, discountRepo);
+            this.reserveTicketService = new OrderService(activeOrderRepository, tokenService, ticketRepository, userRepository, purchasePolicyRepository, notifierMock, eventRepository, mock(LotteryService.class));
 
-        activeOrderRepository.deleteAllActiveOrders();
-        eventRepository.deleteAllEvents();
-        userRepository.deleteAll();
-        jpaDiscountPolicyRepository.deleteAll();
-//        discountRepo.deleteAll();
-        discountRepo.deleteAll();
+            this.purchasedService = new PurchasedService(activeOrderRepository, ticketRepository, purchasedOrderRepository, supplyService, paymentServiceSpy, barcodeGenerator, tokenService, treeOfRoleRepository, discountRepo, userRepository, notifierMock, externalTicketService);
+            this.discountService = new DiscountService(discountRepo, tokenService, purchasedService, userRepository);
 
-    }
+            this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), activeOrderRepository);
+
+            activeOrderRepository.deleteAllActiveOrders();
+            eventRepository.deleteAllEvents();
+            companyRepository.deleteAllCompany();
+            userRepository.deleteAll();
+            jpaDiscountPolicyRepository.deleteAll();
+            discountRepo.deleteAll();
+            adminRepository.deleteAll();
+            adminRepository.addAdmin("admin");
+            tokenService.clearAllData();
+        }
 
     private String setupEventAndGetToken(String owner, String company, String event, double price) {
         String guestToken = tokenService.generateGuestToken();
@@ -236,25 +221,35 @@ private JpaPurchasePolicyRepository jpaPurchasePolicyRepository;
         discountService.createTimeLimitedDiscount(ownerToken, "E6", DiscountTargetType.EVENT, 50.0, cal.getTime(), "C6");
 
         String buyerToken = registerAndLoginBuyer("b6");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C6", "E6", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b6@g.com", orderId, "b6", "none",createCreditCardDetails());
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C6", "E6", List.of(new int[]{0, 0, 1}, new int[]{0, 1, 1}), null).getData();
 
-        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0,"USD");
+        purchasedService.PurchaseTicket("b6@g.com", orderId, "b6", "none", createCreditCardDetails());
+
+        verify(paymentServiceSpy, times(1)).processPayment(any(), eq(200.0), eq("USD"));
     }
 
     @Test
     @DisplayName("7. Invalid Coupon Code Behavior Verification")
     void testInvalidCouponCode() {
-        String ownerToken = setupEventAndGetToken("o7", "C7", "E7", 100.0);
+        double pricePerTicket = 100.0;
+        String ownerToken = setupEventAndGetToken("o7", "C7", "E7", pricePerTicket);
         discountService.createCouponDiscount(ownerToken, "E7", DiscountTargetType.EVENT, "REAL_CODE", 20.0, "C7");
 
         String buyerToken = registerAndLoginBuyer("b7");
-        String orderId = reserveTicketService.reserveTickets(buyerToken, "C7", "E7", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b7@g.com", orderId, "b7", "FAKE_CODE",createCreditCardDetails());
+        List<int[]> seats = List.of(
+                new int[]{0, 0, 1}, new int[]{0, 1, 1},
+                new int[]{0, 2, 1}, new int[]{0, 3, 1}
+        );
 
-        verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0,"USD");
+        String orderId = reserveTicketService.reserveTickets(buyerToken, "C7", "E7", seats, null).getData();
+
+        double expectedTotal = pricePerTicket * seats.size();
+
+        purchasedService.PurchaseTicket("b7@g.com", orderId, "b7", "FAKE_CODE", createCreditCardDetails());
+
+        verify(paymentServiceSpy, times(1)).processPayment(any(), eq(expectedTotal), eq("USD"));
     }
 
     @Test

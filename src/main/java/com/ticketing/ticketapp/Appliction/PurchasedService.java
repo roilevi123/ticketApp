@@ -87,7 +87,18 @@ public class PurchasedService {
         try {
             logger.info("User of token {} is attempting to purchase tickets of the order {}", token, orderId);
 
-            ActiveOrder order = repository.findById(orderId);
+            ActiveOrder order;
+
+            if (orderId == null || orderId.isBlank()) {
+                if (!tokenService.validateToken(token)) {
+                    throw new PurchaseOrderException("Invalid token");
+                }
+
+                String userId = tokenService.extractUserId(token);
+                order = repository.getOrder(userId);
+            } else {
+                order = repository.findById(orderId);
+            }
 
             if (tokenService.validateToken(token)) {
                 String userID = tokenService.extractUserId(token);

@@ -24,42 +24,46 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+
+@SpringBootTest(classes = com.ticketing.ticketapp.TicketappApplication.class)
+@ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@Transactional
 @DisplayName("Complete Event Management Acceptance Tests")
 public class EventManagementTest {
+
+    @Autowired
+    private IUserRepository userRepository;
+    @Autowired private iCompanyRepository companyRepository;
+    @Autowired private iEventRepository eventRepository;
+    @Autowired private iQueueRepository queueRepository;
+    @Autowired private iTreeOfRoleRepository treeOfRoleRepository;
+    @Autowired private IActiveOrderRepository activeOrderRepository;
+    @Autowired private iTicketRepository ticketRepository;
+    @Autowired private iPurchasedOrderRepository purchasedOrderRepository;
+    @Autowired private iAdminRepository adminRepository;
+    @Autowired private TokenService tokenService;
 
     private UserService userService;
     private CompanyService companyService;
     private EventService eventService;
-    private TokenService tokenService;
-    private IUserRepository userRepository;
     private AdminService adminService;
 
     @BeforeEach
     void setUp() {
-        IUserRepository userRepository = new UserRepositoryImpl();
-        iCompanyRepository companyRepository = new CompanyRepositoryImpl();
-        iEventRepository eventRepository = new EventRepositoryImpl();
-        iQueueRepository queueRepository = new QueueRepositoryImpl();
-        iTreeOfRoleRepository treeOfRoleRepository = new TreeOfRoleRepositoryImpl();
-        IActiveOrderRepository activeOrderRepository = new OrderRepositoryImpl();
-        iTicketRepository ticketRepository = new TicketRepositoryImpl();
-        iPurchasedOrderRepository purchasedOrderRepository = new PurchasedOrderRepositoryImpl();
-        this.tokenService = new TokenService();
+        INotifier notifierMock = mock(INotifier.class);
         IPasswordEncoder passwordEncoder = new PasswordEncoderImpl();
 
-        INotifier notifierMock = mock(INotifier.class);
         this.userService = new UserService(passwordEncoder, userRepository, tokenService, new NotificationRepositoryImpl(), notifierMock, treeOfRoleRepository);
         this.companyService = new CompanyService(companyRepository, userRepository, treeOfRoleRepository, tokenService, notifierMock);
         this.eventService = new EventService(companyRepository, eventRepository, tokenService, treeOfRoleRepository, ticketRepository, queueRepository, purchasedOrderRepository, userRepository, notifierMock, mock(iDiscountPolicyRepository.class));
 
-        this.userRepository = userRepository;
-        iAdminRepository adminRepository = new AdminRepositoryImpl(){
-            @Override
-            public boolean isAdmin(String userID) {
-                return userID.equals("admin");
-            }
-        };
-        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), new OrderRepositoryImpl());
+        this.adminService = new AdminService(treeOfRoleRepository, companyRepository, adminRepository, userRepository, purchasedOrderRepository, ticketRepository, eventRepository, tokenService, new NotifierImpl(new Broadcaster(new NotificationRepositoryImpl())), activeOrderRepository);
 
         activeOrderRepository.deleteAllActiveOrders();
         eventRepository.deleteAllEvents();
@@ -69,6 +73,8 @@ public class EventManagementTest {
         queueRepository.deleteAll();
         ticketRepository.deleteAllTickets();
         userRepository.deleteAll();
+        adminRepository.deleteAll();
+        adminRepository.addAdmin("admin");
         tokenService.clearAllData();
     }
 
@@ -179,8 +185,13 @@ public class EventManagementTest {
         reg("1", "1");
         String token = log("1", "1");
         companyService.CreateCompany("1", token);
+
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        assertTrue(eventService.deleteEvent("1", "1", token).isSuccess());
+
+        var eventsResponse = eventService.getCompanyEvents(token, "1");
+        String actualEventId = eventsResponse.getData().get(0).eventId();
+
+        assertTrue(eventService.deleteEvent(actualEventId, "1", token).isSuccess());
     }
 
     @Test
@@ -191,12 +202,18 @@ public class EventManagementTest {
         reg("2", "2");
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
+
         Set<Permission> permissions = new HashSet<>();
         permissions.add(Permission.MANAGE_INVENTORY);
         companyService.AppointAManager("2", "1", permissions, token);
         companyService.ApproveAppointmentForManager(token2, "1");
+
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        assertTrue(eventService.deleteEvent("1", "1", token2).isSuccess());
+
+        var companyEvents = eventService.getCompanyEvents(token, "1");
+        String actualEventId = companyEvents.getData().get(0).eventId();
+
+        assertTrue(eventService.deleteEvent(actualEventId, "1", token2).isSuccess());
     }
 
     @Test
@@ -207,10 +224,16 @@ public class EventManagementTest {
         reg("2", "2");
         String token2 = log("2", "2");
         companyService.CreateCompany("1", token);
+
         companyService.AppointOwner("2", "1", token);
         companyService.ApproveAppointmentForOwner(token2, "1");
+
         eventService.createEvent(token, "1", "1", EventType.PLAY, 100, new Date(), "1", "1", getMapArea());
-        assertTrue(eventService.deleteEvent("1", "1", token2).isSuccess());
+
+        var events = eventService.getCompanyEvents(token, "1").getData();
+        String eventId = events.get(0).eventId();
+
+        assertTrue(eventService.deleteEvent(eventId, "1", token2).isSuccess());
     }
 
     @Test
