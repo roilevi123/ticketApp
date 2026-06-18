@@ -27,7 +27,6 @@ public class EventRepositoryAdapter implements iEventRepository {
     }
 
     @Override
-    @Transactional
     public Event store(String eventName, String artistName, EventType eventType, double price, Date date,
                        String location, String company, MapArea[][] mapArea) {
         if (jpaEventRepository.existsByNameAndCompanyName(eventName, company)) {
@@ -39,7 +38,6 @@ public class EventRepositoryAdapter implements iEventRepository {
     }
 
     @Override
-    @Transactional
     public Event save(Event eventToUpdate) {
         // @Version on Event.version handles optimistic locking automatically
         return jpaEventRepository.save(eventToUpdate);
@@ -71,7 +69,6 @@ public class EventRepositoryAdapter implements iEventRepository {
     }
 
     @Override
-    @Transactional
     public void deleteEvent(String eventId, String company) {
         Event event = getEventById(eventId, company);
         if (event == null) {
@@ -83,14 +80,12 @@ public class EventRepositoryAdapter implements iEventRepository {
     }
 
     @Override
-    @Transactional
     public void deleteAllEvents() {
         jpaEventRepository.deleteAll();
         jpaEventRepository.flush();
     }
 
     @Override
-    @Transactional
     public void deleteCompanyEvent(String company) {
         jpaEventRepository.deleteByCompanyName(company);
         jpaEventRepository.flush();

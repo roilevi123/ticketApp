@@ -4,7 +4,7 @@ import com.ticketing.ticketapp.Appliction.IPaymentService;
 import com.ticketing.ticketapp.Domain.payment.CreditCardDetails;
 import org.springframework.stereotype.Component;
 
-@Component
+//@Component
 public class PaymentServiceMock implements IPaymentService {
     
 //    @Override
@@ -22,11 +22,11 @@ public class PaymentServiceMock implements IPaymentService {
 
     @Override
     public int processPayment(CreditCardDetails cardDetails, double amount, String currency) {
-        return 0;
+        return 100;
     }
 
     @Override
     public int refund(int transactionId) {
-        return 0;
+        return 100;
     }
 }

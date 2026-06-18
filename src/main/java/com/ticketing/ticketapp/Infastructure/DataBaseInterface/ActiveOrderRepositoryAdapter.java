@@ -22,7 +22,6 @@ public class ActiveOrderRepositoryAdapter implements IActiveOrderRepository {
     }
 
     @Override
-    @Transactional
     public void save(ActiveOrder activeOrder){
         if(activeOrder==null || activeOrder.getOrderId()==null || activeOrder.getTicketIds()==null || activeOrder.getTicketIds().isEmpty()|| activeOrder.getCompanyId()==null || activeOrder.getEventId()==null)
             throw new RuntimeException("Order cannot be saved without the relevant info");
@@ -30,7 +29,6 @@ public class ActiveOrderRepositoryAdapter implements IActiveOrderRepository {
     }
 
     @Override
-    @Transactional
     public String store(String companyId, String eventId, List<String> ticketIds, String userId, Date expirationTime){
         if(companyId==null || eventId==null || ticketIds==null ||ticketIds.isEmpty())
             throw new RuntimeException("Order cannot be stored without the relevant info");
@@ -40,13 +38,11 @@ public class ActiveOrderRepositoryAdapter implements IActiveOrderRepository {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public ActiveOrder findById(String orderID){
         return jpaOrderRepository.findById(orderID).orElse(null);
     }
 
     @Override
-    @Transactional
     public void update (ActiveOrder activeOrder){
         if(activeOrder==null || activeOrder.getOrderId()==null)
             throw new RuntimeException("Cannot update an order without id");
@@ -54,21 +50,18 @@ public class ActiveOrderRepositoryAdapter implements IActiveOrderRepository {
     }
 
     @Override
-    @Transactional
     public void delete(String orderID){
         jpaOrderRepository.deleteById(orderID);
         jpaOrderRepository.flush();
     }
 
     @Override
-    @Transactional
     public void deleteAllActiveOrders(){
         jpaOrderRepository.deleteAll();
         jpaOrderRepository.flush();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<String> getTicketsId(String userID){
         ActiveOrder order = jpaOrderRepository.findFirstByUserId(userID).orElse(null);
         if(order==null)
@@ -77,13 +70,11 @@ public class ActiveOrderRepositoryAdapter implements IActiveOrderRepository {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public ActiveOrder getOrder(String userID){
         return jpaOrderRepository.findFirstByUserId(userID).orElse(null);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<ActiveOrder> getAllActiveOrders(){
         return jpaOrderRepository.findAll();
     }

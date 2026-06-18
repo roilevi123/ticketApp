@@ -16,6 +16,7 @@ import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -156,7 +157,11 @@ public class OrderService {
             logger.info("User {} reserved tickets for the event {} of the company {} successfully", userID, event, company);
             return Response.success(id);
 
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Reservation failed: " + e.getMessage());
             return Response.error(e.getMessage());
         }

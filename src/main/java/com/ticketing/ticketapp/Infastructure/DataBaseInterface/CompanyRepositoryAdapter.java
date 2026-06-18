@@ -22,7 +22,6 @@ public class CompanyRepositoryAdapter implements iCompanyRepository {
     }
 
     @Override
-    @Transactional
     public void store(String company, String founderID) {
         if (jpaCompanyRepository.existsById(company)) {
             throw new CompanyDomainException("Company already exists: " + company);
@@ -30,7 +29,6 @@ public class CompanyRepositoryAdapter implements iCompanyRepository {
         jpaCompanyRepository.saveAndFlush(new Company(company, founderID));
     }
 
-    @Override
     public String getCompanyFounder(String company) {
         return jpaCompanyRepository.findById(company)
                 .map(Company::getFounderID)
@@ -43,21 +41,18 @@ public class CompanyRepositoryAdapter implements iCompanyRepository {
     }
 
     @Override
-    @Transactional
     public void save(Company companyToUpdate) {
         // @Version on Company.version handles optimistic locking automatically
         jpaCompanyRepository.save(companyToUpdate);
     }
 
     @Override
-    @Transactional
     public void deleteAllCompany() {
         jpaCompanyRepository.deleteAll();
         jpaCompanyRepository.flush();
     }
 
     @Override
-    @Transactional
     public void deleteCompany(String company) {
         jpaCompanyRepository.deleteById(company);
         jpaCompanyRepository.flush();

@@ -24,6 +24,7 @@ import com.ticketing.ticketapp.Infastructure.ExternalServiceException;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ticketing.ticketapp.Domain.Order.ActiveOrderDomainException;
@@ -215,7 +216,11 @@ public class PurchasedService {
         } catch (ExternalServiceException e) {
             logger.error("External service error during purchase: {}", e.getMessage());
             throw new PurchaseOrderException("External service error: " + e.getMessage(), e);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -263,7 +268,11 @@ public class PurchasedService {
 
         } catch (com.ticketing.ticketapp.Infastructure.ExternalServiceException e) {
             throw e;
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -298,7 +307,11 @@ public class PurchasedService {
             }
             logger.info("User {} got company transactions for company {} successfully", username, company);
             return Response.success(orderDTOS);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -331,7 +344,11 @@ public class PurchasedService {
             }
             logger.info("User {} got their transaction successfully", userID);
             return Response.success(orderDTOS);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -413,7 +430,11 @@ public class PurchasedService {
 
             return Response.success(report);
 
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to generate sub-tree sales report: {}", e.getMessage());
             return Response.error(e.getMessage());
         }

@@ -4,6 +4,7 @@ import com.ticketing.ticketapp.Domain.Discount.DiscountPolicy;
 import com.ticketing.ticketapp.Domain.Discount.DiscountTargetType;
 import com.ticketing.ticketapp.Domain.Discount.JpaDiscountPolicyRepository;
 import com.ticketing.ticketapp.Domain.Discount.iDiscountPolicyRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
@@ -43,7 +44,6 @@ public class DiscountPolicyRepositoryAdapter implements iDiscountPolicyRepositor
         return jpaRepository.findById(policyId)
                 .orElse(null);
     }
-
     @Override
     public void delete(String policyId) {
         jpaRepository.deleteById(policyId);

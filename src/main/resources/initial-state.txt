@@ -1,6 +1,7 @@
 register rina 1234 25 rina@test.com
 register moshe 1234 30 moshe@test.com
 register dan 1234 28 dan@test.com
+registerAdmin admin admin 1000000 admin@test.com
 
 login rina 1234
 login moshe 1234

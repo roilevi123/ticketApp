@@ -2,6 +2,7 @@ package com.ticketing.ticketapp.Infastructure;
 
 import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
 import com.ticketing.ticketapp.Domain.Notification.Notification;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;
@@ -9,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Repository
+@ConditionalOnProperty(name = "repository.type", havingValue = "MEMORY")
 public class NotificationRepositoryImpl implements INotificationRepository {
 
     private final Map<String, List<Notification>> store = new ConcurrentHashMap<>();

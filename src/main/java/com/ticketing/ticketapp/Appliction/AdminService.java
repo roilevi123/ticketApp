@@ -20,6 +20,7 @@ import com.ticketing.ticketapp.Domain.User.User;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -85,7 +86,12 @@ public class AdminService {
             owners.forEach(o -> notifyMember(o.getUserID(), title, message));
             managers.forEach(m -> notifyMember(m.getUserID(), title, message));
             return Response.success("success");
-        }catch (Exception e) {
+
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -101,7 +107,11 @@ public class AdminService {
             notifier.notifyUser(targetUserId, "Message from Admin", message);
             logger.info("Admin sent a message successfully to user with id: "+ targetUserId);
             return Response.success("success");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -113,7 +123,9 @@ public class AdminService {
             User u = userRepository.getUserByUsername(username);
             if (u != null) notifier.notifyUser(u.getID(), title, message);
             logger.info("Notified user successfully");
-        } catch (Exception e) {
+        }
+
+        catch (Exception e) {
             logger.warn("Failed to notify user {}: {}", username, e.getMessage());
         }
     }
@@ -129,7 +141,11 @@ public class AdminService {
             treeOfRoleRepository.deleteUserRoles(UserID);
             logger.info("Deleted user successfully: " + UserID);
             return Response.success("success");
-        }catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -178,7 +194,11 @@ public class AdminService {
             tokenService.banUser(targetUserId);
             logger.info("Banned user successfully: " + targetUserId);
             return Response.success("success");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -193,7 +213,11 @@ public class AdminService {
             tokenService.unbanUser(targetUserId);
             logger.info("Unbanned user " + targetUserId);
             return Response.success("success");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -231,7 +255,11 @@ public class AdminService {
 
             return Response.success("success");
 
-        }catch (Exception e){
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e){
             logger.info("Failed to suspend user: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -253,7 +281,11 @@ public class AdminService {
             notifier.notifyUser(targetUserId, "Account is no longer suspended", "The suspension of your account was canceled by an adminstrator");
 
             return Response.success("success");
-        }catch(Exception e){
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch(Exception e){
             logger.info("Failed to cancel suspension of user: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -269,7 +301,11 @@ public class AdminService {
             List<Suspension> suspensions = userRepository.getAllSuspensions();
             logger.info("Admin got all suspension history successfully");
             return Response.success(suspensions);
-        }catch(Exception e){
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch(Exception e){
             logger.info("Failed to get all suspensions: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -302,7 +338,11 @@ public class AdminService {
             }
             logger.info("Admin {} got purchasing history successfully", adminId);
             return Response.success(dtos);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -322,7 +362,11 @@ public class AdminService {
             analytics.put("activeOrders", activeOrders);
             logger.info("Admin {} got system analytics successfully", adminId);
             return Response.success(analytics);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -341,7 +385,10 @@ public class AdminService {
             notifier.broadcast(title, message);
             logger.info("Admin {} broadcasted a message successfully", adminId);
             return Response.success("Broadcast sent");
-        } catch (Exception e) {
+        }        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }

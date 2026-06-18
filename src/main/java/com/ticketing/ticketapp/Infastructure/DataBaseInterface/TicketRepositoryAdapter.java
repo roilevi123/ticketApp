@@ -25,7 +25,6 @@ public class TicketRepositoryAdapter implements iTicketRepository {
     }
 
     @Override
-    @Transactional
     public void storeTicket(int row, int col, String event, String company, double price) {
         String id = UUID.randomUUID().toString();
         jpaTicketRepository.save(new Ticket(row, col, event, company, id, price));
@@ -37,7 +36,6 @@ public class TicketRepositoryAdapter implements iTicketRepository {
     }
 
     @Override
-    @Transactional
     public void save(Ticket ticketToUpdate) {
         // @Version on Ticket.version handles optimistic locking automatically
         jpaTicketRepository.save(ticketToUpdate);
@@ -61,7 +59,6 @@ public class TicketRepositoryAdapter implements iTicketRepository {
     }
 
     @Override
-    @Transactional
     public void makeMapToTicket(String company, String event, MapArea[][] mapAreas, Date date, double price) {
         List<Ticket> toSave = new ArrayList<>();
         for (int i = 0; i < mapAreas.length; i++) {
@@ -78,7 +75,6 @@ public class TicketRepositoryAdapter implements iTicketRepository {
     }
 
     @Override
-    @Transactional
     public void deleteAllTickets() {
         jpaTicketRepository.deleteAll();
     }

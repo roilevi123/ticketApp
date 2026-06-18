@@ -10,6 +10,7 @@ import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
@@ -80,7 +81,11 @@ public class LotteryService {
             logger.info("Lottery configured successfully for event '{}' / company '{}' - endDate={}, maxWinners={}",
                     eventName, companyName, endDate, maxWinners);
             return Response.success("Lottery configured successfully");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to configure lottery for event '{}': {}", eventName, e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -117,7 +122,11 @@ public class LotteryService {
                     userId, eventName, companyName);
             return Response.success("Successfully registered for the lottery! " +
                     "Winners will be notified after the draw.");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to register for lottery '{}': {}", eventName, e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -171,7 +180,11 @@ public class LotteryService {
 
             logger.info("User of token {} got lottery status for the event {} of the company {} successfully", token, eventName, companyName);
             return Response.success(status);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to get lottery status for '{}': {}", eventName, e.getMessage());
             return Response.error(e.getMessage());
         }

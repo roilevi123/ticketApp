@@ -205,6 +205,19 @@ public class DataInitializer implements ApplicationRunner {
                 tokens.put(p[1], res.getData());
                 break;
             }
+            case "registerAdmin":{
+                String guestToken = tokenService.generateGuestToken();
+                require(p, 5);
+                Response<String> res = userService.register(
+                        guestToken,
+                        p[1],
+                        p[2],
+                        Integer.parseInt(p[3]),
+                        p[4]
+                );
+                String adminToken = userService.login(guestToken, "admin", "admin123").getData();
+                adminRepository.addAdmin(tokenService.extractUserId(adminToken));
+            }
 
             case "create-company": {
                 // create-company username companyName
