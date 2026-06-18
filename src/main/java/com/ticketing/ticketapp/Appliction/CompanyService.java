@@ -15,6 +15,7 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.Cacheable;
@@ -60,7 +61,11 @@ public class CompanyService {
             return Response.success(founderToken);
         } catch (OwnerManagerException e) {
             throw e;
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -87,6 +92,8 @@ public class CompanyService {
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
+        }        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
         } catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
@@ -108,7 +115,9 @@ public class CompanyService {
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
-        } catch (Exception e) {
+        }         catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -129,7 +138,11 @@ public class CompanyService {
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -156,7 +169,11 @@ public class CompanyService {
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -177,7 +194,11 @@ public class CompanyService {
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -201,7 +222,11 @@ public class CompanyService {
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -225,7 +250,11 @@ public class CompanyService {
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -249,7 +278,11 @@ public class CompanyService {
             return Response.success("success");
         } catch (OwnerManagerException e) {
             throw e;
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -299,7 +332,11 @@ public class CompanyService {
             throw new OwnerManagerException("User has no role in this company");
         } catch (OwnerManagerException e) {
             throw e;
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -340,7 +377,11 @@ public class CompanyService {
             treeOfRoleRepository.save(manager);
             logger.info("User {} changed premmisions of the manager {} of the company {} successfully", appointerID, targetUserID, company);
             return Response.success("success");
-        } catch (OwnerManagerException e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (OwnerManagerException e) {
             throw e;
         } catch (Exception e) {
             logger.error("Failed to change permissions: " + e.getMessage());
@@ -366,7 +407,11 @@ public class CompanyService {
             treeOfRoleRepository.getAllManagersByCompany(company).forEach(m -> notifyMember(m.getUserID(), title, msg));
             logger.info("User {} freezed the company {} successfully ", userID, company);
             return Response.success("success");
-        } catch (OwnerManagerException e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (OwnerManagerException e) {
             throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -388,7 +433,11 @@ public class CompanyService {
             companyRepository.save(companyObj);
             logger.info("User {} unfreezed the company {} successfully ", userID, company);
             return Response.success("success");
-        } catch (OwnerManagerException e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (OwnerManagerException e) {
             throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -419,7 +468,11 @@ public class CompanyService {
             managers.forEach(mgr -> notifyMember(mgr.getUserID(), title, closeMsg));
             logger.info("Company '{}' closed by founder '{}' successfully", company, userId);
             return Response.success("success");
-        } catch (OwnerManagerException e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (OwnerManagerException e) {
             throw e;
         } catch (Exception e) {
             logger.error("Failed to close company '{}': {}", company, e.getMessage());
@@ -442,7 +495,11 @@ public class CompanyService {
             notifier.notifyUser(buyerId, "Message from " + companyName, message);
             logger.info("Successfully replied to buyer {}", buyerId);
             return Response.success("success");
-        } catch (OwnerManagerException e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (OwnerManagerException e) {
             throw e;
         } catch (Exception e) {
             logger.error("Failed to reply to buyer: {}", e.getMessage());
@@ -464,7 +521,11 @@ public class CompanyService {
                     .toList();
             logger.info("User of token {} got active companies successfully", token);
             return Response.success(companies);
-        } catch (OwnerManagerException e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (OwnerManagerException e) {
             throw e;
         } catch (Exception e) {
             logger.error("Failed to retrieve active companies: {}", e.getMessage());
@@ -486,7 +547,11 @@ public class CompanyService {
             Set<Permission> permissions = treeOfRoleRepository.getManagerPermissions(targetUserID, company);
             logger.info("User {} got manager {} premissions for company {} successfully", userID, targetUserID, company);
             return Response.success(permissions);
-        } catch (OwnerManagerException e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (OwnerManagerException e) {
             throw e;
         } catch (Exception e) {
             logger.error("Error retrieving manager permissions: " + e.getMessage());
@@ -509,7 +574,11 @@ public class CompanyService {
             buildTreeString(company.getFounderID(), allOwners, allManagers, treeString, 0);
             logger.info("User {} got role tree for company {} successfully", userID, companyName);
             return Response.success(treeString.toString());
-        } catch (OwnerManagerException e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (OwnerManagerException e) {
             throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());

@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -37,7 +38,11 @@ public class PurchasePolicyService {
             PurchaseComponent condition = new AgeLimitCondition(minAge);
             logger.info("User {} created age limit policy (min age: {}) for the company {} successfully", userID, minAge, targetId);
             return Response.success(saveToRepo(targetId, type, condition));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -56,7 +61,11 @@ public class PurchasePolicyService {
             PurchaseComponent condition = new QuantityLimitCondition(min, max);
             logger.info("User {} created quantity limit policy (min: {}, max: {}) for the company {} successfully", userID, min, max, targetId);
             return Response.success(saveToRepo(targetId, type, condition));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -83,7 +92,11 @@ public class PurchasePolicyService {
             }
             logger.info("User {} created AND policy for the company {} successfully", userID, targetId);
             return Response.success(saveToRepo(targetId, type, andComposite));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -111,7 +124,11 @@ public class PurchasePolicyService {
             logger.info("User {} created OR policy for the company {} successfully", userID, targetId);
 
             return Response.success(saveToRepo(targetId, type, orComposite));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -147,7 +164,11 @@ public class PurchasePolicyService {
             if (eventMax   == null) return Response.success(companyMax);
             if (companyMax == null) return Response.success(eventMax);
             return Response.success(Math.min(eventMax, companyMax));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Error getting max seats for event {}: {}", eventName, e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -170,7 +191,11 @@ public class PurchasePolicyService {
                     .collect(Collectors.toList());
             logger.info("User of token {} got policies for event {} of company {} successfully", token, eventId, companyName);
             return Response.success(dtos);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Error retrieving purchase policies: " + e.getMessage());
             return Response.error(e.getMessage());
         }

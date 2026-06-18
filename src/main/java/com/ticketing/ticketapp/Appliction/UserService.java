@@ -8,6 +8,7 @@ import com.ticketing.ticketapp.Domain.User.UserDTO;
 import com.ticketing.ticketapp.Domain.User.UserSuspendedException;
 
 import com.ticketing.ticketapp.Infastructure.TokenService;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +55,11 @@ public class UserService implements IAuth {
             userRepository.Store(username, encodedPassword, age, email);
             logger.info("Registered user " + username + " successfully");
             return Response.success("success");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Registering user " + username + " failed", e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -82,7 +87,11 @@ public class UserService implements IAuth {
             String memberToken = tokenService.generateMemberToken(userObj.getID(), userObj.getName());
             logger.info("User {} logged in successfully", username);
             return Response.success(memberToken);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Login failed for user {}", username, e);
             return Response.error(e.getMessage());
         }
@@ -100,7 +109,11 @@ public class UserService implements IAuth {
             }
             logger.error("Logout failed for token {}", token);
             throw new RuntimeException("Invalid token");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Logout failed", e);
             return Response.error(e.getMessage());
         }
@@ -131,7 +144,11 @@ public class UserService implements IAuth {
             
             logger.info("Profile updated successfully for user {}", userId);
             return Response.success("Profile updated successfully");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to update profile", e);
             return Response.error(e.getMessage());
         }
@@ -154,7 +171,11 @@ public class UserService implements IAuth {
             }
             logger.error("Invalid token provided for getting user info");
             return Response.error("Invalid token");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to get user info", e);
             return Response.error(e.getMessage());
         }
@@ -184,7 +205,11 @@ public class UserService implements IAuth {
             userRepository.save(user);
             logger.info("Password updated successfully for user {}", userId);
             return Response.success("success");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to update password", e);
             return Response.error(e.getMessage());
         }
@@ -213,7 +238,11 @@ public class UserService implements IAuth {
             logger.info("Successfully submitted complaint from {}", username);
             return Response.success("Complaint sent successfully");
 
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to submit complaint: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -247,7 +276,11 @@ public class UserService implements IAuth {
             logger.info("Producer complaint submitted by '{}' for event '{}' / company '{}'",
                     username, eventName, companyName);
             return Response.success("Complaint sent to the producer successfully");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to submit producer complaint: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -261,7 +294,11 @@ public class UserService implements IAuth {
             String userId = tokenService.extractUserId(token);
             List<String> companies = roleRepository.getUserCompanies(userId);
             return Response.success(companies);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to fetch user companies", e);
             return Response.error(e.getMessage());
         }
@@ -291,7 +328,11 @@ public class UserService implements IAuth {
 
             logger.info("User {} switched context to company {} with role {}", user.getName(), companyName, roleInCompany);
             return Response.success(companyToken);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to switch company context", e);
             return Response.error(e.getMessage());
         }
@@ -310,7 +351,11 @@ public class UserService implements IAuth {
                     .collect(java.util.stream.Collectors.toList());
             logger.info("User of token {} got notifications successfully", token);
             return Response.success(messages);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to fetch notifications", e);
             return Response.error(e.getMessage());
         }

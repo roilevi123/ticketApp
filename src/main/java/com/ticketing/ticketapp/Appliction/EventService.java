@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.PurchaseOrder;
+import com.ticketing.ticketapp.Domain.Ticket.Ticket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.ticketing.ticketapp.Domain.Discount.DiscountPolicy;
@@ -24,6 +27,7 @@ import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.Cacheable;
@@ -91,7 +95,11 @@ public class EventService {
             iQueueRepository.initQueue(eventName + company);
             logger.info("Event '{}' created successfully for company '{}'", eventName, company);
             return Response.success("success");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to create event '{}' for company '{}': {}", eventName, company, e.getMessage());
             return Response.error("Failed to create event: " + e.getMessage());
         }
@@ -105,6 +113,11 @@ public class EventService {
     })
     public Response<String> deleteEvent(String eventId, String companyName, String token) {
         try {
+            List<PurchaseOrder> ticketList=purchasedOrderRepository.getPurchasedOrdersForCompany(companyName).stream()
+                    .filter(o -> o.getEvent().equals(eventId)).collect(Collectors.toList());
+            if (!ticketList.isEmpty()){
+                throw new EventDomainException("people are already in stock");
+            }
             logger.info("User of token {} is attempting to delete the event {} of the company: {}", token, eventId,
                     companyName);
             if (!tokenService.validateToken(token)) {
@@ -136,7 +149,11 @@ public class EventService {
             logger.info("Event '{}' deleted successfully for company '{}'", eventId, companyName);
             return Response.success("success");
 
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to delete event '{}' for company '{}': {}", eventId, companyName, e.getMessage());
             return Response.error("Failed to delete event: " + e.getMessage());
         }
@@ -151,7 +168,13 @@ public class EventService {
     public Response<String> UpdateEvent(String token, String eventName, String artistName, EventType eventType,
             double price, Date date, String location, String company, MapArea[][] map, double rating) {
         try {
+
             logger.info("User of token {} is attempting to update the event: {}", token, eventName);
+            List<PurchaseOrder> ticketList=purchasedOrderRepository.getPurchasedOrdersForCompany(company).stream()
+                    .filter(o -> o.getEvent().equals(eventName)).collect(Collectors.toList());
+            if (!ticketList.isEmpty()){
+                throw new EventDomainException("people are already in stock");
+            }
             String userId = tokenService.extractUserId(token);
             if (!tokenService.validateToken(token)) {
                 throw new RuntimeException("Invalid token");
@@ -186,7 +209,11 @@ public class EventService {
             }
             logger.info("User {} successfully update event: ", userID, eventName);
             return Response.success("success");
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -208,7 +235,11 @@ public class EventService {
             }
             logger.info("User {} successfully got company info: ", token, company);
             return Response.success(companyRepository.getCompanyDescription(company));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -234,7 +265,11 @@ public class EventService {
             }
             logger.info("User of token {} successfully got company events: {}", token, company);
             return Response.success(eventDTOs);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -276,7 +311,11 @@ public class EventService {
             }
             logger.info("User of token {} successfully got event: {} of the company {}", token, event, company);
             return Response.success(getEventWithDiscount(event));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Failed to retrieve event '{}': {}", eventName, e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -307,7 +346,11 @@ public class EventService {
             }
             logger.info("Search completed successfully. Found {} events", results.size());
             return Response.success(results);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Error occurred during event search: {}", e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -332,7 +375,9 @@ public class EventService {
             if (discountAmount > 0) {
                 discountedPrice = event.getPrice() - discountAmount;
             }
-        } catch (Exception e) {
+        }
+
+        catch (Exception e) {
             logger.error("Error calculating discount for event '{}': {}", event.getName(), e.getMessage());
         }
 

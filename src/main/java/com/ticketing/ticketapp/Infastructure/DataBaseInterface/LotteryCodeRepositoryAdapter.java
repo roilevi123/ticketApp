@@ -22,7 +22,6 @@ public class LotteryCodeRepositoryAdapter implements ILotteryCodeRepository {
     }
 
     @Override
-    @Transactional
     public LotteryCode generate(String userId, String eventName, String companyName, Date expiryDate) {
         LotteryCode lc = new LotteryCode(userId, eventName, companyName, expiryDate);
         return jpaLotteryCodeRepository.saveAndFlush(lc);
@@ -40,7 +39,6 @@ public class LotteryCodeRepositoryAdapter implements ILotteryCodeRepository {
     }
 
     @Override
-    @Transactional
     public void markUsed(String code) {
         jpaLotteryCodeRepository.findById(code).ifPresent(lc -> {
             lc.setUsed(true);
@@ -54,7 +52,6 @@ public class LotteryCodeRepositoryAdapter implements ILotteryCodeRepository {
     }
 
     @Override
-    @Transactional
     public void deleteAll() {
         jpaLotteryCodeRepository.deleteAll();
     }

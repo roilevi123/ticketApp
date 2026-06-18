@@ -27,7 +27,6 @@ public class UserRepositoryAdapter implements IUserRepository {
     }
 
     @Override
-    @Transactional
     public User Store(String username, String password, int age, String email) {
         if (usernameExists(username)) {
             throw new RuntimeException("User already exists");
@@ -66,14 +65,12 @@ public class UserRepositoryAdapter implements IUserRepository {
     }
 
     @Override
-    @Transactional
     public void save(User userToUpdate) {
         // @Version on User.version handles optimistic locking automatically
         jpaUserRepository.save(userToUpdate);
     }
 
     @Override
-    @Transactional
     public void deleteAll() {
         jpaSuspensionRepository.deleteAll();
         jpaUserRepository.deleteAll();
@@ -81,28 +78,24 @@ public class UserRepositoryAdapter implements IUserRepository {
     }
 
     @Override
-    @Transactional
     public void deleteUser(String ID) {
         jpaUserRepository.deleteById(ID);
         jpaUserRepository.flush();
     }
 
     @Override
-    @Transactional
     public void addCurrentSuspension(String userID, Suspension suspension) {
         suspension.setActive(true);
         jpaSuspensionRepository.saveAndFlush(suspension);
     }
 
     @Override
-    @Transactional
     public void addHistorySuspension(Suspension suspension) {
         suspension.setActive(false);
         jpaSuspensionRepository.saveAndFlush(suspension);
     }
 
     @Override
-    @Transactional
     public boolean isUserSuspendedNow(String userID) {
         return jpaSuspensionRepository.findByUserIDAndIsActiveTrue(userID)
                 .map(suspension -> {
@@ -117,7 +110,6 @@ public class UserRepositoryAdapter implements IUserRepository {
     }
 
     @Override
-    @Transactional
     public void cancelSuspension(String userId) {
         Suspension suspension = jpaSuspensionRepository.findByUserIDAndIsActiveTrue(userId)
                 .orElseThrow(() -> new RuntimeException("User is not currently suspended"));

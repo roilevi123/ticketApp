@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Repository
 @ConditionalOnProperty(name = "repository.type", havingValue = "DB")
@@ -27,7 +27,8 @@ public class PurchasePolicyRepositoryAdapter implements iPurchasePolicyRepositor
 
     @Override
     public PurchasePolicy getPolicy(String policyId) {
-        return jpaRepository.findById(policyId).orElse(null);
+        return jpaRepository.findById(policyId)
+                .orElse(null);
     }
 
 

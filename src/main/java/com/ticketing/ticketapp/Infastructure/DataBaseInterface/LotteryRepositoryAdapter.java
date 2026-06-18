@@ -24,7 +24,6 @@ public class LotteryRepositoryAdapter implements ILotteryRepository {
     }
 
     @Override
-    @Transactional
     public void configure(String eventName, String companyName, Date startDate, Date endDate, int maxWinners) {
         LotteryRegistrationKey key = new LotteryRegistrationKey(eventName, companyName);
         jpaLotteryRepository.findById(key).ifPresentOrElse(
@@ -40,7 +39,6 @@ public class LotteryRepositoryAdapter implements ILotteryRepository {
     }
 
     @Override
-    @Transactional
     public boolean register(String eventName, String companyName, String userId) {
         LotteryRegistrationKey key = new LotteryRegistrationKey(eventName, companyName);
         LotteryRegistration lr = jpaLotteryRepository.findById(key)
@@ -78,7 +76,6 @@ public class LotteryRepositoryAdapter implements ILotteryRepository {
     }
 
     @Override
-    @Transactional
     public void markDrawn(String eventName, String companyName) {
         LotteryRegistrationKey key = new LotteryRegistrationKey(eventName, companyName);
         jpaLotteryRepository.findById(key).ifPresent(lr -> {
@@ -93,7 +90,6 @@ public class LotteryRepositoryAdapter implements ILotteryRepository {
     }
 
     @Override
-    @Transactional
     public void deleteAll() {
         jpaLotteryRepository.deleteAll();
     }

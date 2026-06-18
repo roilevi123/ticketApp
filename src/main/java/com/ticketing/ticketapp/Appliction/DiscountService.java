@@ -5,6 +5,7 @@ import com.ticketing.ticketapp.Domain.User.IUserRepository;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.List;
@@ -38,7 +39,11 @@ public class DiscountService {
             DiscountComponent simple = new ConditionalDiscount(discountId, percentage, null, "no conditions");
             logger.info("User {} created a simple discount for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, simple));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -57,7 +62,11 @@ public class DiscountService {
             DiscountComponent discount = new ConditionalDiscount(discountId, percentage, ctx -> ctx.getQuantity() >= minQuantity, conditionDesc);
             logger.info("User {} created quantity discount for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, discount));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -76,7 +85,11 @@ public class DiscountService {
             DiscountComponent discount = new ConditionalDiscount(discountId, percentage, ctx -> ctx.getPurchaseDate().before(deadline), conditionDesc);
             logger.info("User {} created a time limited discount for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, discount));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -94,7 +107,11 @@ public class DiscountService {
             DiscountComponent coupon = new CouponDiscount(discountId, code, percentage);
             logger.info("User {} created coupon discount for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, coupon));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -122,7 +139,11 @@ public class DiscountService {
             }
             logger.info("User {} created sum discount policy for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, sumComposite));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -150,7 +171,11 @@ public class DiscountService {
             }
             logger.info("User {} created max discount policy for the company {} successfully", userID, companyName);
             return Response.success(savePolicy(targetId, type, maxComposite));
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error(e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -185,7 +210,11 @@ public class DiscountService {
                     .collect(Collectors.toList());
             logger.info("User of token {} got all discounts for the event {} of the company {} successfully", token, eventId, companyName);
             return Response.success(dtos);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Error retrieving discounts: " + e.getMessage());
             return Response.error(e.getMessage());
         }
@@ -221,7 +250,11 @@ public class DiscountService {
             logger.info("User {} calculated price after discounts for the event {} of the company {} successfully", userID, eventId, companyName);
             return Response.success(originalPrice - discountAmount);
 
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             logger.error("Error calculating discount: " + e.getMessage());
             return Response.error(e.getMessage());
         }

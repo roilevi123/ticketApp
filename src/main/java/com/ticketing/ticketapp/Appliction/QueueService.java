@@ -7,6 +7,7 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -57,7 +58,12 @@ public class QueueService {
 
             logger.info("User {} checked status for event {} successfully", userID, eventId);
             return Response.success(status);
-        } catch (Exception e) {
+        }
+
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             return Response.error(e.getMessage());
         }
     }
@@ -71,7 +77,11 @@ public class QueueService {
             List<QueueEntry> queue = queueRepository.getQueue(eventId);
             logger.info("Admin {} got queue for event {} successfully", adminId, eventId);
             return Response.success(queue);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             return Response.error(e.getMessage());
         }
     }
@@ -85,7 +95,11 @@ public class QueueService {
             queueRepository.clearQueue(eventId);
             logger.info("Admin {} cleared queue for event {} successfully", adminId, eventId);
             return Response.success("Queue cleared for event: " + eventId);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             return Response.error(e.getMessage());
         }
     }
@@ -102,7 +116,11 @@ public class QueueService {
             eventFlowRates.put(eventId, maxActiveUsers);
             logger.info("Admin {} set flow rate (max active users: {}) for event {} successfully", adminId,maxActiveUsers, eventId);
             return Response.success("Flow rate set to " + maxActiveUsers + " for event: " + eventId);
-        } catch (Exception e) {
+        }
+        catch (DataAccessException e) {
+            return Response.error("Database unavailable");
+        }
+        catch (Exception e) {
             return Response.error(e.getMessage());
         }
     }
