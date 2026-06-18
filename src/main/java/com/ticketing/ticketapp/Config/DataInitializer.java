@@ -1,5 +1,5 @@
 package com.ticketing.ticketapp.Config;
-
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import com.ticketing.ticketapp.Appliction.*;
 import com.ticketing.ticketapp.Domain.Event.EventType;
 import com.ticketing.ticketapp.Domain.Event.MapArea;
@@ -31,6 +31,10 @@ import java.util.Set;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 @Component
+@ConditionalOnProperty(
+        name = "initial.state.enabled",
+        havingValue = "true"
+)
 public class DataInitializer implements ApplicationRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(DataInitializer.class);
