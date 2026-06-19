@@ -8,11 +8,22 @@ import com.ticketing.ticketapp.Appliction.IExternalTicketService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+@ActiveProfiles("test")
+@TestPropertySource(properties = {
+                "repository.type=DB",
+                "spring.datasource.url=jdbc:postgresql://136.115.146.17:5432/ticketapp_test_db",
+                "spring.datasource.username=ticketapp_user",
+                "spring.datasource.password=BGUticketapp1!",
+                "spring.datasource.driver-class-name=org.postgresql.Driver",
+                "spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect",
+                "spring.jpa.hibernate.ddl-auto=create-drop"
+        })
 @org.springframework.boot.test.context.SpringBootTest
 @org.springframework.test.context.ContextConfiguration(classes = com.ticketing.ticketapp.TicketappApplication.class)
 @org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = "com.ticketing.ticketapp")
