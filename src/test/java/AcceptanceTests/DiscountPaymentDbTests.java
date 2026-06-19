@@ -11,7 +11,7 @@ import org.springframework.test.context.TestPropertySource;
         "spring.datasource.password=BGUticketapp1!",
         "spring.datasource.driver-class-name=org.postgresql.Driver",
         "spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
+        "spring.jpa.hibernate.ddl-auto=update"
 })
 public class DiscountPaymentDbTests
         extends DiscountPaymentTestsBase {
