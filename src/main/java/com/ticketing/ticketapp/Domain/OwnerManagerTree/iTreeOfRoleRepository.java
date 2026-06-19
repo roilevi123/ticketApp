@@ -28,5 +28,5 @@ public interface iTreeOfRoleRepository {
     public void deleteUserRoles(String UserID);
     List<String> getUserCompanies(String userId);
     String getRoleInCompany(String userId, String companyName);
-    String getUserHighestRole(String userId);
+//    String getUserHighestRole(String userId);
 }

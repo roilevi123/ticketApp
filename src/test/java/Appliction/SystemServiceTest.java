@@ -47,14 +47,36 @@ class SystemServiceTest {
         );
     }
     private void stubSuccessfulInit() {
-        when(paymentService.processPayment(any(), anyDouble(),"USD")).thenReturn(100);
-        when(supplyService.supplyToEmail(anyString(), anyString())).thenReturn(true);
-        when(userService.register(eq(GUEST_TOKEN), anyString(), anyString(), anyInt(), anyString()))
-                .thenReturn(Response.success("registered"));
-        when(tokenService.generateGuestToken()).thenReturn(LOGIN_TOKEN);
-        when(userService.login(eq(LOGIN_TOKEN), anyString(), anyString()))
-                .thenReturn(Response.success(ADMIN_JWT));
-        when(tokenService.extractUserId(ADMIN_JWT)).thenReturn(ADMIN_USER_ID);
+        when(paymentService.processPayment(
+                any(CreditCardDetails.class),
+                eq(0.0),
+                eq("USD")
+        )).thenReturn(100);
+
+        when(supplyService.supplyToEmail(
+                eq("system@check.internal"),
+                eq("ping")
+        )).thenReturn(true);
+
+        when(userService.register(
+                eq(GUEST_TOKEN),
+                anyString(),
+                anyString(),
+                anyInt(),
+                anyString()
+        )).thenReturn(Response.success("registered"));
+
+        when(tokenService.generateGuestToken())
+                .thenReturn(LOGIN_TOKEN);
+
+        when(userService.login(
+                eq(LOGIN_TOKEN),
+                anyString(),
+                anyString()
+        )).thenReturn(Response.success(ADMIN_JWT));
+
+        when(tokenService.extractUserId(ADMIN_JWT))
+                .thenReturn(ADMIN_USER_ID);
     }
 
     private void performInit() {
@@ -211,5 +233,166 @@ class SystemServiceTest {
     @Test
     void isOpen_DefaultsFalse() {
         assertFalse(systemService.isOpen());
+    }
+    @Test
+    void initSystem_Success_SetsInitializedAndRegistersAdmin() {
+        stubSuccessfulInit();
+
+        Response<String> result = systemService.initSystem(
+                GUEST_TOKEN, "admin", "pass123", 30, "admin@test.com"
+        );
+
+        assertTrue(result.isSuccess());
+        assertTrue(result.getData().contains("admin"));
+        assertTrue(systemService.isInitialized());
+        verify(adminRepository).addAdmin(ADMIN_USER_ID);
+    }
+
+    @Test
+    void initSystem_AlreadyInitialized_ReturnsError() {
+        stubSuccessfulInit();
+
+        systemService.initSystem(GUEST_TOKEN, "admin", "pass123", 30, "admin@test.com");
+
+        Response<String> result = systemService.initSystem(
+                GUEST_TOKEN, "admin2", "pass", 25, "a@b.com"
+        );
+
+        assertTrue(result.isError());
+        assertEquals("System already initialized", result.getMessage());
+        verify(adminRepository, times(1)).addAdmin(anyString());
+    }
+
+    @Test
+    void initSystem_PaymentServiceUnavailable_ReturnsError() {
+        when(paymentService.processPayment(any(CreditCardDetails.class), eq(0.0), eq("USD")))
+                .thenReturn(-1);
+
+        when(supplyService.supplyToEmail(anyString(), anyString()))
+                .thenReturn(true);
+
+        Response<String> result = systemService.initSystem(
+                GUEST_TOKEN, "admin", "pass", 30, "a@b.com"
+        );
+
+        assertTrue(result.isError());
+        assertEquals("External services unavailable", result.getMessage());
+        assertFalse(systemService.isInitialized());
+        verify(adminRepository, never()).addAdmin(anyString());
+    }
+
+    @Test
+    void initSystem_SupplyServiceUnavailable_ReturnsError() {
+        when(paymentService.processPayment(any(CreditCardDetails.class), eq(0.0), eq("USD")))
+                .thenReturn(100);
+
+        when(supplyService.supplyToEmail(anyString(), anyString()))
+                .thenReturn(false);
+
+        Response<String> result = systemService.initSystem(
+                GUEST_TOKEN, "admin", "pass", 30, "a@b.com"
+        );
+
+        assertTrue(result.isError());
+        assertEquals("External services unavailable", result.getMessage());
+        assertFalse(systemService.isInitialized());
+        verify(adminRepository, never()).addAdmin(anyString());
+    }
+
+    @Test
+    void initSystem_AdminRegistrationFails_ReturnsError() {
+        when(paymentService.processPayment(any(CreditCardDetails.class), eq(0.0), eq("USD")))
+                .thenReturn(100);
+
+        when(supplyService.supplyToEmail(anyString(), anyString()))
+                .thenReturn(true);
+
+        when(userService.register(eq(GUEST_TOKEN), eq("admin"), eq("pass"), eq(30), eq("a@b.com")))
+                .thenReturn(Response.error("Username already taken"));
+
+        Response<String> result = systemService.initSystem(
+                GUEST_TOKEN, "admin", "pass", 30, "a@b.com"
+        );
+
+        assertTrue(result.isError());
+        assertEquals("Failed to create admin: Username already taken", result.getMessage());
+        assertFalse(systemService.isInitialized());
+        verify(adminRepository, never()).addAdmin(anyString());
+    }
+
+    @Test
+    void initSystem_AdminLoginFails_ReturnsError() {
+        when(paymentService.processPayment(any(CreditCardDetails.class), eq(0.0), eq("USD")))
+                .thenReturn(100);
+
+        when(supplyService.supplyToEmail(anyString(), anyString()))
+                .thenReturn(true);
+
+        when(userService.register(eq(GUEST_TOKEN), eq("admin"), eq("pass"), eq(30), eq("a@b.com")))
+                .thenReturn(Response.success("registered"));
+
+        when(tokenService.generateGuestToken()).thenReturn(LOGIN_TOKEN);
+
+        when(userService.login(eq(LOGIN_TOKEN), eq("admin"), eq("pass")))
+                .thenReturn(Response.error("Login failed"));
+
+        Response<String> result = systemService.initSystem(
+                GUEST_TOKEN, "admin", "pass", 30, "a@b.com"
+        );
+
+        assertTrue(result.isError());
+        assertEquals("Failed to authenticate admin after creation", result.getMessage());
+        assertFalse(systemService.isInitialized());
+        verify(adminRepository, never()).addAdmin(anyString());
+    }
+
+    @Test
+    void openSystem_NotAdmin_ReturnsError() {
+        stubSuccessfulInit();
+
+        systemService.initSystem(GUEST_TOKEN, "admin", "pass123", 30, "admin@test.com");
+
+        when(tokenService.extractUserId(ADMIN_TOKEN)).thenReturn("other-user-id");
+        when(adminRepository.isAdmin("other-user-id")).thenReturn(false);
+
+        Response<String> result = systemService.openSystem(ADMIN_TOKEN);
+
+        assertTrue(result.isError());
+        assertEquals("Unauthorized: admin access required to open the system", result.getMessage());
+        assertFalse(systemService.isOpen());
+    }
+
+    @Test
+    void openSystem_Success_SetsOpenState() {
+        stubSuccessfulInit();
+
+        systemService.initSystem(GUEST_TOKEN, "admin", "pass123", 30, "admin@test.com");
+
+        when(tokenService.extractUserId(ADMIN_TOKEN)).thenReturn(ADMIN_USER_ID);
+        when(adminRepository.isAdmin(ADMIN_USER_ID)).thenReturn(true);
+
+        Response<String> result = systemService.openSystem(ADMIN_TOKEN);
+
+        assertTrue(result.isSuccess());
+        assertEquals("System is now open", result.getData());
+        assertTrue(systemService.isOpen());
+    }
+
+    @Test
+    void openSystem_AlreadyOpen_ReturnsError() {
+        stubSuccessfulInit();
+
+        systemService.initSystem(GUEST_TOKEN, "admin", "pass123", 30, "admin@test.com");
+
+        when(tokenService.extractUserId(ADMIN_TOKEN)).thenReturn(ADMIN_USER_ID);
+        when(adminRepository.isAdmin(ADMIN_USER_ID)).thenReturn(true);
+
+        systemService.openSystem(ADMIN_TOKEN);
+
+        Response<String> result = systemService.openSystem(ADMIN_TOKEN);
+
+        assertTrue(result.isError());
+        assertEquals("System is already open", result.getMessage());
+        assertTrue(systemService.isOpen());
     }
 }

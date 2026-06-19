@@ -398,4 +398,5 @@ public class EventService {
         eventRepository.deleteAllEvents();
 
     }
+
 }

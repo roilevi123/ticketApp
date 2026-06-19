@@ -12,7 +12,7 @@ import com.ticketing.ticketapp.Domain.PurchasedOrderAggregate.iPurchasedOrderRep
 import com.ticketing.ticketapp.Domain.QueueAggregates.iQueueRepository;
 import com.ticketing.ticketapp.Domain.Ticket.iTicketRepository;
 import com.ticketing.ticketapp.Domain.User.IUserRepository;
-import com.ticketing.ticketapp.Infastructure.NotificationRepositoryImpl;
+import com.ticketing.ticketapp.Domain.Notification.INotificationRepository;
 import com.ticketing.ticketapp.Infastructure.PasswordEncoderImpl;
 import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +43,7 @@ public abstract class WaitingQueueTestsBase {
     @Autowired protected iTicketRepository ticketRepository;
     @Autowired protected iPurchasedOrderRepository purchasedOrderRepository;
     @Autowired protected TokenService tokenService;
-
+    @Autowired protected INotificationRepository notificationRepository;
     protected UserService userService;
     protected CompanyService companyService;
     protected EventService eventService;
@@ -58,7 +58,7 @@ public abstract class WaitingQueueTestsBase {
                 passwordEncoder,
                 userRepository,
                 tokenService,
-                new NotificationRepositoryImpl(),
+                notificationRepository,
                 notifierMock,
                 treeOfRoleRepository
         );

@@ -48,7 +48,7 @@ class PurchasedServiceTest {
     private final String USERNAME = "user1";
     private final String COMPANY = "companyX";
     private final String EVENT = "eventY";
-
+    String TOKEN = "token";
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -604,5 +604,153 @@ class PurchasedServiceTest {
                 .supplyToEmail(anyString(), anyString());
 
         assertNotNull(orderRepoSpy.findById(orderId));
+    }
+
+
+    @Test
+    void cancelOrder_InvalidToken_ReturnsError() {
+        when(tokenService.validateToken("bad_token")).thenReturn(false);
+
+        Response<String> result = purchasedService.cancelOrder("order1", "bad_token");
+
+        assertTrue(result.isError());
+        assertEquals("Invalid token", result.getMessage());
+
+        verify(purchasedOrderRepository, never()).getByOrderId(anyString());
+    }
+
+    @Test
+    void cancelOrder_OrderNotFound_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(purchasedOrderRepository.getByOrderId("missing")).thenReturn(null);
+
+        Response<String> result = purchasedService.cancelOrder("missing", TOKEN);
+
+        assertTrue(result.isError());
+        assertEquals("Order not found", result.getMessage());
+    }
+
+    @Test
+    void cancelOrder_NotAuthorized_ReturnsError() {
+        PurchaseOrder order = new PurchaseOrder(
+                COMPANY,
+                EVENT,
+                List.of("T1"),
+                "other_user",
+                "order1"
+        );
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+        when(purchasedOrderRepository.getByOrderId("order1")).thenReturn(order);
+
+        Response<String> result = purchasedService.cancelOrder("order1", TOKEN);
+
+        assertTrue(result.isError());
+        assertEquals("Not authorized to cancel this order", result.getMessage());
+
+        verify(externalTicketService, never()).cancelTicket(anyString());
+    }
+
+
+
+
+
+    @Test
+    void cancelOrder_DatabaseFailure_ReturnsError() {
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(USERNAME);
+
+        doThrow(new org.springframework.dao.DataAccessResourceFailureException("DB down"))
+                .when(purchasedOrderRepository)
+                .getByOrderId("order1");
+
+        Response<String> result = purchasedService.cancelOrder("order1", TOKEN);
+
+        assertTrue(result.isError());
+        assertEquals("Database unavailable", result.getMessage());
+    }
+    @Test
+    void cancelOrder_Success_CancelsExternalTicketsAndRestoresTickets() throws Exception {
+        String orderId = "order1";
+        String userId = USERNAME;
+
+        PurchaseOrder order = mock(PurchaseOrder.class);
+
+        Ticket ticket = new Ticket(0, 0, EVENT, COMPANY, "T1", 100.0);
+        ticket.purchase();
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(userId);
+
+        when(purchasedOrderRepository.getByOrderId(orderId)).thenReturn(order);
+        when(order.getBuyerID()).thenReturn(userId);
+        when(order.getExternalTicketIds()).thenReturn(List.of("EXT1"));
+        when(order.getTicketsId()).thenReturn(List.of("T1"));
+
+        when(ticketRepository.getTicketById("T1")).thenReturn(ticket);
+
+        Response<String> result = purchasedService.cancelOrder(orderId, TOKEN);
+
+        assertTrue(result.isSuccess());
+        assertEquals("Order cancelled successfully", result.getData());
+
+        verify(externalTicketService).cancelTicket("EXT1");
+        verify(ticketRepository).save(ticket);
+        verify(purchasedOrderRepository).deleteByOrderId(orderId);
+    }@Test
+    void cancelOrder_ExternalCancelFails_ThrowsExternalServiceException() throws Exception {
+        String orderId = "order1";
+        String userId = USERNAME;
+
+        PurchaseOrder order = mock(PurchaseOrder.class);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(userId);
+
+        when(purchasedOrderRepository.getByOrderId(orderId)).thenReturn(order);
+        when(order.getBuyerID()).thenReturn(userId);
+        when(order.getExternalTicketIds()).thenReturn(List.of("EXT1"));
+
+        doThrow(new RuntimeException("external down"))
+                .when(externalTicketService)
+                .cancelTicket("EXT1");
+
+        ExternalServiceException ex = assertThrows(
+                ExternalServiceException.class,
+                () -> purchasedService.cancelOrder(orderId, TOKEN)
+        );
+
+        assertEquals("External service timeout/error", ex.getMessage());
+
+        verify(ticketRepository, never()).save(any());
+        verify(purchasedOrderRepository, never()).deleteByOrderId(anyString());
+    }
+    @Test
+    void cancelOrder_TicketNotFound_StillDeletesOrder() throws Exception {
+        String orderId = "order1";
+        String userId = USERNAME;
+
+        PurchaseOrder order = mock(PurchaseOrder.class);
+
+        when(tokenService.validateToken(TOKEN)).thenReturn(true);
+        when(tokenService.extractUserId(TOKEN)).thenReturn(userId);
+
+        when(purchasedOrderRepository.getByOrderId(orderId)).thenReturn(order);
+        when(order.getBuyerID()).thenReturn(userId);
+        when(order.getExternalTicketIds()).thenReturn(List.of("EXT1"));
+        when(order.getTicketsId()).thenReturn(List.of("T1"));
+
+        when(ticketRepository.getTicketById("T1")).thenReturn(null);
+
+        Response<String> result = purchasedService.cancelOrder(orderId, TOKEN);
+
+        assertTrue(result.isSuccess());
+        assertEquals("Order cancelled successfully", result.getData());
+
+        verify(externalTicketService).cancelTicket("EXT1");
+        verify(ticketRepository, never()).save(any());
+        verify(purchasedOrderRepository).deleteByOrderId(orderId);
     }
 }

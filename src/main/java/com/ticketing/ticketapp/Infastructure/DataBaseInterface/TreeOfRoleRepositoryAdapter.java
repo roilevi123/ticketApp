@@ -181,12 +181,12 @@ public class TreeOfRoleRepositoryAdapter implements iTreeOfRoleRepository {
         return "MEMBER";
     }
 
-    @Override
-    public String getUserHighestRole(String userId) {
-        boolean isOwner = ownerRepo.findByUserID(userId).stream().anyMatch(Owner::isAccepted);
-        if (isOwner) return "OWNER";
-        boolean isManager = managerRepo.findByUserID(userId).stream().anyMatch(Manager::isAccepted);
-        if (isManager) return "MANAGER";
-        return "MEMBER";
-    }
+//    @Override
+//    public String getUserHighestRole(String userId) {
+//        boolean isOwner = ownerRepo.findByUserID(userId).stream().anyMatch(Owner::isAccepted);
+//        if (isOwner) return "OWNER";
+//        boolean isManager = managerRepo.findByUserID(userId).stream().anyMatch(Manager::isAccepted);
+//        if (isManager) return "MANAGER";
+//        return "MEMBER";
+//    }
 }

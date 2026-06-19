@@ -88,6 +88,7 @@ public class SystemService {
         return Response.success("System is now open");
     }
 
+
     public boolean isInitialized() {
         return initialized;
     }
