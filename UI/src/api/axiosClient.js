@@ -21,9 +21,16 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
     (response) => response,
     (error) => {
+        const isNetworkError =
+            error.code === 'ERR_NETWORK' && !error.response;
 
-        if (!navigator.onLine || error.code === 'ERR_NETWORK' || !error.response) {
+        if (!navigator.onLine) {
             alert("Connection lost. Please check your internet connection.");
+            return Promise.reject(error);
+        }
+
+        if (isNetworkError) {
+            alert("Server is unavailable. Please try again later.");
             return Promise.reject(error);
         }
 
