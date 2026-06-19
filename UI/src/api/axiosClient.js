@@ -21,14 +21,23 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401 && error.response?.data?.error === 'ACCOUNT_REMOVED') {
+
+        if (!navigator.onLine || error.code === 'ERR_NETWORK' || !error.response) {
+            alert("Connection lost. Please check your internet connection.");
+            return Promise.reject(error);
+        }
+
+        if (
+            error.response?.status === 401 &&
+            error.response?.data?.error === 'ACCOUNT_REMOVED'
+        ) {
             localStorage.removeItem('token');
             localStorage.removeItem('role');
             localStorage.removeItem('userID');
             window.location.replace('/account-removed');
         }
+
         return Promise.reject(error);
     }
 );
-
 export default axiosClient;
