@@ -73,7 +73,7 @@ public class NotificationRepositoryAdapter implements INotificationRepository {
         }
 
         notification.setRead(read);
-        jpaRepository.saveAndFlush(notification);
+        jpaRepository.save(notification);
     }
 
     @Override
