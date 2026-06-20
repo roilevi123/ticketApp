@@ -35,10 +35,10 @@ public class NotificationRepositoryAdapter implements INotificationRepository {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Notification> getUnread(String userId) {
         return jpaRepository.findByUserIdAndReadFalse(userId);
     }
-
     @Override
     @Transactional
     public void markAsRead(String userId, String notificationId) {

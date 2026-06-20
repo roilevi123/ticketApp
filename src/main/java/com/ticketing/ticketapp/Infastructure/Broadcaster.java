@@ -26,19 +26,26 @@ public class Broadcaster {
     public void register(String userId, Consumer<String> connectionListener) {
         activeConnections.put(userId, connectionListener);
         logger.info("User {} registered to Broadcaster.", userId);
-        List<Notification> unread = notificationRepository.getUnread(userId);
-        if (!unread.isEmpty()) {
-            logger.info("Delivering {} unread notifications to user {}", unread.size(), userId);
-            for (Notification n : unread) {
-                executorService.submit(() -> {
-                    try {
-                        connectionListener.accept(n.getMessage());
-                    } catch (Exception e) {
-                        logger.error("Failed to deliver notification to user {}", userId, e);
+
+        executorService.submit(() -> {
+            try {
+                List<Notification> unread = notificationRepository.getUnread(userId);
+
+                if (!unread.isEmpty()) {
+                    logger.info("Delivering {} unread notifications to user {}", unread.size(), userId);
+
+                    for (Notification n : unread) {
+                        try {
+                            connectionListener.accept(n.getMessage());
+                        } catch (Exception e) {
+                            logger.error("Failed to deliver notification to user {}", userId, e);
+                        }
                     }
-                });
+                }
+            } catch (Exception e) {
+                logger.error("Failed to load unread notifications for user {}", userId, e);
             }
-        }
+        });
     }
 
     public void unregister(String userId) {
