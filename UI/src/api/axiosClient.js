@@ -14,7 +14,9 @@ const showGlobalError = (message) => {
 
 axiosClient.interceptors.request.use(
     (config) => {
+
         const token = localStorage.getItem('token') || 'guest-temporary-token';
+
         config.headers['Authorization'] = `Bearer ${token}`;
         return config;
     },

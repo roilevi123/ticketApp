@@ -1,4 +1,5 @@
 package com.ticketing.ticketapp.Config;
+import com.ticketing.ticketapp.Domain.OwnerManagerTree.Permission;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import com.ticketing.ticketapp.Appliction.*;
 import com.ticketing.ticketapp.Domain.Event.EventType;
@@ -109,12 +110,14 @@ public class DataInitializer implements ApplicationRunner {
 
         purchasedOrderRepository.deleteAll();
         ticketRepository.deleteAllTickets();
+
+        purchasePolicyService.deleteAll();
+        discountService.deleteAllPolicy();
+
         eventService.deleteAllEvents();
         companyService.deleteAll();
-        userService.deleteAll();
         adminRepository.deleteAll();
-        discountService.deleteAllPolicy();
-        purchasePolicyService.deleteAll();
+        userService.deleteAll();
 
         logger.warn("Initial-state: database reset completed");
     }
@@ -259,13 +262,19 @@ public class DataInitializer implements ApplicationRunner {
             }
 
             case "appoint-manager": {
-                // appoint-manager appointerUsername managerUsername companyName
-                require(p, 4);
+                // appoint-manager appointerUsername managerUsername companyName permissions
+                require(p, 5);
+
+                Set<Permission> permissions =
+                        Arrays.stream(p[4].split(","))
+                                .map(String::trim)
+                                .map(Permission::valueOf)
+                                .collect(Collectors.toSet());
 
                 Response<String> res = companyService.AppointAManager(
                         p[2],
                         text(p[3]),
-                        Set.of(),
+                        permissions,
                         tokenOf(p[1])
                 );
 

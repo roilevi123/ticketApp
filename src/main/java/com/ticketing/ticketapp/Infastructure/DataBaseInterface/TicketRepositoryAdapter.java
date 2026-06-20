@@ -12,12 +12,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @Repository
 @ConditionalOnProperty(name = "repository.type", havingValue = "DB")
 public class TicketRepositoryAdapter implements iTicketRepository {
-
+    @PersistenceContext
+    private EntityManager entityManager;
     private final JpaTicketRepository jpaTicketRepository;
 
     public TicketRepositoryAdapter(JpaTicketRepository jpaTicketRepository) {
@@ -60,18 +63,30 @@ public class TicketRepositoryAdapter implements iTicketRepository {
 
     @Override
     public void makeMapToTicket(String company, String event, MapArea[][] mapAreas, Date date, double price) {
-        List<Ticket> toSave = new ArrayList<>();
+        int batchSize = 100;
+        int count = 0;
+
         for (int i = 0; i < mapAreas.length; i++) {
             for (int j = 0; j < mapAreas[i].length; j++) {
                 MapArea area = mapAreas[i][j];
+
                 if (area == MapArea.SEAT || area == MapArea.STAND) {
                     Ticket ticket = new Ticket(i, j, event, company, UUID.randomUUID().toString(), price);
                     ticket.setDate(date);
-                    toSave.add(ticket);
+
+                    entityManager.persist(ticket);
+                    count++;
+
+                    if (count % batchSize == 0) {
+                        entityManager.flush();
+                        entityManager.clear();
+                    }
                 }
             }
         }
-        jpaTicketRepository.saveAll(toSave);
+
+        entityManager.flush();
+        entityManager.clear();
     }
 
     @Override
