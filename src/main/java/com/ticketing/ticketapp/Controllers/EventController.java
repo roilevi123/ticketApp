@@ -125,4 +125,18 @@ public class EventController {
         }
         return ResponseEntity.badRequest().body(response.getMessage());
     }
+    @GetMapping("/companies/{companyName}/events/{eventName}/available-tickets")
+    public ResponseEntity<?> getAvailableTickets(
+            @RequestAttribute(value = "cleanToken", required = false) String token,
+            @PathVariable("companyName") String companyName,
+            @PathVariable("eventName") String eventName) {
+
+        Response<int[][]> response = eventService.getAvilableTickets(eventName, companyName);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response.getData());
+        }
+
+        return ResponseEntity.status(404).body(response.getMessage());
+    }
 }

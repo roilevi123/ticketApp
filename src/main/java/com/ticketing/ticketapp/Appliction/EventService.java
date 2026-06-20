@@ -398,5 +398,31 @@ public class EventService {
         eventRepository.deleteAllEvents();
 
     }
+    public Response<int[][]> getAvilableTickets(String eventName, String company) {
+        try {
+            List<Ticket> ticketList = ticketRepository.getTicketsForEvent(company, eventName);
+            MapArea[][] mapAreas = eventRepository.getMapArea(company, eventName);
+
+            int rows = mapAreas.length;
+            int cols = mapAreas[0].length;
+
+            int[][] arr = new int[rows][cols];
+
+
+            for (Ticket ticket : ticketList) {
+                int row = ticket.getRow();
+                int col = ticket.getCol();
+
+                if (row >= 0 && row < rows && col >= 0 && col < cols) {
+                    arr[row][col] = ticket.isPurchased() ? 2 : 1;
+                }
+            }
+
+            return Response.success(arr);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Response.error(e.getMessage());
+        }
+    }
 
 }
