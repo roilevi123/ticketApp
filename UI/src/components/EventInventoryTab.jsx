@@ -150,10 +150,10 @@ export default function EventInventoryTab({ companyName }) {
     const standingCount = countType('STAND');
     const seatCount = countType('SEAT');
 
-    if (standingCount === 0 || seatCount === 0) {
-      alert('Mixed map must include both standing and seated places.');
-      return false;
-    }
+    // if (standingCount === 0 || seatCount === 0) {
+    //   alert('Mixed map must include both standing and seated places.');
+    //   return false;
+    // }
 
     return true;
   };

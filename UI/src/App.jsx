@@ -19,7 +19,7 @@ import CheckoutPage from "./components/CheckoutPage";
 import { ActiveOrderProvider } from "./contexts/ActiveOrderContext";
 import { useAuth } from "./contexts/AuthContext";
 import RemovedAccountPage from "./components/RemovedAccountPage";
-
+import GlobalErrorBanner from "./components/GlobalErrorBanner";
 function AdminRoute({ children }) {
   const { token, role, isAdmin } = useAuth();
   if (!token || role === "GUEST") return <Navigate to="/login" replace />;
@@ -30,6 +30,7 @@ function AdminRoute({ children }) {
 function App() {
   return (
     <BrowserRouter>
+        <GlobalErrorBanner />
       <NotificationProvider>
         <ActiveOrderProvider>
       <Routes>
