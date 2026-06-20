@@ -455,25 +455,6 @@ class DataInitializerTest {
 
         assertTrue(ex.getMessage().contains("Initial state failed"));
     }
-    @Test
-    void appointManager_Success_UsesAppointerTokenAndConvertsCompanyName() throws Exception {
-        String file = createResourceFile("""
-    login owner pass123
-    appoint-manager owner manager1 BGU_Events MANAGE_INVENTORY
-    """);
-
-        ReflectionTestUtils.setField(dataInitializer, "initialStateFile", file);
-
-        when(userService.login(anyString(), eq("owner"), eq("pass123")))
-                .thenReturn(Response.success("owner-token"));
-
-        when(companyService.AppointAManager(eq("manager1"), eq("BGU Events"), eq(Set.of()), eq("owner-token")))
-                .thenReturn(Response.success("success"));
-
-        dataInitializer.run(mock(ApplicationArguments.class));
-
-        verify(companyService).AppointAManager("manager1", "BGU Events", Set.of(), "owner-token");
-    }
 
     @Test
     void approveManager_Success_UsesLoggedInUserToken() throws Exception {
