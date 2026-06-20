@@ -32,17 +32,27 @@ const ROW_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
 // Converts the backend 2D map array into flat seat objects.
 // rawRow / rawCol are the 0-based indices used by the backend reserve endpoint.
-function parseMapData(map) {
+function parseMapData(map, availabilityMap) {
   return map.flatMap((row, rowIdx) =>
-    row.map((cell, colIdx) => ({
-      id: `${ROW_LABELS[rowIdx] ?? rowIdx}${colIdx + 1}`,
-      row: ROW_LABELS[rowIdx] ?? String(rowIdx),
-      rawRow: rowIdx,
-      col: colIdx + 1,
-      rawCol: colIdx,
-      available: cell === "SEAT",
-      vip: rowIdx === 0,
-    })),
+      row.map((cell, colIdx) => {
+        const status = availabilityMap?.[rowIdx]?.[colIdx];
+
+        const available =
+            status === 1 ||
+            status === 3 ||
+            (availabilityMap == null && (cell === "SEAT" || cell === "STAND"));
+
+        return {
+          id: `${ROW_LABELS[rowIdx] ?? rowIdx}${colIdx + 1}`,
+          row: ROW_LABELS[rowIdx] ?? String(rowIdx),
+          rawRow: rowIdx,
+          col: colIdx + 1,
+          rawCol: colIdx,
+          type: cell,
+          available,
+          vip: rowIdx === 0 && cell === "SEAT",
+        };
+      }),
   );
 }
 
@@ -151,10 +161,12 @@ function SeatingMap({ seats, selectedSeats, onSeatSelect, atLimit }) {
                     cls = "bg-secondary text-on-secondary scale-110 shadow-lg ring-2 ring-secondary/50";
                   } else if (blockedByLimit) {
                     cls = "bg-surface-container border border-outline-variant text-on-surface-variant opacity-30 cursor-not-allowed";
+                  } else if (seat.type === "STAND") {
+                    cls = "bg-orange-100 border border-orange-400 text-orange-800 hover:border-orange-600 active:scale-95";
                   } else if (seat.vip) {
                     cls = "bg-primary-container border border-primary/40 text-primary hover:border-primary active:scale-95";
                   } else {
-                    cls = "bg-surface-container border border-outline-variant text-on-surface-variant hover:border-secondary hover:text-secondary active:scale-95";
+                    cls = "bg-green-100 border border-green-400 text-green-800 hover:border-green-600 active:scale-95";
                   }
 
                   const title = !seat.available
@@ -173,7 +185,8 @@ function SeatingMap({ seats, selectedSeats, onSeatSelect, atLimit }) {
                       title={title}
                       className={`w-8 h-8 rounded text-label-sm font-bold transition-all ${cls}`}
                     >
-                      {seat.col}
+                      {seat.type === "STAND" ? "ST" : seat.col}
+
                     </button>
                   );
                 })}
@@ -184,8 +197,8 @@ function SeatingMap({ seats, selectedSeats, onSeatSelect, atLimit }) {
 
       <div className="flex flex-wrap gap-4 mt-6">
         {[
-          { cls: "bg-surface-container border border-outline-variant", label: "Available" },
-          { cls: "bg-primary-container border border-primary/40", label: "VIP" },
+          { cls: "bg-green-100 border border-green-400", label: "Seat" },
+          { cls: "bg-orange-100 border border-orange-400", label: "Standing" },
           { cls: "bg-secondary ring-2 ring-secondary/50", label: "Selected" },
           { cls: "bg-surface-container-highest opacity-40", label: "Taken" },
         ].map(({ cls, label }) => (
@@ -207,6 +220,7 @@ export default function EventDetails() {
   const { refreshActiveOrder } = useActiveOrder();
 
   const [event, setEvent] = useState(null);
+  const [availableTickets, setAvailableTickets] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -259,7 +273,29 @@ export default function EventDetails() {
     loadEvent();
     return () => controller.abort();
   }, [companyName, eventName]);
+  useEffect(() => {
+    const controller = new AbortController();
 
+    async function loadAvailableTickets() {
+      try {
+        const res = await axiosClient.get(
+            `/discovery/companies/${encodeURIComponent(companyName)}/events/${encodeURIComponent(eventName)}/available-tickets`,
+            { signal: controller.signal },
+        );
+
+        setAvailableTickets(res.data);
+      } catch (err) {
+        if (err.code !== "ERR_CANCELED") {
+          console.error("Failed to load available tickets:", err);
+          setAvailableTickets(null);
+        }
+      }
+    }
+
+    loadAvailableTickets();
+
+    return () => controller.abort();
+  }, [companyName, eventName]);
   // ── Load seat limit from policy ─────────────────────────────────────────────
   useEffect(() => {
     axiosClient
@@ -397,7 +433,9 @@ export default function EventDetails() {
   };
 
   const { gradient, icon } = TYPE_CONFIG[event?.type?.toUpperCase()] ?? DEFAULT_TYPE;
-  const seats = event?.map?.length ? parseMapData(event.map) : MOCK_SEATS;
+  const seats = event?.map?.length
+      ? parseMapData(event.map, availableTickets)
+      : MOCK_SEATS;
   const atLimit = maxSeats !== null && selectedSeats.length >= maxSeats;
 
   // ── Selection counter label ─────────────────────────────────────────────────
