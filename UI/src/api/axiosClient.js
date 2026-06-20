@@ -24,17 +24,15 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        const isNetworkError = !error.response;
+        const isNetworkError = error.code === 'ERR_NETWORK' && !error.response;
 
         if (!navigator.onLine) {
-            error.isGlobalHandled = true;
-            showGlobalError('Connection lost. Please check your internet connection.');
+            alert("Connection lost. Please check your internet connection.");
             return Promise.reject(error);
         }
 
         if (isNetworkError) {
-            error.isGlobalHandled = true;
-            showGlobalError('Server is unavailable. Please try again later.');
+            alert("Server is unavailable. Please try again later.");
             return Promise.reject(error);
         }
 

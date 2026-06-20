@@ -30,7 +30,6 @@ function AdminRoute({ children }) {
 function App() {
   return (
     <BrowserRouter>
-        <GlobalErrorBanner />
       <NotificationProvider>
         <ActiveOrderProvider>
       <Routes>
