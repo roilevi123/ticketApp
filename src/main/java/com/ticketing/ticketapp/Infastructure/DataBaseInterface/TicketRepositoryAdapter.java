@@ -63,8 +63,7 @@ public class TicketRepositoryAdapter implements iTicketRepository {
 
     @Override
     public void makeMapToTicket(String company, String event, MapArea[][] mapAreas, Date date, double price) {
-        int batchSize = 100;
-        int count = 0;
+        List<Ticket> toSave = new ArrayList<>();
 
         for (int i = 0; i < mapAreas.length; i++) {
             for (int j = 0; j < mapAreas[i].length; j++) {
@@ -73,20 +72,13 @@ public class TicketRepositoryAdapter implements iTicketRepository {
                 if (area == MapArea.SEAT || area == MapArea.STAND) {
                     Ticket ticket = new Ticket(i, j, event, company, UUID.randomUUID().toString(), price);
                     ticket.setDate(date);
-
-                    entityManager.persist(ticket);
-                    count++;
-
-                    if (count % batchSize == 0) {
-                        entityManager.flush();
-                        entityManager.clear();
-                    }
+                    toSave.add(ticket);
                 }
             }
         }
 
-        entityManager.flush();
-        entityManager.clear();
+        jpaTicketRepository.saveAll(toSave);
+        jpaTicketRepository.flush();
     }
 
     @Override

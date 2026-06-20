@@ -458,9 +458,9 @@ class DataInitializerTest {
     @Test
     void appointManager_Success_UsesAppointerTokenAndConvertsCompanyName() throws Exception {
         String file = createResourceFile("""
-            login owner pass123
-            appoint-manager owner manager1 BGU_Events
-            """);
+    login owner pass123
+    appoint-manager owner manager1 BGU_Events MANAGE_INVENTORY
+    """);
 
         ReflectionTestUtils.setField(dataInitializer, "initialStateFile", file);
 

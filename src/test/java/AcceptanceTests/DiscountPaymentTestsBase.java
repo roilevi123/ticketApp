@@ -136,7 +136,7 @@ public abstract class DiscountPaymentTestsBase {
         String buyerToken = registerAndLoginBuyer("b1");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b1@g.com", orderId, "b1", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b1@g.com", orderId, buyerToken, "none",createCreditCardDetails());
 
         verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 90.0,"USD");
     }
@@ -150,7 +150,7 @@ public abstract class DiscountPaymentTestsBase {
         String buyerToken = registerAndLoginBuyer("b2");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C2", "E2", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b2@g.com", orderId, "b2", "PROMO50",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b2@g.com", orderId, buyerToken, "PROMO50",createCreditCardDetails());
 
         verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 100.0,"USD");
     }
@@ -165,7 +165,7 @@ public abstract class DiscountPaymentTestsBase {
         List<int[]> seats = List.of(new int[]{0, 0, 1}, new int[]{0, 1, 1});
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C3", "E3", seats, null).getData();
 
-        purchasedService.PurchaseTicket("b3@g.com", orderId, "b3", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b3@g.com", orderId, buyerToken, "none",createCreditCardDetails());
 
         verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 160.0,"USD");
     }
@@ -183,7 +183,7 @@ public abstract class DiscountPaymentTestsBase {
         String buyerToken = registerAndLoginBuyer("b4");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C4", "E4", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b4@g.com", orderId, "b4", "PLUS5",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b4@g.com", orderId, buyerToken, "PLUS5",createCreditCardDetails());
 
         verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 85.0,"USD");
     }
@@ -201,7 +201,7 @@ public abstract class DiscountPaymentTestsBase {
         String buyerToken = registerAndLoginBuyer("b5");
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C5", "E5", List.of(new int[]{0, 0, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b5@g.com", orderId, "b5", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b5@g.com", orderId, buyerToken, "none",createCreditCardDetails());
 
         verify(paymentServiceSpy, times(1)).processPayment(createCreditCardDetails(), 70.0,"USD");
     }
@@ -219,7 +219,7 @@ public abstract class DiscountPaymentTestsBase {
 
         String orderId = reserveTicketService.reserveTickets(buyerToken, "C6", "E6", List.of(new int[]{0, 0, 1}, new int[]{0, 1, 1}), null).getData();
 
-        purchasedService.PurchaseTicket("b6@g.com", orderId, "b6", "none", createCreditCardDetails());
+        purchasedService.PurchaseTicket("b6@g.com", orderId, buyerToken, "none", createCreditCardDetails());
 
         verify(paymentServiceSpy, times(1)).processPayment(any(), eq(200.0), eq("USD"));
     }
@@ -242,7 +242,7 @@ public abstract class DiscountPaymentTestsBase {
 
         double expectedTotal = pricePerTicket * seats.size();
 
-        purchasedService.PurchaseTicket("b7@g.com", orderId, "b7", "FAKE_CODE", createCreditCardDetails());
+        purchasedService.PurchaseTicket("b7@g.com", orderId, buyerToken, "FAKE_CODE", createCreditCardDetails());
 
         verify(paymentServiceSpy, times(1)).processPayment(any(), eq(expectedTotal), eq("USD"));
     }

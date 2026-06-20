@@ -184,7 +184,7 @@ public abstract class AdminJUnitTestsBase {
         reg("buyer", "p");
         String tB = log("buyer", "p");
         String orderId = reserveTicketService.reserveTickets(tB, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b@gmail.com", orderId, "buyer", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b@gmail.com", orderId, tB, "none",createCreditCardDetails());
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());
@@ -217,12 +217,12 @@ public abstract class AdminJUnitTestsBase {
         reg("b1", "p");
         String tB1 = log("b1", "p");
         String o1 = reserveTicketService.reserveTickets(tB1, "C1", "E1", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b1@gmail.com", o1, "b1", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b1@gmail.com", o1, tB1, "none",createCreditCardDetails());
 
         reg("b2", "p");
         String tB2 = log("b2", "p");
         String o2 = reserveTicketService.reserveTickets(tB2, "C1", "E1", List.of(new int[]{1, 1, 1}), null).getData();
-        purchasedService.PurchaseTicket("b2@gmail.com", o2, "b2", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b2@gmail.com", o2, tB2, "none",createCreditCardDetails());
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());
@@ -270,10 +270,10 @@ public abstract class AdminJUnitTestsBase {
         String tB = log("buyer8", "p");
 
         String orderA = reserveTicketService.reserveTickets(tB, "CompA", "EventA", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b@gmail.com", orderA, "buyer8", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b@gmail.com", orderA, tB, "none",createCreditCardDetails());
 
         String orderB = reserveTicketService.reserveTickets(tB, "CompB", "EventB", List.of(new int[]{0, 0, 1}), null).getData();
-        purchasedService.PurchaseTicket("b@gmail.com", orderB, "buyer8", "none",createCreditCardDetails());
+        purchasedService.PurchaseTicket("b@gmail.com", orderB, tB, "none",createCreditCardDetails());
 
         var response = adminService.GetAllPurchasedOrders("admin");
         assertTrue(response.isSuccess());
