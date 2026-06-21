@@ -78,7 +78,6 @@ public class TicketRepositoryAdapter implements iTicketRepository {
         }
 
         jpaTicketRepository.saveAll(toSave);
-        jpaTicketRepository.flush();
     }
 
     @Override
