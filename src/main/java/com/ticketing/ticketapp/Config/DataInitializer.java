@@ -51,7 +51,7 @@ public class DataInitializer implements ApplicationRunner {
     private final TokenService  tokenService;
     private final iTicketRepository ticketRepository;
     private final iPurchasedOrderRepository purchasedOrderRepository;
-
+    private String currentToken;
     private final iAdminRepository adminRepository;
     private final INotificationRepository notificationRepository;
     private final DiscountService discountService;
@@ -83,6 +83,7 @@ public class DataInitializer implements ApplicationRunner {
         this.notificationRepository = notificationRepository;
         this.discountService = discountService;
         this.purchasePolicyService = purchasePolicyService;
+        this.currentToken = tokenService.generateGuestToken();
     }
 
     @Override
@@ -175,7 +176,6 @@ public class DataInitializer implements ApplicationRunner {
     }
     private void executeAction(String[] p) throws Exception {
         String action = p[0];
-
         switch (action) {
 
             case "register": {
@@ -183,7 +183,7 @@ public class DataInitializer implements ApplicationRunner {
                 require(p, 5);
 
                 Response<String> res = userService.register(
-                        tokenService.generateGuestToken(),
+                        currentToken,
                         p[1],
                         p[2],
                         Integer.parseInt(p[3]),
@@ -199,29 +199,36 @@ public class DataInitializer implements ApplicationRunner {
                 require(p, 3);
 
                 Response<String> res = userService.login(
-                        tokenService.generateGuestToken(),
+                        currentToken,
                         p[1],
                         p[2]
                 );
 
                 assertSuccess(res);
-                tokens.put(p[1], res.getData());
+                currentToken=res.getData();
+//                tokens.put(p[1], res.getData());
+                break;
+            }
+            case "logout": {
+                // logout
+                require(p, 1);
+
+                Response<String> res = userService.logout(currentToken);
+                assertSuccess(res);
+
+                currentToken = tokenService.generateGuestToken();
                 break;
             }
             case "registerAdmin": {
+                // registerAdmin username password age email
                 require(p, 5);
-
-                String username = p[1];
-                String password = p[2];
-                int age = Integer.parseInt(p[3]);
-                String email = p[4];
 
                 Response<String> registerRes = userService.register(
                         tokenService.generateGuestToken(),
-                        username,
-                        password,
-                        age,
-                        email
+                        p[1],
+                        p[2],
+                        Integer.parseInt(p[3]),
+                        p[4]
                 );
 
                 if (!registerRes.isSuccess() && !isAlreadyExistsMessage(registerRes.getMessage())) {
@@ -230,15 +237,13 @@ public class DataInitializer implements ApplicationRunner {
 
                 Response<String> loginRes = userService.login(
                         tokenService.generateGuestToken(),
-                        username,
-                        password
+                        p[1],
+                        p[2]
                 );
 
                 assertSuccess(loginRes);
 
                 String adminToken = loginRes.getData();
-                tokens.put(username, adminToken);
-
                 String adminId = tokenService.extractUserId(adminToken);
                 adminRepository.addAdmin(adminId);
 
@@ -246,36 +251,35 @@ public class DataInitializer implements ApplicationRunner {
             }
 
             case "create-company": {
-                // create-company username companyName
-                require(p, 3);
+                // create-company companyName
+                require(p, 2);
 
                 Response<String> res = companyService.CreateCompany(
-                        text(p[2]),
-                        tokenOf(p[1])
+                        text(p[1]),
+                        currentToken
                 );
 
                 assertSuccess(res);
 
-                // CreateCompany מחזיר company/founder token
-                tokens.put(p[1], res.getData());
+                // אם CreateCompany מחזיר founder/company token, חייבים לעדכן
+                currentToken = res.getData();
                 break;
             }
-
             case "appoint-manager": {
-                // appoint-manager appointerUsername managerUsername companyName permissions
-                require(p, 5);
+                // appoint-manager managerUsername companyName permissions
+                require(p, 4);
 
                 Set<Permission> permissions =
-                        Arrays.stream(p[4].split(","))
+                        Arrays.stream(p[3].split(","))
                                 .map(String::trim)
                                 .map(Permission::valueOf)
                                 .collect(Collectors.toSet());
 
                 Response<String> res = companyService.AppointAManager(
-                        p[2],
-                        text(p[3]),
+                        p[1],
+                        text(p[2]),
                         permissions,
-                        tokenOf(p[1])
+                        currentToken
                 );
 
                 assertSuccess(res);
@@ -283,12 +287,12 @@ public class DataInitializer implements ApplicationRunner {
             }
 
             case "approve-manager": {
-                // approve-manager username companyName
-                require(p, 3);
+                // approve-manager companyName
+                require(p, 2);
 
                 Response<String> res = companyService.ApproveAppointmentForManager(
-                        tokenOf(p[1]),
-                        text(p[2])
+                        currentToken,
+                        text(p[1])
                 );
 
                 assertSuccess(res);
@@ -296,13 +300,13 @@ public class DataInitializer implements ApplicationRunner {
             }
 
             case "appoint-owner": {
-                // appoint-owner appointerUsername ownerUsername companyName
-                require(p, 4);
+                // appoint-owner  ownerUsername companyName
+                require(p, 3);
 
                 Response<String> res = companyService.AppointOwner(
-                        p[2],
-                        text(p[3]),
-                        tokenOf(p[1])
+                        p[1],
+                        text(p[2]),
+                        currentToken
                 );
 
                 assertSuccess(res);
@@ -310,12 +314,12 @@ public class DataInitializer implements ApplicationRunner {
             }
 
             case "approve-owner": {
-                // approve-owner username companyName
-                require(p, 3);
+                // approve-owner companyName
+                require(p, 2);
 
                 Response<String> res = companyService.ApproveAppointmentForOwner(
-                        tokenOf(p[1]),
-                        text(p[2])
+                        currentToken,
+                        text(p[1])
                 );
 
                 assertSuccess(res);
@@ -323,36 +327,38 @@ public class DataInitializer implements ApplicationRunner {
             }
 
             case "create-event": {
-                // create-event username companyName eventName artistName type price location daysFromNow
-                require(p, 11);
+                // create-event companyName eventName artistName type price location daysFromNow standing seats
+                require(p, 10);
 
                 Response<String> res = eventService.createEvent(
-                        tokenOf(p[1]),
-                        text(p[3]),
-                        text(p[4]),
-                        EventType.valueOf(p[5]),
-                        Double.parseDouble(p[6]),
-                        daysFromNow(Integer.parseInt(p[8])),
-                        text(p[7]),
+                        currentToken,
                         text(p[2]),
-                        makeMap(Integer.parseInt(p[9]), Integer.parseInt(p[10]))
+                        text(p[3]),
+                        EventType.valueOf(p[4]),
+                        Double.parseDouble(p[5]),
+                        daysFromNow(Integer.parseInt(p[7])),
+                        text(p[6]),
+                        text(p[1]),
+                        makeMap(
+                                Integer.parseInt(p[8]),
+                                Integer.parseInt(p[9])
+                        )
                 );
 
                 assertSuccess(res);
                 break;
             }
-
             case "configure-lottery": {
-                // configure-lottery username companyName eventName minutesFromNow maxWinners
-                require(p, 6);
+                // configure-lottery companyName eventName minutesFromNow maxWinners
+                require(p, 5);
 
                 Response<String> res = lotteryService.configureLottery(
-                        tokenOf(p[1]),
+                        currentToken,
+                        text(p[1]),
                         text(p[2]),
-                        text(p[3]),
                         null,
-                        minutesFromNow(Integer.parseInt(p[4])),
-                        Integer.parseInt(p[5])
+                        minutesFromNow(Integer.parseInt(p[3])),
+                        Integer.parseInt(p[4])
                 );
 
                 assertSuccess(res);
@@ -360,13 +366,49 @@ public class DataInitializer implements ApplicationRunner {
             }
 
             case "discount-simple": {
-                // discount-simple username targetId targetType percentage companyName saveAs
-                require(p, 7);
+                // discount-simple targetId targetType percentage companyName saveAs
+                require(p, 6);
 
                 Response<String> res = discountService.createSimpleDiscount(
-                        tokenOf(p[1]),
-                        text(p[2]),
-                        DiscountTargetType.valueOf(p[3]),
+                        currentToken,
+                        text(p[1]),
+                        DiscountTargetType.valueOf(p[2]),
+                        Double.parseDouble(p[3]),
+                        text(p[4])
+                );
+
+                assertSuccess(res);
+                ids.put(p[5], res.getData());
+                break;
+            }
+
+            case "discount-quantity": {
+                // discount-quantity targetId targetType percentage minQuantity companyName saveAs
+                require(p, 7);
+
+                Response<String> res = discountService.createQuantityDiscount(
+                        currentToken,
+                        text(p[1]),
+                        DiscountTargetType.valueOf(p[2]),
+                        Double.parseDouble(p[3]),
+                        Integer.parseInt(p[4]),
+                        text(p[5])
+                );
+
+                assertSuccess(res);
+                ids.put(p[6], res.getData());
+                break;
+            }
+
+            case "discount-coupon": {
+                // discount-coupon targetId targetType code percentage companyName saveAs
+                require(p, 7);
+
+                Response<String> res = discountService.createCouponDiscount(
+                        currentToken,
+                        text(p[1]),
+                        DiscountTargetType.valueOf(p[2]),
+                        p[3],
                         Double.parseDouble(p[4]),
                         text(p[5])
                 );
@@ -376,83 +418,65 @@ public class DataInitializer implements ApplicationRunner {
                 break;
             }
 
-            case "discount-quantity": {
-                // discount-quantity username targetId targetType percentage minQuantity companyName saveAs
-                require(p, 8);
-
-                Response<String> res = discountService.createQuantityDiscount(
-                        tokenOf(p[1]),
-                        text(p[2]),
-                        DiscountTargetType.valueOf(p[3]),
-                        Double.parseDouble(p[4]),
-                        Integer.parseInt(p[5]),
-                        text(p[6])
-                );
-
-                assertSuccess(res);
-                ids.put(p[7], res.getData());
-                break;
-            }
-
-            case "discount-coupon": {
-                // discount-coupon username targetId targetType code percentage companyName saveAs
-                require(p, 8);
-
-                Response<String> res = discountService.createCouponDiscount(
-                        tokenOf(p[1]),
-                        text(p[2]),
-                        DiscountTargetType.valueOf(p[3]),
-                        p[4],
-                        Double.parseDouble(p[5]),
-                        text(p[6])
-                );
-
-                assertSuccess(res);
-                ids.put(p[7], res.getData());
-                break;
-            }
-
             case "discount-sum": {
-                // discount-sum username targetId targetType companyName saveAs id1,id2,id3
-                require(p, 7);
+                // discount-sum targetId targetType companyName saveAs id1,id2,id3
+                require(p, 6);
 
                 Response<String> res = discountService.createSumDiscountPolicy(
-                        tokenOf(p[1]),
-                        text(p[2]),
-                        DiscountTargetType.valueOf(p[3]),
-                        idList(p[6]),
-                        text(p[4])
+                        currentToken,
+                        text(p[1]),
+                        DiscountTargetType.valueOf(p[2]),
+                        idList(p[5]),
+                        text(p[3])
                 );
 
                 assertSuccess(res);
-                ids.put(p[5], res.getData());
+                ids.put(p[4], res.getData());
                 break;
             }
 
             case "discount-max": {
-                // discount-max username targetId targetType companyName saveAs id1,id2,id3
-                require(p, 7);
+                // discount-max targetId targetType companyName saveAs id1,id2,id3
+                require(p, 6);
 
                 Response<String> res = discountService.createMaxDiscountPolicy(
-                        tokenOf(p[1]),
-                        text(p[2]),
-                        DiscountTargetType.valueOf(p[3]),
-                        idList(p[6]),
-                        text(p[4])
+                        currentToken,
+                        text(p[1]),
+                        DiscountTargetType.valueOf(p[2]),
+                        idList(p[5]),
+                        text(p[3])
                 );
 
                 assertSuccess(res);
-                ids.put(p[5], res.getData());
+                ids.put(p[4], res.getData());
                 break;
             }
 
             case "policy-age": {
-                require(p, 6);
+                // policy-age targetId targetType minAge saveAs
+                require(p, 5);
 
                 Response<String> res = purchasePolicyService.createAgeLimitPolicy(
-                        tokenOf(p[1]),
-                        text(p[2]),
-                        PurchaseTargetType.valueOf(p[3]),
+                        currentToken,
+                        text(p[1]),
+                        PurchaseTargetType.valueOf(p[2]),
+                        Integer.parseInt(p[3])
+                );
+
+                assertSuccess(res);
+                ids.put(p[4], res.getData());
+                break;
+            }
+
+            case "policy-quantity": {
+                // policy-quantity targetId targetType minQuantity maxQuantity saveAs
+                require(p, 6);
+
+                Response<String> res = purchasePolicyService.createQuantityLimitPolicy(
+                        currentToken,
+                        text(p[1]),
+                        PurchaseTargetType.valueOf(p[2]),
+                        Integer.parseInt(p[3]),
                         Integer.parseInt(p[4])
                 );
 
@@ -461,49 +485,35 @@ public class DataInitializer implements ApplicationRunner {
                 break;
             }
 
-            case "policy-quantity": {
-                require(p, 7);
-
-                Response<String> res = purchasePolicyService.createQuantityLimitPolicy(
-                        tokenOf(p[1]),
-                        text(p[2]),
-                        PurchaseTargetType.valueOf(p[3]),
-                        Integer.parseInt(p[4]),
-                        Integer.parseInt(p[5])
-                );
-
-                assertSuccess(res);
-                ids.put(p[6], res.getData());
-                break;
-            }
-
             case "policy-and": {
-                require(p, 6);
+                // policy-and targetId targetType saveAs id1,id2,id3
+                require(p, 5);
 
                 Response<String> res = purchasePolicyService.createAndPolicy(
-                        tokenOf(p[1]),
-                        text(p[2]),
-                        PurchaseTargetType.valueOf(p[3]),
-                        idList(p[5])
+                        currentToken,
+                        text(p[1]),
+                        PurchaseTargetType.valueOf(p[2]),
+                        idList(p[4])
                 );
 
                 assertSuccess(res);
-                ids.put(p[4], res.getData());
+                ids.put(p[3], res.getData());
                 break;
             }
 
             case "policy-or": {
-                require(p, 6);
+                // policy-or targetId targetType saveAs id1,id2,id3
+                require(p, 5);
 
                 Response<String> res = purchasePolicyService.createOrPolicy(
-                        tokenOf(p[1]),
-                        text(p[2]),
-                        PurchaseTargetType.valueOf(p[3]),
-                        idList(p[5])
+                        currentToken,
+                        text(p[1]),
+                        PurchaseTargetType.valueOf(p[2]),
+                        idList(p[4])
                 );
 
                 assertSuccess(res);
-                ids.put(p[4], res.getData());
+                ids.put(p[3], res.getData());
                 break;
             }
 
@@ -573,11 +583,19 @@ public class DataInitializer implements ApplicationRunner {
         eventService.createEvent(token, name, artist, type, price, date, location, "BGU Events", map);
     }
 
-    private MapArea[][] makeMap(int rows, int cols) {
-        MapArea[][] map = new MapArea[rows][cols];
-        for (int i = 0; i < rows; i++)
-            for (int j = 0; j < cols; j++)
-                map[i][j] = MapArea.SEAT;
+    private MapArea[][] makeMap(int standingCount, int seatCount) {
+        int total = standingCount + seatCount;
+
+        MapArea[][] map = new MapArea[1][total];
+
+        for (int i = 0; i < standingCount; i++) {
+            map[0][i] = MapArea.STAND;
+        }
+
+        for (int i = standingCount; i < total; i++) {
+            map[0][i] = MapArea.SEAT;
+        }
+
         return map;
     }
 

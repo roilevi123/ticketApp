@@ -1,29 +1,15 @@
-register rina 1234 25 rina@test.com
-register moshe 1234 30 moshe@test.com
-register dan 1234 28 dan@test.com
-register d d 28 dan@test.com
-register u1 u1 28 dan@test.com
-register u2 u2 28 dan@test.com
-register u3 u3 28 dan@test.com
-register u4 u4 28 dan@test.com
+registerAdmin admin admin 30 admin@test.com
 
-registerAdmin admin admin 1000000 admin@test.com
+register User1 User1 20 user1@test.com
+register User2 User2 20 user2@test.com
+register User3 User3 20 user3@test.com
+register User4 User4 20 user4@test.com
 
-login rina 1234
-login moshe 1234
-login dan 1234
+login User1 User1
 
-login u1 u1
-login u2 u2
-login u3 u3
+create-company C1
 
+create-event C1 E1 Artist1 LIVE_PERFORMANCE 0 Location1 30 10 10
+create-event C1 E2 Artist2 LIVE_PERFORMANCE 10 Location2 30 10 10
 
-create-company u1 BGU_Events
-
-appoint-owner u1 u2 BGU_Events
-approve-owner u2 BGU_Events
-
-appoint-manager u2 u3 BGU_Events MANAGE_INVENTORY
-approve-manager u3 BGU_Events
-
-
+logout
