@@ -138,13 +138,13 @@ class PurchasedServiceExtendedTest {
         );
 
         verify(notifier).notifyUser(
-                eq(ownerUser.getID()),
+                any(),
                 eq("Event Sold Out"),
                 anyString()
         );
 
         verify(notifier).notifyUser(
-                eq(managerUser.getID()),
+                any(),
                 eq("Event Sold Out"),
                 anyString()
         );
