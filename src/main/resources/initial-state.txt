@@ -1,4 +1,3 @@
-registerAdmin admin admin 30 admin@test.com
 
 register User1 User1 20 user1@test.com
 register User2 User2 20 user2@test.com
