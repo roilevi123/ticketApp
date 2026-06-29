@@ -137,13 +137,7 @@ class PurchasedServiceExtendedTest {
                 createCreditCardDetails()
         );
 
-        verify(notifier).notifyUser(
-                any(),
-                eq("Event Sold Out"),
-                anyString()
-        );
-
-        verify(notifier).notifyUser(
+        verify(notifier, times(2)).notifyUser(
                 any(),
                 eq("Event Sold Out"),
                 anyString()
