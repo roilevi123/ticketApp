@@ -55,7 +55,8 @@ public class PurchasedOrderRepositoryAdapter implements iPurchasedOrderRepositor
 
     @Override
     public List<PurchaseOrder> getPurchasedOrdersForCompany(String company) {
-        return jpaRepository.findByCompany(company);
+        List<PurchaseOrder> a =jpaRepository.findByCompany(company);
+        return a;
     }
 
     @Override

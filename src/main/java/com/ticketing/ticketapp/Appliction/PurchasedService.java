@@ -188,7 +188,7 @@ public class PurchasedService {
                 }
                 throw new PurchaseOrderException("Failed during save or supply: " + e.getMessage(), e);
             }
-
+            String t=order.getUserId();
             if (order.getUserId() != null) {
                 notifier.notifyUser(order.getUserId(), "Purchase Successful",
                         "Your purchase for event '" + order.getEventId() + "' is confirmed. " + purchasedTickets.size() + " ticket(s) sent to " + email + ".");
@@ -198,12 +198,11 @@ public class PurchasedService {
             if (soldOut) {
                 String soldOutMsg = "Your event '" + order.getEventId() + "' is now sold out!";
                 treeOfRoleRepository.getAllOwnersByCompany(order.getCompanyId()).forEach(o -> {
-                    User u = userRepository.getUserByUsername(o.getUserID());
-                    if (u != null) notifier.notifyUser(u.getID(), "Event Sold Out", soldOutMsg);
+                    if (o != null) notifier.notifyUser(o.getUserID(), "Event Sold Out", soldOutMsg);
+
                 });
                 treeOfRoleRepository.getAllManagersByCompany(order.getCompanyId()).forEach(m -> {
-                    User u = userRepository.getUserByUsername(m.getUserID());
-                    if (u != null) notifier.notifyUser(u.getID(), "Event Sold Out", soldOutMsg);
+                    if (m != null) notifier.notifyUser(m.getUserID(), "Event Sold Out", soldOutMsg);
                 });
             }
 
@@ -395,7 +394,7 @@ public class PurchasedService {
             List<PurchaseOrderDTO> matchingOrderDTOs = new ArrayList<>();
 
             for (PurchaseOrder order : allCompanyOrders) {
-                if (order.getBuyerID() != null && (order.getBuyerID().equals(currentUserId) || subTreeUserIds.contains(order.getBuyerID()))) {
+                if (order.getBuyerID() != null  ) {
                     List<String> ticketsId = order.getTicketsId();
                     List<Ticket> ticketList = ticketRepository.getTickets(ticketsId);
                     List<TicketDTO> ticketDTOs = new ArrayList<>();
@@ -427,7 +426,6 @@ public class PurchasedService {
 
             logger.info("Successfully generated sales report for sub-tree of {}. Total Revenue: {}, Tickets Sold: {}",
                     currentUserId, totalRevenue, totalTicketsSold);
-
             return Response.success(report);
 
         }

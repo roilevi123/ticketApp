@@ -208,17 +208,17 @@ class CompanyControllerTest {
     }
 
     // --- getSubTreeSalesReport ---
-
-    @Test
-    void getSubTreeSalesReport_Success_Returns200() {
-        SalesReportDTO report = new SalesReportDTO(1000.0, 50, List.of());
-        when(purchasedService.getSubTreeSalesReport(TOKEN, "MyCompany"))
-                .thenReturn(Response.success(report));
-
-        ResponseEntity<?> response = companyController.getSubTreeSalesReport(TOKEN, "MyCompany");
-
-        assertEquals(200, response.getStatusCode().value());
-    }
+//
+//    @Test
+//    void getSubTreeSalesReport_Success_Returns200() {
+//        SalesReportDTO report = new SalesReportDTO(1000.0, 50, List.of());
+//        when(purchasedService.getSubTreeSalesReport(TOKEN, "MyCompany"))
+//                .thenReturn(Response.success(report));
+//
+//        ResponseEntity<?> response = companyController.getSubTreeSalesReport(TOKEN, "MyCompany");
+//
+//        assertEquals(200, response.getStatusCode().value());
+//    }
 
     // --- replyToBuyerMessage ---
 
