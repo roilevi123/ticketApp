@@ -70,6 +70,9 @@ class DataInitializerTest {
                 discountService,
                 purchasePolicyService
         );
+        ReflectionTestUtils.setField(dataInitializer, "adminName", "admin");
+        ReflectionTestUtils.setField(dataInitializer, "adminPassward", "admin");
+        ReflectionTestUtils.setField(dataInitializer, "exitOnFailure", false);
 
         ReflectionTestUtils.setField(dataInitializer, "initialStateEnabled", true);
         ReflectionTestUtils.setField(dataInitializer, "skipExisting", true);

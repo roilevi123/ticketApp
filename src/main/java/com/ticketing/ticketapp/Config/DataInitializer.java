@@ -62,6 +62,14 @@ public class DataInitializer implements ApplicationRunner {
     private boolean skipExisting;
     @Value("${initial.state.reset:false}")
     private boolean resetBeforeInit;
+    @Value("${admin.name}")
+    private String adminName;
+    @Value("${admin.passward}")
+    private String adminPassward;
+    @Value("${initial.state.createAdmin:false}")
+    private boolean createAdmin;
+    @Value("${initial.state.exitOnFailure}")
+    private boolean exitOnFailure;
     @Value("${initial.state.enabled:false}")
     private boolean initialStateEnabled;
     public DataInitializer(UserService userService, CompanyService companyService,
@@ -102,7 +110,19 @@ public class DataInitializer implements ApplicationRunner {
             logger.info("DataInitializer: initial state loaded successfully");
 
         } catch (Exception e) {
-            logger.error("DataInitializer failed: {}", e.getMessage());
+            logger.error("""
+            
+            ***************************
+            INITIAL STATE FAILED
+            ***************************
+          
+            ***************************
+            """);
+
+            if (exitOnFailure) {
+                System.exit(1);
+            }
+
             throw new RuntimeException("Initial state failed", e);
         }
     }
@@ -128,6 +148,9 @@ public class DataInitializer implements ApplicationRunner {
 
         if (inputStream == null) {
             throw new RuntimeException("File not found: " + filePath);
+        }
+        if (createAdmin) {
+            registerAdmin(adminName, adminPassward);
         }
 
         List<String> lines = new BufferedReader(
@@ -156,6 +179,35 @@ public class DataInitializer implements ApplicationRunner {
                 );
             }
         }
+    }
+    public  void registerAdmin(String name,String passward){
+        // registerAdmin username password age email
+
+
+        Response<String> registerRes = userService.register(
+                tokenService.generateGuestToken(),
+                name,
+                passward,
+                1,
+                "roilevi@gmail.com"
+        );
+
+        if (!registerRes.isSuccess() && !isAlreadyExistsMessage(registerRes.getMessage())) {
+            assertSuccess(registerRes);
+        }
+
+        Response<String> loginRes = userService.login(
+                tokenService.generateGuestToken(),
+                name,
+                passward
+        );
+
+        assertSuccess(loginRes);
+
+        String adminToken = loginRes.getData();
+        String adminId = tokenService.extractUserId(adminToken);
+        adminRepository.addAdmin(adminId);
+
     }
     private boolean isAlreadyExistsError(Exception e) {
         String msg = e.getMessage();

@@ -10,3 +10,5 @@ spring.jpa.hibernate.ddl-auto=create-drop
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 initi al.state.enabled=false
+admin.name=admin
+admin.passward=admin
