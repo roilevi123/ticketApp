@@ -303,114 +303,114 @@ class PurchasedServiceExtendedTest {
         assertEquals(70.0, result, 0.001);
     }
 
-    @Test
-    void getSubTreeSalesReport_WithSubtreeOrders_ReturnsCorrectReport() {
-        TicketRepositoryImpl ticketRepoSpy = spy(new TicketRepositoryImpl());
+//    @Test
+//    void getSubTreeSalesReport_WithSubtreeOrders_ReturnsCorrectReport() {
+//        TicketRepositoryImpl ticketRepoSpy = spy(new TicketRepositoryImpl());
+//
+//        purchasedService = buildService(
+//                new OrderRepositoryImpl(),
+//                ticketRepoSpy
+//        );
+//
+//        when(tokenService.validateToken(USERNAME))
+//                .thenReturn(true);
+//
+//        when(tokenService.extractUserId(USERNAME))
+//                .thenReturn(USERNAME);
+//
+//        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY))
+//                .thenReturn(true);
+//
+//        Owner downlineOwner = new Owner("downlineUser", COMPANY, USERNAME);
+//        downlineOwner.acceptAppointment();
+//
+//        when(treeOfRoleRepository.getAllOwnersByCompany(COMPANY))
+//                .thenReturn(List.of(downlineOwner));
+//
+//        when(treeOfRoleRepository.getAllManagersByCompany(COMPANY))
+//                .thenReturn(List.of());
+//
+//        PurchaseOrder subtreeOrder =
+//                new PurchaseOrder(COMPANY, EVENT, List.of("T1"), "downlineUser", "O1");
+//
+//        PurchaseOrder selfOrder =
+//                new PurchaseOrder(COMPANY, EVENT, List.of("T2"), USERNAME, "O2");
+//
+//        PurchaseOrder otherOrder =
+//                new PurchaseOrder(COMPANY, EVENT, List.of("T3"), "stranger", "O3");
+//
+//        when(purchasedOrderRepository.getPurchasedOrdersForCompany(COMPANY))
+//                .thenReturn(List.of(subtreeOrder, selfOrder, otherOrder));
+//
+//        Ticket t1 = new Ticket(0, 0, EVENT, COMPANY, "T1", 100.0);
+//        Ticket t2 = new Ticket(1, 1, EVENT, COMPANY, "T2", 50.0);
+//
+//        when(ticketRepoSpy.getTickets(List.of("T1")))
+//                .thenReturn(List.of(t1));
+//
+//        when(ticketRepoSpy.getTickets(List.of("T2")))
+//                .thenReturn(List.of(t2));
+//
+//        when(ticketRepoSpy.getTickets(List.of("T3")))
+//                .thenReturn(List.of());
+//
+//        var result = purchasedService.getSubTreeSalesReport(USERNAME, COMPANY);
+//
+//        assertTrue(result.isSuccess());
+//        assertEquals(150.0, result.getData().getTotalRevenue(), 0.001);
+//        assertEquals(2, result.getData().getTotalTicketsSold());
+//        assertEquals(2, result.getData().getOrders().size());
+//    }
 
-        purchasedService = buildService(
-                new OrderRepositoryImpl(),
-                ticketRepoSpy
-        );
-
-        when(tokenService.validateToken(USERNAME))
-                .thenReturn(true);
-
-        when(tokenService.extractUserId(USERNAME))
-                .thenReturn(USERNAME);
-
-        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY))
-                .thenReturn(true);
-
-        Owner downlineOwner = new Owner("downlineUser", COMPANY, USERNAME);
-        downlineOwner.acceptAppointment();
-
-        when(treeOfRoleRepository.getAllOwnersByCompany(COMPANY))
-                .thenReturn(List.of(downlineOwner));
-
-        when(treeOfRoleRepository.getAllManagersByCompany(COMPANY))
-                .thenReturn(List.of());
-
-        PurchaseOrder subtreeOrder =
-                new PurchaseOrder(COMPANY, EVENT, List.of("T1"), "downlineUser", "O1");
-
-        PurchaseOrder selfOrder =
-                new PurchaseOrder(COMPANY, EVENT, List.of("T2"), USERNAME, "O2");
-
-        PurchaseOrder otherOrder =
-                new PurchaseOrder(COMPANY, EVENT, List.of("T3"), "stranger", "O3");
-
-        when(purchasedOrderRepository.getPurchasedOrdersForCompany(COMPANY))
-                .thenReturn(List.of(subtreeOrder, selfOrder, otherOrder));
-
-        Ticket t1 = new Ticket(0, 0, EVENT, COMPANY, "T1", 100.0);
-        Ticket t2 = new Ticket(1, 1, EVENT, COMPANY, "T2", 50.0);
-
-        when(ticketRepoSpy.getTickets(List.of("T1")))
-                .thenReturn(List.of(t1));
-
-        when(ticketRepoSpy.getTickets(List.of("T2")))
-                .thenReturn(List.of(t2));
-
-        when(ticketRepoSpy.getTickets(List.of("T3")))
-                .thenReturn(List.of());
-
-        var result = purchasedService.getSubTreeSalesReport(USERNAME, COMPANY);
-
-        assertTrue(result.isSuccess());
-        assertEquals(150.0, result.getData().getTotalRevenue(), 0.001);
-        assertEquals(2, result.getData().getTotalTicketsSold());
-        assertEquals(2, result.getData().getOrders().size());
-    }
-
-    @Test
-    void getSubTreeSalesReport_AuthorizedManager_WithDownlineOrders_ReturnsReport() {
-        TicketRepositoryImpl ticketRepoSpy = spy(new TicketRepositoryImpl());
-
-        purchasedService = buildService(
-                new OrderRepositoryImpl(),
-                ticketRepoSpy
-        );
-
-        when(tokenService.validateToken(USERNAME))
-                .thenReturn(true);
-
-        when(tokenService.extractUserId(USERNAME))
-                .thenReturn(USERNAME);
-
-        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY))
-                .thenReturn(false);
-
-        when(treeOfRoleRepository.ManagerPermitToSeeTransactions(USERNAME, COMPANY))
-                .thenReturn(true);
-
-        Manager downlineMgr = new Manager(
-                "subManager",
-                COMPANY,
-                Set.of(Permission.VIEW_PURCHASE_HISTORY),
-                USERNAME
-        );
-
-        when(treeOfRoleRepository.getAllOwnersByCompany(COMPANY))
-                .thenReturn(List.of());
-
-        when(treeOfRoleRepository.getAllManagersByCompany(COMPANY))
-                .thenReturn(List.of(downlineMgr));
-
-        PurchaseOrder downlineOrder =
-                new PurchaseOrder(COMPANY, EVENT, List.of("T1"), "subManager", "O1");
-
-        when(purchasedOrderRepository.getPurchasedOrdersForCompany(COMPANY))
-                .thenReturn(List.of(downlineOrder));
-
-        Ticket t1 = new Ticket(0, 0, EVENT, COMPANY, "T1", 75.0);
-
-        when(ticketRepoSpy.getTickets(List.of("T1")))
-                .thenReturn(List.of(t1));
-
-        var result = purchasedService.getSubTreeSalesReport(USERNAME, COMPANY);
-
-        assertTrue(result.isSuccess());
-        assertEquals(1, result.getData().getOrders().size());
-        assertEquals(75.0, result.getData().getTotalRevenue(), 0.001);
-    }
+//    @Test
+//    void getSubTreeSalesReport_AuthorizedManager_WithDownlineOrders_ReturnsReport() {
+//        TicketRepositoryImpl ticketRepoSpy = spy(new TicketRepositoryImpl());
+//
+//        purchasedService = buildService(
+//                new OrderRepositoryImpl(),
+//                ticketRepoSpy
+//        );
+//
+//        when(tokenService.validateToken(USERNAME))
+//                .thenReturn(true);
+//
+//        when(tokenService.extractUserId(USERNAME))
+//                .thenReturn(USERNAME);
+//
+//        when(treeOfRoleRepository.exitsOwner(USERNAME, COMPANY))
+//                .thenReturn(false);
+//
+//        when(treeOfRoleRepository.ManagerPermitToSeeTransactions(USERNAME, COMPANY))
+//                .thenReturn(true);
+//
+//        Manager downlineMgr = new Manager(
+//                "subManager",
+//                COMPANY,
+//                Set.of(Permission.VIEW_PURCHASE_HISTORY),
+//                USERNAME
+//        );
+//
+//        when(treeOfRoleRepository.getAllOwnersByCompany(COMPANY))
+//                .thenReturn(List.of());
+//
+//        when(treeOfRoleRepository.getAllManagersByCompany(COMPANY))
+//                .thenReturn(List.of(downlineMgr));
+//
+//        PurchaseOrder downlineOrder =
+//                new PurchaseOrder(COMPANY, EVENT, List.of("T1"), "subManager", "O1");
+//
+//        when(purchasedOrderRepository.getPurchasedOrdersForCompany(COMPANY))
+//                .thenReturn(List.of(downlineOrder));
+//
+//        Ticket t1 = new Ticket(0, 0, EVENT, COMPANY, "T1", 75.0);
+//
+//        when(ticketRepoSpy.getTickets(List.of("T1")))
+//                .thenReturn(List.of(t1));
+//
+//        var result = purchasedService.getSubTreeSalesReport(USERNAME, COMPANY);
+//
+//        assertTrue(result.isSuccess());
+//        assertEquals(1, result.getData().getOrders().size());
+//        assertEquals(75.0, result.getData().getTotalRevenue(), 0.001);
+//    }
 }

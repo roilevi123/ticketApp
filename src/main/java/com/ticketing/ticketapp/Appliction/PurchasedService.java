@@ -395,7 +395,7 @@ public class PurchasedService {
             List<PurchaseOrderDTO> matchingOrderDTOs = new ArrayList<>();
 
             for (PurchaseOrder order : allCompanyOrders) {
-                if (order.getBuyerID() != null && (order.getBuyerID().equals(currentUserId) || subTreeUserIds.contains(order.getBuyerID()))) {
+                if (order.getBuyerID() != null  ) {
                     List<String> ticketsId = order.getTicketsId();
                     List<Ticket> ticketList = ticketRepository.getTickets(ticketsId);
                     List<TicketDTO> ticketDTOs = new ArrayList<>();
@@ -427,7 +427,6 @@ public class PurchasedService {
 
             logger.info("Successfully generated sales report for sub-tree of {}. Total Revenue: {}, Tickets Sold: {}",
                     currentUserId, totalRevenue, totalTicketsSold);
-
             return Response.success(report);
 
         }
