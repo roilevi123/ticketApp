@@ -43,7 +43,7 @@ public class PurchasePolicyService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("age limit policy creation failed", e);
             return Response.error(e.getMessage());
         }
     }
@@ -66,7 +66,7 @@ public class PurchasePolicyService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("qoute quantity limit policy creation failed", e);
             return Response.error(e.getMessage());
         }
     }
@@ -97,7 +97,7 @@ public class PurchasePolicyService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("and policy creation failed");
             return Response.error(e.getMessage());
         }
     }
@@ -129,7 +129,7 @@ public class PurchasePolicyService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("or policy creation failed");
             return Response.error(e.getMessage());
         }
     }

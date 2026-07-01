@@ -106,7 +106,7 @@ public class EventService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error("Failed to create event '{}' for company '{}': {}", eventName, company, e.getMessage());
+            logger.error("Failed to create event '{}' for company '{}':", eventName, company);
             return Response.error("Failed to create event: " + e.getMessage());
         }
     }

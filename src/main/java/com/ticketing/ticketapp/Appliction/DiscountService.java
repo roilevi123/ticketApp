@@ -44,7 +44,7 @@ public class DiscountService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("simple discount creation failed");
             return Response.error(e.getMessage());
         }
     }
@@ -67,7 +67,7 @@ public class DiscountService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("quantity discount creation failed");
             return Response.error(e.getMessage());
         }
     }
@@ -90,7 +90,7 @@ public class DiscountService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("time limited discount creation failed");
             return Response.error(e.getMessage());
         }
     }
@@ -112,7 +112,7 @@ public class DiscountService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("cup coupon discount creation failed");
             return Response.error(e.getMessage());
         }
     }
@@ -144,7 +144,7 @@ public class DiscountService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("sum discount creation failed");
             return Response.error(e.getMessage());
         }
     }
@@ -176,7 +176,7 @@ public class DiscountService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("max discount creation failed");
             return Response.error(e.getMessage());
         }
     }

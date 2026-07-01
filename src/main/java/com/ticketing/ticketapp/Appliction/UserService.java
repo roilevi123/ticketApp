@@ -60,7 +60,7 @@ public class UserService implements IAuth {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error("Registering user " + username + " failed", e.getMessage());
+            logger.error("Registering user " + username + " failed");
             return Response.error(e.getMessage());
         }
     }
@@ -92,7 +92,7 @@ public class UserService implements IAuth {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error("Login failed for user {}", username, e);
+            logger.error("Login failed for user {}", username);
             return Response.error(e.getMessage());
         }
     }
@@ -114,7 +114,7 @@ public class UserService implements IAuth {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error("Logout failed", e);
+            logger.error("Logout failed");
             return Response.error(e.getMessage());
         }
     }

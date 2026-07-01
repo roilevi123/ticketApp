@@ -66,7 +66,7 @@ public class CompanyService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("create company failed");
             return Response.error(e.getMessage());
         }
     }
@@ -95,7 +95,7 @@ public class CompanyService {
         }        catch (DataAccessException e) {
             return Response.error("Database unavailable");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("appointment failed");
             return Response.error(e.getMessage());
         }
     }
@@ -118,7 +118,7 @@ public class CompanyService {
         }         catch (DataAccessException e) {
             return Response.error("Database unavailable");
         }catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("approve appointment failed");
             return Response.error(e.getMessage());
         }
     }
@@ -174,7 +174,7 @@ public class CompanyService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("appoint owner failed");
             return Response.error(e.getMessage());
         }
     }
@@ -199,7 +199,7 @@ public class CompanyService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("approve appointment failed");
             return Response.error(e.getMessage());
         }
     }

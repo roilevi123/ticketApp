@@ -86,7 +86,7 @@ public class LotteryService {
             return Response.error("Database unavailable");
         }
         catch (Exception e) {
-            logger.error("Failed to configure lottery for event '{}': {}", eventName, e.getMessage());
+            logger.error("Failed to configure lottery for event '{}': ", eventName);
             return Response.error(e.getMessage());
         }
     }
