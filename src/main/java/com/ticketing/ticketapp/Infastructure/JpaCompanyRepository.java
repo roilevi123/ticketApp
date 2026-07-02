@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface JpaCompanyRepository extends JpaRepository<Company, String> {
     List<Company> findByActiveTrue();
+    void deleteByCompanyName(String companyName);
 }

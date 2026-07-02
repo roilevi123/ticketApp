@@ -15,6 +15,7 @@ import com.ticketing.ticketapp.Infastructure.TokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -446,26 +447,36 @@ public class CompanyService {
     }
 
     @Transactional
-    @CacheEvict(value = "activeCompanies", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "activeCompanies", allEntries = true),
+            @CacheEvict(value = "companyEvents", allEntries = true),
+            @CacheEvict(value = "searchedEvents", allEntries = true),
+            @CacheEvict(value = "events", allEntries = true),
+            @CacheEvict(value = "eventMaps", allEntries = true)
+    })
     public Response<String> closeCompany(String company, String token) {
         try {
-            logger.info("User of token {} is attempting to close the company: {}", token, company);
             if (!tokenService.validateToken(token)) throw new OwnerManagerException("Invalid token");
             String userId = tokenService.extractUserId(token);
             if (userRepository.isUserSuspendedNow(userId))
                 throw new OwnerManagerException("User is suspended");
+
             Owner o = treeOfRoleRepository.getOwner(userId, company);
             if (o == null || !iTreeOfRoleRepository.FOUNDER_APPOINTER.equals(o.getAppointerID()))
                 throw new OwnerManagerException("Only the founder can close the company");
+
             List<Owner> owners = treeOfRoleRepository.getAllOwnersByCompany(company);
             List<Manager> managers = treeOfRoleRepository.getAllManagersByCompany(company);
-            companyRepository.deleteCompany(company);
+
             eventRepository.deleteCompanyEvent(company);
+            companyRepository.deleteCompany(company);
             treeOfRoleRepository.deleteCompanyMangersAndOwners(company);
+
             String title = "Company Closed";
             String closeMsg = "Company '" + company + "' has been permanently closed by its founder.";
             owners.forEach(owner -> notifyMember(owner.getUserID(), title, closeMsg));
             managers.forEach(mgr -> notifyMember(mgr.getUserID(), title, closeMsg));
+
             logger.info("Company '{}' closed by founder '{}' successfully", company, userId);
             return Response.success("success");
         }

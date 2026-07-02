@@ -87,7 +87,7 @@ public class EventRepositoryAdapter implements iEventRepository {
 
     @Override
     public void deleteCompanyEvent(String company) {
-        jpaEventRepository.deleteByCompanyName(company);
+        jpaEventRepository.deleteCompanyEvent(company);
         jpaEventRepository.flush();
     }
 
