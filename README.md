@@ -412,3 +412,14 @@ policy-or targetId targetType saveAs id1,id2,id3
 ```
 
 Combines policies using logical OR.
+
+------------------------------------------------------------------------
+# Documentation And Relevant files
+
+``` text
+link to UML: https://drive.google.com/file/d/1hMbAo6SjcIWjn3nkTz5ZGisPiODqYpbd/view?usp=sharing
+```
+
+``` text
+link to Use Case File: https://drive.google.com/file/d/11HMMY3Lb8KsHFuJ9TAof66p5-6wX0eaG/view?usp=sharing
+```
