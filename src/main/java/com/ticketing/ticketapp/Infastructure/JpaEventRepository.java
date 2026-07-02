@@ -3,6 +3,8 @@ package com.ticketing.ticketapp.Infastructure;
 import com.ticketing.ticketapp.Domain.Event.Event;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,7 +17,8 @@ public interface JpaEventRepository extends JpaRepository<Event, String> {
     List<Event> findByCompanyName(String companyName);
     boolean existsByNameAndCompanyName(String name, String companyName);
 
-    @Transactional
     @Modifying
-    void deleteByCompanyName(String companyName);
+    @Transactional
+    @Query("DELETE FROM Event e WHERE e.companyName = :companyName")
+    void deleteCompanyEvent(@Param("companyName") String companyName);
 }
