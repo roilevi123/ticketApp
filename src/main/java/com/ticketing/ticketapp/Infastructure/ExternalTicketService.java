@@ -63,7 +63,7 @@ public class ExternalTicketService implements IExternalTicketService {
             throw e;
         } catch (HttpTimeoutException e) {
             System.err.println("[ExternalTicketService] issueTicket Timed Out!");
-            return "-1";
+            throw new ExternalServiceException("Ticket service timed out during issueTicket", e);
         } catch (Exception e) {
             throw new ExternalServiceException("Ticket service issueTicket error: " + e.getMessage(), e);
         }
@@ -106,7 +106,7 @@ public class ExternalTicketService implements IExternalTicketService {
             throw e;
         } catch (HttpTimeoutException e) {
             System.err.println("[ExternalTicketService] cancelTicket Timed Out!");
-            return false;
+            throw new ExternalServiceException("Ticket cancel service timed out", e);
         } catch (Exception e) {
             throw new ExternalServiceException("Ticket service cancelTicket error: " + e.getMessage(), e);
         }
