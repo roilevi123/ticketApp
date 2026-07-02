@@ -213,7 +213,7 @@ public class EventService {
                         .forEach(o -> notifier.notifyUser(o.getBuyerID(), "Event Rescheduled",
                                 "The event '" + eventName + "' has been rescheduled to " + date + "."));
             }
-            logger.info("User {} successfully update event: ", userID, eventName);
+            logger.info("User {} successfully update event: {}", userID, eventName);
             return Response.success("success");
         }
         catch (DataAccessException e) {
@@ -239,7 +239,7 @@ public class EventService {
             if (!c) {
                 throw new RuntimeException("the company is not active");
             }
-            logger.info("User {} successfully got company info: ", token, company);
+            logger.info("User {} successfully got company info:{} ", token, company);
             return Response.success(companyRepository.getCompanyDescription(company));
         }
         catch (DataAccessException e) {
@@ -339,7 +339,7 @@ public class EventService {
             Date startDate, Date endDate,
             String location, Double minRating) {
         try {
-            logger.info("User of token {} is attempting to search company events: ", token, company);
+            logger.info("User of token {} is attempting to search company events: {}", token, company);
 
             if (token != null && !token.trim().isEmpty()) {
                 boolean isGuest = token.contains("guest-temporary-token");

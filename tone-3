@@ -1,0 +1,22 @@
+[33mtag milestone-3[m
+Tagger: roilevi05 <roi9@post.bgu.ac.il>
+Date:   Sat Jun 20 19:21:19 2026 +0300
+
+Milestone 3
+
+[33mcommit 014578913e99d452627da696c0c1ea2bd7b77453[m[33m ([m[1;33mtag: [m[1;33mmilestone-3[m[33m)[m
+Author: roilevi123 <roi9@post.bgu.ac.il>
+Date:   Sat Jun 20 18:41:37 2026 +0300
+
+    kl
+
+[1mdiff --git a/src/main/resources/application.properties b/src/main/resources/application.properties[m
+[1mindex ab735f0..61824d9 100644[m
+[1m--- a/src/main/resources/application.properties[m
+[1m+++ b/src/main/resources/application.properties[m
+[36m@@ -29,4 +29,4 @@[m [minitial.state.file=initial-state.txt[m
+ initial.state.skipExisting=true[m
+ repository.type=DB[m
+ initial.state.reset=true[m
+[31m-initial.state.enabled=false[m
+[32m+[m[32minitial.state.enabled=true[m
